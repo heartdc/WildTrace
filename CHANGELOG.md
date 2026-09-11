@@ -709,3 +709,7 @@
 ## Phase 5 patch scope gate
 
 - 新增本地补丁路径范围校验，拒绝越界路径。
+
+## Phase 5 scan schema gate
+
+- 分支影响比较要求扫描结果 schema 0.3。

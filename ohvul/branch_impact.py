@@ -11,6 +11,7 @@ def validate_patch_scope(root, paths):
 def compare_findings(base, revised):
     def ids(result):
         return {f['evidence_id'] for f in result.get('findings', [])}
+    if base.get('schema_version') != '0.3' or revised.get('schema_version') != '0.3': raise ValueError('unsupported scan result schema')
     if base.get('safety', {}).get('local_only') is not True or revised.get('safety', {}).get('local_only') is not True:
         raise ValueError('only local-only results are supported')
     old, new = ids(base), ids(revised)
