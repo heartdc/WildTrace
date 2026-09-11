@@ -432,3 +432,8 @@ Phase 4 的允许范围已完成：静态证据独立复核、合成 harness、�
 ## Phase 5 分支影响 CLI 增量（2026-09-11）
 
 branch_impact 支持 python -m ohvul.branch_impact 对两份本地 JSON 结果做离线比较，错误输入输出 INVALID；不访问远程 Git。
+
+
+## Phase 5 CLI 回归覆盖增量（2026-09-11）
+
+新增分支影响 CLI 成功路径测试，验证本地 JSON 比较输出可解析；专项测试 5 项通过。

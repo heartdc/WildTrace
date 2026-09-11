@@ -733,3 +733,7 @@
 ## Phase 5 branch impact CLI
 
 - 新增本地 JSON 分支影响比较 CLI。
+
+## Phase 5 branch impact CLI regression
+
+- 增加 CLI 成功路径回归测试。
