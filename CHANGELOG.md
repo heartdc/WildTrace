@@ -656,3 +656,7 @@
 ## Local installation documentation
 
 - README 增加本地安装、测试和 LLM 环境变量说明。
+
+## Repository security policy
+
+- 新增 SECURITY.md，明确本地审计范围和安全报告边界。
