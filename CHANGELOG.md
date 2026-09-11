@@ -696,3 +696,8 @@
 ## Current checkpoint clarification
 
 - 明确 PROJECT_STATE 前部历史条目与末尾最新检查点的优先级。
+
+## Phase 4 bounded closure
+
+- Phase 4 允许范围闭环完成，明确不执行真实目标代码。
+- 下一阶段进入 Phase 5 准备：分支影响、补丁验证和报告。

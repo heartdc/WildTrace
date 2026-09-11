@@ -388,3 +388,7 @@ verification_link.validate_link 现在严格要求 checkpoint_sha256 为 64 位�
 ## 当前有效检查点说明（2026-09-10）
 
 文档前部的历史条目保留作记录；当前有效状态以文档末尾最新检查点为准：Phase 4 已开始，验证链和 CI 已通过，后续聚焦隔离 harness 与检查点进一步集成。
+
+## Phase 4 闭环检查点（2026-09-11）
+
+Phase 4 的允许范围已完成：静态证据独立复核、合成 harness、输入输出预算、FSM local_verification、检查点摘要关联、冲突拒绝、恢复读取、跨平台回归和 CI 门禁均已验证。真实 OpenHarmony 目标代码执行仍被禁止，因此不产生漏洞确认结论。下一阶段为 Phase 5：分支影响、补丁验证和报告。
