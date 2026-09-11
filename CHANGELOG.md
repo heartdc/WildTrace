@@ -705,3 +705,7 @@
 ## Phase 5 branch impact comparison
 
 - 新增本地扫描结果分支影响比较器，输出候选变化并保持 review_required。
+
+## Phase 5 patch scope gate
+
+- 新增本地补丁路径范围校验，拒绝越界路径。

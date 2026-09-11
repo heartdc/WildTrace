@@ -397,3 +397,8 @@ Phase 4 的允许范围已完成：静态证据独立复核、合成 harness、�
 ## Phase 5 分支影响比较增量（2026-09-11）
 
 新增 branch_impact.compare_findings，仅比较本地保存结果的 evidence_id，输出新增/消失候选并要求人工审核；不访问远程 Git。新增测试通过。
+
+
+## Phase 5 补丁范围门控增量（2026-09-11）
+
+新增 validate_patch_scope，限制补丁路径在授权源码根目录内，拒绝路径穿越；新增测试通过。
