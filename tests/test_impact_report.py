@@ -8,3 +8,4 @@ class ImpactReportTests(unittest.TestCase):
 
   from ohvul.impact_report import project_for_review
   projected=project_for_review(report,'task'); self.assertEqual(projected['workflow']['task_id'],'task'); self.assertEqual(projected['assessment']['confirmed_vulnerabilities'],0)
+  with self.assertRaises(ValueError): project_for_review(report,'')
