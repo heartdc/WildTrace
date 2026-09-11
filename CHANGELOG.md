@@ -792,3 +792,7 @@
 ## Phase 5 task association validation
 
 - 增加影响报告无效任务关联拒绝测试。
+
+## Phase 5 review API integration test
+
+- 验证影响报告可进入现有人工审核 API，保持不可确认结论。

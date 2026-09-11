@@ -508,3 +508,8 @@ impact_report 新增 project_for_review，为现有审核 API 添加 task/report
 ## Phase 5 任务关联校验（2026-09-11）
 
 影响报告投影新增无效 task ID 拒绝测试，确保审核链任务关联合法。
+
+
+## Phase 5 审核 API 接入验证（2026-09-11）
+
+验证影响报告投影可直接进入 create_review/validate_review，且审核记录仍保持 final_vulnerability_verdict=false；测试通过。
