@@ -632,3 +632,7 @@
 ## CI credential pattern gate
 
 - GitHub Actions 新增离线 API key 形态扫描。
+
+## Local credential ignore rules
+
+- 新增 .env、密钥和 secrets 文件忽略规则。

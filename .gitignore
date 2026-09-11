@@ -4,3 +4,10 @@ docs/references/
 **/__pycache__/
 *.pyc
 
+
+.env
+.env.*
+*.key
+*.pem
+*.secrets
+
