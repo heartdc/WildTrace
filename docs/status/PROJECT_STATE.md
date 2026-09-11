@@ -299,3 +299,8 @@ LLM 适配器拒绝非 HTTPS Base URL，新增离线测试；避免 key 通过�
 ## LLM 输出大小门控增量（2026-09-10）
 
 适配器限制模型草稿不超过 16 KiB，避免异常响应污染后续证据链；编译检查通过。
+
+
+## CI 离线回归增量（2026-09-10）
+
+新增 .github/workflows/offline-tests.yml，在 push/PR 上运行本地 unittest；不使用 secrets、不联网扫描目标。

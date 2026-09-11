@@ -624,3 +624,7 @@
 ## LLM draft size gate
 
 - LLM 草稿输出新增 16 KiB 大小上限。
+
+## Offline CI regression
+
+- 新增 GitHub Actions 离线单元测试工作流。
