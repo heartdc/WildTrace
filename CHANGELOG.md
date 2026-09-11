@@ -772,3 +772,7 @@
 ## Phase 5 impact draft projection
 
 - 新增分支影响到 review-only 草稿的确定性投影。
+
+## Phase 4 joint verification CLI
+
+- 新增 verify-joint 联合文件校验命令行入口。

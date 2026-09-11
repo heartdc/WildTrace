@@ -483,3 +483,8 @@ verify_patch_hashes 严格要求期望摘要为 64 位小写十六进制 SHA-256
 ## Phase 5 影响草稿投影增量（2026-09-11）
 
 新增 make_impact_draft，将本地分支影响比较投影为 candidate_only 审核草稿，confirmed_vulnerabilities 固定为 0；测试通过。
+
+
+## Phase 4 联合验证 CLI 增量（2026-09-11）
+
+新增 verify-joint / python -m ohvul.verify_joint，直接调用联合文件校验并输出 OK/INVALID；不联网、不执行目标代码。
