@@ -830,3 +830,7 @@
 ## Phase 6 performance matrix
 
 - 新增受边界限制的多规模合成性能矩阵。
+
+## Phase 6 CI performance smoke
+
+- CI 增加受限性能基准 smoke test。

@@ -552,3 +552,8 @@ validate_joint_files 统一拒绝 checkpoint/result/harness 符号链接输入�
 ## Phase 6 多规模性能矩阵增量（2026-09-11）
 
 新增 benchmark_matrix，在 1..10000 文件边界内执行合成扫描矩阵，输出各规模吞吐；新增测试通过。
+
+
+## Phase 6 CI 性能 smoke 增量（2026-09-11）
+
+CI 新增 python -m ohvul.performance --files 1 --lines 1 smoke test，验证性能入口可运行且使用受限合成输入。
