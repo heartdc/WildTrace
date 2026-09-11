@@ -737,3 +737,7 @@
 ## Phase 5 branch impact CLI regression
 
 - 增加 CLI 成功路径回归测试。
+
+## Phase 5 installed CLI entry
+
+- 新增 wildtrace-impact 安装后命令行入口。
