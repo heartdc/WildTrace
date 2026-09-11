@@ -10,3 +10,5 @@ class PerformanceTests(unittest.TestCase):
 
 
 
+
+  with self.assertRaises(ValueError): validate_performance_result(dict(benchmark_scan(files=1,lines=1), files_per_second=-1))

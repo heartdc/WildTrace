@@ -857,3 +857,7 @@
 ## Phase 6 performance result schema
 
 - 新增性能结果 schema 和安全字段校验。
+
+## Phase 6 throughput field gate
+
+- 性能结果新增 files_per_second 字段门控。

@@ -27,6 +27,7 @@ def compare_throughput(baseline, current, max_regression=0.2):
 def validate_performance_result(result):
     if not isinstance(result, dict) or result.get('schema') != '0.1': raise ValueError('invalid performance schema')
     if not isinstance(result.get('files'), int) or not isinstance(result.get('elapsed_seconds'), (int,float)) or result['elapsed_seconds'] < 0: raise ValueError('invalid performance metrics')
+    if not isinstance(result.get('files_per_second'), (int,float)) or result['files_per_second'] < 0: raise ValueError('invalid throughput metric')
     if result.get('local_only') is not True or result.get('no_execution') is not True: raise ValueError('unsafe performance result')
     return True
 
