@@ -660,3 +660,7 @@
 ## Repository security policy
 
 - 新增 SECURITY.md，明确本地审计范围和安全报告边界。
+
+## Code ownership
+
+- 新增 CODEOWNERS，要求项目维护者审核变更。
