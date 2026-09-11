@@ -644,3 +644,7 @@
 ## Cross-platform CI verification
 
 - Ubuntu GitHub Actions offline-tests 对 beadf8d 执行成功。
+
+## Packaging metadata
+
+- 新增最小 pyproject.toml，声明项目元数据与 wildtrace CLI 入口。
