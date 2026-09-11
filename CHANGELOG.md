@@ -608,3 +608,7 @@
 ## LLM runtime configuration docs
 
 - README 增加 key 脱敏和显式调用说明。
+
+## LLM model allowlist
+
+- LLM 适配器限制为已验证的 grok-4.6 模型。
