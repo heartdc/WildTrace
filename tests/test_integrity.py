@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from ohvul.detect.scanner import scan_path
 from ohvul.domain.evidence import make_bundle, validate_bundle
-from ohvul.verify import validate_result
+from ohvul.verify import validate_result`nfrom ohvul.workflow.fsm import save_checkpoint, WorkflowCheckpoint
 
 
 class IntegrityTests(unittest.TestCase):
@@ -84,3 +84,4 @@ class ScanInputGateTests(unittest.TestCase):
   from ohvul.source_snapshot import source_snapshot
   with tempfile.TemporaryDirectory() as d:
    root=pathlib.Path(d); (root/'a.c').write_text('one'); first=source_snapshot(root); (root/'a.c').write_text('two'); self.assertNotEqual(first,source_snapshot(root))
+
