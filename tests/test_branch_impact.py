@@ -42,3 +42,11 @@ class BranchImpactTests(unittest.TestCase):
   from ohvul.branch_impact import verify_patch_hashes
   with tempfile.TemporaryDirectory() as d:
    with self.assertRaises(ValueError): verify_patch_hashes(d,{'a.c':'bad'})
+
+ def test_impact_draft_remains_candidate_only(self):
+  from ohvul.branch_impact import make_impact_draft
+  base={'schema_version':'0.3','scan':{'root':'/src'},'safety':{'local_only':True},'findings':[]}
+  draft=make_impact_draft(base,base)
+  self.assertEqual(draft['assessment']['status'],'candidate_only')
+  self.assertEqual(draft['assessment']['confirmed_vulnerabilities'],0)
+  self.assertTrue(draft['assessment']['review_required'])

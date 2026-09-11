@@ -768,3 +768,7 @@
 ## Phase 5 patch digest format gate
 
 - 补丁文件摘要校验新增标准 SHA-256 格式门控。
+
+## Phase 5 impact draft projection
+
+- 新增分支影响到 review-only 草稿的确定性投影。

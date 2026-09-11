@@ -478,3 +478,8 @@ make_link 与 validate_link 统一要求小写十六进制 SHA-256 摘要，生�
 ## Phase 5 补丁摘要格式门控（2026-09-11）
 
 verify_patch_hashes 严格要求期望摘要为 64 位小写十六进制 SHA-256；新增格式拒绝测试。
+
+
+## Phase 5 影响草稿投影增量（2026-09-11）
+
+新增 make_impact_draft，将本地分支影响比较投影为 candidate_only 审核草稿，confirmed_vulnerabilities 固定为 0；测试通过。

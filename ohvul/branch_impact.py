@@ -16,6 +16,11 @@ def verify_patch_hashes(root, expected):
         if value != digest: raise ValueError('patch hash mismatch')
         result[name] = value
     return result
+
+def make_impact_draft(base, revised):
+    impact = compare_findings(base, revised)
+    return {'schema': '0.1', 'kind': 'branch_impact_draft', 'impact': impact,
+            'assessment': {'status': 'candidate_only', 'confirmed_vulnerabilities': 0, 'review_required': True}}
 import argparse, json
 
 def validate_patch_scope(root, paths):
