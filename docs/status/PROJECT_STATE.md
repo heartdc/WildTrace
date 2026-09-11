@@ -249,3 +249,18 @@ save_record 使用独占创建、拒绝符号链接和覆盖，记录先经 sche
 ## Phase 4 全量回归（2026-09-10）
 
 全套测试 104 项，102 通过、2 跳过；安全落盘与现有工作流兼容。
+
+
+## 深入审计修复：符号链接一致性（2026-09-10）
+
+审计发现 scanner 会跟随符号链接，与 source_snapshot 跳过策略不一致；现已显式跳过 symlink，并新增回归测试。专项测试 4 项，3 通过、1 跳过。
+
+
+## LLM 运行时适配器增量（2026-09-10）
+
+新增 ohvul.llm_adapter，仅在调用时从 OSLOVELACE_API_KEY 读取 key，默认不联网；请求内容明确限制为候选证据分析草稿，返回 final_verdict=undetermined。仓库与日志不保存 key。
+
+
+## LLM 适配器离线安全回归（2026-09-10）
+
+新增 mock 网络测试，验证运行时 key 仅进入授权请求头，不进入返回结果，且 final_verdict 始终为 undetermined。

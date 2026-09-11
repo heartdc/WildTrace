@@ -10,7 +10,7 @@ def scan_path(root, relative_files=None):
  root=pathlib.Path(root).resolve(); findings=[]; bundles=[]; files=0
  allowed = set(relative_files) if relative_files is not None else None
  for f in root.rglob("*"):
-  if not f.is_file() or f.suffix.lower() not in EXTENSIONS: continue
+  if f.is_symlink() or not f.is_file() or f.suffix.lower() not in EXTENSIONS: continue
   if allowed is not None and f.relative_to(root).as_posix() not in allowed: continue
   files+=1
   try: lines=f.read_text(encoding="utf-8",errors="replace").splitlines()

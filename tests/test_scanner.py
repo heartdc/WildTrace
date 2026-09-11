@@ -1,6 +1,13 @@
 import tempfile, pathlib, unittest
 from ohvul.detect.scanner import scan_path
 class ScannerTests(unittest.TestCase):
+ def test_symlink_sources_are_skipped(self):
+  import tempfile, os
+  with tempfile.TemporaryDirectory() as d:
+   root=pathlib.Path(d); (root/'real.c').write_text('int x;')
+   try: os.symlink(root/'real.c', root/'linked.c')
+   except (OSError, NotImplementedError): self.skipTest('symlink unavailable')
+   self.assertEqual(scan_path(root)['scan']['files_scanned'],1)
  def test_local_scan_emits_candidate(self):
   with tempfile.TemporaryDirectory() as d:
    p=pathlib.Path(d)/"x.c"; p.write_text("void f(char *p){ strcpy(p, \"x\"); }\n")

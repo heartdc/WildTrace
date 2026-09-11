@@ -584,3 +584,15 @@
 ## Safe harness record persistence
 
 - harness 记录采用独占创建，拒绝覆盖和符号链接路径。
+
+## Audit fix: symlink consistency
+
+- 扫描器显式跳过符号链接，和源码快照边界保持一致。
+
+## Runtime LLM adapter
+
+- 新增可选 LLM 适配器，key 仅从环境变量读取，输出保持 undetermined。
+
+## LLM adapter safety regression
+
+- 增加离线 mock 测试，验证 key 不出现在结果且输出保持 review-only。
