@@ -692,3 +692,7 @@
 ## Verification link recovery
 
 - 验证关联记录支持离线读取和重新校验。
+
+## Current checkpoint clarification
+
+- 明确 PROJECT_STATE 前部历史条目与末尾最新检查点的优先级。
