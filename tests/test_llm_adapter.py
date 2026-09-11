@@ -28,3 +28,4 @@ class LlmAdapterTests(unittest.TestCase):
   finally:
    if old is None: os.environ.pop('OSLOVELACE_API_KEY',None)
    else: os.environ['OSLOVELACE_API_KEY']=old
+
