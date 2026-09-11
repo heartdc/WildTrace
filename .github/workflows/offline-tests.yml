@@ -2,6 +2,9 @@ name: offline-tests
 on:
   push:
   pull_request:
+permissions:
+  contents: read
+
 jobs:
   tests:
     runs-on: ubuntu-latest
@@ -15,4 +18,5 @@ jobs:
         shell: bash
         run: |
           ! grep -RInE --exclude-dir=.git 'sk-[A-Za-z0-9_-]{20,}' .
+
 

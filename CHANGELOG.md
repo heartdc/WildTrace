@@ -636,3 +636,7 @@
 ## Local credential ignore rules
 
 - 新增 .env、密钥和 secrets 文件忽略规则。
+
+## CI least privilege
+
+- 离线测试 workflow 设置 contents: read 最小权限。
