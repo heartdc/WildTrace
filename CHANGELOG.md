@@ -628,3 +628,7 @@
 ## Offline CI regression
 
 - 新增 GitHub Actions 离线单元测试工作流。
+
+## CI credential pattern gate
+
+- GitHub Actions 新增离线 API key 形态扫描。

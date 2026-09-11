@@ -304,3 +304,8 @@ LLM 适配器拒绝非 HTTPS Base URL，新增离线测试；避免 key 通过�
 ## CI 离线回归增量（2026-09-10）
 
 新增 .github/workflows/offline-tests.yml，在 push/PR 上运行本地 unittest；不使用 secrets、不联网扫描目标。
+
+
+## CI 密钥形态门禁增量（2026-09-10）
+
+离线 CI 新增 sk- 形态凭据扫描，防止未来提交意外包含 API key；仅扫描仓库内容，不访问网络。

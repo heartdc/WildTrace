@@ -11,3 +11,8 @@ jobs:
         with:
           python-version: '3.11'
       - run: python -m unittest discover -s tests -q
+      - name: Check for credential patterns
+        shell: bash
+        run: |
+          ! grep -RInE --exclude-dir=.git 'sk-[A-Za-z0-9_-]{20,}' .
+
