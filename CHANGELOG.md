@@ -612,3 +612,7 @@
 ## LLM model allowlist
 
 - LLM 适配器限制为已验证的 grok-4.6 模型。
+
+## LLM HTTPS boundary
+
+- LLM 适配器强制 HTTPS Base URL。

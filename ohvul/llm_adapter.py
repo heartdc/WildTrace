@@ -1,5 +1,6 @@
 """Optional runtime LLM adapter; key is read only from environment."""
 import json, os, urllib.request
+from urllib.parse import urlparse
 ALLOWED_MODELS = {'grok-4.6'}
 
 def draft_analysis(context, *, base_url='https://www.oslovelace.com/v1', model='grok-4.6', timeout=30):
@@ -7,6 +8,8 @@ def draft_analysis(context, *, base_url='https://www.oslovelace.com/v1', model='
         raise ValueError('timeout must be between 1 and 60 seconds')
     if model not in ALLOWED_MODELS:
         raise ValueError('model is not allowlisted')
+    if urlparse(base_url).scheme != 'https':
+        raise ValueError('base_url must use HTTPS')
     if not isinstance(context, dict):
         raise ValueError('context must be structured evidence')
     encoded_context = json.dumps(context, ensure_ascii=False)
