@@ -814,3 +814,7 @@
 ## Phase 6 synthetic performance benchmark
 
 - 新增有资源上限的合成扫描性能基准。
+
+## Phase 6 performance CLI
+
+- 新增 wildtrace-perf 命令和 JSON 输出回归测试。

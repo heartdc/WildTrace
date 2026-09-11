@@ -532,3 +532,8 @@ validate_joint_files 统一拒绝 checkpoint/result/harness 符号链接输入�
 ## Phase 6 性能评测增量（2026-09-11）
 
 新增 performance.benchmark_scan，在边界内生成合成 C 源码并统计扫描耗时/吞吐；结果标记 local_only、no_execution。新增 2 项测试通过。
+
+
+## Phase 6 性能 CLI 增量（2026-09-11）
+
+新增 wildtrace-perf 安装入口和 CLI JSON 回归测试；性能基准仍限于合成源码和明确资源预算。

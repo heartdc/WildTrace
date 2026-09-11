@@ -12,3 +12,4 @@ requires-python = ">=3.10"
 wildtrace = "ohvul.cli:main"
 wildtrace-impact = "ohvul.branch_impact:main"
 verify-joint = 'ohvul.verify_joint:main'
+wildtrace-perf = 'ohvul.performance:main'
