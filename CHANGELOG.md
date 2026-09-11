@@ -713,3 +713,7 @@
 ## Phase 5 scan schema gate
 
 - 分支影响比较要求扫描结果 schema 0.3。
+
+## Phase 5 local path only gate
+
+- 补丁路径校验拒绝 URL 形式输入。

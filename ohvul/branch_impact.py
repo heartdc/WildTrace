@@ -5,6 +5,7 @@ def validate_patch_scope(root, paths):
     root = Path(root).resolve()
     if not isinstance(paths, list) or any(not isinstance(p, str) for p in paths): raise ValueError('patch paths must be strings')
     for value in paths:
+        if '://' in value: raise ValueError('patch path must be local')
         candidate = (root / value).resolve()
         if candidate != root and root not in candidate.parents: raise ValueError('patch path escapes source root')
     return True

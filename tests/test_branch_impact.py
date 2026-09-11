@@ -11,3 +11,5 @@ class BranchImpactTests(unittest.TestCase):
    self.assertTrue(validate_patch_scope(d,['src/file.c']))
    with self.assertRaises(ValueError): validate_patch_scope(d,['../../outside.c'])
 
+
+   with self.assertRaises(ValueError): validate_patch_scope(d,['https://example.invalid/x.c'])
