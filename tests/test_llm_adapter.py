@@ -13,7 +13,7 @@ class LlmAdapterTests(unittest.TestCase):
   with self.assertRaises(ValueError): draft_analysis({'evidence':'x' * 70000})
   with self.assertRaises(ValueError): draft_analysis({'id':'x'}, timeout=0)
   with self.assertRaises(ValueError): draft_analysis({'id':'x'}, model='gpt-4.6')
- with self.assertRaises(ValueError): draft_analysis({'id':'x'}, base_url='http://localhost/v1')
+  with self.assertRaises(ValueError): draft_analysis({'id':'x'}, base_url='http://localhost/v1')
  def test_mocked_response_is_review_only_and_key_free(self):
   import json
   from unittest.mock import patch
