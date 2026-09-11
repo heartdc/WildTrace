@@ -838,3 +838,7 @@
 ## Phase 6 throughput regression comparison
 
 - 新增本地性能吞吐退化比较器和门控测试。
+
+## Phase 6 local demo guide
+
+- 新增安全本地演示流程文档。

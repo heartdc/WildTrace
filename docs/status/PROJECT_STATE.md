@@ -562,3 +562,8 @@ CI 新增 python -m ohvul.performance --files 1 --lines 1 smoke test，验证性
 ## Phase 6 性能退化比较增量（2026-09-11）
 
 新增 compare_throughput，比较本地基线吞吐并在退化超过阈值时标记失败；结果要求人工审核，不自动改变安全结论。
+
+
+## Phase 6 本地演示文档增量（2026-09-11）
+
+新增 LOCAL_DEMO.md，串联安装、扫描、证据验证、分支影响、联合验证和性能基准命令，明确候选不等于漏洞确认。
