@@ -25,9 +25,9 @@ def compare_findings(base, revised):
             'unchanged_count':len(old & new),'review_required':True}
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__); p.add_argument('base',type=Path); p.add_argument('revised',type=Path)
+    p=argparse.ArgumentParser(description=__doc__); p.add_argument('base',type=Path); p.add_argument('revised',type=Path); args=p.parse_args()
     try:
-        result=compare_findings(json.loads(p.parse_args().base.read_text(encoding='utf-8-sig')), json.loads(p.parse_args().revised.read_text(encoding='utf-8-sig')))
+        result=compare_findings(json.loads(args.base.read_text(encoding='utf-8-sig')), json.loads(args.revised.read_text(encoding='utf-8-sig')))
         print(json.dumps(result,ensure_ascii=False,indent=2)); return 0
     except (OSError, ValueError, TypeError, KeyError) as exc: print(f'INVALID: {exc}'); return 1
 
