@@ -680,3 +680,7 @@
 ## Verification digest format gate
 
 - 验证关联严格校验 checkpoint SHA-256 格式。
+
+## Shard evidence conflict gate
+
+- 跨分片合并拒绝同 ID 不同内容的证据记录。

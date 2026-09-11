@@ -369,3 +369,8 @@ merge_shard_results 新增 max_shards 上限，防止超大源码树结果无界
 ## 验证摘要格式门控增量（2026-09-10）
 
 verification_link.validate_link 现在严格要求 checkpoint_sha256 为 64 位小写十六进制摘要；新增伪造摘要拒绝测试。
+
+
+## 分片证据冲突门控增量（2026-09-10）
+
+跨分片合并遇到相同 evidence_id 但内容不同的记录现在明确拒绝，防止证据替换；新增冲突测试通过。

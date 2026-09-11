@@ -23,7 +23,10 @@ def merge_shard_results(results, root, max_shards=10000):
         if result.get('scan', {}).get('root') != root:
             raise ValueError('shard root mismatch')
         for bundle in result.get('evidence_bundles', []):
-            if bundle['evidence_id'] not in seen:
+            if bundle['evidence_id'] in seen:
+                existing = next(x for x in bundles if x['evidence_id'] == bundle['evidence_id'])
+                if existing != bundle: raise ValueError('conflicting shard evidence')
+            else:
                 seen.add(bundle['evidence_id']); bundles.append(bundle)
         findings.extend(result.get('findings', []))
     findings.sort(key=lambda f: (f['location']['file'], f['location']['line'], f['cwe_candidate']))

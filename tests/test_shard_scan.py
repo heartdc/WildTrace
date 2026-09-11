@@ -21,3 +21,5 @@ class ShardScanTests(unittest.TestCase):
    self.assertEqual(merged['findings'][0]['alert_id'],'AL-000001')
    self.assertEqual(validate_result(merged), 1)
    with self.assertRaises(ValueError): merge_shard_results([result], Path(d)/'other')
+   altered=dict(result); altered['evidence_bundles']=[dict(result['evidence_bundles'][0], artifacts=[])]
+   with self.assertRaises(ValueError): merge_shard_results([result, altered], root)
