@@ -1,6 +1,12 @@
 import tempfile, pathlib, unittest
 from ohvul.detect.scanner import scan_path
 class ScannerTests(unittest.TestCase):
+ def test_scan_does_not_call_network_or_llm(self):
+  from unittest.mock import patch
+  with tempfile.TemporaryDirectory() as d:
+   pathlib.Path(d,'x.c').write_text('int x;')
+   with patch('urllib.request.urlopen', side_effect=AssertionError('network call')):
+    scan_path(d)
  def test_symlink_sources_are_skipped(self):
   import tempfile, os
   with tempfile.TemporaryDirectory() as d:

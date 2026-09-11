@@ -672,3 +672,7 @@
 ## Shard merge resource gate
 
 - 跨分片合并新增 max_shards 上限。
+
+## Scanner network isolation regression
+
+- 增加扫描流程不触发网络或 LLM 的回归测试。
