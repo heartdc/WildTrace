@@ -30,7 +30,7 @@ def validate_checkpoint_link(link, harness_record, checkpoint_bytes):
     return True
 
 def make_link(task_id, checkpoint_sha256, harness_record):
-    if not task_id or len(checkpoint_sha256) != 64:
+    if not task_id or not re.fullmatch(r'[0-9a-f]{64}', str(checkpoint_sha256)):
         raise ValueError('invalid checkpoint identity')
     if harness_record.get('verdict') != 'undetermined' or harness_record.get('review_required') is not True:
         raise ValueError('harness record is not review-only')

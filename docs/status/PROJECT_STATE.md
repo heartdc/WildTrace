@@ -468,3 +468,8 @@ pyproject 新增 wildtrace-impact 入口，调用离线分支影响比较器；�
 ## Phase 4 联合文件校验入口增量（2026-09-11）
 
 新增 validate_joint_files，联合读取 checkpoint、scan result 和 harness record，校验检查点摘要、任务 ID、结果 evidence 及 harness link；编译与相关测试通过。
+
+
+## 验证 link 生成格式一致性（2026-09-11）
+
+make_link 与 validate_link 统一要求小写十六进制 SHA-256 摘要，生成端不再产生必然无效的 link；相关测试通过。

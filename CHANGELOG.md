@@ -760,3 +760,7 @@
 ## Phase 4 joint file validation
 
 - 新增检查点、扫描结果和 harness 记录的联合文件校验入口。
+
+## Verification link generation consistency
+
+- link 生成端与校验端统一 SHA-256 格式约束。
