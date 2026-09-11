@@ -542,3 +542,8 @@ validate_joint_files 统一拒绝 checkpoint/result/harness 符号链接输入�
 ## Phase 6 性能 CLI 回归（2026-09-11）
 
 性能专项 3 项和全量测试 126 项均通过（122 通过、4 跳过）；性能 CLI 不触发目标代码执行或网络扫描。
+
+
+## Phase 6 性能契约文档（2026-09-11）
+
+新增 PHASE6_PERFORMANCE.md，记录合成基准命令、资源范围、输出字段和不可外推限制。

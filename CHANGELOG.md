@@ -822,3 +822,7 @@
 ## Phase 6 performance regression
 
 - 性能专项 3 项、全量 126 项测试通过（4 项跳过）。
+
+## Phase 6 performance contract documentation
+
+- 新增性能评测契约文档，明确合成输入和统计边界。
