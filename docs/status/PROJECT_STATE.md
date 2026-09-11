@@ -319,3 +319,8 @@ LLM 适配器拒绝非 HTTPS Base URL，新增离线测试；避免 key 通过�
 ## CI 最小权限增量（2026-09-10）
 
 离线测试工作流新增 contents: read 最小权限声明，减少 CI 任务写入仓库的能力。
+
+
+## 跨平台 CI 验证（2026-09-11）
+
+GitHub Actions offline-tests 在 Ubuntu 上对提交 beadf8d 执行成功；本地 Windows 全套测试仍为 108 项，105 通过、3 跳过。

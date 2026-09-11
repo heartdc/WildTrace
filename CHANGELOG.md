@@ -640,3 +640,7 @@
 ## CI least privilege
 
 - 离线测试 workflow 设置 contents: read 最小权限。
+
+## Cross-platform CI verification
+
+- Ubuntu GitHub Actions offline-tests 对 beadf8d 执行成功。
