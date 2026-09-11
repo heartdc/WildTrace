@@ -28,3 +28,11 @@ class BranchImpactTests(unittest.TestCase):
    a=Path(d)/'a.json'; b=Path(d)/'b.json'; a.write_text(json.dumps(base)); b.write_text(json.dumps(base))
    proc=subprocess.run([sys.executable,'-m','ohvul.branch_impact',str(a),str(b)],capture_output=True,text=True)
   self.assertEqual(proc.returncode,0); self.assertEqual(json.loads(proc.stdout)['unchanged_count'],0)
+
+ def test_patch_hashes_verify_local_file(self):
+  import tempfile, hashlib
+  from pathlib import Path
+  from ohvul.branch_impact import verify_patch_hashes
+  with tempfile.TemporaryDirectory() as d:
+   Path(d,'a.c').write_text('x'); digest=hashlib.sha256(b'x').hexdigest()
+   self.assertEqual(verify_patch_hashes(d,{'a.c':digest})['a.c'],digest)

@@ -1,5 +1,19 @@
 """Compare saved local scan results; no Git or target execution."""
 from pathlib import Path
+import hashlib
+
+def verify_patch_hashes(root, expected):
+    root = Path(root).resolve()
+    if not isinstance(expected, dict): raise ValueError('expected hashes must be an object')
+    result = {}
+    for name, digest in expected.items():
+        if not isinstance(name, str) or '://' in name: raise ValueError('patch path must be local')
+        path = (root / name).resolve()
+        if root not in path.parents or not path.is_file(): raise ValueError('patch file unavailable')
+        value = hashlib.sha256(path.read_bytes()).hexdigest()
+        if value != digest: raise ValueError('patch hash mismatch')
+        result[name] = value
+    return result
 import argparse, json
 
 def validate_patch_scope(root, paths):

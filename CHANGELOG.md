@@ -745,3 +745,7 @@
 ## Phase 5 JSON root type gate
 
 - 分支影响比较器新增 JSON 根类型校验。
+
+## Phase 5 patch hash verification
+
+- 新增本地补丁文件 SHA-256 校验。
