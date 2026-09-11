@@ -547,3 +547,8 @@ validate_joint_files 统一拒绝 checkpoint/result/harness 符号链接输入�
 ## Phase 6 性能契约文档（2026-09-11）
 
 新增 PHASE6_PERFORMANCE.md，记录合成基准命令、资源范围、输出字段和不可外推限制。
+
+
+## Phase 6 多规模性能矩阵增量（2026-09-11）
+
+新增 benchmark_matrix，在 1..10000 文件边界内执行合成扫描矩阵，输出各规模吞吐；新增测试通过。

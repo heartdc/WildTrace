@@ -1,5 +1,5 @@
 import unittest
-from ohvul.performance import benchmark_scan
+from ohvul.performance import benchmark_scan, benchmark_matrix
 
 class PerformanceTests(unittest.TestCase):
  def test_bounded_synthetic_benchmark(self):
@@ -7,3 +7,4 @@ class PerformanceTests(unittest.TestCase):
   self.assertEqual(result['files'],2); self.assertTrue(result['local_only']); self.assertTrue(result['no_execution'])
  def test_bounds_rejected(self):
   with self.assertRaises(ValueError): benchmark_scan(files=0)
+

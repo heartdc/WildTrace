@@ -826,3 +826,7 @@
 ## Phase 6 performance contract documentation
 
 - 新增性能评测契约文档，明确合成输入和统计边界。
+
+## Phase 6 performance matrix
+
+- 新增受边界限制的多规模合成性能矩阵。
