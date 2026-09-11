@@ -32,9 +32,16 @@ class WorkflowCheckpoint:
 
  def to_dict(self): return asdict(self)
 
- def transition(self, target: str, *, reason: str | None = None):
+ def transition(self, target: str, *, reason: str | None = None, verification_files=None):
   if target not in STATES: raise ValueError(f"unknown workflow state: {target}")
   if target not in TRANSITIONS[self.state]: raise ValueError(f"illegal transition: {self.state} -> {target}")
+  if self.state == "local_verification" and target == "triage":
+   if not isinstance(verification_files, (tuple, list)) or len(verification_files) != 3:
+    raise ValueError("verified checkpoint/result/harness files required")
+   from ohvul.verification_link import load_verified_checkpoint
+   verified = load_verified_checkpoint(*verification_files)
+   if verified.to_dict() != self.to_dict():
+    raise ValueError("verified checkpoint differs from current workflow")
   if target == "blocked":
    self.last_error = reason or "unspecified_block"
   elif self.state == "blocked":

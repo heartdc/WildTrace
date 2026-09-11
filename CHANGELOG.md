@@ -1,5 +1,11 @@
 # Changelog
 
+## Joint verification single-read consistency
+
+- 扫描结果摘要和解析共用单次读取字节，修复原先两次读取可能不一致的问题。
+- 增加联合校验/CLI 成功路径、结果字节变化、错任务、缺失证据、损坏 envelope 和无效 workflow 测试。
+- 相关 11 项测试：10 通过、1 跳过；只验证合成 JSON 关联，不宣称 harness 或漏洞复现成功。
+
 ## Actual checkpoint linkage validation
 
 - 新增 make_checkpoint_link / validate_checkpoint_link，以实际检查点字节生成并验证摘要，同时核对 schema、任务、local_verification 状态与 harness 记录。
@@ -842,3 +848,8 @@
 ## Phase 6 local demo guide
 
 - 新增安全本地演示流程文档。
+
+## Phase 4 FSM joint verification gate
+
+- local_verification 到 triage 必须通过 checkpoint/result/harness 联合校验。
+- 验证失败保持状态不变，相关专项 47 项测试通过。

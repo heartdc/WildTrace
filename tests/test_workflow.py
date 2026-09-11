@@ -2,8 +2,9 @@ import json, pathlib, tempfile, unittest
 from ohvul.workflow.fsm import WorkflowCheckpoint, load_checkpoint, save_checkpoint
 class WorkflowTests(unittest.TestCase):
  def test_local_verification_state_is_explicit(self):
-  c=WorkflowCheckpoint('verify'); c.transition('static_scan').transition('local_verification').transition('triage')
-  self.assertEqual(c.state,'triage')
+  c=WorkflowCheckpoint('verify'); c.transition('static_scan').transition('local_verification')
+  with self.assertRaises(ValueError): c.transition('triage')
+  self.assertEqual(c.state,'local_verification')
  def test_valid_lifecycle_and_recovery(self):
   c=WorkflowCheckpoint("task-1"); c.transition("static_scan").transition("triage").transition("blocked",reason="policy_stop"); self.assertEqual(c.last_error,"policy_stop"); c.transition("triage"); self.assertIsNone(c.last_error)
  def test_illegal_transition_rejected(self):

@@ -61,18 +61,27 @@ def load_link(path, harness_record):
 
 def validate_joint_files(checkpoint_path, result_path, harness_path):
     """Validate checkpoint, saved scan result, and review record as one chain."""
+    load_verified_checkpoint(checkpoint_path, result_path, harness_path)
+    return True
+
+def load_verified_checkpoint(checkpoint_path, result_path, harness_path):
+    """Return the checkpoint parsed from the same bytes that were verified."""
     for value in (checkpoint_path, result_path, harness_path):
         if Path(value).is_symlink(): raise ValueError('verification input must not be a symlink')
     checkpoint_bytes = Path(checkpoint_path).read_bytes()
     checkpoint = _checkpoint_from_bytes(checkpoint_bytes)
-    result_path = Path(result_path)
-    result = json.loads(result_path.read_text(encoding='utf-8-sig'))
-    if checkpoint.result_sha256 != hashlib.sha256(result_path.read_bytes()).hexdigest():
+    result_bytes = Path(result_path).read_bytes()
+    if checkpoint.result_sha256 != hashlib.sha256(result_bytes).hexdigest():
         raise ValueError('scan result bytes mismatch')
-    if result.get('workflow', {}).get('task_id') != checkpoint.task_id:
+    result = json.loads(result_bytes.decode('utf-8-sig'))
+    if not isinstance(result, dict) or not isinstance(result.get('workflow'), dict):
+        raise ValueError('invalid scan result workflow')
+    if result['workflow'].get('task_id') != checkpoint.task_id:
         raise ValueError('scan result task mismatch')
     from .verify import validate_result
     validate_result(result)
     payload = json.loads(Path(harness_path).read_text(encoding='utf-8-sig'))
+    if not isinstance(payload, dict) or set(payload) != {'link', 'record'}:
+        raise ValueError('invalid harness envelope')
     validate_checkpoint_link(payload['link'], payload['record'], checkpoint_bytes)
-    return True
+    return checkpoint

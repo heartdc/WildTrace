@@ -1,5 +1,14 @@
 # 当前工程检查点
 
+## 最新增量：联合验证单次读取与 CLI 行为测试
+
+- 当前工作：Phase 6 交付检查中修补 Phase 4 验证依赖，未宣布项目完成。
+- 已完成：validate_joint_files 对扫描结果只读取一次，摘要和 JSON 解析使用同一份字节；无效 workflow 和 harness envelope 明确拒绝。
+- 验证：python -m unittest tests.test_joint_files tests.test_checkpoint_link tests.test_verification_link -q；11 项，10 通过、1 项符号链接能力跳过。git diff --check 通过。
+- 修改：ohvul/verification_link.py、tests/test_joint_files.py、本文件和 CHANGELOG.md。
+- 输入与边界：只使用临时合成 JSON；不读取真实源码、不联网、不执行目标程序、不创建真实审核记录。
+- 未完成：成功测试证明文件关联一致，不证明 harness 执行或漏洞复现。真实源码快照复核、FSM 迁移强制门控、阶段验收仍需补齐。下一步处理这些依赖，而非重复 CI 查询。
+
 ## 最新校正：检查点实际内容绑定
 
 - 阶段：修补 Phase 4 未完成依赖；已有 Phase 5 原型保留，不再用旧清单宣称 Phase 4 全部验收通过。
@@ -567,3 +576,7 @@ CI 新增 python -m ohvul.performance --files 1 --lines 1 smoke test，验证性
 ## Phase 6 本地演示文档增量（2026-09-11）
 
 新增 LOCAL_DEMO.md，串联安装、扫描、证据验证、分支影响、联合验证和性能基准命令，明确候选不等于漏洞确认。
+
+## Phase 4 FSM 联合校验门控（2026-09-11）
+
+`local_verification -> triage` 现在必须提供 checkpoint/result/harness 三个文件；FSM 会调用联合校验，并在失败时保持原状态不变。相关专项 47 项测试通过（1 项跳过）。
