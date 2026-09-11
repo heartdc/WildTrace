@@ -861,3 +861,7 @@
 ## Phase 6 throughput field gate
 
 - 性能结果新增 files_per_second 字段门控。
+
+## Phase 6 performance CLI schema gate
+
+- 性能 CLI 输出前新增即时 schema 校验。

@@ -33,7 +33,9 @@ def validate_performance_result(result):
 
 def main():
     p=argparse.ArgumentParser(description=__doc__); p.add_argument('--files',type=int,default=10); p.add_argument('--lines',type=int,default=20); args=p.parse_args()
-    try: print(json.dumps(benchmark_scan(files=args.files,lines=args.lines),ensure_ascii=False,indent=2)); return 0
+    try:
+        result=benchmark_scan(files=args.files,lines=args.lines); validate_performance_result(result)
+        print(json.dumps(result,ensure_ascii=False,indent=2)); return 0
     except ValueError as exc: print(f'INVALID: {exc}'); return 1
 
 if __name__ == '__main__': raise SystemExit(main())

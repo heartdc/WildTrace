@@ -590,3 +590,8 @@ CI 新增 python -m ohvul.performance --files 1 --lines 1 smoke test，验证性
 ## Phase 6 吞吐字段门控增量（2026-09-11）
 
 性能结果校验新增 files_per_second 非负数检查，拒绝异常吞吐记录；测试通过。
+
+
+## Phase 6 性能 CLI 即时 schema 门控（2026-09-11）
+
+性能 CLI 输出前立即调用 validate_performance_result，确保 schema 和安全字段实际生效；专项测试通过。
