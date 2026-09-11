@@ -537,3 +537,8 @@ validate_joint_files 统一拒绝 checkpoint/result/harness 符号链接输入�
 ## Phase 6 性能 CLI 增量（2026-09-11）
 
 新增 wildtrace-perf 安装入口和 CLI JSON 回归测试；性能基准仍限于合成源码和明确资源预算。
+
+
+## Phase 6 性能 CLI 回归（2026-09-11）
+
+性能专项 3 项和全量测试 126 项均通过（122 通过、4 跳过）；性能 CLI 不触发目标代码执行或网络扫描。

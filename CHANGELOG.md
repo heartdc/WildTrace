@@ -818,3 +818,7 @@
 ## Phase 6 performance CLI
 
 - 新增 wildtrace-perf 命令和 JSON 输出回归测试。
+
+## Phase 6 performance regression
+
+- 性能专项 3 项、全量 126 项测试通过（4 项跳过）。
