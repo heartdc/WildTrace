@@ -427,3 +427,8 @@ Phase 4 的允许范围已完成：静态证据独立复核、合成 harness、�
 ## Phase 5 findings 结构门控增量（2026-09-11）
 
 分支影响比较器校验 findings 结构和 evidence_id 类型，损坏输入明确拒绝；新增测试通过。
+
+
+## Phase 5 分支影响 CLI 增量（2026-09-11）
+
+branch_impact 支持 python -m ohvul.branch_impact 对两份本地 JSON 结果做离线比较，错误输入输出 INVALID；不访问远程 Git。

@@ -1,5 +1,6 @@
 """Compare saved local scan results; no Git or target execution."""
 from pathlib import Path
+import argparse, json
 
 def validate_patch_scope(root, paths):
     root = Path(root).resolve()
@@ -22,3 +23,12 @@ def compare_findings(base, revised):
     old, new = ids(base), ids(revised)
     return {'schema':'0.1','added_evidence_ids':sorted(new-old),'removed_evidence_ids':sorted(old-new),
             'unchanged_count':len(old & new),'review_required':True}
+
+def main():
+    p=argparse.ArgumentParser(description=__doc__); p.add_argument('base',type=Path); p.add_argument('revised',type=Path)
+    try:
+        result=compare_findings(json.loads(p.parse_args().base.read_text(encoding='utf-8-sig')), json.loads(p.parse_args().revised.read_text(encoding='utf-8-sig')))
+        print(json.dumps(result,ensure_ascii=False,indent=2)); return 0
+    except (OSError, ValueError, TypeError, KeyError) as exc: print(f'INVALID: {exc}'); return 1
+
+if __name__=='__main__': raise SystemExit(main())

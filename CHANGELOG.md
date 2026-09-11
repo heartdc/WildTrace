@@ -729,3 +729,7 @@
 ## Phase 5 findings structure gate
 
 - 分支影响比较新增 findings 结构校验。
+
+## Phase 5 branch impact CLI
+
+- 新增本地 JSON 分支影响比较 CLI。
