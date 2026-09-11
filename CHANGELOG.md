@@ -664,3 +664,7 @@
 ## Code ownership
 
 - 新增 CODEOWNERS，要求项目维护者审核变更。
+
+## Safe verification link persistence
+
+- 新增验证关联记录的 schema 校验、独占持久化和覆盖保护。
