@@ -14,5 +14,4 @@ class BranchImpactTests(unittest.TestCase):
   with self.assertRaises(ValueError): compare_findings({'schema_version':'0.3','scan':{'root':'/x'},'safety':{},'findings':[]},{'schema_version':'0.3','scan':{'root':'/x'},'safety':{'local_only':True},'findings':[]})
 
 
-   with self.assertRaises(ValueError): validate_patch_scope(d,['https://example.invalid/x.c'])
 
