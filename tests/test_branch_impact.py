@@ -10,6 +10,8 @@ class BranchImpactTests(unittest.TestCase):
   with tempfile.TemporaryDirectory() as d:
    self.assertTrue(validate_patch_scope(d,['src/file.c']))
    with self.assertRaises(ValueError): validate_patch_scope(d,['../../outside.c'])
+ def test_non_local_result_rejected(self):
+  with self.assertRaises(ValueError): compare_findings({'schema_version':'0.3','scan':{'root':'/x'},'safety':{},'findings':[]},{'schema_version':'0.3','scan':{'root':'/x'},'safety':{'local_only':True},'findings':[]})
 
 
    with self.assertRaises(ValueError): validate_patch_scope(d,['https://example.invalid/x.c'])

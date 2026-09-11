@@ -721,3 +721,7 @@
 ## Phase 5 scan root binding
 
 - 分支影响比较绑定扫描源码根目录。
+
+## Phase 5 local result gate regression
+
+- 增加非 local_only 结果拒绝测试。
