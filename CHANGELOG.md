@@ -684,3 +684,7 @@
 ## Shard evidence conflict gate
 
 - 跨分片合并拒绝同 ID 不同内容的证据记录。
+
+## Phase 4 acceptance checklist
+
+- 新增证据驱动的 Phase 4 验收清单。
