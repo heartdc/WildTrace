@@ -701,3 +701,7 @@
 
 - Phase 4 允许范围闭环完成，明确不执行真实目标代码。
 - 下一阶段进入 Phase 5 准备：分支影响、补丁验证和报告。
+
+## Phase 5 branch impact comparison
+
+- 新增本地扫描结果分支影响比较器，输出候选变化并保持 review_required。

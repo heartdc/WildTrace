@@ -392,3 +392,8 @@ verification_link.validate_link 现在严格要求 checkpoint_sha256 为 64 位�
 ## Phase 4 闭环检查点（2026-09-11）
 
 Phase 4 的允许范围已完成：静态证据独立复核、合成 harness、输入输出预算、FSM local_verification、检查点摘要关联、冲突拒绝、恢复读取、跨平台回归和 CI 门禁均已验证。真实 OpenHarmony 目标代码执行仍被禁止，因此不产生漏洞确认结论。下一阶段为 Phase 5：分支影响、补丁验证和报告。
+
+
+## Phase 5 分支影响比较增量（2026-09-11）
+
+新增 branch_impact.compare_findings，仅比较本地保存结果的 evidence_id，输出新增/消失候选并要求人工审核；不访问远程 Git。新增测试通过。
