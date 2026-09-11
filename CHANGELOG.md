@@ -1,5 +1,12 @@
 # Changelog
 
+## Actual checkpoint linkage validation
+
+- 新增 make_checkpoint_link / validate_checkpoint_link，以实际检查点字节生成并验证摘要，同时核对 schema、任务、local_verification 状态与 harness 记录。
+- 复用 validate_checkpoint_data，解析和摘要使用相同字节来源。
+- 新增字节变化、任务变化、伪造摘要、错误状态及无效记录测试；相关 38 项测试通过。
+- 校正 Phase 4 验收声明：旧 link 校验不证明检查点关联；生产链集成仍待完成。本轮不推送。
+
 ## 2026-09-10
 
 - 建立防御性代码审计 MVP。
@@ -749,3 +756,7 @@
 ## Phase 5 patch hash verification
 
 - 新增本地补丁文件 SHA-256 校验。
+
+## Phase 4 joint file validation
+
+- 新增检查点、扫描结果和 harness 记录的联合文件校验入口。

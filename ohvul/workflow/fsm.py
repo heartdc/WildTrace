@@ -59,6 +59,10 @@ def save_checkpoint(checkpoint: WorkflowCheckpoint, path: Path, *, force=False):
 
 def load_checkpoint(path: Path) -> WorkflowCheckpoint:
  data=json.loads(path.read_text(encoding="utf-8-sig"))
+ return validate_checkpoint_data(data)
+
+def validate_checkpoint_data(data: dict) -> WorkflowCheckpoint:
+ """Validate already-decoded checkpoint data without reopening a file."""
  if not isinstance(data, dict) or data.get("state") not in STATES or not isinstance(data.get("task_id"), str):
   raise ValueError("invalid workflow checkpoint")
  required={"checkpoint_version","task_id","state","retry_count","last_error","result_sha256","source_snapshot_sha256"}

@@ -1,5 +1,16 @@
 # 当前工程检查点
 
+## 最新校正：检查点实际内容绑定
+
+- 阶段：修补 Phase 4 未完成依赖；已有 Phase 5 原型保留，不再用旧清单宣称 Phase 4 全部验收通过。
+- 本轮进展：增加实际检查点字节、schema、local_verification 状态、任务 ID 与 harness 记录的联合校验；抽取复用 validate_checkpoint_data，避免读取两次文件造成摘要/解析来源不一致。
+- 验证命令：python -m unittest tests.test_checkpoint_link tests.test_verification_link tests.test_workflow -q；38 项通过。
+- 输入：仅合成检查点字节和合成记录；没有读取目标源码、使用 API key、调用 LLM 或推送外部仓库。
+- 已修改：ohvul/verification_link.py、ohvul/workflow/fsm.py、tests/test_checkpoint_link.py、本文件、CHANGELOG.md、docs/engineering/PHASE4_ACCEPTANCE.md。
+- 未完成：联合校验尚未接入生产 CLI/FSM 迁移；源码/扫描结果/验证记录尚未形成完整联合绑定。摘要一致性不是身份认证，也不是漏洞复现。
+- 下一步：接入文件级验证入口并拒绝旧全零摘要样本作为验收证据；随后补齐迁移门控。
+- 无安全策略阻断。以下为历史记录，不代表以上缺口已解决。
+
 - 阶段：Phase 3 静态候选与证据模型，仍在进行。
 - 检查点：STATIC_BENCHMARK_TAXONOMY_IMPLEMENTED。
 - 最近增量：独立封存标记生成命令及归档验证复用。
@@ -452,3 +463,8 @@ pyproject 新增 wildtrace-impact 入口，调用离线分支影响比较器；�
 ## Phase 5 补丁摘要校验增量（2026-09-11）
 
 新增 verify_patch_hashes，对授权源码根目录内文件进行 SHA-256 校验，拒绝越界和摘要不匹配；测试通过。
+
+
+## Phase 4 联合文件校验入口增量（2026-09-11）
+
+新增 validate_joint_files，联合读取 checkpoint、scan result 和 harness record，校验检查点摘要、任务 ID、结果 evidence 及 harness link；编译与相关测试通过。
