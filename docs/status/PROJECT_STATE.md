@@ -518,3 +518,8 @@ impact_report 新增 project_for_review，为现有审核 API 添加 task/report
 ## Phase 4 联合输入 symlink 门控增量（2026-09-11）
 
 validate_joint_files 统一拒绝 checkpoint/result/harness 符号链接输入，与扫描器和快照策略一致；新增测试通过。
+
+
+## Phase 5 审核批次接入增量（2026-09-11）
+
+新增 create_impact_review_batch，将影响报告投影接入现有 review/review_batch 链路；批次 final_vulnerability_verdict 固定为 false。专项测试通过。

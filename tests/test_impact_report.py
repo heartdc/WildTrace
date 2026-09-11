@@ -10,6 +10,9 @@ class ImpactReportTests(unittest.TestCase):
   projected=project_for_review(report,'task'); self.assertEqual(projected['workflow']['task_id'],'task'); self.assertEqual(projected['assessment']['confirmed_vulnerabilities'],0)
   from ohvul.report.review import create_review, validate_review
   review=create_review(projected,'reviewer','approved_for_verification'); validate_review(review,projected); self.assertIsNot(review['final_vulnerability_verdict'], True)
+  from ohvul.impact_report import create_impact_review_batch
+  batch=create_impact_review_batch(report,'task','reviewer'); self.assertFalse(batch['final_vulnerability_verdict'])
   with self.assertRaises(ValueError): project_for_review(report,'')
+
 
 

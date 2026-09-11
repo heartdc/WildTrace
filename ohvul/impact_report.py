@@ -18,3 +18,10 @@ def project_for_review(impact_report, task_id):
     result['workflow'] = {'task_id': task_id, 'state': 'report'}
     result['assessment'] = {'status': 'candidate_only', 'confirmed_vulnerabilities': 0, 'note': 'Branch impact draft requires human review.'}
     return result
+
+def create_impact_review_batch(impact_report, task_id, reviewer, decision='approved_for_verification'):
+    report = project_for_review(impact_report, task_id)
+    from .report.review import create_review
+    from .report.review_batch import create_review_batch
+    review = create_review(report, reviewer, decision)
+    return create_review_batch('impact-' + task_id, task_id, report, [review])

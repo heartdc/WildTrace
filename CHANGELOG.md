@@ -800,3 +800,7 @@
 ## Phase 4 joint input symlink gate
 
 - 联合验证入口拒绝符号链接输入。
+
+## Phase 5 impact review batch
+
+- 分支影响报告接入人工审核批次创建流程，禁止最终确认。
