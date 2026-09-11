@@ -788,3 +788,7 @@
 ## Phase 5 review report projection
 
 - 分支影响报告可投影进入现有人工审核 API。
+
+## Phase 5 task association validation
+
+- 增加影响报告无效任务关联拒绝测试。

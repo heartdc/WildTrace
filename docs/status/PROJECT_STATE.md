@@ -503,3 +503,8 @@ verify_patch_hashes 严格要求期望摘要为 64 位小写十六进制 SHA-256
 ## Phase 5 审核报告投影增量（2026-09-11）
 
 impact_report 新增 project_for_review，为现有审核 API 添加 task/report 工作流封装，保持 candidate_only、confirmed_vulnerabilities=0；测试通过。
+
+
+## Phase 5 任务关联校验（2026-09-11）
+
+影响报告投影新增无效 task ID 拒绝测试，确保审核链任务关联合法。
