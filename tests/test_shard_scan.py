@@ -1,6 +1,6 @@
 import tempfile, unittest
 from pathlib import Path
-from ohvul.shards import build_manifest, scan_shard, merge_shard_results
+from ohvul.shards import build_manifest, scan_shard, merge_shard_results, scan_manifest
 from ohvul.verify import validate_result
 
 class ShardScanTests(unittest.TestCase):
@@ -23,3 +23,4 @@ class ShardScanTests(unittest.TestCase):
    with self.assertRaises(ValueError): merge_shard_results([result], Path(d)/'other')
    altered=dict(result); altered['evidence_bundles']=[dict(result['evidence_bundles'][0], artifacts=[])]
    with self.assertRaises(ValueError): merge_shard_results([result, altered], root)
+

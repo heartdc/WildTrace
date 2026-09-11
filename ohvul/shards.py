@@ -12,6 +12,12 @@ def scan_shard(root, shard):
         raise ValueError('invalid shard')
     return scan_path(root, relative_files=files)
 
+def scan_manifest(root, manifest, max_shards=10000):
+    if not isinstance(manifest, dict) or manifest.get('root') != str(Path(root).resolve()): raise ValueError('manifest root mismatch')
+    shards = manifest.get('shards')
+    if not isinstance(shards, list) or len(shards) > max_shards: raise ValueError('manifest exceeds max_shards')
+    return merge_shard_results([scan_shard(root, shard) for shard in shards], root, max_shards=max_shards)
+
 def merge_shard_results(results, root, max_shards=10000):
     """Deterministically merge shard scan results without changing findings."""
     root = str(Path(root).resolve())

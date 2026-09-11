@@ -595,3 +595,8 @@ CI 新增 python -m ohvul.performance --files 1 --lines 1 smoke test，验证性
 ## Phase 6 性能 CLI 即时 schema 门控（2026-09-11）
 
 性能 CLI 输出前立即调用 validate_performance_result，确保 schema 和安全字段实际生效；专项测试通过。
+
+
+## Phase 6 受控分片调度增量（2026-09-11）
+
+新增 scan_manifest，按清单顺序逐片扫描并通过 max_shards 门控后合并结果；新增调度测试通过。尚未覆盖长期性能和取消/超时。

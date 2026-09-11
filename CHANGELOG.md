@@ -865,3 +865,7 @@
 ## Phase 6 performance CLI schema gate
 
 - 性能 CLI 输出前新增即时 schema 校验。
+
+## Phase 6 bounded shard scheduler
+
+- 新增按 manifest 顺序的受控分片扫描调度。
