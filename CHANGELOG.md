@@ -717,3 +717,7 @@
 ## Phase 5 local path only gate
 
 - 补丁路径校验拒绝 URL 形式输入。
+
+## Phase 5 scan root binding
+
+- 分支影响比较绑定扫描源码根目录。
