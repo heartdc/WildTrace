@@ -25,3 +25,12 @@ See [evidence contract](docs/engineering/EVIDENCE_VALIDATION.md) for scope and l
 ## Optional LLM drafting
 
 The optional `ohvul.llm_adapter` reads `OSLOVELACE_API_KEY` only at runtime. It sends structured candidate evidence for drafting and always returns `final_verdict=undetermined`. Do not place keys in source, config files, fixtures, logs, or commits. Calls are explicit; the scanner does not invoke the network automatically.
+
+## Local installation and verification
+
+```powershell
+python -m pip install -e . --no-deps
+python -m unittest discover -s tests -q
+```
+
+No API key is required for scanning or tests. Configure `OSLOVELACE_API_KEY` only when explicitly using the optional drafting adapter.

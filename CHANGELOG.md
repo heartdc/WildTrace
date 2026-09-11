@@ -652,3 +652,7 @@
 ## Local package validation
 
 - editable 安装（--no-deps）和 wildtrace CLI 帮助验证通过。
+
+## Local installation documentation
+
+- README 增加本地安装、测试和 LLM 环境变量说明。

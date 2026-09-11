@@ -334,3 +334,8 @@ GitHub Actions offline-tests 在 Ubuntu 上对提交 beadf8d 执行成功；本�
 ## 本地打包验证（2026-09-10）
 
 editable 安装（--no-deps）成功，wildtrace --help 可用；生成目录已加入忽略规则。原清理命令受环境策略阻断，未重复尝试。
+
+
+## 本地安装文档增量（2026-09-10）
+
+README 补充无 key 的本地安装和离线测试命令，并说明仅显式调用 LLM 适配器时配置环境变量。
