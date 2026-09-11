@@ -21,3 +21,7 @@ Rules are intentionally conservative candidates. They are not vulnerability verd
 
 Saved schema 0.3 results can be checked offline using `python -m ohvul.verify result.json`.
 See [evidence contract](docs/engineering/EVIDENCE_VALIDATION.md) for scope and limitations.
+
+## Optional LLM drafting
+
+The optional `ohvul.llm_adapter` reads `OSLOVELACE_API_KEY` only at runtime. It sends structured candidate evidence for drafting and always returns `final_verdict=undetermined`. Do not place keys in source, config files, fixtures, logs, or commits. Calls are explicit; the scanner does not invoke the network automatically.

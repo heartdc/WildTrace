@@ -604,3 +604,7 @@
 ## LLM timeout gate
 
 - LLM 适配器新增 1..60 秒超时校验。
+
+## LLM runtime configuration docs
+
+- README 增加 key 脱敏和显式调用说明。
