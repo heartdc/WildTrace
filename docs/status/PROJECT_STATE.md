@@ -379,3 +379,8 @@ verification_link.validate_link 现在严格要求 checkpoint_sha256 为 64 位�
 ## Phase 4 验收清单（2026-09-10）
 
 新增 PHASE4_ACCEPTANCE.md，按证据列出本地复核、隔离契约、FSM、检查点关联、合成 harness 和回归状态，并明确未执行目标代码、未确认漏洞。
+
+
+## 验证关联恢复增量（2026-09-10）
+
+新增 load_link，重启后从磁盘读取并重新校验 harness 摘要绑定；新增恢复读取断言通过。

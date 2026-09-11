@@ -26,3 +26,8 @@ def save_link(link, path, harness_record):
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open('x', encoding='utf-8', newline='\n') as stream:
         json.dump(link, stream, ensure_ascii=False, indent=2); stream.write('\n')
+
+def load_link(path, harness_record):
+    link = json.loads(Path(path).read_text(encoding='utf-8-sig'))
+    validate_link(link, harness_record)
+    return link

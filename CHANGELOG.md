@@ -688,3 +688,7 @@
 ## Phase 4 acceptance checklist
 
 - 新增证据驱动的 Phase 4 验收清单。
+
+## Verification link recovery
+
+- 验证关联记录支持离线读取和重新校验。

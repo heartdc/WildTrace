@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "analysis/方案审查与优化建议.md",
+                "file": "engineering/LEGACY_JOURNAL_COMPAT.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "方案审查与优化建议"
+              "title": "LEGACY_JOURNAL_COMPAT"
             }
           }
         ]
@@ -190,6 +190,9 @@
   },
   "active": "c18b35c2602e280e",
   "lastOpenFiles": [
+    "engineering/PHASE4_ACCEPTANCE.md",
+    "design/OpenHarmony漏洞挖掘_技术说明书与设计方案_v2_合并版.md",
+    "analysis/方案审查与优化建议.md",
     "status/PROJECT_STATE.md",
     "references/硕士毕业论文_张鑫棋 (1).pdf",
     "references/毕设论文最终版.pdf",
@@ -201,9 +204,7 @@
     "engineering/ENGINEERING_PROMPT.md",
     "engineering/ARCHIVE_LIFECYCLE.md",
     "design/RULE_BENCHMARK.md",
-    "design/OpenHarmony漏洞挖掘_技术说明书与设计方案_v2_合并版.md",
     "decisions/ADR-0001-0002.md",
-    "analysis/方案审查与优化建议.md",
     "design/local-vulnerability-metadata.example.json",
     "decisions",
     "status",
