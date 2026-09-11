@@ -1,5 +1,5 @@
 import unittest
-from ohvul.branch_impact import compare_findings, validate_patch_scope
+from ohvul.branch_impact import compare_findings, validate_patch_scope, make_impact_draft, validate_impact_draft
 
 class BranchImpactTests(unittest.TestCase):
  def test_compares_local_results_deterministically(self):
@@ -50,3 +50,4 @@ class BranchImpactTests(unittest.TestCase):
   self.assertEqual(draft['assessment']['status'],'candidate_only')
   self.assertEqual(draft['assessment']['confirmed_vulnerabilities'],0)
   self.assertTrue(draft['assessment']['review_required'])
+

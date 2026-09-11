@@ -21,6 +21,13 @@ def make_impact_draft(base, revised):
     impact = compare_findings(base, revised)
     return {'schema': '0.1', 'kind': 'branch_impact_draft', 'impact': impact,
             'assessment': {'status': 'candidate_only', 'confirmed_vulnerabilities': 0, 'review_required': True}}
+
+def validate_impact_draft(draft):
+    if not isinstance(draft, dict) or draft.get('schema') != '0.1' or draft.get('kind') != 'branch_impact_draft': raise ValueError('invalid impact draft')
+    assessment = draft.get('assessment', {})
+    if assessment.get('status') != 'candidate_only' or assessment.get('confirmed_vulnerabilities') != 0 or assessment.get('review_required') is not True: raise ValueError('impact draft must remain review-only')
+    if draft.get('impact', {}).get('review_required') is not True: raise ValueError('impact comparison requires review')
+    return True
 import argparse, json
 
 def validate_patch_scope(root, paths):

@@ -776,3 +776,7 @@
 ## Phase 4 joint verification CLI
 
 - 新增 verify-joint 联合文件校验命令行入口。
+
+## Phase 5 impact draft validation
+
+- 增加分支影响草稿 review-only schema 校验。

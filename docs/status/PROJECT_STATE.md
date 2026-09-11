@@ -488,3 +488,8 @@ verify_patch_hashes 严格要求期望摘要为 64 位小写十六进制 SHA-256
 ## Phase 4 联合验证 CLI 增量（2026-09-11）
 
 新增 verify-joint / python -m ohvul.verify_joint，直接调用联合文件校验并输出 OK/INVALID；不联网、不执行目标代码。
+
+
+## Phase 5 影响草稿 schema 校验（2026-09-11）
+
+新增 validate_impact_draft，分支影响草稿固定 candidate_only、confirmed_vulnerabilities=0 和 review_required=true；测试通过。Phase 5 尚未完成，仍需正式报告绑定与补丁前后证据闭环。
