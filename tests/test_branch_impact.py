@@ -19,3 +19,12 @@ class BranchImpactTests(unittest.TestCase):
  def test_malformed_findings_rejected(self):
   base={'schema_version':'0.3','scan':{'root':'/x'},'safety':{'local_only':True}}
   with self.assertRaises(ValueError): compare_findings(dict(base, findings=[{'evidence_id':1}]), dict(base, findings=[]))
+
+ def test_cli_success_path(self):
+  import json, tempfile, subprocess, sys
+  from pathlib import Path
+  base={'schema_version':'0.3','scan':{'root':'/src'},'safety':{'local_only':True},'findings':[]}
+  with tempfile.TemporaryDirectory() as d:
+   a=Path(d)/'a.json'; b=Path(d)/'b.json'; a.write_text(json.dumps(base)); b.write_text(json.dumps(base))
+   proc=subprocess.run([sys.executable,'-m','ohvul.branch_impact',str(a),str(b)],capture_output=True,text=True)
+  self.assertEqual(proc.returncode,0); self.assertEqual(json.loads(proc.stdout)['unchanged_count'],0)
