@@ -1,5 +1,6 @@
 """Compare saved local scan results; no Git or target execution."""
 from pathlib import Path
+import re
 import hashlib
 
 def verify_patch_hashes(root, expected):
@@ -8,6 +9,7 @@ def verify_patch_hashes(root, expected):
     result = {}
     for name, digest in expected.items():
         if not isinstance(name, str) or '://' in name: raise ValueError('patch path must be local')
+        if not isinstance(digest, str) or not re.fullmatch(r'[0-9a-f]{64}', digest): raise ValueError('invalid patch digest')
         path = (root / name).resolve()
         if root not in path.parents or not path.is_file(): raise ValueError('patch file unavailable')
         value = hashlib.sha256(path.read_bytes()).hexdigest()

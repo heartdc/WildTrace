@@ -764,3 +764,7 @@
 ## Verification link generation consistency
 
 - link 生成端与校验端统一 SHA-256 格式约束。
+
+## Phase 5 patch digest format gate
+
+- 补丁文件摘要校验新增标准 SHA-256 格式门控。

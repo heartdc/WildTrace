@@ -36,3 +36,9 @@ class BranchImpactTests(unittest.TestCase):
   with tempfile.TemporaryDirectory() as d:
    Path(d,'a.c').write_text('x'); digest=hashlib.sha256(b'x').hexdigest()
    self.assertEqual(verify_patch_hashes(d,{'a.c':digest})['a.c'],digest)
+
+ def test_patch_digest_format_rejected(self):
+  import tempfile
+  from ohvul.branch_impact import verify_patch_hashes
+  with tempfile.TemporaryDirectory() as d:
+   with self.assertRaises(ValueError): verify_patch_hashes(d,{'a.c':'bad'})

@@ -473,3 +473,8 @@ pyproject 新增 wildtrace-impact 入口，调用离线分支影响比较器；�
 ## 验证 link 生成格式一致性（2026-09-11）
 
 make_link 与 validate_link 统一要求小写十六进制 SHA-256 摘要，生成端不再产生必然无效的 link；相关测试通过。
+
+
+## Phase 5 补丁摘要格式门控（2026-09-11）
+
+verify_patch_hashes 严格要求期望摘要为 64 位小写十六进制 SHA-256；新增格式拒绝测试。
