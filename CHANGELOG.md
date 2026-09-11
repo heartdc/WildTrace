@@ -780,3 +780,7 @@
 ## Phase 5 impact draft validation
 
 - 增加分支影响草稿 review-only schema 校验。
+
+## Phase 5 impact report projection
+
+- 新增绑定双扫描结果摘要的 review-only 影响报告。
