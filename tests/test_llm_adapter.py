@@ -11,7 +11,7 @@ class LlmAdapterTests(unittest.TestCase):
  def test_large_or_unstructured_context_rejected(self):
   with self.assertRaises(ValueError): draft_analysis('source text')
   with self.assertRaises(ValueError): draft_analysis({'evidence':'x' * 70000})
- with self.assertRaises(ValueError): draft_analysis({'id':'x'}, timeout=0)
+  with self.assertRaises(ValueError): draft_analysis({'id':'x'}, timeout=0)
   with self.assertRaises(ValueError): draft_analysis({'id':'x'}, model='gpt-4.6')
  def test_mocked_response_is_review_only_and_key_free(self):
   import json
@@ -28,4 +28,5 @@ class LlmAdapterTests(unittest.TestCase):
   finally:
    if old is None: os.environ.pop('OSLOVELACE_API_KEY',None)
    else: os.environ['OSLOVELACE_API_KEY']=old
+
 
