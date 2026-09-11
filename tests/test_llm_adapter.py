@@ -8,6 +8,9 @@ class LlmAdapterTests(unittest.TestCase):
    with self.assertRaises(RuntimeError): draft_analysis({'id':'x'})
   finally:
    if old is not None: os.environ['OSLOVELACE_API_KEY']=old
+ def test_large_or_unstructured_context_rejected(self):
+  with self.assertRaises(ValueError): draft_analysis('source text')
+  with self.assertRaises(ValueError): draft_analysis({'evidence':'x' * 70000})
  def test_mocked_response_is_review_only_and_key_free(self):
   import json
   from unittest.mock import patch

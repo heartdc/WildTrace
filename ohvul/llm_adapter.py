@@ -2,6 +2,11 @@
 import json, os, urllib.request
 
 def draft_analysis(context, *, base_url='https://www.oslovelace.com/v1', model='grok-4.6', timeout=30):
+    if not isinstance(context, dict):
+        raise ValueError('context must be structured evidence')
+    encoded_context = json.dumps(context, ensure_ascii=False)
+    if len(encoded_context.encode('utf-8')) > 65536:
+        raise ValueError('context exceeds 64 KiB')
     key = os.environ.get('OSLOVELACE_API_KEY')
     if not key:
         raise RuntimeError('OSLOVELACE_API_KEY is not configured')

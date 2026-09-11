@@ -596,3 +596,7 @@
 ## LLM adapter safety regression
 
 - 增加离线 mock 测试，验证 key 不出现在结果且输出保持 review-only。
+
+## LLM context boundary
+
+- LLM 适配器新增结构化上下文和 64 KiB 大小限制。
