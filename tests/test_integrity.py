@@ -5,8 +5,8 @@ import tempfile
 import unittest
 from ohvul.detect.scanner import scan_path
 from ohvul.domain.evidence import make_bundle, validate_bundle
-from ohvul.verify import validate_result`r`nfrom ohvul.workflow.fsm import save_checkpoint, WorkflowCheckpoint
-
+from ohvul.verify import validate_result
+from ohvul.workflow.fsm import save_checkpoint, WorkflowCheckpoint
 
 class IntegrityTests(unittest.TestCase):
     def test_source_and_environment_changes_detected(self):
