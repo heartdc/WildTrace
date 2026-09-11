@@ -11,7 +11,10 @@ def validate_patch_scope(root, paths):
     return True
 def compare_findings(base, revised):
     def ids(result):
-        return {f['evidence_id'] for f in result.get('findings', [])}
+        findings = result.get('findings', [])
+        if not isinstance(findings, list) or any(not isinstance(f, dict) or not isinstance(f.get('evidence_id'), str) for f in findings):
+            raise ValueError('invalid findings structure')
+        return {f['evidence_id'] for f in findings}
     if base.get('schema_version') != '0.3' or revised.get('schema_version') != '0.3': raise ValueError('unsupported scan result schema')
     if base.get('scan', {}).get('root') != revised.get('scan', {}).get('root'): raise ValueError('scan roots differ')
     if base.get('safety', {}).get('local_only') is not True or revised.get('safety', {}).get('local_only') is not True:

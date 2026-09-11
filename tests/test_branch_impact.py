@@ -15,3 +15,7 @@ class BranchImpactTests(unittest.TestCase):
 
 
 
+
+ def test_malformed_findings_rejected(self):
+  base={'schema_version':'0.3','scan':{'root':'/x'},'safety':{'local_only':True}}
+  with self.assertRaises(ValueError): compare_findings(dict(base, findings=[{'evidence_id':1}]), dict(base, findings=[]))

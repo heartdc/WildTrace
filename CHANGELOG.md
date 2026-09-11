@@ -725,3 +725,7 @@
 ## Phase 5 local result gate regression
 
 - 增加非 local_only 结果拒绝测试。
+
+## Phase 5 findings structure gate
+
+- 分支影响比较新增 findings 结构校验。
