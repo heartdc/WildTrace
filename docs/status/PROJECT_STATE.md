@@ -329,3 +329,8 @@ GitHub Actions offline-tests 在 Ubuntu 上对提交 beadf8d 执行成功；本�
 ## 可交付打包元数据增量（2026-09-10）
 
 新增 pyproject.toml，声明 WildTrace 包元数据和 CLI 入口；无运行时联网依赖。
+
+
+## 本地打包验证（2026-09-10）
+
+editable 安装（--no-deps）成功，wildtrace --help 可用；生成目录已加入忽略规则。原清理命令受环境策略阻断，未重复尝试。

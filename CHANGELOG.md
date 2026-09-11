@@ -648,3 +648,7 @@
 ## Packaging metadata
 
 - 新增最小 pyproject.toml，声明项目元数据与 wildtrace CLI 入口。
+
+## Local package validation
+
+- editable 安装（--no-deps）和 wildtrace CLI 帮助验证通过。

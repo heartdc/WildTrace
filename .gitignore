@@ -10,4 +10,5 @@ docs/references/
 *.key
 *.pem
 *.secrets
+wildtrace.egg-info/
 
