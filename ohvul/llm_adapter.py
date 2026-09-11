@@ -2,6 +2,8 @@
 import json, os, urllib.request
 
 def draft_analysis(context, *, base_url='https://www.oslovelace.com/v1', model='grok-4.6', timeout=30):
+    if not isinstance(timeout, int) or not 0 < timeout <= 60:
+        raise ValueError('timeout must be between 1 and 60 seconds')
     if not isinstance(context, dict):
         raise ValueError('context must be structured evidence')
     encoded_context = json.dumps(context, ensure_ascii=False)

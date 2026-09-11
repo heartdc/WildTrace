@@ -600,3 +600,7 @@
 ## LLM context boundary
 
 - LLM 适配器新增结构化上下文和 64 KiB 大小限制。
+
+## LLM timeout gate
+
+- LLM 适配器新增 1..60 秒超时校验。
