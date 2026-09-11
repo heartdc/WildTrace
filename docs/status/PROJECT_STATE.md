@@ -442,3 +442,8 @@ branch_impact 支持 python -m ohvul.branch_impact 对两份本地 JSON 结果�
 ## Phase 5 CLI 安装入口增量（2026-09-11）
 
 pyproject 新增 wildtrace-impact 入口，调用离线分支影响比较器；不访问远程 Git。
+
+
+## Phase 5 JSON 根类型门控增量（2026-09-11）
+
+分支影响比较器明确拒绝非对象 JSON 根值，避免未捕获属性异常；专项测试通过。

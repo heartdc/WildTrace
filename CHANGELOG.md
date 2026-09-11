@@ -741,3 +741,7 @@
 ## Phase 5 installed CLI entry
 
 - 新增 wildtrace-impact 安装后命令行入口。
+
+## Phase 5 JSON root type gate
+
+- 分支影响比较器新增 JSON 根类型校验。

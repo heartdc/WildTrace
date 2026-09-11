@@ -11,6 +11,7 @@ def validate_patch_scope(root, paths):
         if candidate != root and root not in candidate.parents: raise ValueError('patch path escapes source root')
     return True
 def compare_findings(base, revised):
+    if not isinstance(base, dict) or not isinstance(revised, dict): raise ValueError('scan results must be objects')
     def ids(result):
         findings = result.get('findings', [])
         if not isinstance(findings, list) or any(not isinstance(f, dict) or not isinstance(f.get('evidence_id'), str) for f in findings):
