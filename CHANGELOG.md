@@ -784,3 +784,7 @@
 ## Phase 5 impact report projection
 
 - 新增绑定双扫描结果摘要的 review-only 影响报告。
+
+## Phase 5 review report projection
+
+- 分支影响报告可投影进入现有人工审核 API。

@@ -498,3 +498,8 @@ verify_patch_hashes 严格要求期望摘要为 64 位小写十六进制 SHA-256
 ## Phase 5 影响报告投影增量（2026-09-11）
 
 新增 impact_report，绑定 base/revised 扫描结果摘要并嵌入 review-only 影响草稿；输出 verdict=undetermined。新增测试通过。Phase 5 仍需与正式报告/审核批次链路集成。
+
+
+## Phase 5 审核报告投影增量（2026-09-11）
+
+impact_report 新增 project_for_review，为现有审核 API 添加 task/report 工作流封装，保持 candidate_only、confirmed_vulnerabilities=0；测试通过。

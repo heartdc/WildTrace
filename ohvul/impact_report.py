@@ -10,3 +10,11 @@ def validate_impact_report(report):
     if not isinstance(report,dict) or report.get('schema')!='0.1' or report.get('kind')!='branch_impact_report': raise ValueError('invalid impact report')
     if report.get('review_required') is not True or report.get('verdict')!='undetermined': raise ValueError('impact report must remain review-only')
     validate_impact_draft(report.get('draft',{})); return True
+
+def project_for_review(impact_report, task_id):
+    validate_impact_report(impact_report)
+    if not isinstance(task_id, str) or not task_id.strip(): raise ValueError('task id required')
+    result = dict(impact_report)
+    result['workflow'] = {'task_id': task_id, 'state': 'report'}
+    result['assessment'] = {'status': 'candidate_only', 'confirmed_vulnerabilities': 0, 'note': 'Branch impact draft requires human review.'}
+    return result
