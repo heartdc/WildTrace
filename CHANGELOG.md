@@ -620,3 +620,7 @@
 ## LLM response schema validation
 
 - 新增 LLM 响应结构和文本类型校验。
+
+## LLM draft size gate
+
+- LLM 草稿输出新增 16 KiB 大小上限。

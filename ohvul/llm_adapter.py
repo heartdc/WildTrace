@@ -28,4 +28,6 @@ def draft_analysis(context, *, base_url='https://www.oslovelace.com/v1', model='
         raise ValueError('invalid LLM response schema') from exc
     if not isinstance(draft, str):
         raise ValueError('LLM draft must be text')
+    if len(draft.encode('utf-8')) > 16384:
+        raise ValueError('LLM draft exceeds 16 KiB')
     return {'model': data.get('model', model), 'draft': draft, 'final_verdict': 'undetermined'}
