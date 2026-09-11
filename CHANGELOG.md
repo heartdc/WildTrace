@@ -853,3 +853,7 @@
 
 - local_verification 到 triage 必须通过 checkpoint/result/harness 联合校验。
 - 验证失败保持状态不变，相关专项 47 项测试通过。
+
+## Phase 6 performance result schema
+
+- 新增性能结果 schema 和安全字段校验。

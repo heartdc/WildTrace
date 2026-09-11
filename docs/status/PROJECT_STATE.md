@@ -580,3 +580,8 @@ CI 新增 python -m ohvul.performance --files 1 --lines 1 smoke test，验证性
 ## Phase 4 FSM 联合校验门控（2026-09-11）
 
 `local_verification -> triage` 现在必须提供 checkpoint/result/harness 三个文件；FSM 会调用联合校验，并在失败时保持原状态不变。相关专项 47 项测试通过（1 项跳过）。
+
+
+## Phase 6 性能结果 schema 增量（2026-09-11）
+
+新增 validate_performance_result，校验性能结果 schema、耗时类型及 local_only/no_execution 安全字段；测试通过。

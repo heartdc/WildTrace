@@ -24,6 +24,12 @@ def compare_throughput(baseline, current, max_regression=0.2):
     regression=(old-new)/old
     return {'schema':'0.1','regression':regression,'within_budget':regression <= max_regression,'review_required':True,'local_only':True}
 
+def validate_performance_result(result):
+    if not isinstance(result, dict) or result.get('schema') != '0.1': raise ValueError('invalid performance schema')
+    if not isinstance(result.get('files'), int) or not isinstance(result.get('elapsed_seconds'), (int,float)) or result['elapsed_seconds'] < 0: raise ValueError('invalid performance metrics')
+    if result.get('local_only') is not True or result.get('no_execution') is not True: raise ValueError('unsafe performance result')
+    return True
+
 def main():
     p=argparse.ArgumentParser(description=__doc__); p.add_argument('--files',type=int,default=10); p.add_argument('--lines',type=int,default=20); args=p.parse_args()
     try: print(json.dumps(benchmark_scan(files=args.files,lines=args.lines),ensure_ascii=False,indent=2)); return 0
