@@ -616,3 +616,7 @@
 ## LLM HTTPS boundary
 
 - LLM 适配器强制 HTTPS Base URL。
+
+## LLM response schema validation
+
+- 新增 LLM 响应结构和文本类型校验。

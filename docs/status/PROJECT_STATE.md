@@ -289,3 +289,8 @@ README 新增可选 LLM 适配器配置说明，明确环境变量读取、显�
 ## LLM HTTPS 边界增量（2026-09-10）
 
 LLM 适配器拒绝非 HTTPS Base URL，新增离线测试；避免 key 通过明文 HTTP 传输。
+
+
+## LLM 响应 schema 校验增量（2026-09-10）
+
+适配器对 choices/message/content 做结构化校验，异常响应拒绝进入分析链，草稿必须为文本；专项测试通过。

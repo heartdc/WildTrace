@@ -22,4 +22,10 @@ def draft_analysis(context, *, base_url='https://www.oslovelace.com/v1', model='
     request = urllib.request.Request(base_url.rstrip('/') + '/chat/completions', data=json.dumps(payload).encode(), headers={'Authorization':'Bearer '+key, 'Content-Type':'application/json'})
     with urllib.request.urlopen(request, timeout=timeout) as response:
         data=json.loads(response.read().decode())
-    return {'model': data.get('model', model), 'draft': data['choices'][0]['message']['content'], 'final_verdict': 'undetermined'}
+    try:
+        draft = data['choices'][0]['message']['content']
+    except (KeyError, IndexError, TypeError) as exc:
+        raise ValueError('invalid LLM response schema') from exc
+    if not isinstance(draft, str):
+        raise ValueError('LLM draft must be text')
+    return {'model': data.get('model', model), 'draft': draft, 'final_verdict': 'undetermined'}
