@@ -6,7 +6,7 @@ class VerificationLinkTests(unittest.TestCase):
   record={'schema':'0.1','case_id':'x','verdict':'undetermined','review_required':True,'reproducible':True}
   link=make_link('task','a'*64,record); self.assertTrue(validate_link(link,record))
   record['case_id']='y'
- with self.assertRaises(ValueError): validate_link(link,record)
+  with self.assertRaises(ValueError): validate_link(link,record)
  def test_save_link_refuses_overwrite(self):
   import tempfile
   from pathlib import Path
