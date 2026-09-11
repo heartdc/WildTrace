@@ -1,0 +1,1319 @@
+{
+  "schema_version": "0.3",
+  "scan": {
+    "root": "C:\\Projects\\OpenHarmony\\commonlibrary\\utils_lite\\timer_task",
+    "files_scanned": 2,
+    "completed_at": "2026-09-11T02:45:31.115419+00:00"
+  },
+  "findings": [
+    {
+      "alert_id": "AL-000001",
+      "source": "builtin_rule",
+      "cwe_candidate": "CWE-476",
+      "rule": "null-dereference",
+      "description": "Possible dereference of a pointer after a nullable-returning call",
+      "location": {
+        "file": "include\\nativeapi_timer_task.h",
+        "line": 2
+      },
+      "evidence": {
+        "code": "* Copyright (c) 2020 Huawei Device Co., Ltd.",
+        "line_hash": "d82028ee964d1f4c"
+      },
+      "evidence_id": "EB-ae5041a47a56bc3874528b106a85ffe75827451dfdb91e0fcaf47cfadf6d6812",
+      "status": "candidate"
+    },
+    {
+      "alert_id": "AL-000002",
+      "source": "builtin_rule",
+      "cwe_candidate": "CWE-476",
+      "rule": "null-dereference",
+      "description": "Possible dereference of a pointer after a nullable-returning call",
+      "location": {
+        "file": "include\\nativeapi_timer_task.h",
+        "line": 3
+      },
+      "evidence": {
+        "code": "* Licensed under the Apache License, Version 2.0 (the \"License\");",
+        "line_hash": "7ad634c5d3771698"
+      },
+      "evidence_id": "EB-d8eabddc39bac0afbcd097599930edc6b1b46880c4942a9f334c743c70627e11",
+      "status": "candidate"
+    },
+    {
+      "alert_id": "AL-000003",
+      "source": "builtin_rule",
+      "cwe_candidate": "CWE-476",
+      "rule": "null-dereference",
+      "description": "Possible dereference of a pointer after a nullable-returning call",
+      "location": {
+        "file": "include\\nativeapi_timer_task.h",
+        "line": 4
+      },
+      "evidence": {
+        "code": "* you may not use this file except in compliance with the License.",
+        "line_hash": "7389efb2cae9f232"
+      },
+      "evidence_id": "EB-35b97e56ec35bf63a31f9dc49c168ae3e547b857dd6d4056583dd59f8279177a",
+      "status": "candidate"
+    },
+    {
+      "alert_id": "AL-000004",
+      "source": "builtin_rule",
+      "cwe_candidate": "CWE-476",
+      "rule": "null-dereference",
+      "description": "Possible dereference of a pointer after a nullable-returning call",
+      "location": {
+        "file": "include\\nativeapi_timer_task.h",
+        "line": 5
+      },
+      "evidence": {
+        "code": "* You may obtain a copy of the License at",
+        "line_hash": "d64c12204a05e4ea"
+      },
+      "evidence_id": "EB-967d580381d9129652e8ce41fbe63ed6656914d8de3de7247e2bbbb160736d72",
+      "status": "candidate"
+    },
+    {
+      "alert_id": "AL-000005",
+      "source": "builtin_rule",
+      "cwe_candidate": "CWE-476",
+      "rule": "null-dereference",
+      "description": "Possible dereference of a pointer after a nullable-returning call",
+      "location": {
+        "file": "include\\nativeapi_timer_task.h",
+        "line": 7
+      },
+      "evidence": {
+        "code": "*     http://www.apache.org/licenses/LICENSE-2.0",
+        "line_hash": "6cdcf8f5745cfd0f"
+      },
+      "evidence_id": "EB-f3435b7fc64750c83735664e84e5e5b3715b6c209675d89241380874a53141ed",
+      "status": "candidate"
+    },
+    {
+      "alert_id": "AL-000006",
+      "source": "builtin_rule",
+      "cwe_candidate": "CWE-476",
+      "rule": "null-dereference",
+      "description": "Possible dereference of a pointer after a nullable-returning call",
+      "location": {
+        "file": "include\\nativeapi_timer_task.h",
+        "line": 9
+      },
+      "evidence": {
+        "code": "* Unless required by applicable law or agreed to in writing, software",
+        "line_hash": "1503fa25a1f0d73c"
+      },
+      "evidence_id": "EB-9697e7aa19d7dbf05a81f9a38bc511bdecc7a037642bcc09e24aaad25913bb06",
+      "status": "candidate"
+    },
+    {
+      "alert_id": "AL-000007",
+      "source": "builtin_rule",
+      "cwe_candidate": "CWE-476",
+      "rule": "null-dereference",
+      "description": "Possible dereference of a pointer after a nullable-returning call",
+      "location": {
+        "file": "include\\nativeapi_timer_task.h",
+        "line": 10
+      },
+      "evidence": {
+        "code": "* distributed under the License is distributed on an \"AS IS\" BASIS,",
+        "line_hash": "171749e39e0d73dc"
+      },
+      "evidence_id": "EB-de24a26428a21ba47c929e0a095178fa26e49d80e4dfa3ef182b7e13e97c6309",
+      "status": "candidate"
+    },
+    {
+      "alert_id": "AL-000008",
+      "source": "builtin_rule",
+      "cwe_candidate": "CWE-476",
+      "rule": "null-dereference",
+      "description": "Possible dereference of a pointer after a nullable-returning call",
+      "location": {
+        "file": "include\\nativeapi_timer_task.h",
+        "line": 11
+      },
+      "evidence": {
+        "code": "* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.",
+        "line_hash": "a633801ccc729052"
+      },
+      "evidence_id": "EB-cb17c945a5b45f99096d04a28f4cb86a3ca462b7c0b6439bebf75ea9d267ff5d",
+      "status": "candidate"
+    },
+    {
+      "alert_id": "AL-000009",
+      "source": "builtin_rule",
+      "cwe_candidate": "CWE-476",
+      "rule": "null-dereference",
+      "description": "Possible dereference of a pointer after a nullable-returning call",
+      "location": {
+        "file": "include\\nativeapi_timer_task.h",
+        "line": 12
+      },
+      "evidence": {
+        "code": "* See the License for the specific language governing permissions and",
+        "line_hash": "214f6a6c0c666454"
+      },
+      "evidence_id": "EB-e574d20b39ae32125e82d90904606cf241dba21ad499340ce85d5656d4c71ad1",
+      "status": "candidate"
+    },
+    {
+      "alert_id": "AL-000010",
+      "source": "builtin_rule",
+      "cwe_candidate": "CWE-476",
+      "rule": "null-dereference",
+      "description": "Possible dereference of a pointer after a nullable-returning call",
+      "location": {
+        "file": "include\\nativeapi_timer_task.h",
+        "line": 13
+      },
+      "evidence": {
+        "code": "* limitations under the License.",
+        "line_hash": "14728fe861962d20"
+      },
+      "evidence_id": "EB-b6280ab943f66bfe8a11ad9ea1a06326b6e82948d129a7eb0b2fd0e94ea068fd",
+      "status": "candidate"
+    },
+    {
+      "alert_id": "AL-000011",
+      "source": "builtin_rule",
+      "cwe_candidate": "CWE-476",
+      "rule": "null-dereference",
+      "description": "Possible dereference of a pointer after a nullable-returning call",
+      "location": {
+        "file": "include\\nativeapi_timer_task.h",
+        "line": 25
+      },
+      "evidence": {
+        "code": "#endif /* __cplusplus */",
+        "line_hash": "9343b27eb799a431"
+      },
+      "evidence_id": "EB-f4d7c8dcfd62cbff57679db29f23c071519544d4ff5c19ea83b01f83e06d65f2",
+      "status": "candidate"
+    },
+    {
+      "alert_id": "AL-000012",
+      "source": "builtin_rule",
+      "cwe_candidate": "CWE-476",
+      "rule": "null-dereference",
+      "description": "Possible dereference of a pointer after a nullable-returning call",
+      "location": {
+        "file": "include\\nativeapi_timer_task.h",
+        "line": 27
+      },
+      "evidence": {
+        "code": "typedef void* timerHandle_t;",
+        "line_hash": "89b0a600c7b70530"
+      },
+      "evidence_id": "EB-7ecc2473afd342e6020d978e6192d723009ee3ab89b01e40c60c1dad9ebc1bf5",
+      "status": "candidate"
+    },
+    {
+      "alert_id": "AL-000013",
+      "source": "builtin_rule",
+      "cwe_candidate": "CWE-476",
+      "rule": "null-dereference",
+      "description": "Possible dereference of a pointer after a nullable-returning call",
+      "location": {
+        "file": "include\\nativeapi_timer_task.h",
+        "line": 30
+      },
+      "evidence": {
+        "code": "int StartTimerTask(bool isPeriodic, const unsigned int delay, void* userCallback,",
+        "line_hash": "6d8764df30aa7398"
+      },
+      "evidence_id": "EB-0937dadf95f9036b13934ffed2f3c57341f105f095a5b5c187e13270583c8d51",
+      "status": "candidate"
+    },
+    {
+      "alert_id": "AL-000014",
+      "source": "builtin_rule",
+      "cwe_candidate": "CWE-476",
+      "rule": "null-dereference",
+      "description": "Possible dereference of a pointer after a nullable-returning call",
+      "location": {
+        "file": "include\\nativeapi_timer_task.h",
+        "line": 31
+      },
+      "evidence": {
+        "code": "void* userContext, timerHandle_t* timerHandle);",
+        "line_hash": "5e9cc0b4b62bfd45"
+      },
+      "evidence_id": "EB-d32587ab71bd6d2e917e727c16d2439dc979adfd507a1ba910c3f4b6b5e21713",
+      "status": "candidate"
+    },
+    {
+      "alert_id": "AL-000015",
+      "source": "builtin_rule",
+      "cwe_candidate": "CWE-476",
+      "rule": "null-dereference",
+      "description": "Possible dereference of a pointer after a nullable-returning call",
+      "location": {
+        "file": "include\\nativeapi_timer_task.h",
+        "line": 38
+      },
+      "evidence": {
+        "code": "#endif  /* __cplusplus */",
+        "line_hash": "6398d87178af40a2"
+      },
+      "evidence_id": "EB-a3db47cf9e5707d90e20a601340150dde6f103348fcb644e75b39ed780e5418e",
+      "status": "candidate"
+    },
+    {
+      "alert_id": "AL-000016",
+      "source": "builtin_rule",
+      "cwe_candidate": "CWE-476",
+      "rule": "null-dereference",
+      "description": "Possible dereference of a pointer after a nullable-returning call",
+      "location": {
+        "file": "include\\nativeapi_timer_task.h",
+        "line": 40
+      },
+      "evidence": {
+        "code": "#endif /* JS_NATIVEAPI_TIMER_TASK_H */",
+        "line_hash": "c1c03a567cd29ccc"
+      },
+      "evidence_id": "EB-777017fa66a7f0619625dbd27794630f40fe160d8b96cf91582c3d4163aa7786",
+      "status": "candidate"
+    },
+    {
+      "alert_id": "AL-000017",
+      "source": "builtin_rule",
+      "cwe_candidate": "CWE-476",
+      "rule": "null-dereference",
+      "description": "Possible dereference of a pointer after a nullable-returning call",
+      "location": {
+        "file": "src\\nativeapi_timer_task.c",
+        "line": 2
+      },
+      "evidence": {
+        "code": "* Copyright (c) 2020 Huawei Device Co., Ltd.",
+        "line_hash": "d82028ee964d1f4c"
+      },
+      "evidence_id": "EB-e25314b507d18cb3762361552b19ff1bd7496f92f6aab198f11be14fe5919da4",
+      "status": "candidate"
+    },
+    {
+      "alert_id": "AL-000018",
+      "source": "builtin_rule",
+      "cwe_candidate": "CWE-476",
+      "rule": "null-dereference",
+      "description": "Possible dereference of a pointer after a nullable-returning call",
+      "location": {
+        "file": "src\\nativeapi_timer_task.c",
+        "line": 3
+      },
+      "evidence": {
+        "code": "* Licensed under the Apache License, Version 2.0 (the \"License\");",
+        "line_hash": "7ad634c5d3771698"
+      },
+      "evidence_id": "EB-12c7e0137b729db2a4396c7f813702aff0dac4ee8f7a5d01a6e310d12d9963bc",
+      "status": "candidate"
+    },
+    {
+      "alert_id": "AL-000019",
+      "source": "builtin_rule",
+      "cwe_candidate": "CWE-476",
+      "rule": "null-dereference",
+      "description": "Possible dereference of a pointer after a nullable-returning call",
+      "location": {
+        "file": "src\\nativeapi_timer_task.c",
+        "line": 4
+      },
+      "evidence": {
+        "code": "* you may not use this file except in compliance with the License.",
+        "line_hash": "7389efb2cae9f232"
+      },
+      "evidence_id": "EB-a5d7bb35c549f1c3a0dd455bc78152d2bd3b3ee2a26afeb8ce01082301854cdc",
+      "status": "candidate"
+    },
+    {
+      "alert_id": "AL-000020",
+      "source": "builtin_rule",
+      "cwe_candidate": "CWE-476",
+      "rule": "null-dereference",
+      "description": "Possible dereference of a pointer after a nullable-returning call",
+      "location": {
+        "file": "src\\nativeapi_timer_task.c",
+        "line": 5
+      },
+      "evidence": {
+        "code": "* You may obtain a copy of the License at",
+        "line_hash": "d64c12204a05e4ea"
+      },
+      "evidence_id": "EB-5730dbbe29c7cdf782a36e36350447e37ee5c1b107101c18a32a8ed76d6e3a20",
+      "status": "candidate"
+    },
+    {
+      "alert_id": "AL-000021",
+      "source": "builtin_rule",
+      "cwe_candidate": "CWE-476",
+      "rule": "null-dereference",
+      "description": "Possible dereference of a pointer after a nullable-returning call",
+      "location": {
+        "file": "src\\nativeapi_timer_task.c",
+        "line": 7
+      },
+      "evidence": {
+        "code": "*     http://www.apache.org/licenses/LICENSE-2.0",
+        "line_hash": "6cdcf8f5745cfd0f"
+      },
+      "evidence_id": "EB-66a93cebe97e253acdc2f9fc23e600340c4ee2da18038584809d2c90af280ff4",
+      "status": "candidate"
+    },
+    {
+      "alert_id": "AL-000022",
+      "source": "builtin_rule",
+      "cwe_candidate": "CWE-476",
+      "rule": "null-dereference",
+      "description": "Possible dereference of a pointer after a nullable-returning call",
+      "location": {
+        "file": "src\\nativeapi_timer_task.c",
+        "line": 9
+      },
+      "evidence": {
+        "code": "* Unless required by applicable law or agreed to in writing, software",
+        "line_hash": "1503fa25a1f0d73c"
+      },
+      "evidence_id": "EB-883c048220d58aa0d9257967a69dce8997abbaaf0cc1286bd1946205bea73eb6",
+      "status": "candidate"
+    },
+    {
+      "alert_id": "AL-000023",
+      "source": "builtin_rule",
+      "cwe_candidate": "CWE-476",
+      "rule": "null-dereference",
+      "description": "Possible dereference of a pointer after a nullable-returning call",
+      "location": {
+        "file": "src\\nativeapi_timer_task.c",
+        "line": 10
+      },
+      "evidence": {
+        "code": "* distributed under the License is distributed on an \"AS IS\" BASIS,",
+        "line_hash": "171749e39e0d73dc"
+      },
+      "evidence_id": "EB-a01ebfb24026c10a55f6d4f803613aa54739821950443c992d75d5b6a53848fb",
+      "status": "candidate"
+    },
+    {
+      "alert_id": "AL-000024",
+      "source": "builtin_rule",
+      "cwe_candidate": "CWE-476",
+      "rule": "null-dereference",
+      "description": "Possible dereference of a pointer after a nullable-returning call",
+      "location": {
+        "file": "src\\nativeapi_timer_task.c",
+        "line": 11
+      },
+      "evidence": {
+        "code": "* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.",
+        "line_hash": "a633801ccc729052"
+      },
+      "evidence_id": "EB-d017e4cdddda8c731e24e601616ae49e24d50cb487723ff025bf5c6c019fcf70",
+      "status": "candidate"
+    },
+    {
+      "alert_id": "AL-000025",
+      "source": "builtin_rule",
+      "cwe_candidate": "CWE-476",
+      "rule": "null-dereference",
+      "description": "Possible dereference of a pointer after a nullable-returning call",
+      "location": {
+        "file": "src\\nativeapi_timer_task.c",
+        "line": 12
+      },
+      "evidence": {
+        "code": "* See the License for the specific language governing permissions and",
+        "line_hash": "214f6a6c0c666454"
+      },
+      "evidence_id": "EB-c52424a082384e87652dee5af1c9ccfed477b48afcfdb5e1dfec7d7f243ef367",
+      "status": "candidate"
+    },
+    {
+      "alert_id": "AL-000026",
+      "source": "builtin_rule",
+      "cwe_candidate": "CWE-476",
+      "rule": "null-dereference",
+      "description": "Possible dereference of a pointer after a nullable-returning call",
+      "location": {
+        "file": "src\\nativeapi_timer_task.c",
+        "line": 13
+      },
+      "evidence": {
+        "code": "* limitations under the License.",
+        "line_hash": "14728fe861962d20"
+      },
+      "evidence_id": "EB-0708d548ea6644e62f5e2d7f1dc97a28aa41cfb6bf65d506284753115f351992",
+      "status": "candidate"
+    },
+    {
+      "alert_id": "AL-000027",
+      "source": "builtin_rule",
+      "cwe_candidate": "CWE-476",
+      "rule": "null-dereference",
+      "description": "Possible dereference of a pointer after a nullable-returning call",
+      "location": {
+        "file": "src\\nativeapi_timer_task.c",
+        "line": 26
+      },
+      "evidence": {
+        "code": "int StartTimerTask(bool isPeriodic, const unsigned int delay, void* userCallback,",
+        "line_hash": "6d8764df30aa7398"
+      },
+      "evidence_id": "EB-3178d896d203014b7b3dfb355c464333a6bb3959313cc9094c8865d4c2b508eb",
+      "status": "candidate"
+    },
+    {
+      "alert_id": "AL-000028",
+      "source": "builtin_rule",
+      "cwe_candidate": "CWE-476",
+      "rule": "null-dereference",
+      "description": "Possible dereference of a pointer after a nullable-returning call",
+      "location": {
+        "file": "src\\nativeapi_timer_task.c",
+        "line": 27
+      },
+      "evidence": {
+        "code": "void* userContext, timerHandle_t* timerHandle)",
+        "line_hash": "e04cb4f282d51d09"
+      },
+      "evidence_id": "EB-468fe971e4a083d9dddc50999e364224701b9018ed45589f032fcffd89d507f9",
+      "status": "candidate"
+    },
+    {
+      "alert_id": "AL-000029",
+      "source": "builtin_rule",
+      "cwe_candidate": "CWE-476",
+      "rule": "null-dereference",
+      "description": "Possible dereference of a pointer after a nullable-returning call",
+      "location": {
+        "file": "src\\nativeapi_timer_task.c",
+        "line": 43
+      },
+      "evidence": {
+        "code": "*timerHandle = timerId;",
+        "line_hash": "ec16f17b88e9a4b9"
+      },
+      "evidence_id": "EB-fda3937f3df097b509b90772ed08b1098c966e7e637146936c5452dd1a6af533",
+      "status": "candidate"
+    }
+  ],
+  "evidence_bundles": [
+    {
+      "evidence_id": "EB-ae5041a47a56bc3874528b106a85ffe75827451dfdb91e0fcaf47cfadf6d6812",
+      "stage": "static_scan",
+      "source": {
+        "root": "C:\\Projects\\OpenHarmony\\commonlibrary\\utils_lite\\timer_task",
+        "file": "include\\nativeapi_timer_task.h",
+        "line": 2
+      },
+      "environment": {
+        "execution": "none",
+        "network": "disabled"
+      },
+      "inputs": [],
+      "artifacts": [
+        {
+          "name": "code",
+          "sha256": "2d0b67c536b09adaa735b6039a57322b90539bccea4d5c8c2674bb3dc51de48d"
+        },
+        {
+          "name": "line_hash",
+          "sha256": "9963fcf2a66cd7cafdcf2493bb04c2556adf4dfebb560e1c54a2231cf6bd5729"
+        }
+      ],
+      "verdict": "candidate",
+      "parent_id": null,
+      "bundle_version": "1"
+    },
+    {
+      "evidence_id": "EB-d8eabddc39bac0afbcd097599930edc6b1b46880c4942a9f334c743c70627e11",
+      "stage": "static_scan",
+      "source": {
+        "root": "C:\\Projects\\OpenHarmony\\commonlibrary\\utils_lite\\timer_task",
+        "file": "include\\nativeapi_timer_task.h",
+        "line": 3
+      },
+      "environment": {
+        "execution": "none",
+        "network": "disabled"
+      },
+      "inputs": [],
+      "artifacts": [
+        {
+          "name": "code",
+          "sha256": "cf41c0a84ba3e02f90dbd42d3db236791cb170d89cb0867ed1bfb1e48479ddea"
+        },
+        {
+          "name": "line_hash",
+          "sha256": "a7b60397c8a62d7f3d8325b4cdcdf2b8440bc9d99b5f31c383c21f2dd3410fd1"
+        }
+      ],
+      "verdict": "candidate",
+      "parent_id": null,
+      "bundle_version": "1"
+    },
+    {
+      "evidence_id": "EB-35b97e56ec35bf63a31f9dc49c168ae3e547b857dd6d4056583dd59f8279177a",
+      "stage": "static_scan",
+      "source": {
+        "root": "C:\\Projects\\OpenHarmony\\commonlibrary\\utils_lite\\timer_task",
+        "file": "include\\nativeapi_timer_task.h",
+        "line": 4
+      },
+      "environment": {
+        "execution": "none",
+        "network": "disabled"
+      },
+      "inputs": [],
+      "artifacts": [
+        {
+          "name": "code",
+          "sha256": "817d42a7713965386e5cec70564a00435bcdd20d15a6c5f8e5f4f926d0304d06"
+        },
+        {
+          "name": "line_hash",
+          "sha256": "854a187d9ab864fde20d1354dbc8587d3e745bbe26c1aaded8cd34c22b362368"
+        }
+      ],
+      "verdict": "candidate",
+      "parent_id": null,
+      "bundle_version": "1"
+    },
+    {
+      "evidence_id": "EB-967d580381d9129652e8ce41fbe63ed6656914d8de3de7247e2bbbb160736d72",
+      "stage": "static_scan",
+      "source": {
+        "root": "C:\\Projects\\OpenHarmony\\commonlibrary\\utils_lite\\timer_task",
+        "file": "include\\nativeapi_timer_task.h",
+        "line": 5
+      },
+      "environment": {
+        "execution": "none",
+        "network": "disabled"
+      },
+      "inputs": [],
+      "artifacts": [
+        {
+          "name": "code",
+          "sha256": "7b0d15c3d5f31e30cda913a29ddcea09fad72139d52479e936f4eef461182275"
+        },
+        {
+          "name": "line_hash",
+          "sha256": "4a6b706b98e1dc9f0fdb75ecd72051ad319ca983ef32f0dcf709d0dfc9aba648"
+        }
+      ],
+      "verdict": "candidate",
+      "parent_id": null,
+      "bundle_version": "1"
+    },
+    {
+      "evidence_id": "EB-f3435b7fc64750c83735664e84e5e5b3715b6c209675d89241380874a53141ed",
+      "stage": "static_scan",
+      "source": {
+        "root": "C:\\Projects\\OpenHarmony\\commonlibrary\\utils_lite\\timer_task",
+        "file": "include\\nativeapi_timer_task.h",
+        "line": 7
+      },
+      "environment": {
+        "execution": "none",
+        "network": "disabled"
+      },
+      "inputs": [],
+      "artifacts": [
+        {
+          "name": "code",
+          "sha256": "c6c33f4fb63bcebf2b4a17067925ac34835a3aea80da77d7c3e8128713a824a6"
+        },
+        {
+          "name": "line_hash",
+          "sha256": "9829c846ff78d10cec48a68afe42ca1c64bd5b89d1243a5cac32ad0f05be60ad"
+        }
+      ],
+      "verdict": "candidate",
+      "parent_id": null,
+      "bundle_version": "1"
+    },
+    {
+      "evidence_id": "EB-9697e7aa19d7dbf05a81f9a38bc511bdecc7a037642bcc09e24aaad25913bb06",
+      "stage": "static_scan",
+      "source": {
+        "root": "C:\\Projects\\OpenHarmony\\commonlibrary\\utils_lite\\timer_task",
+        "file": "include\\nativeapi_timer_task.h",
+        "line": 9
+      },
+      "environment": {
+        "execution": "none",
+        "network": "disabled"
+      },
+      "inputs": [],
+      "artifacts": [
+        {
+          "name": "code",
+          "sha256": "967aa9a441df719949d29db7f08bf62600097723baf0b7df01aacf0857e82b46"
+        },
+        {
+          "name": "line_hash",
+          "sha256": "e862f18d7106266d8f67fde5477514d58678001b5b2ceb2cf696ae4a6d8f122e"
+        }
+      ],
+      "verdict": "candidate",
+      "parent_id": null,
+      "bundle_version": "1"
+    },
+    {
+      "evidence_id": "EB-de24a26428a21ba47c929e0a095178fa26e49d80e4dfa3ef182b7e13e97c6309",
+      "stage": "static_scan",
+      "source": {
+        "root": "C:\\Projects\\OpenHarmony\\commonlibrary\\utils_lite\\timer_task",
+        "file": "include\\nativeapi_timer_task.h",
+        "line": 10
+      },
+      "environment": {
+        "execution": "none",
+        "network": "disabled"
+      },
+      "inputs": [],
+      "artifacts": [
+        {
+          "name": "code",
+          "sha256": "91da6735c27a6cddbae201b5d980d3b7be8a1001172585324ad9b0507cc359ef"
+        },
+        {
+          "name": "line_hash",
+          "sha256": "0c3abe3a6d70a46287dc810f262c3b5d83cca00805e3d8db4639b2df6a06904a"
+        }
+      ],
+      "verdict": "candidate",
+      "parent_id": null,
+      "bundle_version": "1"
+    },
+    {
+      "evidence_id": "EB-cb17c945a5b45f99096d04a28f4cb86a3ca462b7c0b6439bebf75ea9d267ff5d",
+      "stage": "static_scan",
+      "source": {
+        "root": "C:\\Projects\\OpenHarmony\\commonlibrary\\utils_lite\\timer_task",
+        "file": "include\\nativeapi_timer_task.h",
+        "line": 11
+      },
+      "environment": {
+        "execution": "none",
+        "network": "disabled"
+      },
+      "inputs": [],
+      "artifacts": [
+        {
+          "name": "code",
+          "sha256": "01e8cb92ae136cd3df2f25ad8b498f0459a76d0d70cdf829dd7b79da780e3dea"
+        },
+        {
+          "name": "line_hash",
+          "sha256": "9005d219d725e18281af1c361aaafa2b86c2409bc2e1a5b9cfca66834a79bc5b"
+        }
+      ],
+      "verdict": "candidate",
+      "parent_id": null,
+      "bundle_version": "1"
+    },
+    {
+      "evidence_id": "EB-e574d20b39ae32125e82d90904606cf241dba21ad499340ce85d5656d4c71ad1",
+      "stage": "static_scan",
+      "source": {
+        "root": "C:\\Projects\\OpenHarmony\\commonlibrary\\utils_lite\\timer_task",
+        "file": "include\\nativeapi_timer_task.h",
+        "line": 12
+      },
+      "environment": {
+        "execution": "none",
+        "network": "disabled"
+      },
+      "inputs": [],
+      "artifacts": [
+        {
+          "name": "code",
+          "sha256": "3700e023ae11adc3e6733fbb0498129a12a9ad78b07e3113809f7a035966a505"
+        },
+        {
+          "name": "line_hash",
+          "sha256": "f6fba970b52bb72191ff4e1bf9b456d1c6c3890ebb657d818081dc160b7bc99b"
+        }
+      ],
+      "verdict": "candidate",
+      "parent_id": null,
+      "bundle_version": "1"
+    },
+    {
+      "evidence_id": "EB-b6280ab943f66bfe8a11ad9ea1a06326b6e82948d129a7eb0b2fd0e94ea068fd",
+      "stage": "static_scan",
+      "source": {
+        "root": "C:\\Projects\\OpenHarmony\\commonlibrary\\utils_lite\\timer_task",
+        "file": "include\\nativeapi_timer_task.h",
+        "line": 13
+      },
+      "environment": {
+        "execution": "none",
+        "network": "disabled"
+      },
+      "inputs": [],
+      "artifacts": [
+        {
+          "name": "code",
+          "sha256": "13f644705d05758501509a7e1e416a19bd632f835b157ae490c19df91f75c439"
+        },
+        {
+          "name": "line_hash",
+          "sha256": "befd67e412d6084e148116fc424e1a3ad9a958a21fbe16e01e8060b0b56fbfc3"
+        }
+      ],
+      "verdict": "candidate",
+      "parent_id": null,
+      "bundle_version": "1"
+    },
+    {
+      "evidence_id": "EB-f4d7c8dcfd62cbff57679db29f23c071519544d4ff5c19ea83b01f83e06d65f2",
+      "stage": "static_scan",
+      "source": {
+        "root": "C:\\Projects\\OpenHarmony\\commonlibrary\\utils_lite\\timer_task",
+        "file": "include\\nativeapi_timer_task.h",
+        "line": 25
+      },
+      "environment": {
+        "execution": "none",
+        "network": "disabled"
+      },
+      "inputs": [],
+      "artifacts": [
+        {
+          "name": "code",
+          "sha256": "223f5f7fd60089787afbd303c7a3ac0138a92ed8110f15d81a02a2ece8f8f9a0"
+        },
+        {
+          "name": "line_hash",
+          "sha256": "715f33c0aa82eda56ceb0d85892de2c9338f6b9f4044bc1531f8d886165c33a3"
+        }
+      ],
+      "verdict": "candidate",
+      "parent_id": null,
+      "bundle_version": "1"
+    },
+    {
+      "evidence_id": "EB-7ecc2473afd342e6020d978e6192d723009ee3ab89b01e40c60c1dad9ebc1bf5",
+      "stage": "static_scan",
+      "source": {
+        "root": "C:\\Projects\\OpenHarmony\\commonlibrary\\utils_lite\\timer_task",
+        "file": "include\\nativeapi_timer_task.h",
+        "line": 27
+      },
+      "environment": {
+        "execution": "none",
+        "network": "disabled"
+      },
+      "inputs": [],
+      "artifacts": [
+        {
+          "name": "code",
+          "sha256": "d45e72db831c73a9832ebd13fb0c627ed1d20834b85819bbfb0bcc2418251580"
+        },
+        {
+          "name": "line_hash",
+          "sha256": "30edb118b934dbd58352249fd14005b748ec8020844d65d9f829be766e6e10a9"
+        }
+      ],
+      "verdict": "candidate",
+      "parent_id": null,
+      "bundle_version": "1"
+    },
+    {
+      "evidence_id": "EB-0937dadf95f9036b13934ffed2f3c57341f105f095a5b5c187e13270583c8d51",
+      "stage": "static_scan",
+      "source": {
+        "root": "C:\\Projects\\OpenHarmony\\commonlibrary\\utils_lite\\timer_task",
+        "file": "include\\nativeapi_timer_task.h",
+        "line": 30
+      },
+      "environment": {
+        "execution": "none",
+        "network": "disabled"
+      },
+      "inputs": [],
+      "artifacts": [
+        {
+          "name": "code",
+          "sha256": "990e41f6c6c66f1b3c589f5c5d5098b5e9d9eda0ea7e959b09b0d4169afb292d"
+        },
+        {
+          "name": "line_hash",
+          "sha256": "71739676d3967adf50d2cdbefbe695d844d291f5cd07e99c21252ff6a4879c66"
+        }
+      ],
+      "verdict": "candidate",
+      "parent_id": null,
+      "bundle_version": "1"
+    },
+    {
+      "evidence_id": "EB-d32587ab71bd6d2e917e727c16d2439dc979adfd507a1ba910c3f4b6b5e21713",
+      "stage": "static_scan",
+      "source": {
+        "root": "C:\\Projects\\OpenHarmony\\commonlibrary\\utils_lite\\timer_task",
+        "file": "include\\nativeapi_timer_task.h",
+        "line": 31
+      },
+      "environment": {
+        "execution": "none",
+        "network": "disabled"
+      },
+      "inputs": [],
+      "artifacts": [
+        {
+          "name": "code",
+          "sha256": "30ad99a9abfe579a71bf53ac006fd8a11fc679862cb0f79d6c9a9312c74af1e7"
+        },
+        {
+          "name": "line_hash",
+          "sha256": "9dec0a10eb4e50ce6a8094a91ec0d03d7b32c7bc0fc3a2e0eee87204f2c91eac"
+        }
+      ],
+      "verdict": "candidate",
+      "parent_id": null,
+      "bundle_version": "1"
+    },
+    {
+      "evidence_id": "EB-a3db47cf9e5707d90e20a601340150dde6f103348fcb644e75b39ed780e5418e",
+      "stage": "static_scan",
+      "source": {
+        "root": "C:\\Projects\\OpenHarmony\\commonlibrary\\utils_lite\\timer_task",
+        "file": "include\\nativeapi_timer_task.h",
+        "line": 38
+      },
+      "environment": {
+        "execution": "none",
+        "network": "disabled"
+      },
+      "inputs": [],
+      "artifacts": [
+        {
+          "name": "code",
+          "sha256": "924cea07f9fb49b1d4483e9ce15d8a4ff65ea01ce86fbf3d56eae77afb470a11"
+        },
+        {
+          "name": "line_hash",
+          "sha256": "1132d82de925cc7eff9e71e42b551d63914806bb5833a5fde96129e05f66fa9d"
+        }
+      ],
+      "verdict": "candidate",
+      "parent_id": null,
+      "bundle_version": "1"
+    },
+    {
+      "evidence_id": "EB-777017fa66a7f0619625dbd27794630f40fe160d8b96cf91582c3d4163aa7786",
+      "stage": "static_scan",
+      "source": {
+        "root": "C:\\Projects\\OpenHarmony\\commonlibrary\\utils_lite\\timer_task",
+        "file": "include\\nativeapi_timer_task.h",
+        "line": 40
+      },
+      "environment": {
+        "execution": "none",
+        "network": "disabled"
+      },
+      "inputs": [],
+      "artifacts": [
+        {
+          "name": "code",
+          "sha256": "541c085b4a5f259ea87cac2fc852f3ad3bd52f3975d6a302f832c14a59f0eba2"
+        },
+        {
+          "name": "line_hash",
+          "sha256": "d003ff0069131ff59523b37fc99d6a89b69c314e3c969fecfb26341859a59857"
+        }
+      ],
+      "verdict": "candidate",
+      "parent_id": null,
+      "bundle_version": "1"
+    },
+    {
+      "evidence_id": "EB-e25314b507d18cb3762361552b19ff1bd7496f92f6aab198f11be14fe5919da4",
+      "stage": "static_scan",
+      "source": {
+        "root": "C:\\Projects\\OpenHarmony\\commonlibrary\\utils_lite\\timer_task",
+        "file": "src\\nativeapi_timer_task.c",
+        "line": 2
+      },
+      "environment": {
+        "execution": "none",
+        "network": "disabled"
+      },
+      "inputs": [],
+      "artifacts": [
+        {
+          "name": "code",
+          "sha256": "2d0b67c536b09adaa735b6039a57322b90539bccea4d5c8c2674bb3dc51de48d"
+        },
+        {
+          "name": "line_hash",
+          "sha256": "9963fcf2a66cd7cafdcf2493bb04c2556adf4dfebb560e1c54a2231cf6bd5729"
+        }
+      ],
+      "verdict": "candidate",
+      "parent_id": null,
+      "bundle_version": "1"
+    },
+    {
+      "evidence_id": "EB-12c7e0137b729db2a4396c7f813702aff0dac4ee8f7a5d01a6e310d12d9963bc",
+      "stage": "static_scan",
+      "source": {
+        "root": "C:\\Projects\\OpenHarmony\\commonlibrary\\utils_lite\\timer_task",
+        "file": "src\\nativeapi_timer_task.c",
+        "line": 3
+      },
+      "environment": {
+        "execution": "none",
+        "network": "disabled"
+      },
+      "inputs": [],
+      "artifacts": [
+        {
+          "name": "code",
+          "sha256": "cf41c0a84ba3e02f90dbd42d3db236791cb170d89cb0867ed1bfb1e48479ddea"
+        },
+        {
+          "name": "line_hash",
+          "sha256": "a7b60397c8a62d7f3d8325b4cdcdf2b8440bc9d99b5f31c383c21f2dd3410fd1"
+        }
+      ],
+      "verdict": "candidate",
+      "parent_id": null,
+      "bundle_version": "1"
+    },
+    {
+      "evidence_id": "EB-a5d7bb35c549f1c3a0dd455bc78152d2bd3b3ee2a26afeb8ce01082301854cdc",
+      "stage": "static_scan",
+      "source": {
+        "root": "C:\\Projects\\OpenHarmony\\commonlibrary\\utils_lite\\timer_task",
+        "file": "src\\nativeapi_timer_task.c",
+        "line": 4
+      },
+      "environment": {
+        "execution": "none",
+        "network": "disabled"
+      },
+      "inputs": [],
+      "artifacts": [
+        {
+          "name": "code",
+          "sha256": "817d42a7713965386e5cec70564a00435bcdd20d15a6c5f8e5f4f926d0304d06"
+        },
+        {
+          "name": "line_hash",
+          "sha256": "854a187d9ab864fde20d1354dbc8587d3e745bbe26c1aaded8cd34c22b362368"
+        }
+      ],
+      "verdict": "candidate",
+      "parent_id": null,
+      "bundle_version": "1"
+    },
+    {
+      "evidence_id": "EB-5730dbbe29c7cdf782a36e36350447e37ee5c1b107101c18a32a8ed76d6e3a20",
+      "stage": "static_scan",
+      "source": {
+        "root": "C:\\Projects\\OpenHarmony\\commonlibrary\\utils_lite\\timer_task",
+        "file": "src\\nativeapi_timer_task.c",
+        "line": 5
+      },
+      "environment": {
+        "execution": "none",
+        "network": "disabled"
+      },
+      "inputs": [],
+      "artifacts": [
+        {
+          "name": "code",
+          "sha256": "7b0d15c3d5f31e30cda913a29ddcea09fad72139d52479e936f4eef461182275"
+        },
+        {
+          "name": "line_hash",
+          "sha256": "4a6b706b98e1dc9f0fdb75ecd72051ad319ca983ef32f0dcf709d0dfc9aba648"
+        }
+      ],
+      "verdict": "candidate",
+      "parent_id": null,
+      "bundle_version": "1"
+    },
+    {
+      "evidence_id": "EB-66a93cebe97e253acdc2f9fc23e600340c4ee2da18038584809d2c90af280ff4",
+      "stage": "static_scan",
+      "source": {
+        "root": "C:\\Projects\\OpenHarmony\\commonlibrary\\utils_lite\\timer_task",
+        "file": "src\\nativeapi_timer_task.c",
+        "line": 7
+      },
+      "environment": {
+        "execution": "none",
+        "network": "disabled"
+      },
+      "inputs": [],
+      "artifacts": [
+        {
+          "name": "code",
+          "sha256": "c6c33f4fb63bcebf2b4a17067925ac34835a3aea80da77d7c3e8128713a824a6"
+        },
+        {
+          "name": "line_hash",
+          "sha256": "9829c846ff78d10cec48a68afe42ca1c64bd5b89d1243a5cac32ad0f05be60ad"
+        }
+      ],
+      "verdict": "candidate",
+      "parent_id": null,
+      "bundle_version": "1"
+    },
+    {
+      "evidence_id": "EB-883c048220d58aa0d9257967a69dce8997abbaaf0cc1286bd1946205bea73eb6",
+      "stage": "static_scan",
+      "source": {
+        "root": "C:\\Projects\\OpenHarmony\\commonlibrary\\utils_lite\\timer_task",
+        "file": "src\\nativeapi_timer_task.c",
+        "line": 9
+      },
+      "environment": {
+        "execution": "none",
+        "network": "disabled"
+      },
+      "inputs": [],
+      "artifacts": [
+        {
+          "name": "code",
+          "sha256": "967aa9a441df719949d29db7f08bf62600097723baf0b7df01aacf0857e82b46"
+        },
+        {
+          "name": "line_hash",
+          "sha256": "e862f18d7106266d8f67fde5477514d58678001b5b2ceb2cf696ae4a6d8f122e"
+        }
+      ],
+      "verdict": "candidate",
+      "parent_id": null,
+      "bundle_version": "1"
+    },
+    {
+      "evidence_id": "EB-a01ebfb24026c10a55f6d4f803613aa54739821950443c992d75d5b6a53848fb",
+      "stage": "static_scan",
+      "source": {
+        "root": "C:\\Projects\\OpenHarmony\\commonlibrary\\utils_lite\\timer_task",
+        "file": "src\\nativeapi_timer_task.c",
+        "line": 10
+      },
+      "environment": {
+        "execution": "none",
+        "network": "disabled"
+      },
+      "inputs": [],
+      "artifacts": [
+        {
+          "name": "code",
+          "sha256": "91da6735c27a6cddbae201b5d980d3b7be8a1001172585324ad9b0507cc359ef"
+        },
+        {
+          "name": "line_hash",
+          "sha256": "0c3abe3a6d70a46287dc810f262c3b5d83cca00805e3d8db4639b2df6a06904a"
+        }
+      ],
+      "verdict": "candidate",
+      "parent_id": null,
+      "bundle_version": "1"
+    },
+    {
+      "evidence_id": "EB-d017e4cdddda8c731e24e601616ae49e24d50cb487723ff025bf5c6c019fcf70",
+      "stage": "static_scan",
+      "source": {
+        "root": "C:\\Projects\\OpenHarmony\\commonlibrary\\utils_lite\\timer_task",
+        "file": "src\\nativeapi_timer_task.c",
+        "line": 11
+      },
+      "environment": {
+        "execution": "none",
+        "network": "disabled"
+      },
+      "inputs": [],
+      "artifacts": [
+        {
+          "name": "code",
+          "sha256": "01e8cb92ae136cd3df2f25ad8b498f0459a76d0d70cdf829dd7b79da780e3dea"
+        },
+        {
+          "name": "line_hash",
+          "sha256": "9005d219d725e18281af1c361aaafa2b86c2409bc2e1a5b9cfca66834a79bc5b"
+        }
+      ],
+      "verdict": "candidate",
+      "parent_id": null,
+      "bundle_version": "1"
+    },
+    {
+      "evidence_id": "EB-c52424a082384e87652dee5af1c9ccfed477b48afcfdb5e1dfec7d7f243ef367",
+      "stage": "static_scan",
+      "source": {
+        "root": "C:\\Projects\\OpenHarmony\\commonlibrary\\utils_lite\\timer_task",
+        "file": "src\\nativeapi_timer_task.c",
+        "line": 12
+      },
+      "environment": {
+        "execution": "none",
+        "network": "disabled"
+      },
+      "inputs": [],
+      "artifacts": [
+        {
+          "name": "code",
+          "sha256": "3700e023ae11adc3e6733fbb0498129a12a9ad78b07e3113809f7a035966a505"
+        },
+        {
+          "name": "line_hash",
+          "sha256": "f6fba970b52bb72191ff4e1bf9b456d1c6c3890ebb657d818081dc160b7bc99b"
+        }
+      ],
+      "verdict": "candidate",
+      "parent_id": null,
+      "bundle_version": "1"
+    },
+    {
+      "evidence_id": "EB-0708d548ea6644e62f5e2d7f1dc97a28aa41cfb6bf65d506284753115f351992",
+      "stage": "static_scan",
+      "source": {
+        "root": "C:\\Projects\\OpenHarmony\\commonlibrary\\utils_lite\\timer_task",
+        "file": "src\\nativeapi_timer_task.c",
+        "line": 13
+      },
+      "environment": {
+        "execution": "none",
+        "network": "disabled"
+      },
+      "inputs": [],
+      "artifacts": [
+        {
+          "name": "code",
+          "sha256": "13f644705d05758501509a7e1e416a19bd632f835b157ae490c19df91f75c439"
+        },
+        {
+          "name": "line_hash",
+          "sha256": "befd67e412d6084e148116fc424e1a3ad9a958a21fbe16e01e8060b0b56fbfc3"
+        }
+      ],
+      "verdict": "candidate",
+      "parent_id": null,
+      "bundle_version": "1"
+    },
+    {
+      "evidence_id": "EB-3178d896d203014b7b3dfb355c464333a6bb3959313cc9094c8865d4c2b508eb",
+      "stage": "static_scan",
+      "source": {
+        "root": "C:\\Projects\\OpenHarmony\\commonlibrary\\utils_lite\\timer_task",
+        "file": "src\\nativeapi_timer_task.c",
+        "line": 26
+      },
+      "environment": {
+        "execution": "none",
+        "network": "disabled"
+      },
+      "inputs": [],
+      "artifacts": [
+        {
+          "name": "code",
+          "sha256": "990e41f6c6c66f1b3c589f5c5d5098b5e9d9eda0ea7e959b09b0d4169afb292d"
+        },
+        {
+          "name": "line_hash",
+          "sha256": "71739676d3967adf50d2cdbefbe695d844d291f5cd07e99c21252ff6a4879c66"
+        }
+      ],
+      "verdict": "candidate",
+      "parent_id": null,
+      "bundle_version": "1"
+    },
+    {
+      "evidence_id": "EB-468fe971e4a083d9dddc50999e364224701b9018ed45589f032fcffd89d507f9",
+      "stage": "static_scan",
+      "source": {
+        "root": "C:\\Projects\\OpenHarmony\\commonlibrary\\utils_lite\\timer_task",
+        "file": "src\\nativeapi_timer_task.c",
+        "line": 27
+      },
+      "environment": {
+        "execution": "none",
+        "network": "disabled"
+      },
+      "inputs": [],
+      "artifacts": [
+        {
+          "name": "code",
+          "sha256": "d2751acee440ca095cf04c419c1375eec21d764da3dc27f8bdb47b7cbcc076f3"
+        },
+        {
+          "name": "line_hash",
+          "sha256": "5397d61ce186ebee5200aed81991f81f5bcfbef3fd3ab54d7a76f98bf396032e"
+        }
+      ],
+      "verdict": "candidate",
+      "parent_id": null,
+      "bundle_version": "1"
+    },
+    {
+      "evidence_id": "EB-fda3937f3df097b509b90772ed08b1098c966e7e637146936c5452dd1a6af533",
+      "stage": "static_scan",
+      "source": {
+        "root": "C:\\Projects\\OpenHarmony\\commonlibrary\\utils_lite\\timer_task",
+        "file": "src\\nativeapi_timer_task.c",
+        "line": 43
+      },
+      "environment": {
+        "execution": "none",
+        "network": "disabled"
+      },
+      "inputs": [],
+      "artifacts": [
+        {
+          "name": "code",
+          "sha256": "eae6a52752a070d58b9765905027b483cbfe10ccefb217e03006afcbce294791"
+        },
+        {
+          "name": "line_hash",
+          "sha256": "9f9fc67603eb4fb51b5009b78f669fb5db7a1b9c52c70c57150a11957dda0d89"
+        }
+      ],
+      "verdict": "candidate",
+      "parent_id": null,
+      "bundle_version": "1"
+    }
+  ],
+  "safety": {
+    "local_only": true,
+    "no_execution": true,
+    "no_network": true
+  },
+  "components": [
+    {
+      "name": "timer_task",
+      "path": ".",
+      "version": null,
+      "version_source": null,
+      "marker": "BUILD.gn"
+    }
+  ],
+  "known_vulnerability_matches": [
+    {
+      "component": "timer_task",
+      "version": null,
+      "matches": [],
+      "unresolved": []
+    }
+  ],
+  "workflow": {
+    "task_id": "e1cf1a90-2214-4280-ad2f-88d1131fd6cd",
+    "checkpoint_version": "1",
+    "state": "static_scan",
+    "retry_count": 0,
+    "last_error": null,
+    "result_sha256": null,
+    "source_snapshot_sha256": "17b503f23e08e29f1929d5007ed2642d83e99a83b238167da8e0d1987857cdef"
+  }
+}

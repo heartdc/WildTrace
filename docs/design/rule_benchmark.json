@@ -1,0 +1,84 @@
+[
+  {
+    "id": "memcpy_candidate",
+    "code": "void f(char *d,const char *s,int n){ memcpy(d,s,n); }",
+    "expected_cwe": [
+      "CWE-122"
+    ],
+    "label": "candidate",
+    "reason": "危险 API 或算术模式作为候选，需要后续证据",
+    "language": "C",
+    "component": "control"
+  },
+  {
+    "id": "strcpy_candidate",
+    "code": "void f(char *d,const char *s){ strcpy(d,s); }",
+    "expected_cwe": [
+      "CWE-122"
+    ],
+    "label": "candidate",
+    "reason": "危险 API 或算术模式作为候选，需要后续证据",
+    "language": "C",
+    "component": "parser_like"
+  },
+  {
+    "id": "reviewed_ignore",
+    "code": "void f(char *d,const char *s){ strcpy(d,s); } // ohvul:ignore",
+    "expected_cwe": [],
+    "label": "reviewed_suppressed",
+    "reason": "人工复核后保留抑制记录，不代表代码安全",
+    "language": "C",
+    "component": "control"
+  },
+  {
+    "id": "safe_length_copy",
+    "code": "void f(char *d,const char *s,size_t n){ if(n <= 16) memcpy(d,s,n); }",
+    "expected_cwe": [
+      "CWE-122"
+    ],
+    "label": "candidate_requires_context",
+    "reason": "需要调用链、长度约束或数据流上下文",
+    "language": "C",
+    "component": "parser_like"
+  },
+  {
+    "id": "non_memory_code",
+    "code": "int add(int a,int b){ return a+b; }",
+    "expected_cwe": [],
+    "label": "safe_control",
+    "reason": "人工确认存在边界或空值检查，规则仍可能只看到局部语法",
+    "language": "C",
+    "component": "control"
+  },
+  {
+    "id": "integer_length_candidate",
+    "code": "void *f(size_t n){ return malloc(n+1); }",
+    "expected_cwe": [
+      "CWE-190"
+    ],
+    "label": "candidate_requires_context",
+    "reason": "需要调用链、长度约束或数据流上下文",
+    "language": "C",
+    "component": "native_memory"
+  },
+  {
+    "id": "pointer_deref_candidate",
+    "code": "int f(int *p){ return *p; }",
+    "expected_cwe": [
+      "CWE-476"
+    ],
+    "label": "candidate_requires_context",
+    "reason": "需要调用链、长度约束或数据流上下文",
+    "language": "C",
+    "component": "native_memory"
+  },
+  {
+    "id": "checked_pointer_safe_control",
+    "code": "int f(int *p){ if(p != 0) return *p; return 0; }",
+    "expected_cwe": [],
+    "label": "safe_control",
+    "reason": "人工确认存在边界或空值检查，规则仍可能只看到局部语法",
+    "language": "C",
+    "component": "native_memory"
+  }
+]

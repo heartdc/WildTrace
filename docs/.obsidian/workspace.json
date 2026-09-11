@@ -1,0 +1,212 @@
+{
+  "main": {
+    "id": "6918d83c38b9092f",
+    "type": "split",
+    "children": [
+      {
+        "id": "4f4851552de3456e",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "c18b35c2602e280e",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "analysis/方案审查与优化建议.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "方案审查与优化建议"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "100556b27ff83d76",
+    "type": "split",
+    "children": [
+      {
+        "id": "77de42b08cfc077d",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "2daa112cabddddef",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-folder-closed",
+              "title": "文件列表"
+            }
+          },
+          {
+            "id": "e9915bd811ef5e90",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "搜索"
+            }
+          },
+          {
+            "id": "88cd78d8af317191",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-bookmark",
+              "title": "书签"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "0ccc0e7f7d97b4f1",
+    "type": "split",
+    "children": [
+      {
+        "id": "9a0fe7b991a73b23",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "b7747c53884e7d05",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "engineering/LOCAL_METADATA_CONTRACT.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "反向链接"
+            }
+          },
+          {
+            "id": "2ab7cac81b40aaf8",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "engineering/LOCAL_METADATA_CONTRACT.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "出链"
+            }
+          },
+          {
+            "id": "d844545d07ffec9a",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "标签"
+            }
+          },
+          {
+            "id": "6c06a6475da73060",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "添加笔记属性"
+            }
+          },
+          {
+            "id": "8251365c7cdf4643",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "engineering/LOCAL_METADATA_CONTRACT.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "大纲"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:打开快速切换": false,
+      "graph:查看关系图谱": false,
+      "canvas:新建白板": false,
+      "daily-notes:打开/创建今天的日记": false,
+      "templates:插入模板": false,
+      "command-palette:打开命令面板": false,
+      "bases:新建数据库": false
+    }
+  },
+  "active": "c18b35c2602e280e",
+  "lastOpenFiles": [
+    "status/PROJECT_STATE.md",
+    "references/硕士毕业论文_张鑫棋 (1).pdf",
+    "references/毕设论文最终版.pdf",
+    "engineering/PHASE4_LOCAL_VALIDATION.md",
+    "engineering/LOCAL_METADATA_CONTRACT.md",
+    "engineering/LEGACY_JOURNAL_COMPAT.md",
+    "engineering/FSM_CHECKPOINT.md",
+    "engineering/EVIDENCE_VALIDATION.md",
+    "engineering/ENGINEERING_PROMPT.md",
+    "engineering/ARCHIVE_LIFECYCLE.md",
+    "design/RULE_BENCHMARK.md",
+    "design/OpenHarmony漏洞挖掘_技术说明书与设计方案_v2_合并版.md",
+    "decisions/ADR-0001-0002.md",
+    "analysis/方案审查与优化建议.md",
+    "design/local-vulnerability-metadata.example.json",
+    "decisions",
+    "status",
+    "engineering"
+  ]
+}

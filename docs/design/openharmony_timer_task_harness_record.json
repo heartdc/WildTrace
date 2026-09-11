@@ -1,0 +1,15 @@
+{
+  "record": {
+    "schema": "0.1",
+    "case_id": "openharmony_timer_task",
+    "verdict": "undetermined",
+    "review_required": true,
+    "reproducible": true
+  },
+  "link": {
+    "schema": "0.1",
+    "task_id": "openharmony-timer-task",
+    "checkpoint_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "harness_record_sha256": "8c4cbc27eab438c188190325e8d2c5b0cbdfd8569236febf7fdb3425aaac9d64"
+  }
+}

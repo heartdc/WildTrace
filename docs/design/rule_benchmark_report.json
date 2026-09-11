@@ -1,0 +1,146 @@
+{
+  "benchmark_schema": "0.1",
+  "cases": 8,
+  "candidate_metrics": {
+    "tp": 5,
+    "fp": 2,
+    "fn": 0,
+    "precision": 0.7142857142857143,
+    "recall": 1.0
+  },
+  "rule_overlap_cases": 1,
+  "groups": {
+    "control::C": {
+      "cases": 3,
+      "tp": 1,
+      "fp": 0,
+      "fn": 0
+    },
+    "parser_like::C": {
+      "cases": 2,
+      "tp": 2,
+      "fp": 0,
+      "fn": 0
+    },
+    "native_memory::C": {
+      "cases": 3,
+      "tp": 2,
+      "fp": 2,
+      "fn": 0
+    }
+  },
+  "results": [
+    {
+      "id": "memcpy_candidate",
+      "label": "candidate",
+      "expected": [
+        "CWE-122"
+      ],
+      "observed": [
+        "CWE-122"
+      ],
+      "true_positive_candidates": 1,
+      "false_positive_candidates": 0,
+      "false_negative_candidates": 0,
+      "rule_overlap": false,
+      "reason": "\u5371\u9669 API \u6216\u7b97\u672f\u6a21\u5f0f\u4f5c\u4e3a\u5019\u9009\uff0c\u9700\u8981\u540e\u7eed\u8bc1\u636e"
+    },
+    {
+      "id": "strcpy_candidate",
+      "label": "candidate",
+      "expected": [
+        "CWE-122"
+      ],
+      "observed": [
+        "CWE-122"
+      ],
+      "true_positive_candidates": 1,
+      "false_positive_candidates": 0,
+      "false_negative_candidates": 0,
+      "rule_overlap": false,
+      "reason": "\u5371\u9669 API \u6216\u7b97\u672f\u6a21\u5f0f\u4f5c\u4e3a\u5019\u9009\uff0c\u9700\u8981\u540e\u7eed\u8bc1\u636e"
+    },
+    {
+      "id": "reviewed_ignore",
+      "label": "reviewed_suppressed",
+      "expected": [],
+      "observed": [],
+      "true_positive_candidates": 0,
+      "false_positive_candidates": 0,
+      "false_negative_candidates": 0,
+      "rule_overlap": false,
+      "reason": "\u4eba\u5de5\u590d\u6838\u540e\u4fdd\u7559\u6291\u5236\u8bb0\u5f55\uff0c\u4e0d\u4ee3\u8868\u4ee3\u7801\u5b89\u5168"
+    },
+    {
+      "id": "safe_length_copy",
+      "label": "candidate_requires_context",
+      "expected": [
+        "CWE-122"
+      ],
+      "observed": [
+        "CWE-122"
+      ],
+      "true_positive_candidates": 1,
+      "false_positive_candidates": 0,
+      "false_negative_candidates": 0,
+      "rule_overlap": false,
+      "reason": "\u9700\u8981\u8c03\u7528\u94fe\u3001\u957f\u5ea6\u7ea6\u675f\u6216\u6570\u636e\u6d41\u4e0a\u4e0b\u6587"
+    },
+    {
+      "id": "non_memory_code",
+      "label": "safe_control",
+      "expected": [],
+      "observed": [],
+      "true_positive_candidates": 0,
+      "false_positive_candidates": 0,
+      "false_negative_candidates": 0,
+      "rule_overlap": false,
+      "reason": "\u4eba\u5de5\u786e\u8ba4\u5b58\u5728\u8fb9\u754c\u6216\u7a7a\u503c\u68c0\u67e5\uff0c\u89c4\u5219\u4ecd\u53ef\u80fd\u53ea\u770b\u5230\u5c40\u90e8\u8bed\u6cd5"
+    },
+    {
+      "id": "integer_length_candidate",
+      "label": "candidate_requires_context",
+      "expected": [
+        "CWE-190"
+      ],
+      "observed": [
+        "CWE-190",
+        "CWE-476"
+      ],
+      "true_positive_candidates": 1,
+      "false_positive_candidates": 1,
+      "false_negative_candidates": 0,
+      "rule_overlap": true,
+      "reason": "\u9700\u8981\u8c03\u7528\u94fe\u3001\u957f\u5ea6\u7ea6\u675f\u6216\u6570\u636e\u6d41\u4e0a\u4e0b\u6587"
+    },
+    {
+      "id": "pointer_deref_candidate",
+      "label": "candidate_requires_context",
+      "expected": [
+        "CWE-476"
+      ],
+      "observed": [
+        "CWE-476"
+      ],
+      "true_positive_candidates": 1,
+      "false_positive_candidates": 0,
+      "false_negative_candidates": 0,
+      "rule_overlap": false,
+      "reason": "\u9700\u8981\u8c03\u7528\u94fe\u3001\u957f\u5ea6\u7ea6\u675f\u6216\u6570\u636e\u6d41\u4e0a\u4e0b\u6587"
+    },
+    {
+      "id": "checked_pointer_safe_control",
+      "label": "safe_control",
+      "expected": [],
+      "observed": [
+        "CWE-476"
+      ],
+      "true_positive_candidates": 0,
+      "false_positive_candidates": 1,
+      "false_negative_candidates": 0,
+      "rule_overlap": false,
+      "reason": "\u4eba\u5de5\u786e\u8ba4\u5b58\u5728\u8fb9\u754c\u6216\u7a7a\u503c\u68c0\u67e5\uff0c\u89c4\u5219\u4ecd\u53ef\u80fd\u53ea\u770b\u5230\u5c40\u90e8\u8bed\u6cd5"
+    }
+  ],
+  "disclaimer": "Candidate-rule statistics only; no vulnerability verdict."
+}
