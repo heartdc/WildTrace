@@ -16,6 +16,14 @@ def benchmark_matrix(scales=(1, 10, 100)):
     if not isinstance(scales, (list, tuple)) or not scales or any(not isinstance(x, int) or x < 1 or x > 10000 for x in scales): raise ValueError('invalid benchmark scales')
     return {'schema':'0.1','runs':[benchmark_scan(files=x) for x in scales], 'local_only':True, 'no_execution':True}
 
+def compare_throughput(baseline, current, max_regression=0.2):
+    if not isinstance(baseline, dict) or not isinstance(current, dict): raise ValueError('invalid performance result')
+    old, new = baseline.get('files_per_second'), current.get('files_per_second')
+    if not isinstance(old, (int,float)) or old <= 0 or not isinstance(new, (int,float)) or new < 0: raise ValueError('invalid throughput')
+    if not isinstance(max_regression, (int,float)) or not 0 <= max_regression < 1: raise ValueError('invalid regression threshold')
+    regression=(old-new)/old
+    return {'schema':'0.1','regression':regression,'within_budget':regression <= max_regression,'review_required':True,'local_only':True}
+
 def main():
     p=argparse.ArgumentParser(description=__doc__); p.add_argument('--files',type=int,default=10); p.add_argument('--lines',type=int,default=20); args=p.parse_args()
     try: print(json.dumps(benchmark_scan(files=args.files,lines=args.lines),ensure_ascii=False,indent=2)); return 0

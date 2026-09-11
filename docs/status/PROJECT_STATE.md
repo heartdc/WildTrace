@@ -557,3 +557,8 @@ validate_joint_files 统一拒绝 checkpoint/result/harness 符号链接输入�
 ## Phase 6 CI 性能 smoke 增量（2026-09-11）
 
 CI 新增 python -m ohvul.performance --files 1 --lines 1 smoke test，验证性能入口可运行且使用受限合成输入。
+
+
+## Phase 6 性能退化比较增量（2026-09-11）
+
+新增 compare_throughput，比较本地基线吞吐并在退化超过阈值时标记失败；结果要求人工审核，不自动改变安全结论。

@@ -834,3 +834,7 @@
 ## Phase 6 CI performance smoke
 
 - CI 增加受限性能基准 smoke test。
+
+## Phase 6 throughput regression comparison
+
+- 新增本地性能吞吐退化比较器和门控测试。
