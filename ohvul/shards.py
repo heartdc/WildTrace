@@ -12,9 +12,10 @@ def scan_shard(root, shard):
         raise ValueError('invalid shard')
     return scan_path(root, relative_files=files)
 
-def merge_shard_results(results, root):
+def merge_shard_results(results, root, max_shards=10000):
     """Deterministically merge shard scan results without changing findings."""
     root = str(Path(root).resolve())
+    if max_shards < 1 or len(results) > max_shards: raise ValueError('shard merge exceeds max_shards')
     findings = []
     bundles = []
     seen = set()

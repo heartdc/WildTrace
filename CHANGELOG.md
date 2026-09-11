@@ -668,3 +668,7 @@
 ## Safe verification link persistence
 
 - 新增验证关联记录的 schema 校验、独占持久化和覆盖保护。
+
+## Shard merge resource gate
+
+- 跨分片合并新增 max_shards 上限。
