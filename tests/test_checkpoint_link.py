@@ -32,3 +32,14 @@ class CheckpointLinkTests(unittest.TestCase):
             make_checkpoint_link(b'{}', self.record)
         with self.assertRaises(ValueError):
             make_checkpoint_link(self.raw, dict(self.record, verdict='confirmed'))
+
+    def test_joint_inputs_reject_symlink(self):
+        import os, tempfile
+        from pathlib import Path
+        from ohvul.verification_link import validate_joint_files
+        with tempfile.TemporaryDirectory() as d:
+            target = Path(d) / 'target'; target.write_bytes(self.raw)
+            link = Path(d) / 'link';
+            try: os.symlink(target, link)
+            except (OSError, NotImplementedError): self.skipTest('symlink unavailable')
+            with self.assertRaises(ValueError): validate_joint_files(link, target, target)

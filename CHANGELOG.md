@@ -796,3 +796,7 @@
 ## Phase 5 review API integration test
 
 - 验证影响报告可进入现有人工审核 API，保持不可确认结论。
+
+## Phase 4 joint input symlink gate
+
+- 联合验证入口拒绝符号链接输入。

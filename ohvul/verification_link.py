@@ -61,6 +61,8 @@ def load_link(path, harness_record):
 
 def validate_joint_files(checkpoint_path, result_path, harness_path):
     """Validate checkpoint, saved scan result, and review record as one chain."""
+    for value in (checkpoint_path, result_path, harness_path):
+        if Path(value).is_symlink(): raise ValueError('verification input must not be a symlink')
     checkpoint_bytes = Path(checkpoint_path).read_bytes()
     checkpoint = _checkpoint_from_bytes(checkpoint_bytes)
     result_path = Path(result_path)
