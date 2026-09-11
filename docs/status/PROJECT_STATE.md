@@ -364,3 +364,8 @@ merge_shard_results 新增 max_shards 上限，防止超大源码树结果无界
 ## 扫描网络隔离回归（2026-09-10）
 
 新增测试确认普通 scan_path 流程不会调用 urllib 或 LLM；网络仅存在于显式适配器入口。
+
+
+## 验证摘要格式门控增量（2026-09-10）
+
+verification_link.validate_link 现在严格要求 checkpoint_sha256 为 64 位小写十六进制摘要；新增伪造摘要拒绝测试。

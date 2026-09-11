@@ -676,3 +676,7 @@
 ## Scanner network isolation regression
 
 - 增加扫描流程不触发网络或 LLM 的回归测试。
+
+## Verification digest format gate
+
+- 验证关联严格校验 checkpoint SHA-256 格式。

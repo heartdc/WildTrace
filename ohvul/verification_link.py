@@ -1,5 +1,5 @@
 """Deterministic linkage between a workflow checkpoint and harness record."""
-import hashlib, json
+import hashlib, json, re
 from pathlib import Path
 
 def make_link(task_id, checkpoint_sha256, harness_record):
@@ -11,7 +11,8 @@ def make_link(task_id, checkpoint_sha256, harness_record):
             'harness_record_sha256':hashlib.sha256(json.dumps(harness_record,sort_keys=True,separators=(',',':')).encode()).hexdigest()}
 
 def validate_link(link, harness_record):
-    if not isinstance(link, dict) or link.get('schema') != '0.1' or not link.get('task_id'):
+    if (not isinstance(link, dict) or link.get('schema') != '0.1' or not link.get('task_id')
+            or not re.fullmatch(r'[0-9a-f]{64}', str(link.get('checkpoint_sha256', '')))):
         raise ValueError('invalid verification link')
     expected=hashlib.sha256(json.dumps(harness_record,sort_keys=True,separators=(',',':')).encode()).hexdigest()
     if link.get('harness_record_sha256') != expected: raise ValueError('harness record mismatch')
