@@ -804,3 +804,9 @@
 ## Phase 5 impact review batch
 
 - 分支影响报告接入人工审核批次创建流程，禁止最终确认。
+
+## Phase 5 bounded closure and Phase 6 start
+
+- Phase 5 允许范围闭环完成：分支影响、补丁校验、报告草稿和审核批次均已验证。
+- 123 项测试，119 通过、4 跳过。
+- 正式进入 Phase 6：性能评测、演示和交付准备。

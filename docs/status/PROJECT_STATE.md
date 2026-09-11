@@ -523,3 +523,7 @@ validate_joint_files 统一拒绝 checkpoint/result/harness 符号链接输入�
 ## Phase 5 审核批次接入增量（2026-09-11）
 
 新增 create_impact_review_batch，将影响报告投影接入现有 review/review_batch 链路；批次 final_vulnerability_verdict 固定为 false。专项测试通过。
+
+## Phase 5 允许范围闭环（2026-09-11）
+
+分支影响比较、补丁路径和 SHA-256 校验、影响报告草稿、任务绑定、人工审核批次接入及回归门禁均已完成并通过 123 项测试（119 通过、4 跳过）。这些能力只处理本地保存结果，不证明真实分支影响或漏洞成立。正式进入 Phase 6：性能评测、演示和交付准备。
