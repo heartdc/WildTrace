@@ -659,3 +659,8 @@ save_performance_result 先校验性能 schema，再独占创建 JSON，拒绝�
 ## 知识库来源摘要绑定增量（2026-09-12）
 
 知识库匹配结果新增 knowledge_base_sha256 和 source_record_sha256，绑定整体数据库与具体源记录摘要；测试通过。
+
+
+## 本地漏洞知识库契约文档（2026-09-12）
+
+新增 LOCAL_KNOWLEDGE_BASE.md，明确字段、exact/unresolved 匹配、摘要绑定和人工审核边界。

@@ -918,3 +918,7 @@
 ## Knowledge base source binding
 
 - CVE/CWE 匹配结果携带知识库和源记录摘要。
+
+## Local knowledge base contract documentation
+
+- 新增本地 CVE/CWE 知识库契约文档。
