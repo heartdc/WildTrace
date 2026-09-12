@@ -930,3 +930,28 @@
 ## Knowledge base file size gate
 
 - 本地知识库新增 16 MiB 文件大小限制。
+from pathlib import Path
+p=Path('docs/status/PROJECT_STATE.md')
+s=p.read_text(encoding='utf-8-sig')
+marker='## 本次已完成'
+idx=s.index(marker)
+head='''# 当前工程检查点
+
+## 当前有效状态（2026-09-12）
+
+- 阶段：Phase 6 性能评测和交付准备，Phase 4 与 Phase 5 的允许范围闭环已完成。
+- Phase 4：静态证据独立复核、合成 harness、FSM local_verification、checkpoint/result/harness 联合校验、源码快照绑定和人工审核门控已完成；不执行真实目标代码。
+- Phase 5：本地分片/结果比较、补丁路径和 SHA-256 校验、影响报告草稿、任务绑定与审核批次接入已完成；真实 Git 固定版本和提交区间 adapter 仍待实现。
+- Phase 6：性能基准、峰值内存、吞吐退化比较、性能快照、CI smoke 和演示文档已完成原型；真实授权 OpenHarmony 子树长期性能数据、最终用户手册和交付包仍待实现。
+- 最近验证：python -m unittest discover -s tests -q，共 139 项，135 通过、4 跳过。
+- 当前结论：项目是可运行的防御性 MVP，不是已完成的比赛成品；候选发现不等于漏洞确认，主机测试不等于 OpenHarmony 平台结论。
+- 后续顺序：先完成本地固定版本输入契约，再实现 Git adapter、补丁前后闭环、正式审核链和知识库接入，最后完成真实授权子树性能与交付材料。
+
+'''
+p.write_text(head+s[idx:],encoding='utf-8')
+PY
+@'
+## Current state and acceptance calibration
+
+- 统一 PROJECT_STATE 顶部有效口径，保留历史记录但明确 Phase 4/5 完成范围与 Phase 6 原型范围。
+- 最近全量测试为 139 项，135 通过、4 跳过。
