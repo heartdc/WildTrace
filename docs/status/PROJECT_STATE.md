@@ -605,3 +605,7 @@ CI 新增 python -m ohvul.performance --files 1 --lines 1 smoke test，验证性
 ## Phase 4 源码快照联合门控（2026-09-12）
 
 validate_joint_files 现在核对 checkpoint 与扫描结果的 source_snapshot_sha256，快照不一致时拒绝；新增测试通过。
+
+## Phase 4 快照联合门控回归（2026-09-12）
+
+全套测试 135 项，131 通过、4 跳过。source_snapshot_sha256 联合校验与完整工作流无回归；仍未执行真实目标代码。

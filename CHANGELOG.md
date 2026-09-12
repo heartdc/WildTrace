@@ -873,3 +873,8 @@
 ## Phase 4 source snapshot joint gate
 
 - 联合验证新增 checkpoint/result 源码快照摘要一致性校验。
+
+## Phase 4 source snapshot regression
+
+- 全套测试 135 项，131 通过、4 跳过。
+- 源码快照联合校验与完整工作流无回归。
