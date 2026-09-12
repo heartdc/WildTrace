@@ -93,3 +93,12 @@ class JointFileTests(unittest.TestCase):
             self.write_chain(scan)
             with self.assertRaisesRegex(ValueError, 'workflow'):
                 validate_joint_files(self.cp, self.result, self.harness)
+
+    def test_source_snapshot_mismatch_rejected(self):
+        raw = json.dumps(dict(self.scan, workflow={'task_id': 'synthetic-task', 'source_snapshot_sha256': 'a' * 64})).encode()
+        self.result.write_bytes(raw)
+        checkpoint = WorkflowCheckpoint('synthetic-task', state='local_verification', result_sha256=hashlib.sha256(raw).hexdigest(), source_snapshot_sha256='b' * 64)
+        cp_raw = json.dumps(checkpoint.to_dict()).encode(); self.cp.write_bytes(cp_raw)
+        self.harness.write_text(json.dumps({'record': self.record, 'link': make_checkpoint_link(cp_raw, self.record)}), encoding='utf-8')
+        with self.assertRaisesRegex(ValueError, 'source snapshot'):
+            validate_joint_files(self.cp, self.result, self.harness)

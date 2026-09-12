@@ -78,6 +78,8 @@ def load_verified_checkpoint(checkpoint_path, result_path, harness_path):
         raise ValueError('invalid scan result workflow')
     if result['workflow'].get('task_id') != checkpoint.task_id:
         raise ValueError('scan result task mismatch')
+    if checkpoint.source_snapshot_sha256 is not None and result['workflow'].get('source_snapshot_sha256') != checkpoint.source_snapshot_sha256:
+        raise ValueError('source snapshot mismatch')
     from .verify import validate_result
     validate_result(result)
     payload = json.loads(Path(harness_path).read_text(encoding='utf-8-sig'))

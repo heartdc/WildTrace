@@ -869,3 +869,7 @@
 ## Phase 6 bounded shard scheduler
 
 - 新增按 manifest 顺序的受控分片扫描调度。
+
+## Phase 4 source snapshot joint gate
+
+- 联合验证新增 checkpoint/result 源码快照摘要一致性校验。

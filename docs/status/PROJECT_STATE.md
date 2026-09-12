@@ -600,3 +600,8 @@ CI 新增 python -m ohvul.performance --files 1 --lines 1 smoke test，验证性
 ## Phase 6 受控分片调度增量（2026-09-11）
 
 新增 scan_manifest，按清单顺序逐片扫描并通过 max_shards 门控后合并结果；新增调度测试通过。尚未覆盖长期性能和取消/超时。
+
+
+## Phase 4 源码快照联合门控（2026-09-12）
+
+validate_joint_files 现在核对 checkpoint 与扫描结果的 source_snapshot_sha256，快照不一致时拒绝；新增测试通过。

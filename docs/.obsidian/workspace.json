@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "engineering/LEGACY_JOURNAL_COMPAT.md",
+                "file": "analysis/COMPETITION_GAP_ANALYSIS.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "LEGACY_JOURNAL_COMPAT"
+              "title": "COMPETITION_GAP_ANALYSIS"
             }
           }
         ]
@@ -190,6 +190,8 @@
   },
   "active": "c18b35c2602e280e",
   "lastOpenFiles": [
+    "engineering/LEGACY_JOURNAL_COMPAT.md",
+    "analysis/COMPETITION_GAP_ANALYSIS.md",
     "engineering/LOCAL_DEMO.md",
     "engineering/PHASE6_PERFORMANCE.md",
     "engineering/PHASE4_ACCEPTANCE.md",
@@ -200,7 +202,6 @@
     "references/毕设论文最终版.pdf",
     "engineering/PHASE4_LOCAL_VALIDATION.md",
     "engineering/LOCAL_METADATA_CONTRACT.md",
-    "engineering/LEGACY_JOURNAL_COMPAT.md",
     "engineering/FSM_CHECKPOINT.md",
     "engineering/EVIDENCE_VALIDATION.md",
     "engineering/ENGINEERING_PROMPT.md",
