@@ -890,3 +890,7 @@
 ## Phase 6 performance result recovery
 
 - 性能基线支持读取并重新校验。
+
+## Phase 6 performance report formatting
+
+- 新增性能矩阵 Markdown 报告生成函数。

@@ -46,6 +46,15 @@ def load_performance_result(path):
     validate_performance_result(result)
     return result
 
+def format_performance_report(matrix):
+    if not isinstance(matrix, dict) or matrix.get('schema') != '0.1' or not isinstance(matrix.get('runs'), list): raise ValueError('invalid performance matrix')
+    lines=['# Synthetic Performance Benchmark','', '| Files | Seconds | Files per second | Peak memory bytes | Findings |','|---:|---:|---:|---:|---:|']
+    for run in matrix['runs']:
+        validate_performance_result(run)
+        lines.append(f"| {run['files']} | {run['elapsed_seconds']:.6f} | {run['files_per_second']:.2f} | {run['peak_memory_bytes']} | {run['findings']} |")
+    lines += ['', 'Results are synthetic, local-only measurements and do not establish a vulnerability verdict.']
+    return '\n'.join(lines) + '\n'
+
 def main():
     p=argparse.ArgumentParser(description=__doc__); p.add_argument('--files',type=int,default=10); p.add_argument('--lines',type=int,default=20); args=p.parse_args()
     try:

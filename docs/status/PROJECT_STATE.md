@@ -624,3 +624,8 @@ save_performance_result 先校验性能 schema，再独占创建 JSON，拒绝�
 ## Phase 6 性能结果恢复增量（2026-09-12）
 
 新增 load_performance_result，读取后重新执行性能 schema 校验，支持基线安全恢复；测试通过。
+
+
+## Phase 6 性能报告格式化增量（2026-09-12）
+
+新增 format_performance_report，将性能矩阵格式化为包含耗时、吞吐、峰值内存和候选数的 Markdown；报告明确为合成本地测量。
