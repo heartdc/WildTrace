@@ -947,10 +947,6 @@ head='''# 当前工程检查点
 - 当前结论：项目是可运行的防御性 MVP，不是已完成的比赛成品；候选发现不等于漏洞确认，主机测试不等于 OpenHarmony 平台结论。
 - 后续顺序：先完成本地固定版本输入契约，再实现 Git adapter、补丁前后闭环、正式审核链和知识库接入，最后完成真实授权子树性能与交付材料。
 
-'''
-p.write_text(head+s[idx:],encoding='utf-8')
-PY
-@'
 ## Current state and acceptance calibration
 
 - 统一 PROJECT_STATE 顶部有效口径，保留历史记录但明确 Phase 4/5 完成范围与 Phase 6 原型范围。
