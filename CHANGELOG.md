@@ -963,3 +963,7 @@ head='''# 当前工程检查点
 ## Phase 5 Git scope digest binding
 
 - Git scope record 新增 observed_branch 和确定性 scope_sha256。
+
+## Phase 5 local commit range
+
+- 新增本地 Git 提交区间和变更文件读取。

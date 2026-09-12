@@ -31,3 +31,11 @@ def inspect_revision(scope):
     import hashlib, json
     record['scope_sha256']=hashlib.sha256(json.dumps(record,sort_keys=True,separators=(',',':')).encode()).hexdigest()
     return record
+
+def inspect_range(scope):
+    normalized=validate_scope(scope); root=normalized['source_root']
+    try:
+        commits=subprocess.run(['git','-C',root,'log',normalized['revision'],'--since',normalized['since'],'--until',normalized['until'],'--format=%H'],check=True,capture_output=True,text=True,timeout=30).stdout.splitlines()
+        changed=subprocess.run(['git','-C',root,'log',normalized['revision'],'--since',normalized['since'],'--until',normalized['until'],'--name-only','--format='],check=True,capture_output=True,text=True,timeout=30).stdout.splitlines()
+    except (OSError, subprocess.SubprocessError) as exc: raise ValueError('local git range inspection failed') from exc
+    return {'schema':'0.1','scope':normalized,'commits':commits,'changed_files':sorted({x for x in changed if x.strip()}),'local_only':True}
