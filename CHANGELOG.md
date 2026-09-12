@@ -959,3 +959,7 @@ head='''# 当前工程检查点
 ## Phase 5 local Git adapter
 
 - 新增本地 revision、parent 和 changed_files 读取适配器。
+
+## Phase 5 Git scope digest binding
+
+- Git scope record 新增 observed_branch 和确定性 scope_sha256。

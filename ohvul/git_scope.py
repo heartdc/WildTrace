@@ -26,4 +26,8 @@ def inspect_revision(scope):
     parents=git('rev-list','--parents','-n','1',commit).split()[1:]
     parent=parents[0] if parents else None
     changed=git('diff-tree','--no-commit-id','--name-only','-r',commit).splitlines()
-    return {'schema':'0.1','scope':normalized,'commit':commit,'parent':parent,'changed_files':changed,'local_only':True}
+    observed_branch=git('branch','--show-current')
+    record={'schema':'0.1','scope':normalized,'commit':commit,'parent':parent,'observed_branch':observed_branch,'changed_files':changed,'local_only':True}
+    import hashlib, json
+    record['scope_sha256']=hashlib.sha256(json.dumps(record,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+    return record

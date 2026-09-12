@@ -684,3 +684,8 @@ save_performance_result 先校验性能 schema，再独占创建 JSON，拒绝�
 ## Phase 5 本地 Git adapter 增量（2026-09-12）
 
 新增 git_scope.inspect_revision，使用无 shell 的本地 git 命令读取 commit、父提交和变更文件；新增本地 HEAD 检查测试。
+
+
+## Phase 5 Git scope 摘要绑定增量（2026-09-12）
+
+Git adapter 记录 observed_branch 和 changed_files，并生成 scope_sha256 绑定范围记录；测试通过。
