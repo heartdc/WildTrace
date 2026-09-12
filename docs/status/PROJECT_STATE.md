@@ -1,31 +1,15 @@
 # 当前工程检查点
 
-## 最新增量：联合验证单次读取与 CLI 行为测试
+## 当前有效状态（2026-09-12）
 
-- 当前工作：Phase 6 交付检查中修补 Phase 4 验证依赖，未宣布项目完成。
-- 已完成：validate_joint_files 对扫描结果只读取一次，摘要和 JSON 解析使用同一份字节；无效 workflow 和 harness envelope 明确拒绝。
-- 验证：python -m unittest tests.test_joint_files tests.test_checkpoint_link tests.test_verification_link -q；11 项，10 通过、1 项符号链接能力跳过。git diff --check 通过。
-- 修改：ohvul/verification_link.py、tests/test_joint_files.py、本文件和 CHANGELOG.md。
-- 输入与边界：只使用临时合成 JSON；不读取真实源码、不联网、不执行目标程序、不创建真实审核记录。
-- 未完成：成功测试证明文件关联一致，不证明 harness 执行或漏洞复现。真实源码快照复核、FSM 迁移强制门控、阶段验收仍需补齐。下一步处理这些依赖，而非重复 CI 查询。
-
-## 最新校正：检查点实际内容绑定
-
-- 阶段：修补 Phase 4 未完成依赖；已有 Phase 5 原型保留，不再用旧清单宣称 Phase 4 全部验收通过。
-- 本轮进展：增加实际检查点字节、schema、local_verification 状态、任务 ID 与 harness 记录的联合校验；抽取复用 validate_checkpoint_data，避免读取两次文件造成摘要/解析来源不一致。
-- 验证命令：python -m unittest tests.test_checkpoint_link tests.test_verification_link tests.test_workflow -q；38 项通过。
-- 输入：仅合成检查点字节和合成记录；没有读取目标源码、使用 API key、调用 LLM 或推送外部仓库。
-- 已修改：ohvul/verification_link.py、ohvul/workflow/fsm.py、tests/test_checkpoint_link.py、本文件、CHANGELOG.md、docs/engineering/PHASE4_ACCEPTANCE.md。
-- 未完成：联合校验尚未接入生产 CLI/FSM 迁移；源码/扫描结果/验证记录尚未形成完整联合绑定。摘要一致性不是身份认证，也不是漏洞复现。
-- 下一步：接入文件级验证入口并拒绝旧全零摘要样本作为验收证据；随后补齐迁移门控。
-- 无安全策略阻断。以下为历史记录，不代表以上缺口已解决。
-
-- 阶段：Phase 3 静态候选与证据模型，仍在进行。
-- 检查点：STATIC_BENCHMARK_TAXONOMY_IMPLEMENTED。
-- 最近增量：独立封存标记生成命令及归档验证复用。
-- 验证：python -m unittest discover -s tests -q，共 81 项，79 通过、2 跳过（当前 Windows 环境不能创建符号链接）。
-- 没有在运行的后台任务，没有安全策略阻断。
-- 上轮属于有效进展；总体目标未完成，不能用工具数量或测试通过推断参赛能力已完成。
+- 阶段：Phase 6 性能评测和交付准备；Phase 4、Phase 5 的允许范围闭环已完成，完整比赛成品仍未完成。
+- Phase 4：静态证据独立复核、合成 harness、FSM `local_verification`、checkpoint/result/harness 联合校验、源码快照绑定和人工审核门控已完成；真实目标代码执行仍禁止。
+- Phase 5：本地固定版本输入契约、Git revision/range 原型、分支影响比较、补丁路径与 SHA-256 校验、影响报告草稿和审核批次接入已完成原型；真实提交区间到补丁有效性的完整闭环仍未完成。
+- Phase 6：性能基准、峰值内存、吞吐退化比较、性能快照、CI smoke 和演示文档已完成原型；完整授权 OpenHarmony 子树长期评测、最终用户手册、视频和交付包仍未完成。
+- 最近验证：`python -m unittest discover -s tests -q`，143 项，139 通过、4 跳过。
+- 当前结论：项目是可运行的防御性 MVP 和比赛候选原型，不是已完成的比赛成品；候选发现不等于漏洞确认，主机测试不等于 OpenHarmony 平台结论。
+- 后续顺序：先把本地知识库接入扫描主流程，再完善固定版本/分支/补丁证据链，随后扩展少量高价值语义规则，最后完成真实授权子树性能评测和交付材料。
+- 历史记录说明：本文件以下条目为追加式历史记录；如与本节冲突，以本节为准。历史条目不得作为已完成能力的单独证据。
 
 ## 本次已完成
 

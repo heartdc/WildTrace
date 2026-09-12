@@ -967,3 +967,6 @@ head='''# 当前工程检查点
 ## Phase 5 local commit range
 
 - 新增本地 Git 提交区间和变更文件读取。
+## State checkpoint calibration
+
+- 统一 PROJECT_STATE.md 顶部当前有效阶段、完成范围、未完成项和最新测试数字；保留追加式历史记录。
