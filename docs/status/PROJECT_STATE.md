@@ -674,3 +674,8 @@ save_performance_result 先校验性能 schema，再独占创建 JSON，拒绝�
 ## 知识库文件大小门控增量（2026-09-12）
 
 知识库加载新增 16 MiB 文件大小上限，超限输入在解析前拒绝；测试通过。
+
+
+## Phase 5 本地固定版本输入契约增量（2026-09-12）
+
+新增 git_scope.validate_scope，校验本地 source_root、revision/branch、日期范围和组件范围，拒绝 URL/远程引用；新增 2 项测试。

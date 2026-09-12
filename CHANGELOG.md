@@ -951,3 +951,7 @@ head='''# 当前工程检查点
 
 - 统一 PROJECT_STATE 顶部有效口径，保留历史记录但明确 Phase 4/5 完成范围与 Phase 6 原型范围。
 - 最近全量测试为 139 项，135 通过、4 跳过。
+
+## Phase 5 fixed local Git scope contract
+
+- 新增本地固定版本、分支、日期和组件范围契约。
