@@ -609,3 +609,8 @@ validate_joint_files 现在核对 checkpoint 与扫描结果的 source_snapshot_
 ## Phase 4 快照联合门控回归（2026-09-12）
 
 全套测试 135 项，131 通过、4 跳过。source_snapshot_sha256 联合校验与完整工作流无回归；仍未执行真实目标代码。
+
+
+## Phase 6 峰值内存评测增量（2026-09-12）
+
+性能基准新增 tracemalloc 峰值内存 peak_memory_bytes 指标及非负校验；性能专项测试通过。
