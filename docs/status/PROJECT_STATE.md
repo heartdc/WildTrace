@@ -664,3 +664,8 @@ save_performance_result 先校验性能 schema，再独占创建 JSON，拒绝�
 ## 本地漏洞知识库契约文档（2026-09-12）
 
 新增 LOCAL_KNOWLEDGE_BASE.md，明确字段、exact/unresolved 匹配、摘要绑定和人工审核边界。
+
+
+## 知识库文本字段门控增量（2026-09-12）
+
+知识库校验新增 summary/component/source 非空约束，拒绝不完整来源记录；测试通过。

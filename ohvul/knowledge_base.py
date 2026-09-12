@@ -9,6 +9,7 @@ def load_records(path):
     for record in data['records']:
         required={'id','cwe','summary','component','affected_versions','fixed_versions','source'}
         if not isinstance(record,dict) or not required.issubset(record) or not isinstance(record['id'],str) or record['id'] in seen: raise ValueError('invalid knowledge record')
+        if any(not isinstance(record[k], str) or not record[k].strip() for k in ('summary','component','source')): raise ValueError('invalid knowledge text fields')
         if not re.fullmatch(r'CVE-\d{4}-\d{4,}', record['id']): raise ValueError('invalid vulnerability id')
         if not isinstance(record['cwe'],list) or any(not re.fullmatch(r'CWE-[1-9]\d*', str(x)) for x in record['cwe']): raise ValueError('invalid CWE')
         if not all(isinstance(record[k],list) and all(isinstance(x,str) for x in record[k]) for k in ('affected_versions','fixed_versions')): raise ValueError('invalid version lists')

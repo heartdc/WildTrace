@@ -922,3 +922,7 @@
 ## Local knowledge base contract documentation
 
 - 新增本地 CVE/CWE 知识库契约文档。
+
+## Knowledge base text field gate
+
+- 知识库新增文本字段完整性校验。
