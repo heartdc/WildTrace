@@ -1,0 +1,15 @@
+"""Versioned local vulnerability knowledge-base validation; no network access."""
+import hashlib, json, re
+
+def load_records(path):
+    data=json.loads(open(path, encoding='utf-8-sig').read())
+    if not isinstance(data, dict) or data.get('schema') != '0.1' or not isinstance(data.get('records'), list): raise ValueError('invalid knowledge base')
+    records=[]; seen=set()
+    for record in data['records']:
+        required={'id','cwe','summary','component','affected_versions','fixed_versions','source'}
+        if not isinstance(record,dict) or not required.issubset(record) or not isinstance(record['id'],str) or record['id'] in seen: raise ValueError('invalid knowledge record')
+        if not re.fullmatch(r'CVE-\d{4}-\d{4,}', record['id']): raise ValueError('invalid vulnerability id')
+        if not isinstance(record['cwe'],list) or any(not re.fullmatch(r'CWE-[1-9]\d*', str(x)) for x in record['cwe']): raise ValueError('invalid CWE')
+        if not all(isinstance(record[k],list) and all(isinstance(x,str) for x in record[k]) for k in ('affected_versions','fixed_versions')): raise ValueError('invalid version lists')
+        seen.add(record['id']); records.append(record)
+    return {'schema':'0.1','records':records,'records_sha256':hashlib.sha256(json.dumps(records,sort_keys=True,separators=(',',':')).encode()).hexdigest()}

@@ -898,3 +898,7 @@
 ## Phase 6 performance baseline snapshot
 
 - 新增合成性能基线 Markdown 快照。
+
+## Versioned local vulnerability knowledge base
+
+- 新增本地 CVE/CWE 知识库记录校验和整体摘要。

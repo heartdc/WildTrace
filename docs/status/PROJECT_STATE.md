@@ -634,3 +634,8 @@ save_performance_result 先校验性能 schema，再独占创建 JSON，拒绝�
 ## Phase 6 性能基线快照（2026-09-12）
 
 生成 docs/design/performance_baseline.md，记录 1/5/10 文件合成基准的耗时、吞吐、峰值内存和候选数；仅用于同环境回归，不代表真实平台性能。
+
+
+## 本地漏洞知识库增量（2026-09-12）
+
+新增 knowledge_base.load_records，校验版本化本地 CVE/CWE 记录、组件、受影响/修复版本和来源，并生成 records_sha256；不联网加载。新增 2 项测试通过。
