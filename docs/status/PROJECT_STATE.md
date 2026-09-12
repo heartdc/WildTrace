@@ -629,3 +629,8 @@ save_performance_result 先校验性能 schema，再独占创建 JSON，拒绝�
 ## Phase 6 性能报告格式化增量（2026-09-12）
 
 新增 format_performance_report，将性能矩阵格式化为包含耗时、吞吐、峰值内存和候选数的 Markdown；报告明确为合成本地测量。
+
+
+## Phase 6 性能基线快照（2026-09-12）
+
+生成 docs/design/performance_baseline.md，记录 1/5/10 文件合成基准的耗时、吞吐、峰值内存和候选数；仅用于同环境回归，不代表真实平台性能。

@@ -894,3 +894,7 @@
 ## Phase 6 performance report formatting
 
 - 新增性能矩阵 Markdown 报告生成函数。
+
+## Phase 6 performance baseline snapshot
+
+- 新增合成性能基线 Markdown 快照。
