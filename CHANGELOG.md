@@ -910,3 +910,7 @@
 ## Deterministic knowledge base matching
 
 - 新增组件和版本精确匹配函数。
+
+## Knowledge base unresolved matching
+
+- 知识库版本未精确匹配时保留 unresolved 候选。

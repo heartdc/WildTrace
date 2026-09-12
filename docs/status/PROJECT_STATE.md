@@ -649,3 +649,8 @@ save_performance_result 先校验性能 schema，再独占创建 JSON，拒绝�
 ## 知识库精确匹配增量（2026-09-12）
 
 新增 match_records，按组件和受影响版本执行确定性 exact 匹配，未命中返回空候选；测试通过。
+
+
+## 知识库 unresolved 匹配增量（2026-09-12）
+
+组件已知但版本未精确匹配时返回 unresolved 候选，避免静默漏报并保留人工复核入口；测试通过。
