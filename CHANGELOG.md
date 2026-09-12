@@ -902,3 +902,7 @@
 ## Versioned local vulnerability knowledge base
 
 - 新增本地 CVE/CWE 知识库记录校验和整体摘要。
+
+## Knowledge base resource handling
+
+- 修复知识库读取未关闭文件句柄问题。

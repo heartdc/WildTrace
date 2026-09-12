@@ -1,8 +1,9 @@
 """Versioned local vulnerability knowledge-base validation; no network access."""
 import hashlib, json, re
+from pathlib import Path
 
 def load_records(path):
-    data=json.loads(open(path, encoding='utf-8-sig').read())
+    data=json.loads(Path(path).read_text(encoding='utf-8-sig'))
     if not isinstance(data, dict) or data.get('schema') != '0.1' or not isinstance(data.get('records'), list): raise ValueError('invalid knowledge base')
     records=[]; seen=set()
     for record in data['records']:

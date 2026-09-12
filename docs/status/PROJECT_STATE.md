@@ -639,3 +639,8 @@ save_performance_result 先校验性能 schema，再独占创建 JSON，拒绝�
 ## 本地漏洞知识库增量（2026-09-12）
 
 新增 knowledge_base.load_records，校验版本化本地 CVE/CWE 记录、组件、受影响/修复版本和来源，并生成 records_sha256；不联网加载。新增 2 项测试通过。
+
+
+## 知识库资源管理修复（2026-09-12）
+
+知识库加载改用 Path.read_text，消除未关闭文件句柄警告；ResourceWarning 严格测试通过。
