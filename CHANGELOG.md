@@ -906,3 +906,7 @@
 ## Knowledge base resource handling
 
 - 修复知识库读取未关闭文件句柄问题。
+
+## Deterministic knowledge base matching
+
+- 新增组件和版本精确匹配函数。

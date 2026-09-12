@@ -14,3 +14,7 @@ def load_records(path):
         if not all(isinstance(record[k],list) and all(isinstance(x,str) for x in record[k]) for k in ('affected_versions','fixed_versions')): raise ValueError('invalid version lists')
         seen.add(record['id']); records.append(record)
     return {'schema':'0.1','records':records,'records_sha256':hashlib.sha256(json.dumps(records,sort_keys=True,separators=(',',':')).encode()).hexdigest()}
+
+def match_records(database, component, version):
+    if not isinstance(database, dict) or not isinstance(component, str) or not isinstance(version, str): raise ValueError('invalid match input')
+    return [{'id':r['id'],'cwe':r['cwe'],'match_level':'exact','source':r['source']} for r in database.get('records', []) if r.get('component') == component and version in r.get('affected_versions', [])]

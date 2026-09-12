@@ -644,3 +644,8 @@ save_performance_result 先校验性能 schema，再独占创建 JSON，拒绝�
 ## 知识库资源管理修复（2026-09-12）
 
 知识库加载改用 Path.read_text，消除未关闭文件句柄警告；ResourceWarning 严格测试通过。
+
+
+## 知识库精确匹配增量（2026-09-12）
+
+新增 match_records，按组件和受影响版本执行确定性 exact 匹配，未命中返回空候选；测试通过。
