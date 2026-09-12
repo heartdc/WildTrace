@@ -926,3 +926,7 @@
 ## Knowledge base text field gate
 
 - 知识库新增文本字段完整性校验。
+
+## Knowledge base file size gate
+
+- 本地知识库新增 16 MiB 文件大小限制。

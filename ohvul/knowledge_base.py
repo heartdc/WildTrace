@@ -3,7 +3,9 @@ import hashlib, json, re
 from pathlib import Path
 
 def load_records(path):
-    data=json.loads(Path(path).read_text(encoding='utf-8-sig'))
+    path=Path(path)
+    if path.stat().st_size > 16 * 1024 * 1024: raise ValueError('knowledge base exceeds 16 MiB')
+    data=json.loads(path.read_text(encoding='utf-8-sig'))
     if not isinstance(data, dict) or data.get('schema') != '0.1' or not isinstance(data.get('records'), list): raise ValueError('invalid knowledge base')
     records=[]; seen=set()
     for record in data['records']:

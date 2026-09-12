@@ -20,3 +20,8 @@ class KnowledgeBaseTests(unittest.TestCase):
   with tempfile.TemporaryDirectory() as d:
    p=Path(d)/'kb.json'; record={'id':'CVE-2024-1234','cwe':['CWE-120'],'summary':'x','component':'c','affected_versions':['1'],'fixed_versions':['2'],'source':''}; p.write_text(json.dumps({'schema':'0.1','records':[record]}))
    with self.assertRaises(ValueError): load_records(p)
+
+ def test_oversized_file_rejected(self):
+  with tempfile.TemporaryDirectory() as d:
+   p=Path(d)/'kb.json'; p.write_bytes(b'x' * (16*1024*1024+1))
+   with self.assertRaises(ValueError): load_records(p)
