@@ -914,3 +914,7 @@
 ## Knowledge base unresolved matching
 
 - 知识库版本未精确匹配时保留 unresolved 候选。
+
+## Knowledge base source binding
+
+- CVE/CWE 匹配结果携带知识库和源记录摘要。

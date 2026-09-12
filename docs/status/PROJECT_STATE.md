@@ -654,3 +654,8 @@ save_performance_result 先校验性能 schema，再独占创建 JSON，拒绝�
 ## 知识库 unresolved 匹配增量（2026-09-12）
 
 组件已知但版本未精确匹配时返回 unresolved 候选，避免静默漏报并保留人工复核入口；测试通过。
+
+
+## 知识库来源摘要绑定增量（2026-09-12）
+
+知识库匹配结果新增 knowledge_base_sha256 和 source_record_sha256，绑定整体数据库与具体源记录摘要；测试通过。

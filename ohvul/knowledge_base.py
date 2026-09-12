@@ -18,6 +18,8 @@ def load_records(path):
 def match_records(database, component, version):
     if not isinstance(database, dict) or not isinstance(component, str) or not isinstance(version, str): raise ValueError('invalid match input')
     candidates=[r for r in database.get('records', []) if r.get('component') == component]
-    exact=[{'id':r['id'],'cwe':r['cwe'],'match_level':'exact','source':r['source']} for r in candidates if version in r.get('affected_versions', [])]
+    def project(r, level):
+        return {'id':r['id'],'cwe':r['cwe'],'match_level':level,'source':r['source'],'knowledge_base_sha256':database.get('records_sha256'),'source_record_sha256':hashlib.sha256(json.dumps(r,sort_keys=True,separators=(',',':')).encode()).hexdigest()}
+    exact=[project(r,'exact') for r in candidates if version in r.get('affected_versions', [])]
     if exact: return exact
-    return [{'id':r['id'],'cwe':r['cwe'],'match_level':'unresolved','source':r['source']} for r in candidates]
+    return [project(r,'unresolved') for r in candidates]
