@@ -41,6 +41,11 @@ def save_performance_result(result, path):
     with path.open('x', encoding='utf-8', newline='\n') as stream:
         json.dump(result, stream, ensure_ascii=False, indent=2); stream.write('\n')
 
+def load_performance_result(path):
+    result=json.loads(Path(path).read_text(encoding='utf-8-sig'))
+    validate_performance_result(result)
+    return result
+
 def main():
     p=argparse.ArgumentParser(description=__doc__); p.add_argument('--files',type=int,default=10); p.add_argument('--lines',type=int,default=20); args=p.parse_args()
     try:

@@ -1,5 +1,5 @@
 import unittest
-from ohvul.performance import benchmark_scan, benchmark_matrix, compare_throughput, validate_performance_result, save_performance_result
+from ohvul.performance import benchmark_scan, benchmark_matrix, compare_throughput, validate_performance_result, save_performance_result, load_performance_result
 
 class PerformanceTests(unittest.TestCase):
  def test_bounded_synthetic_benchmark(self):
@@ -12,4 +12,5 @@ class PerformanceTests(unittest.TestCase):
 
 
   with self.assertRaises(ValueError): validate_performance_result(dict(benchmark_scan(files=1,lines=1), files_per_second=-1))
+
 

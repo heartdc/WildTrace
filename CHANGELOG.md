@@ -886,3 +886,7 @@
 ## Phase 6 performance result persistence
 
 - 新增性能结果安全落盘和覆盖保护。
+
+## Phase 6 performance result recovery
+
+- 性能基线支持读取并重新校验。

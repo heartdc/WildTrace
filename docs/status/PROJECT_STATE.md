@@ -619,3 +619,8 @@ validate_joint_files 现在核对 checkpoint 与扫描结果的 source_snapshot_
 ## Phase 6 性能结果安全落盘（2026-09-12）
 
 save_performance_result 先校验性能 schema，再独占创建 JSON，拒绝覆盖和符号链接；测试通过。
+
+
+## Phase 6 性能结果恢复增量（2026-09-12）
+
+新增 load_performance_result，读取后重新执行性能 schema 校验，支持基线安全恢复；测试通过。
