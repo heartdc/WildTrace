@@ -679,3 +679,8 @@ save_performance_result 先校验性能 schema，再独占创建 JSON，拒绝�
 ## Phase 5 本地固定版本输入契约增量（2026-09-12）
 
 新增 git_scope.validate_scope，校验本地 source_root、revision/branch、日期范围和组件范围，拒绝 URL/远程引用；新增 2 项测试。
+
+
+## Phase 5 本地 Git adapter 增量（2026-09-12）
+
+新增 git_scope.inspect_revision，使用无 shell 的本地 git 命令读取 commit、父提交和变更文件；新增本地 HEAD 检查测试。

@@ -955,3 +955,7 @@ head='''# 当前工程检查点
 ## Phase 5 fixed local Git scope contract
 
 - 新增本地固定版本、分支、日期和组件范围契约。
+
+## Phase 5 local Git adapter
+
+- 新增本地 revision、parent 和 changed_files 读取适配器。

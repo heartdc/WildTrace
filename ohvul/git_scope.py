@@ -1,6 +1,7 @@
 """Validation for fixed local Git analysis scopes; no network access."""
 from pathlib import Path
 import re
+import subprocess
 
 def validate_scope(scope):
     required={'source_root','revision','branch','since','until','components'}
@@ -15,3 +16,14 @@ def validate_scope(scope):
     if scope['since'] > scope['until']: raise ValueError('date range is reversed')
     if not isinstance(scope['components'],list) or not scope['components'] or any(not isinstance(x,str) or not x.strip() for x in scope['components']): raise ValueError('components must be nonempty strings')
     return {'source_root':str(root.resolve()),'revision':scope['revision'],'branch':scope['branch'],'since':scope['since'],'until':scope['until'],'components':list(dict.fromkeys(scope['components']))}
+
+def inspect_revision(scope):
+    normalized=validate_scope(scope); root=normalized['source_root']
+    def git(*args):
+        try: return subprocess.run(['git','-C',root,*args],check=True,capture_output=True,text=True,timeout=15).stdout.strip()
+        except (OSError, subprocess.SubprocessError) as exc: raise ValueError('local git inspection failed') from exc
+    commit=git('rev-parse','--verify',normalized['revision']+'^{commit}')
+    parents=git('rev-list','--parents','-n','1',commit).split()[1:]
+    parent=parents[0] if parents else None
+    changed=git('diff-tree','--no-commit-id','--name-only','-r',commit).splitlines()
+    return {'schema':'0.1','scope':normalized,'commit':commit,'parent':parent,'changed_files':changed,'local_only':True}
