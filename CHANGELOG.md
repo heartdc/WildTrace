@@ -882,3 +882,7 @@
 ## Phase 6 peak memory metric
 
 - 性能基准新增峰值内存采样和 schema 校验。
+
+## Phase 6 performance result persistence
+
+- 新增性能结果安全落盘和覆盖保护。

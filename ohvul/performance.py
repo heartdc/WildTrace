@@ -3,6 +3,7 @@ import tempfile, time, tracemalloc
 from pathlib import Path
 from .detect.scanner import scan_path
 import argparse, json
+from pathlib import Path
 
 def benchmark_scan(*, files=10, lines=20):
     if not isinstance(files,int) or not 1 <= files <= 10000 or not isinstance(lines,int) or not 1 <= lines <= 1000: raise ValueError('benchmark bounds exceeded')
@@ -32,6 +33,13 @@ def validate_performance_result(result):
     if not isinstance(result.get('peak_memory_bytes'), int) or result['peak_memory_bytes'] < 0: raise ValueError('invalid memory metric')
     if result.get('local_only') is not True or result.get('no_execution') is not True: raise ValueError('unsafe performance result')
     return True
+
+def save_performance_result(result, path):
+    validate_performance_result(result); path=Path(path)
+    if path.exists() or path.is_symlink(): raise FileExistsError('performance result already exists')
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open('x', encoding='utf-8', newline='\n') as stream:
+        json.dump(result, stream, ensure_ascii=False, indent=2); stream.write('\n')
 
 def main():
     p=argparse.ArgumentParser(description=__doc__); p.add_argument('--files',type=int,default=10); p.add_argument('--lines',type=int,default=20); args=p.parse_args()

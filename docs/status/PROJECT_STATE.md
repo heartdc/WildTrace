@@ -614,3 +614,8 @@ validate_joint_files 现在核对 checkpoint 与扫描结果的 source_snapshot_
 ## Phase 6 峰值内存评测增量（2026-09-12）
 
 性能基准新增 tracemalloc 峰值内存 peak_memory_bytes 指标及非负校验；性能专项测试通过。
+
+
+## Phase 6 性能结果安全落盘（2026-09-12）
+
+save_performance_result 先校验性能 schema，再独占创建 JSON，拒绝覆盖和符号链接；测试通过。
