@@ -18,6 +18,17 @@ class EngineProfileTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 load_profile(path)
 
+    def test_unsupported_engine_rejected(self):
+        import json, tempfile
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'profile.json'
+            path.write_text(json.dumps({'schema': 'engine-profile-0.1', 'component': 'x',
+                                        'source_repositories': {'x': 'a'*40},
+                                        'source_files': [], 'include_dirs': [], 'defines': [],
+                                        'extra_compile_args': [], 'engines': ['remote-engine']}))
+            with self.assertRaises(ValueError):
+                load_profile(path)
+
     def test_profile_source_validation_reports_missing_inputs(self):
         profile = {'source_files': ['a.c'], 'include_dirs': ['include']}
         result = validate_profile_sources(profile, Path('.'))

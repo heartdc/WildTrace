@@ -6,6 +6,8 @@ import subprocess
 from pathlib import Path
 from .engine_adapter import windows_to_wsl_path
 
+_PROFILE_ENGINES = {"clang-static-analyzer", "clang-tidy", "semgrep"}
+
 
 def load_profile(path: Path) -> dict:
     data = json.loads(Path(path).read_text(encoding="utf-8-sig"))
@@ -22,6 +24,8 @@ def load_profile(path: Path) -> dict:
             raise ValueError("profile paths must stay relative to source root")
     if not all(isinstance(x, str) and x for x in data["source_files"] + data["include_dirs"] + data["defines"] + data["extra_compile_args"] + data["engines"]):
         raise ValueError("profile lists must contain nonempty strings")
+    if any(x not in _PROFILE_ENGINES for x in data["engines"]):
+        raise ValueError("profile contains unsupported engine")
     return data
 
 
