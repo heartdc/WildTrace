@@ -10,6 +10,14 @@ class EngineProfileTests(unittest.TestCase):
         self.assertIn('-DABILITY_WINDOW_SUPPORT', args)
         self.assertTrue(any(x.startswith('-I/mnt/c/') for x in args))
 
+    def test_invalid_commit_rejected(self):
+        import json, tempfile
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'profile.json'
+            path.write_text(json.dumps({'schema': 'engine-profile-0.1', 'component': 'x', 'source_repositories': {'x': 'bad'}, 'source_files': [], 'include_dirs': [], 'defines': [], 'extra_compile_args': [], 'engines': []}))
+            with self.assertRaises(ValueError):
+                load_profile(path)
+
 
 if __name__ == '__main__':
     unittest.main()

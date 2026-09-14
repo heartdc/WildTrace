@@ -6,7 +6,7 @@
     "build": "71de884ecc242fa7757c5506e3a3606b9d51c5b0",
     "applications/sample/camera": "f41db9875943bc560444827d2effd5e16e4e821d",
     "foundation/ability/ability_lite": "ac5b043bc0b53cfa3c3da9e5f87c0ee5d14df803",
-    "foundation/communication/ipc": "a36ce279edb3045cef80853f3fb65c6005a5e48"
+    "foundation/communication/ipc": "a36ce279edb3045cef80853f3fb65c6005a5e48a"
   },
   "source_files": ["applications/sample/camera/cameraApp/cameraApp/src/main/cpp/camera_ability.cpp", "applications/sample/camera/cameraApp/cameraApp/src/main/cpp/camera_ability_slice.cpp", "applications/sample/camera/cameraApp/cameraApp/src/main/cpp/camera_manager.cpp"],
   "include_dirs": ["applications/sample/camera/cameraApp/cameraApp/src/main/cpp", "foundation/ability/ability_lite/interfaces/kits/ability_lite", "foundation/bundlemanager/bundle_framework_lite/interfaces/kits/bundle_lite", "foundation/ability/ability_lite/interfaces/kits/want_lite", "foundation/arkui/ui_lite/interfaces/kits", "foundation/arkui/ui_lite/interfaces/innerkits", "foundation/graphic/graphic_utils_lite/interfaces/kits", "foundation/graphic/graphic_utils_lite/interfaces/innerkits", "foundation/graphic/surface_lite/interfaces/kits", "foundation/multimedia/camera_lite/interfaces/kits", "foundation/multimedia/media_lite/interfaces/kits/recorder_lite", "foundation/multimedia/media_utils_lite/interfaces/kits", "third_party/bounds_checking_function/include", "base/hiviewdfx/hilog_lite/interfaces/native/kits/hilog", "foundation/communication/ipc/interfaces/innerkits/c/ipc/include", "foundation/communication/ipc/interfaces/innerkits/ipc_core/include"],
