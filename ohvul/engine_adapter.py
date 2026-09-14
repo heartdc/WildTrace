@@ -379,3 +379,35 @@ def run_wsl_clang_tidy(source_file: Path, source_root: Path, *,
     if completed.returncode != 0:
         result["stderr"] = completed.stderr[-8192:]
     return result
+
+
+def run_wsl_semgrep(source_root: Path, rule_file: Path, relative_files: tuple[str, ...], *,
+                    semgrep_root: str = "/home/airgap/semgrep-venv/bin/semgrep",
+                    timeout: int = 300) -> dict:
+    """Run Semgrep with a local rule file and explicit local file list."""
+    root, rule_file = Path(source_root).resolve(), Path(rule_file).resolve()
+    if not rule_file.is_file() or not rule_file.is_relative_to(root):
+        raise ValueError("Semgrep rule file must be inside source root")
+    files = []
+    for relative in relative_files:
+        candidate = (root / relative).resolve()
+        if not candidate.is_relative_to(root) or not candidate.is_file():
+            raise ValueError("Semgrep source file must be inside source root")
+        files.append(windows_to_wsl_path(candidate))
+    command = ["wsl.exe", "-d", "Ubuntu", "--", semgrep_root, "scan", "--config",
+               windows_to_wsl_path(rule_file), "--json", "--no-git-ignore", *files]
+    try:
+        completed = subprocess.run(command, capture_output=True, text=True,
+                                   timeout=timeout, shell=False, check=False)
+    except subprocess.TimeoutExpired:
+        return {"schema_version": "0.1", "engine": "semgrep", "status": "timeout",
+                "safety": {"local_only": True, "no_execution": True, "no_network": True}}
+    try:
+        raw = json.loads(completed.stdout)
+    except json.JSONDecodeError as exc:
+        raise ValueError("Semgrep output is not JSON") from exc
+    result = normalize_semgrep_json(raw, source_root=root, engine_version="1.177.0")
+    result["status"] = "completed" if completed.returncode == 0 else "input_error"
+    if completed.returncode != 0:
+        result["stderr"] = completed.stderr[-8192:]
+    return result
