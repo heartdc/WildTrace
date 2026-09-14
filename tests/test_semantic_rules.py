@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from ohvul.semantic_rules import length_candidates
+from ohvul.semantic_rules import length_candidates, cross_function_length_candidates
 
 
 class SemanticRuleTests(unittest.TestCase):
@@ -25,6 +25,21 @@ class SemanticRuleTests(unittest.TestCase):
             path = Path(directory) / 'a.c'
             path.write_text('void f(char *p) { strlen(p); }')
             self.assertEqual(length_candidates(path, root=path.parent), [])
+
+    def test_cross_function_length_path_is_linked(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'a.cpp').write_text('''void sink(char *dst, const char *src, size_t n) {
+  memcpy(dst, src, n);
+}
+void run(char *d, char *s) {
+  size_t n = strlen(s);
+  sink(d, s, n);
+}
+''')
+            found = cross_function_length_candidates(root, ['a.cpp'])
+            self.assertEqual(len(found), 1)
+            self.assertEqual(found[0]['callee']['callee'] if 'callee' in found[0]['callee'] else found[0]['caller']['callee'], 'sink')
 
 
 if __name__ == '__main__':

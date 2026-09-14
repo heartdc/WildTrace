@@ -53,3 +53,51 @@ def length_candidates(path: Path, *, root: Path | None = None) -> list[dict]:
             ],
         })
     return candidates
+
+
+def cross_function_length_candidates(root: Path, relative_files: list[str]) -> list[dict]:
+    """Link a caller's length expression to a callee copy sink conservatively."""
+    root = Path(root).resolve()
+    sources = {}
+    for relative in relative_files:
+        path = (root / relative).resolve()
+        if not path.is_relative_to(root) or not path.is_file():
+            raise ValueError("source file escapes root or is missing")
+        sources[relative] = path.read_text(encoding="utf-8", errors="replace").splitlines()
+    callees = {}
+    for relative, lines in sources.items():
+        for number, line in enumerate(lines, 1):
+            match = re.search(r"\b(?:void|int|size_t|bool|char\s*\*)\s+(\w+)\s*\([^)]*\b(\w+)\s*\)\s*\{", line)
+            if match:
+                name, size_param = match.groups()
+                for sink_line in range(number, min(len(lines), number + 80)):
+                    sink = _COPY.search(lines[sink_line])
+                    if sink and re.search(r"\b" + re.escape(size_param) + r"\b", sink.group(2)):
+                        callees[name] = (relative, number, sink_line + 1, size_param)
+                        break
+    candidates = []
+    for relative, lines in sources.items():
+        for number, line in enumerate(lines, 1):
+            for name, (callee_file, callee_start, sink_line, size_param) in callees.items():
+                if number == callee_start and relative == callee_file:
+                    continue
+                call = re.search(r"\b" + re.escape(name) + r"\s*\(([^)]*)\)", line)
+                if not call:
+                    continue
+                args = [x.strip() for x in call.group(1).split(",")]
+                if not args:
+                    continue
+                length_arg = args[-1]
+                prior = "\n".join(lines[max(0, number - 6):number + 1])
+                if not _LENGTH_SOURCE.search(prior):
+                    continue
+                candidates.append({
+                    "kind": "cross_function_length_propagation_candidate",
+                    "status": "candidate",
+                    "caller": {"source_file": relative, "call_line": number, "callee": name, "length_argument": length_arg},
+                    "callee": {"source_file": callee_file, "definition_line": callee_start, "sink_line": sink_line, "size_parameter": size_param},
+                    "evidence": [{"kind": "caller_length_source", "source_file": relative, "line": number - 1},
+                                 {"kind": "callee_copy_sink", "source_file": callee_file, "line": sink_line}],
+                    "review_questions": ["Does the caller length reach the callee unchanged?", "Is the destination capacity checked before the copy?"]
+                })
+    return candidates
