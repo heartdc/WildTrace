@@ -199,6 +199,28 @@ def normalize_sarif(raw: dict, *, engine: str, source_root: Path,
                               source_root=source_root, engine_version=engine_version)
 
 
+def normalize_semgrep_json(raw: dict, *, source_root: Path,
+                           engine_version: str = "unknown") -> dict:
+    """Convert Semgrep JSON results into candidate findings."""
+    if not isinstance(raw, dict) or not isinstance(raw.get("results", []), list):
+        raise ValueError("expected Semgrep JSON result")
+    findings = []
+    for item in raw["results"]:
+        if not isinstance(item, dict):
+            continue
+        start = item.get("start", {})
+        path = item.get("path")
+        if not isinstance(path, str) or not isinstance(start, dict):
+            continue
+        extra = item.get("extra", {})
+        findings.append({"rule": item.get("check_id", "semgrep-rule"),
+                         "description": extra.get("message", ""),
+                         "location": {"file": path, "line": start.get("line")},
+                         "evidence": {"severity": extra.get("severity", "WARNING")}})
+    return normalize_findings({"findings": findings}, engine="semgrep",
+                              source_root=source_root, engine_version=engine_version)
+
+
 def build_local_command(engine: str, executable: str, source_root: Path) -> list[str]:
     """Build an explicit local-only command; caller owns execution and review."""
     if engine not in SUPPORTED_ENGINES or not executable or Path(executable).name != engine:

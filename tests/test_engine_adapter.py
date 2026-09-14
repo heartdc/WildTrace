@@ -1,6 +1,6 @@
 import unittest
 from pathlib import Path
-from ohvul.engine_adapter import discover_local_engines, normalize_findings, normalize_sarif, normalize_clang_plist, normalize_clang_tidy_text, engine_result_to_audit_result, merge_engine_result, attach_knowledge_candidates, build_local_command, windows_to_wsl_path
+from ohvul.engine_adapter import discover_local_engines, normalize_findings, normalize_sarif, normalize_semgrep_json, normalize_clang_plist, normalize_clang_tidy_text, engine_result_to_audit_result, merge_engine_result, attach_knowledge_candidates, build_local_command, windows_to_wsl_path
 
 
 class EngineAdapterTests(unittest.TestCase):
@@ -20,6 +20,12 @@ class EngineAdapterTests(unittest.TestCase):
         raw = {"version": "2.1.0", "runs": [{"results": [{"ruleId": "R1", "message": {"text": "x"}, "locations": [{"physicalLocation": {"artifactLocation": {"uri": "a.c"}, "region": {"startLine": 4}}}]}]}]}
         result = normalize_sarif(raw, engine="semgrep", source_root=Path("."))
         self.assertEqual(result["findings"][0]["location"]["line"], 4)
+
+    def test_semgrep_json_normalization(self):
+        raw = {'results': [{'check_id': 'r', 'path': 'a.c', 'start': {'line': 3}, 'extra': {'message': 'x', 'severity': 'WARNING'}}]}
+        result = normalize_semgrep_json(raw, source_root=Path('.'), engine_version='1.177.0')
+        self.assertEqual(result['engine'], 'semgrep')
+        self.assertEqual(result['findings'][0]['location']['line'], 3)
 
     def test_command_is_local_and_allowlisted(self):
         self.assertEqual(build_local_command("semgrep", "semgrep", Path("."))[0], "semgrep")

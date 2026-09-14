@@ -46,6 +46,7 @@
 - 引擎结果合并增加源码快照一致性门控，拒绝跨快照混合证据。
 - 全量回归更新为 164 项通过、4 项环境相关跳过。
 - 全量回归更新为 170 项通过、4 项环境相关跳过。
+- WSL 隔离 venv 安装 Semgrep 1.177.0；cameraApp 本地规则扫描完成且无结果，合成 C 样本可产生候选；新增 Semgrep JSON 统一结果转换。
 - 在独立 `C:\Projects\OpenHarmony-complete` 工作区补齐 build、camera sample、ability_lite、bundle_framework_lite、ui_lite、graphic_utils_lite、IPC、camera_lite、media_lite 等直接依赖；提取 GN include/define 参数后，camera `camera_ability.cpp` Clang 状态由 input_error 变为 completed、0 条诊断。
 - 组件工作区关键提交已记录：build `71de884ecc242fa7757c5506e3a3606b9d51c5b0`、camera `f41db9875943bc560444827d2effd5e16e4e821d`、ability_lite `ac5b043bc0b53cfa3c3da9e5f87c0ee5d14df803`、IPC `a36ce279edb3045cef80853f3fb65c6005a5e48`。
 - 补齐 surface_lite、media_lite/recorder_lite、hilog_lite、bounds_checking_function 等头文件路径后，cameraApp 三个 C++ 源文件均完成 Clang 分析：3/3 completed、0 个输入错误、0 条诊断。
