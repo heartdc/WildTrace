@@ -1059,3 +1059,4 @@ head='''# 当前工程检查点
 - 对 OpenHarmony-complete camera_ability.cpp 执行本地 Semgrep 合成规则试验：扫描成功、0 条诊断，规则哈希已记录；结果仅作为组件级静态证据。
 - Semgrep profile 输出现在包含每个本地规则文件的 SHA-256，便于跨引擎结果复核和复现。
 - 新增 `docs/design/camera_semgrep_profile.json`，记录 camera 组件固定提交、规则相对路径和哈希；保持 candidate-only 与源码根内规则门禁。
+- 新增保守的 `ohvul.semantic_facts` 事实提取层及越界回归测试，为后续跨函数长度传播和生命周期规则提供统一输入；不升级为漏洞结论。
