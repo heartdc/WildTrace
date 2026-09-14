@@ -1,5 +1,7 @@
 # Changelog
 
+- 新增 `docs/design/camera_app_engine_profile.json`，固化 cameraApp 组件的提交、文件、include、define 和引擎参数。
+
 ## FSM CLI engine integration
 
 - 主 CLI 增加 `--engine-files-from`，在 static_scan 阶段运行受控 WSL Clang 分片并合并 EvidenceBundle。
