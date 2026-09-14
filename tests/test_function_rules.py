@@ -170,5 +170,158 @@ class ContractTests(unittest.TestCase):
         json.dumps(_scan(code), ensure_ascii=False)
 
 
+class PathSensitivityTests(unittest.TestCase):
+    """Counter-examples from PR review: NULL-check placement variants."""
+
+    def test_check_after_deref_still_reported(self):
+        code = ("int f(size_t n) {\n"
+                "  char *p = malloc(n);\n"
+                "  p[0] = 'x';\n"
+                "  if (p == NULL) {\n"
+                "    return -1;\n"
+                "  }\n"
+                "  return 0;\n"
+                "}\n")
+        self.assertIn("CWE-476", _cwes(_scan(code)))
+
+    def test_multiple_nullable_vars_both_reported(self):
+        code = ("void f(size_t n, const char *name) {\n"
+                "  char *p = malloc(n);\n"
+                "  char *v = getenv(name);\n"
+                "  p[0] = 'x';\n"
+                "  v[0] = 'y';\n"
+                "}\n")
+        result = _scan(code)
+        self.assertGreaterEqual(len([f for f in result["findings"]
+                                     if f["cwe_candidate"] == "CWE-476"]), 2)
+
+    @unittest.expectedFailure
+    def test_branch_only_check_is_known_false_negative(self):
+        """A NULL check inside one branch does not guard the fall-through deref.
+
+        Known limitation of the lightweight model (no CFG); documented in the
+        module docstring. If this ever starts passing, update the docstring.
+        """
+        code = ("int f(int flag, size_t n) {\n"
+                "  char *p = malloc(n);\n"
+                "  if (flag) {\n"
+                "    if (p == NULL) {\n"
+                "      return -1;\n"
+                "    }\n"
+                "  }\n"
+                "  p[0] = 'x';\n"
+                "  return 0;\n"
+                "}\n")
+        self.assertIn("CWE-476", _cwes(_scan(code)))
+
+
+class ParserBoundaryTests(unittest.TestCase):
+    def test_multiline_signature_extracted(self):
+        code = "int add(int a,\n    int b)\n{\n  return a + b;\n}\n"
+        functions = extract_functions(code)
+        self.assertEqual(len(functions), 1)
+        self.assertEqual(functions[0]["name"], "add")
+
+    def test_brace_in_string_literal_is_structural_nothing(self):
+        code = ("void f(void) {\n"
+                "  printf(\"trigger {\");\n"
+                "  char *s = \"} else {\";\n"
+                "}\n"
+                "void g(void) {\n"
+                "}\n")
+        self.assertEqual(len(extract_functions(code)), 2)
+
+    def test_block_comment_braces_ignored(self):
+        code = ("/* { if (x) { */\n"
+                "void f(size_t n) {\n"
+                "  char *p = malloc(n); /* } */\n"
+                "  p[0] = 0;\n"
+                "}\n"
+                "// }\n")
+        functions = extract_functions(code)
+        self.assertEqual(len(functions), 1)
+        self.assertEqual(functions[0]["name"], "f")
+
+    def test_preprocessor_lines_skipped(self):
+        code = ("#define LOOP(x) do { (x)++; } while (0)\n"
+                "void f(size_t n) {\n"
+                "  char *p = malloc(n);\n"
+                "  p[0] = 0;\n"
+                "}\n")
+        functions = extract_functions(code)
+        self.assertEqual(len(functions), 1)
+        self.assertEqual(functions[0]["name"], "f")
+
+
+class GuardPrecisionTests(unittest.TestCase):
+    def test_for_loop_comparison_does_not_suppress(self):
+        """Only if/else guards suppress; loop conditions bound nothing here."""
+        code = ("void f(int i, int w, int h) {\n"
+                "  for (i = 0; i < w; i++) {\n"
+                "    char *p = malloc(w * h);\n"
+                "    p[0] = 1;\n"
+                "  }\n"
+                "}\n")
+        self.assertIn("CWE-190", _cwes(_scan(code)))
+
+    def test_if_guard_still_suppresses(self):
+        code = ("void resize(int w, int h) {\n"
+                "  if (w > 0 && h > 0) {\n"
+                "    char *p = malloc(w * h);\n"
+                "    p[0] = 1;\n"
+                "  }\n"
+                "}\n")
+        self.assertNotIn("CWE-190", _cwes(_scan(code)))
+
+
+class FixedBufferLimitTests(unittest.TestCase):
+    def test_long_string_literal_reported(self):
+        code = 'void f(void) {\n  char buf[8];\n  strcpy(buf, "0123456789");\n}\n'
+        self.assertIn("CWE-121", _cwes(_scan(code)))
+
+    def test_short_literal_still_safe(self):
+        code = 'void f(void) {\n  char buf[8];\n  strcpy(buf, "0123");\n}\n'
+        self.assertNotIn("CWE-121", _cwes(_scan(code)))
+
+    def test_symbolic_array_size_not_tracked(self):
+        """Documented limitation: only numeric-size char arrays are tracked."""
+        code = ("void f(const char *src) {\n"
+                "  char buf[SIZE];\n"
+                "  strcpy(buf, src);\n"
+                "}\n")
+        self.assertNotIn("CWE-121", _cwes(_scan(code)))
+
+
+class RelativeFilesTests(unittest.TestCase):
+    def test_explicit_paths_only_read_those_files(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "a.c").write_text("void f(size_t n) {\n  char *p = malloc(n);\n  p[0] = 0;\n}\n")
+            (root / "b.c").write_text("void g(size_t n) {\n  char *q = malloc(n);\n  q[0] = 0;\n}\n")
+            result = scan_functions(root, relative_files=["a.c"])
+            self.assertEqual(result["scan"]["files_scanned"], 1)
+            self.assertTrue(all(f["location"]["file"] == "a.c" for f in result["findings"]))
+
+    def test_escape_entries_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for entry in ("../outside.c", "/absolute/path.c", "sub/../../escape.c"):
+                with self.assertRaises(ValueError):
+                    scan_functions(root, relative_files=[entry])
+
+
+class UnifiedSchemaTests(unittest.TestCase):
+    def test_output_passes_validate_result(self):
+        from ohvul.verify import validate_result
+        code = ("void f(size_t n, const char *src) {\n"
+                "  char *p = malloc(n * 2);\n"
+                "  char buf[32];\n"
+                "  strcpy(buf, src);\n"
+                "  p[0] = 0;\n"
+                "}\n")
+        result = _scan(code)
+        self.assertEqual(validate_result(result), len(result["evidence_bundles"]))
+
+
 if __name__ == "__main__":
     unittest.main()
