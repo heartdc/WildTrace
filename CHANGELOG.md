@@ -1064,3 +1064,4 @@ head='''# 当前工程检查点
 - 增加显式文件集合内的 caller→callee 长度传播候选关联，并保留人工复核问题。
 - 将语义长度候选投影到 schema 0.3 和 EvidenceBundle，绑定源码位置与快照摘要，并通过统一结果校验。
 - 主 CLI 增加显式 `--semantic-files-from`，将语义候选并入现有结果、快照和报告链；默认扫描不受影响。
+- 新增 `docs/design/CVE_KB_COLLECTION.md`，定义 CVE/CWE 本地知识库的字段、来源优先级、版本规范、双人复核、交付物和安全边界，供合作伙伴采集。
