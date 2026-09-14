@@ -1,5 +1,67 @@
 # Changelog
 
+## FSM CLI engine integration
+
+- 主 CLI 增加 `--engine-files-from`，在 static_scan 阶段运行受控 WSL Clang 分片并合并 EvidenceBundle。
+- 引擎输入错误随结果记录，不自动升级审核状态；受控 fixture CLI 验证 completed 路径通过。
+- 完成带 checkpoint、journal、report 的完整 fixture 验证：结果校验、报告绑定和 static_scan 状态均通过。
+- 引擎接入后运行完整测试集：155 项通过，4 项环境相关跳过；既有 FSM、报告、审核和归档测试保持通过。
+- 对 OpenHarmony 快照中的 7 个 bzip2 C 文件完成受控分片运行：7/7 完成、0 个输入错误、6 条候选；结果保持本地候选语义。
+- 为实际出现的 Clang 规则增加保守 CWE 候选映射：`unix.Malloc`→CWE-416、`DeprecatedOrUnsafeBufferHandling`→CWE-676；仅作为候选字段。
+- CWE 候选映射增加 `builtin_engine_rule_map` 来源和映射版本 `1`，并纳入 EvidenceBundle 校验。
+- 增加 `core.NullDereference`→CWE-476 候选映射，并用真实 Clang Analyzer 空指针诊断完成本地转换验证。
+- 引擎结果增加本地知识库交叉匹配：按组件/版本和已有 CWE 候选过滤，绑定 CVE/CWE、数据库摘要、源记录摘要及 EvidenceBundle，仍保持 candidate-only。
+- `wildtrace-clang` CLI 增加 `--knowledge-base --component --version`，完成本地知识库匹配的可执行入口验证。
+- 全量回归确认：155 项通过，4 项环境相关跳过。
+- 本地 Demo 文档补充 WSL Clang 单文件、显式清单和知识库匹配用法，并说明 `completed/partial/input_error` 状态语义。
+- 全量回归更新为 156 项通过、4 项环境相关跳过。
+- 增加 `wildtrace-engine-benchmark` 离线评测入口，支持人工标注 case 与 schema 0.3 引擎结果的候选级 TP/FP/FN、precision/recall 统计。
+- 全量回归更新为 157 项通过、4 项环境相关跳过。
+- 新增 `docs/design/ENGINE_BENCHMARK.md`，规定引擎候选基准的人工标注字段、证据绑定、输入不可用处理和指标边界。
+- 引擎基准评测器增加 CWE 格式、标签和安全样本空标注校验。
+- 全量回归更新为 158 项通过、4 项环境相关跳过。
+- 新增 `docs/design/engine_benchmark_template.json`，提供不带准确率结论的人工标注起始模板。
+- 用隔离合成样本验证评测 CLI：2 cases、TP=1、FP=1、FN=0；该指标仅验证工具链，不代表 OpenHarmony 准确率。
+- 评测器现在排除与 `input_errors` 对应的样本，避免缺失构建上下文被统计为 false negative。
+- 引擎评测器增加 `bootstrap_cases`，可从保存结果生成待人工复核草稿，默认不填 CWE。
+- 全量回归更新为 160 项通过、4 项环境相关跳过。
+- 基准设计文档补充 `bootstrap_cases()` 草稿生成与正式评测的先后边界。
+- `wildtrace-engine-benchmark` 增加 `--bootstrap-output` 模式，可从结果文件生成待人工复核 cases。
+- bootstrap 草稿现在要求 64 位十六进制源码快照 SHA-256。
+- 引擎评测优先按标注 `source_file` 精确对齐，避免同名文件造成候选误配；无路径时保留 ID 前缀回退。
+- 全量回归更新为 162 项通过、4 项环境相关跳过。
+- 全量回归更新为 163 项通过、4 项环境相关跳过。
+- 全量回归更新为 161 项通过、4 项环境相关跳过。
+- README 增加引擎评测 bootstrap 草稿生成示例。
+- 引擎 CLI 输出绑定源码快照 SHA-256；直接保存的 schema 0.3 结果现在带有 `scan.source_snapshot_sha256`。
+- 引擎结果合并增加源码快照一致性门控，拒绝跨快照混合证据。
+- 全量回归更新为 164 项通过、4 项环境相关跳过。
+- 在独立 `C:\Projects\OpenHarmony-complete` 工作区补齐 build、camera sample、ability_lite、bundle_framework_lite、ui_lite、graphic_utils_lite、IPC、camera_lite、media_lite 等直接依赖；提取 GN include/define 参数后，camera `camera_ability.cpp` Clang 状态由 input_error 变为 completed、0 条诊断。
+- 组件工作区关键提交已记录：build `71de884ecc242fa7757c5506e3a3606b9d51c5b0`、camera `f41db9875943bc560444827d2effd5e16e4e821d`、ability_lite `ac5b043bc0b53cfa3c3da9e5f87c0ee5d14df803`、IPC `a36ce279edb3045cef80853f3fb65c6005a5e48`。
+- 补齐 surface_lite、media_lite/recorder_lite、hilog_lite、bounds_checking_function 等头文件路径后，cameraApp 三个 C++ 源文件均完成 Clang 分析：3/3 completed、0 个输入错误、0 条诊断。
+- 增加 WSL clang-tidy 单文件执行适配；cameraApp `camera_ability.cpp` 使用同一编译参数完成 `clang-analyzer-*` 检查。
+- 全量回归更新为 159 项通过、4 项环境相关跳过。
+- 本地 Demo 文档补充人工标注完成后的离线引擎候选评测流程。
+- README 增加本地 Clang 引擎、知识库匹配和候选评测入口说明。
+
+## Clang WSL engine adapter
+
+- 接入 WSL 中 LLVM 22.1.8 Clang Static Analyzer 的 plist 输出转换。
+- 增加 Windows 路径到 WSL 路径映射、超时处理和 `input_error` 结构化结果。
+- 在 OpenHarmony camera sample 上完成真实本地调用；因缺少 `ability_loader.h` 返回输入构建错误，不将其解释为干净扫描。
+- 7 项适配器测试通过；合成 use-after-free plist 可转换为候选结果。
+- WSL Clang 适配器支持显式 tuple 编译参数；当前 OpenHarmony 快照未提供可用 compile database，真实复跑仍记录为 `input_error`。
+- 检查 OpenHarmony 根目录确认缺少 `.gn`、`build.sh`、`prebuilts`、`out` 和目标 sample 依赖头文件；当前快照不足以生成真实编译数据库，未启动构建或修改源码。
+- 读取 `.repo_snapshot.json` 和同步日志确认该快照为裁剪快照：`build`、`ability_lite`、`bundle_framework_lite`、`ui_lite`、`camera_lite`、`media_lite` 等依赖均为 skipped，不能据此作完整平台分析结论。
+- 在裁剪快照中的 `third_party/bzip2/bzip2recover.c` 上完成一次真实 Clang Analyzer 运行，状态为 `completed`、0 条候选；该结果仅代表该文件在默认编译上下文下无诊断，不代表 OpenHarmony 全局结论。
+- 接入 clang-tidy 文本诊断转换；对同一真实文件运行受限 `clang-analyzer-*` 检查，解析 32 条候选，保留规则、行号、列号和原始描述。
+- 增加外部引擎结果到 schema 0.3/EvidenceBundle 的投影，并用现有 `validate_result` 对 32 条真实 clang-tidy 候选完成联合校验。
+- 增加 `wildtrace-clang` CLI：对单个本地文件运行 WSL Clang，完成时输出 schema 0.3/EvidenceBundle，输入依赖不完整时输出 `input_error`。
+- `wildtrace-clang` 增加 `--files-from` 受控清单模式，逐文件运行、合并候选、保留部分失败和输入错误，不对整个源码树盲扫。
+- 增加 `ohvul.engine_shards`，复用现有 manifest/shard 结构逐文件调用 WSL Clang，并保留每个分片的输入错误和候选证据。
+- 增加 `merge_engine_result`，将引擎证据并入 schema 0.3 扫描结果，检查源码根目录和 EvidenceBundle 冲突，并通过现有结果校验器。
+- 主 CLI 增加 `--engine-files-from`，在 `static_scan` 前运行受控 WSL Clang 分片并合并结果；引擎输入错误随结果记录，不自动升级审核状态。
+
 ## Joint verification single-read consistency
 
 - 扫描结果摘要和解析共用单次读取字节，修复原先两次读取可能不一致的问题。

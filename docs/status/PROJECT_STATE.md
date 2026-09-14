@@ -2,13 +2,16 @@
 
 ## 当前有效状态（2026-09-12）
 
-- 阶段：Phase 6 性能评测和交付准备；Phase 4、Phase 5 的允许范围闭环已完成，完整比赛成品仍未完成。
+- 阶段：Phase 6 性能评测和交付准备；当前新增完成成熟引擎适配层与受控 Clang 分片闭环，Phase 4、Phase 5 的允许范围闭环已完成，完整比赛成品仍未完成。
 - Phase 4：静态证据独立复核、合成 harness、FSM `local_verification`、checkpoint/result/harness 联合校验、源码快照绑定和人工审核门控已完成；真实目标代码执行仍禁止。
 - Phase 5：本地固定版本输入契约、Git revision/range 原型、分支影响比较、补丁路径与 SHA-256 校验、影响报告草稿和审核批次接入已完成原型；真实提交区间到补丁有效性的完整闭环仍未完成。
 - Phase 6：性能基准、峰值内存、吞吐退化比较、性能快照、CI smoke 和演示文档已完成原型；完整授权 OpenHarmony 子树长期评测、最终用户手册、视频和交付包仍未完成。
-- 最近验证：`python -m unittest discover -s tests -q`，143 项，139 通过、4 跳过。
+- 分析引擎适配：已接入 WSL LLVM 22.1.8 Clang Analyzer plist、clang-tidy 文本诊断、显式文件清单/分片、schema 0.3/EvidenceBundle、主 CLI static_scan 合并和本地 CVE/CWE 交叉匹配；OpenHarmony 当前裁剪快照仍不能代表完整平台构建分析。
+- 真实组件输入：原 `C:\Projects\OpenHarmony` 为裁剪快照；已在独立 `C:\Projects\OpenHarmony-complete` 工作区补齐 camera 直接依赖并用显式 GN include/define 参数成功解析 `camera_ability.cpp`（Clang completed，0 条诊断）。该工作区尚未完成产品级全量构建，不能扩展为平台级结论。
+- cameraApp 组件验证：`camera_ability.cpp`、`camera_ability_slice.cpp`、`camera_manager.cpp` 在补齐 surface/media/IPC/hilog/securec 头文件路径后 3/3 Clang completed、0 个输入错误、0 条诊断；仍属于组件级静态分析，不是全平台结论。
+- 最近验证：`python -m unittest discover -s tests -q`，164 项通过、4 项环境相关跳过。
 - 当前结论：项目是可运行的防御性 MVP 和比赛候选原型，不是已完成的比赛成品；候选发现不等于漏洞确认，主机测试不等于 OpenHarmony 平台结论。
-- 后续顺序：先把本地知识库接入扫描主流程，再完善固定版本/分支/补丁证据链，随后扩展少量高价值语义规则，最后完成真实授权子树性能评测和交付材料。
+- 后续顺序：先把本地知识库接入引擎扫描主流程，再完善固定版本/分支/补丁证据链，随后扩展少量高价值语义规则，最后完成真实授权子树性能评测和交付材料。
 - 历史记录说明：本文件以下条目为追加式历史记录；如与本节冲突，以本节为准。历史条目不得作为已完成能力的单独证据。
 
 ## 本次已完成

@@ -1,0 +1,14 @@
+[
+  {
+    "id": "replace-with-stable-case-id",
+    "source_file": "relative/path/to/source.c",
+    "source_snapshot_sha256": "",
+    "component": "",
+    "version": "",
+    "expected_cwe": [],
+    "label": "candidate_requires_context",
+    "reason": "待人工复核：填写调用上下文、规则证据和判定理由",
+    "reviewer": "",
+    "reviewed_at": ""
+  }
+]

@@ -11,4 +11,5 @@ docs/references/
 *.pem
 *.secrets
 wildtrace.egg-info/
+.cache/
 
