@@ -48,6 +48,7 @@
 - 全量回归更新为 170 项通过、4 项环境相关跳过。
 - 全量回归更新为 173 项通过、4 项环境相关跳过。
 - Semgrep taint pilot 在合成 C 样本上成功捕获 `getenv`→`strcpy` 数据流；规则和边界记录在 `docs/design/semgrep_taint_pilot.yml`。
+- Semgrep taint pilot 已在 cameraApp 三个真实文件上完成离线复跑：0 条命中、无输入错误；结果仅表示该规则未命中这些文件。
 - WSL 隔离 venv 安装 Semgrep 1.177.0；cameraApp 本地规则扫描完成且无结果，合成 C 样本可产生候选；新增 Semgrep JSON 统一结果转换。
 - 新增 `run_wsl_semgrep()`：仅接受源码根目录内的本地规则和显式文件清单，禁止远程规则输入。
 - 在独立 `C:\Projects\OpenHarmony-complete` 工作区补齐 build、camera sample、ability_lite、bundle_framework_lite、ui_lite、graphic_utils_lite、IPC、camera_lite、media_lite 等直接依赖；提取 GN include/define 参数后，camera `camera_ability.cpp` Clang 状态由 input_error 变为 completed、0 条诊断。
