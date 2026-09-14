@@ -1,0 +1,17 @@
+{
+  "schema": "semgrep-profile-0.1",
+  "component": "camera_sample_app/cameraApp",
+  "source_root_label": "OpenHarmony-complete",
+  "source_repositories": {
+    "applications/sample/camera": "f41db9875943bc560444827d2effd5e16e4e821d"
+  },
+  "rule_file_relative_to_source_root": "tools/wildtrace/camera_pilot.yml",
+  "rule_sha256": "CB307513B7BA9C6F00E712BE2C85D0DBBEC7ABEB3F1DF4D5FFBDFEB17B53B5EF",
+  "source_files": [
+    "applications/sample/camera/cameraApp/cameraApp/src/main/cpp/camera_ability.cpp",
+    "applications/sample/camera/cameraApp/cameraApp/src/main/cpp/camera_ability_slice.cpp",
+    "applications/sample/camera/cameraApp/cameraApp/src/main/cpp/camera_manager.cpp"
+  ],
+  "status": "candidate_only",
+  "disclaimer": "Synthetic local rule for component-level static review; not a vulnerability verdict or platform-wide result."
+}
