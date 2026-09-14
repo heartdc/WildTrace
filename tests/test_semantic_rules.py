@@ -2,7 +2,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from ohvul.semantic_rules import length_candidates, cross_function_length_candidates
+from ohvul.semantic_rules import length_candidates, cross_function_length_candidates, candidates_to_audit_result
+from ohvul.verify import validate_result
 
 
 class SemanticRuleTests(unittest.TestCase):
@@ -40,6 +41,9 @@ void run(char *d, char *s) {
             found = cross_function_length_candidates(root, ['a.cpp'])
             self.assertEqual(len(found), 1)
             self.assertEqual(found[0]['callee']['callee'] if 'callee' in found[0]['callee'] else found[0]['caller']['callee'], 'sink')
+            result = candidates_to_audit_result(found, root=root, source_snapshot_sha256='a' * 64)
+            self.assertEqual(validate_result(result), 1)
+            self.assertEqual(result['findings'][0]['status'], 'candidate')
 
 
 if __name__ == '__main__':

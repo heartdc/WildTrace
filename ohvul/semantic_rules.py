@@ -4,6 +4,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 from .semantic_facts import SemanticFact, extract_facts
+from .domain.evidence import make_bundle
 
 _COPY = re.compile(r"\b(memcpy|memmove|strncpy|snprintf)\s*\(([^)]*)\)")
 _LENGTH_SOURCE = re.compile(r"\b(strlen|strnlen|read|recv|memcpy)\s*\(")
@@ -101,3 +102,34 @@ def cross_function_length_candidates(root: Path, relative_files: list[str]) -> l
                     "review_questions": ["Does the caller length reach the callee unchanged?", "Is the destination capacity checked before the copy?"]
                 })
     return candidates
+
+
+def candidates_to_audit_result(candidates: list[dict], *, root: Path,
+                               source_snapshot_sha256: str | None = None) -> dict:
+    """Project semantic candidates into schema 0.3 without changing verdict."""
+    root = Path(root).resolve()
+    bundles, findings = [], []
+    for index, candidate in enumerate(candidates, 1):
+        if not isinstance(candidate, dict) or candidate.get("status") != "candidate":
+            raise ValueError("semantic candidate must remain candidate")
+        if "sink" in candidate:
+            file_name = candidate["source_file"]
+            line = candidate["sink"]["line"]
+        else:
+            file_name = candidate["callee"]["source_file"]
+            line = candidate["callee"]["sink_line"]
+        evidence = {"semantic_candidate": candidate}
+        bundle = make_bundle("static_scan", {"root": str(root), "file": file_name, "line": line}, evidence=evidence)
+        bundles.append(bundle.to_dict())
+        findings.append({"alert_id": f"AL-SEM-{index:06d}", "source": "wildtrace-semantic-rules",
+                         "cwe_candidate": "CWE-120", "rule": candidate["kind"],
+                         "description": "Length propagation requires manual review",
+                         "location": {"file": file_name, "line": line},
+                         "evidence": evidence, "evidence_id": bundle.evidence_id, "status": "candidate"})
+    scan = {"root": str(root), "files_scanned": len({f["location"]["file"] for f in findings}),
+            "engine": "wildtrace-semantic", "engine_version": "0.1"}
+    if source_snapshot_sha256 is not None:
+        scan["source_snapshot_sha256"] = source_snapshot_sha256
+    return {"schema_version": "0.3", "scan": scan, "findings": findings,
+            "evidence_bundles": bundles,
+            "safety": {"local_only": True, "no_execution": True, "no_network": True}}
