@@ -34,6 +34,7 @@
 - 全量回归更新为 161 项通过、4 项环境相关跳过。
 - README 增加引擎评测 bootstrap 草稿生成示例。
 - 新增 `docs/engineering/COLLABORATION_PLAN.md`，定义用户、Codex 和 GLM-5.3 的职责及 GitHub 协作流程。
+- 根据代码审查更新协作和比赛规划：先修适配层正确性，再固定组件 profile、做双引擎试验和高价值漏洞族，GLM-5.3 通过 PR 编辑边界模块，Codex维护核心链。
 - 引擎 CLI 输出绑定源码快照 SHA-256；直接保存的 schema 0.3 结果现在带有 `scan.source_snapshot_sha256`。
 - 引擎结果合并增加源码快照一致性门控，拒绝跨快照混合证据。
 - 全量回归更新为 164 项通过、4 项环境相关跳过。
