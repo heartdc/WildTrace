@@ -9,9 +9,10 @@
 - 分析引擎适配：已接入 WSL LLVM 22.1.8 Clang Analyzer plist、clang-tidy 文本诊断、显式文件清单/分片、schema 0.3/EvidenceBundle、主 CLI static_scan 合并和本地 CVE/CWE 交叉匹配；OpenHarmony 当前裁剪快照仍不能代表完整平台构建分析。
 - 真实组件输入：原 `C:\Projects\OpenHarmony` 为裁剪快照；已在独立 `C:\Projects\OpenHarmony-complete` 工作区补齐 camera 直接依赖并用显式 GN include/define 参数成功解析 `camera_ability.cpp`（Clang completed，0 条诊断）。该工作区尚未完成产品级全量构建，不能扩展为平台级结论。
 - cameraApp 组件验证：`camera_ability.cpp`、`camera_ability_slice.cpp`、`camera_manager.cpp` 在补齐 surface/media/IPC/hilog/securec 头文件路径后 3/3 Clang completed、0 个输入错误、0 条诊断；仍属于组件级静态分析，不是全平台结论。
-- 最近验证：`python -m unittest discover -s tests -q`，173 项通过、4 项环境相关跳过。
+- 最近验证：`python -m unittest discover -s tests -q`，178 项通过、4 项环境相关跳过。
 - 当前结论：项目是可运行的防御性 MVP 和比赛候选原型，不是已完成的比赛成品；候选发现不等于漏洞确认，主机测试不等于 OpenHarmony 平台结论。
 - 后续顺序：完成适配层正确性收敛，固定组件 profile 和跨函数工具试验，随后扩展高价值漏洞族、补丁验证、人工评测、真实性能和交付材料。
+- Phase 1 适配器正确性检查点：已完成 alert_id 冲突消解、Clang/clang-tidy/Semgrep 来源保留、外部结果 schema 校验、源码根与快照一致性、显式文件/分片路径、WSL 路径归一化及越界拒绝；178 项测试通过、4 项环境相关跳过。该检查点只证明适配器契约，不证明分析器覆盖率或漏洞成立。
 - 历史记录说明：本文件以下条目为追加式历史记录；如与本节冲突，以本节为准。历史条目不得作为已完成能力的单独证据。
 
 ## 本次已完成
