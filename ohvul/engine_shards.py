@@ -2,6 +2,7 @@
 from __future__ import annotations
 from pathlib import Path
 from .engine_adapter import run_wsl_clang_analyzer, engine_result_to_audit_result
+from .engine_profile import load_profile, profile_compile_args
 
 
 def scan_engine_shard(root, shard, *, llvm_root="/home/airgap/llvm", timeout=300, compile_args=()):
@@ -46,3 +47,13 @@ def scan_engine_manifest(root, manifest, *, max_shards=10000, llvm_root="/home/a
     errors = [e for r in results for e in r.get("input_errors", [])]
     output = {"schema_version": "0.3", "scan": {"root": str(root), "files_scanned": sum(r["engine_runs"] for r in results), "engine": "clang", "engine_version": "22.1.8"}, "findings": findings, "evidence_bundles": bundles, "input_errors": errors, "status": "completed" if not errors else ("partial" if findings else "input_error"), "safety": {"local_only": True, "no_execution": True, "no_network": True}}
     return output
+
+
+def scan_engine_profile(root, profile_path, *, max_shards=10000, llvm_root="/home/airgap/llvm", timeout=300):
+    """Run the files declared by a validated component profile."""
+    root = Path(root).resolve()
+    profile = load_profile(Path(profile_path))
+    manifest = {"root": str(root), "shards": [{"files": profile["source_files"]}]}
+    return scan_engine_manifest(root, manifest, max_shards=max_shards,
+                                llvm_root=llvm_root, timeout=timeout,
+                                compile_args=profile_compile_args(profile, root))

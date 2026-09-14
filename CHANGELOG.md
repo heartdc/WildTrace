@@ -36,6 +36,7 @@
 - 全量回归更新为 163 项通过、4 项环境相关跳过。
 - 全量回归更新为 161 项通过、4 项环境相关跳过。
 - README 增加引擎评测 bootstrap 草稿生成示例。
+- 新增 `scan_engine_profile()`，可按版本化组件 profile 直接运行声明的文件清单和编译参数。
 - 新增 `docs/engineering/COLLABORATION_PLAN.md`，定义用户、Codex 和 GLM-5.3 的职责及 GitHub 协作流程。
 - 根据代码审查更新协作和比赛规划：先修适配层正确性，再固定组件 profile、做双引擎试验和高价值漏洞族，GLM-5.3 通过 PR 编辑边界模块，Codex维护核心链。
 - 阶段 A 修复：引擎分片合并重新编号 `alert_id`，并区分 `clang` 与 `clang-tidy` 来源。
