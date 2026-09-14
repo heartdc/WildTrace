@@ -1,6 +1,7 @@
 # Changelog
 
 - 新增 `docs/design/camera_app_engine_profile.json`，固化 cameraApp 组件的提交、文件、include、define 和引擎参数。
+- 新增 `engine_profile` loader，校验组件 profile 并生成 WSL 编译参数。
 
 ## FSM CLI engine integration
 
