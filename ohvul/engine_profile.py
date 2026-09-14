@@ -32,3 +32,16 @@ def profile_compile_args(profile: dict, source_root: Path) -> tuple[str, ...]:
     args.extend("-I" + windows_to_wsl_path(root / value) for value in profile["include_dirs"])
     args.extend(profile["extra_compile_args"])
     return tuple(args)
+
+
+def validate_profile_sources(profile: dict, source_root: Path) -> dict:
+    """Validate declared files and include directories against a local root."""
+    root = Path(source_root).resolve()
+    if not root.is_dir():
+        raise ValueError("source root must be an existing directory")
+    missing_files = [x for x in profile["source_files"] if not (root / x).is_file()]
+    missing_dirs = [x for x in profile["include_dirs"] if not (root / x).is_dir()]
+    return {"complete": not missing_files and not missing_dirs,
+            "missing_files": missing_files, "missing_include_dirs": missing_dirs,
+            "source_files": len(profile["source_files"]),
+            "include_dirs": len(profile["include_dirs"])}

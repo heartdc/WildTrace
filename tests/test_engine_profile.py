@@ -1,6 +1,6 @@
 import unittest
 from pathlib import Path
-from ohvul.engine_profile import load_profile, profile_compile_args
+from ohvul.engine_profile import load_profile, profile_compile_args, validate_profile_sources
 
 
 class EngineProfileTests(unittest.TestCase):
@@ -17,6 +17,12 @@ class EngineProfileTests(unittest.TestCase):
             path.write_text(json.dumps({'schema': 'engine-profile-0.1', 'component': 'x', 'source_repositories': {'x': 'bad'}, 'source_files': [], 'include_dirs': [], 'defines': [], 'extra_compile_args': [], 'engines': []}))
             with self.assertRaises(ValueError):
                 load_profile(path)
+
+    def test_profile_source_validation_reports_missing_inputs(self):
+        profile = {'source_files': ['a.c'], 'include_dirs': ['include']}
+        result = validate_profile_sources(profile, Path('.'))
+        self.assertFalse(result['complete'])
+        self.assertIn('a.c', result['missing_files'])
 
 
 if __name__ == '__main__':

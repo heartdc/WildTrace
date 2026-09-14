@@ -47,6 +47,7 @@
 - 全量回归更新为 164 项通过、4 项环境相关跳过。
 - 全量回归更新为 170 项通过、4 项环境相关跳过。
 - 全量回归更新为 173 项通过、4 项环境相关跳过。
+- 阶段二增加 `validate_profile_sources()`；cameraApp profile 在 `OpenHarmony-complete` 中验证为 complete（3 个源文件、16 个 include 目录）。
 - Semgrep taint pilot 在合成 C 样本上成功捕获 `getenv`→`strcpy` 数据流；规则和边界记录在 `docs/design/semgrep_taint_pilot.yml`。
 - Semgrep taint pilot 已在 cameraApp 三个真实文件上完成离线复跑：0 条命中、无输入错误；结果仅表示该规则未命中这些文件。
 - 竞赛差距分析文档新增最新代码审查结论和收敛后的执行顺序。
