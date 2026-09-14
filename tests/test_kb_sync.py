@@ -226,5 +226,71 @@ class CliTests(unittest.TestCase):
             self.assertIn("INVALID", result.stderr)
 
 
+class ReviewHardeningTests(unittest.TestCase):
+    """PR review items: manifest paths, atomic builds, dropped products, semantics."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.base = Path(self._tmp.name)
+        self.cvelist = _cvelist_dir(self.base / "src1")
+        self.osv = _osv_dir(self.base / "src2")
+        self.out = self.base / "kb"
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def test_manifest_path_escape_rejected(self):
+        build_kb(self.cvelist, self.osv, self.out, snapshot_version="s")
+        manifest_path = self.out / "manifest.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8-sig"))
+        for escape in ("../escape.json", "/absolute.json", "sub/../../up.json"):
+            manifest["shards"][0]["file"] = escape
+            manifest_path.write_bytes(json.dumps(manifest).encode("utf-8"))
+            with self.assertRaises(ValueError):
+                load_sharded_kb(self.out)
+
+    def test_rebuild_replaces_stale_content(self):
+        build_kb(self.cvelist, self.osv, self.out, snapshot_version="s")
+        stale = self.out / "kb_part_9999.json"
+        stale.write_bytes(b'{"schema":"0.1","records":[]}')
+        rebuild = build_kb(self.cvelist, self.osv, self.out, snapshot_version="s2")
+        self.assertFalse(stale.exists())
+        self.assertEqual(load_sharded_kb(self.out)["snapshot_version"], "s2")
+        self.assertEqual(len(list(self.out.glob("*.json"))),
+                         len(rebuild["shards"]) + 1)
+
+    def test_failed_build_preserves_previous_output(self):
+        build_kb(self.cvelist, self.osv, self.out, snapshot_version="s")
+        before = sorted(p.name for p in self.out.iterdir())
+        from unittest import mock
+        with mock.patch("ohvul.kb_sync._MAX_SHARD_BYTES", 1):
+            with self.assertRaises(ValueError):
+                build_kb(self.cvelist, self.osv, self.out, snapshot_version="broken")
+        self.assertEqual(sorted(p.name for p in self.out.iterdir()), before)
+        self.assertEqual(load_sharded_kb(self.out)["snapshot_version"], "s")
+        self.assertEqual([p.name for p in self.base.iterdir() if ".staging-" in p.name], [])
+
+    def test_dropped_products_are_audited(self):
+        multi = json.loads(json.dumps(_CVELIST_RECORD))
+        multi["cveMetadata"]["cveId"] = "CVE-2024-0005"
+        multi["containers"]["cna"]["affected"].append(
+            {"product": "libdemo-plugin", "versions": [{"version": "1.2.0"}]})
+        _write(self.cvelist, "cves/2024/0xxx/CVE-2024-0005.json", multi)
+        manifest = build_kb(self.cvelist, self.osv, self.out, snapshot_version="s")
+        samples = manifest["source_stats"]["cvelistV5"]["dropped_product_samples"]
+        self.assertEqual(samples, [{"cve": "CVE-2024-0005", "kept": "libdemo",
+                                    "dropped": "libdemo-plugin"}])
+
+    def test_fixed_version_semantics_recorded(self):
+        manifest = build_kb(self.cvelist, self.osv, self.out, snapshot_version="s")
+        database = load_sharded_kb(self.out)
+        by_id = {r["id"]: r for r in database["records"]}
+        self.assertEqual(by_id["CVE-2024-0001"]["fixed_version_semantics"],
+                         "cvelist_lessThan_boundaries")
+        self.assertEqual(by_id["CVE-2024-0002"]["fixed_version_semantics"], "none")
+        self.assertEqual(by_id["CVE-2024-0003"]["fixed_version_semantics"],
+                         "osv_fixed_events")
+
+
 if __name__ == "__main__":
     unittest.main()

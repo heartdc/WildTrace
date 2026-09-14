@@ -35,6 +35,18 @@ python -m ohvul.kb_sync verify --kb <dir>
 
 ## 已知限制（v1）
 
-- schema 0.1 以 CVE id 为主键，一条记录一个组件；同一 CVE 多产品时保留首个，其余计入 dropped_products。
-- 版本语义只有精确字符串；OSV 区间投影为其 fixed 事件命名的版本。
+- schema 0.1 以 CVE id 为主键，一条记录一个组件；同一 CVE 多产品时保留首个，
+  其余记入 manifest `source_stats.*.dropped_product_samples`（上限 1000 条、
+  超出置 truncated 标记）作为召回候选，不进入记录本体。
+- 版本语义只有精确字符串；`fixed_versions` 中的值是**区间边界**而非经核实的
+  精确修复版本——每条记录带 `fixed_version_semantics` 声明投影来源
+  （`cvelist_lessThan_boundaries` / `osv_fixed_events` / `none`）。
 - 分片上限（2000 条/片，可调）与 16 MiB 单文件加载上限配合使用。
+
+## 构建安全性与残留处理
+
+- 构建先写入同级临时 staging 目录，整体经 `load_sharded_kb` 自校验后原子换入；
+  换入失败自动回滚，失败构建不留 staging 残留、不触碰旧输出。
+- 目录换入意味着上一次构建的陈旧分片随旧目录整体消失，无需单独清理。
+- `load_sharded_kb` 拒绝 manifest 中绝对路径、含 `..`、或 resolve 后越出
+  kb 目录的分片条目。

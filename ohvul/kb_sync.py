@@ -8,18 +8,25 @@ network access and executes no target code.
 
 Documented v1 limitations:
 - One component per CVE record (the 0.1 schema keys records by CVE id); the
-  first affected product wins and further products are counted as dropped.
+  first affected product wins and dropped products are recorded as auditable
+  samples in the manifest source stats (recall candidates only).
 - OSV records without a CVE alias are skipped (the schema requires CVE ids).
-- Version semantics stay exact strings; ranges are projected to the fixed
-  versions they name. GHSA YAML is not parsed directly (GHSA data arrives via
-  OSV aliases).
+- Version semantics stay exact strings. Values projected into fixed_versions
+  are RANGE BOUNDARIES, not verified exact fix releases; each record carries
+  fixed_version_semantics stating the projection (cvelist_lessThan_boundaries
+  or osv_fixed_events). GHSA YAML is not parsed directly (GHSA data arrives
+  via OSV aliases).
 """
 from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
+import pathlib
 import re
+import shutil
 import sys
+import tempfile
 from pathlib import Path
 
 from .knowledge_base import load_records
@@ -29,6 +36,15 @@ MANIFEST_SCHEMA = "kb-manifest-0.1"
 _CVE_ID = re.compile(r"CVE-\d{4}-\d{4,}")
 _CWE_ID = re.compile(r"CWE-[1-9]\d*")
 _MAX_SHARD_BYTES = 8 * 1024 * 1024
+_DROPPED_SAMPLE_CAP = 1000
+
+
+def _note_dropped(stats: dict, cve: str, kept: str, dropped: str) -> None:
+    if len(stats.get("dropped_product_samples", [])) >= _DROPPED_SAMPLE_CAP:
+        stats["dropped_products_truncated"] = True
+        return
+    stats.setdefault("dropped_product_samples", []).append(
+        {"cve": cve, "kept": kept, "dropped": dropped})
 
 
 def _canonical_digest(records: list[dict]) -> str:
@@ -86,7 +102,8 @@ def parse_cvelist(root: Path) -> tuple[list[dict], dict]:
             if not component:
                 component = product
             elif product != component:
-                stats["dropped_products"] += 1
+                stats["dropped_products"] = stats.get("dropped_products", 0) + 1
+                _note_dropped(stats, identifier, component, product)
             for version in entry.get("versions", []):
                 if not isinstance(version, dict):
                     continue
@@ -103,6 +120,8 @@ def parse_cvelist(root: Path) -> tuple[list[dict], dict]:
                   "component": component,
                   "affected_versions": affected_versions,
                   "fixed_versions": fixed_versions,
+                  "fixed_version_semantics": ("cvelist_lessThan_boundaries"
+                                              if fixed_versions else "none"),
                   "source": "cvelistV5"}
         if records.setdefault(identifier, record) is record:
             stats["records_kept"] += 1
@@ -151,7 +170,8 @@ def parse_osv(root: Path, ecosystems: set[str]) -> tuple[list[dict], dict]:
             if not component:
                 component = product
             elif product != component:
-                stats["dropped_products"] += 1
+                stats["dropped_products"] = stats.get("dropped_products", 0) + 1
+                _note_dropped(stats, identifier, component, product)
             for value in entry.get("versions", []):
                 value = _text(value, limit=100)
                 if value and value not in affected_versions:
@@ -180,6 +200,9 @@ def parse_osv(root: Path, ecosystems: set[str]) -> tuple[list[dict], dict]:
                                         "summary": summary, "component": component,
                                         "affected_versions": affected_versions,
                                         "fixed_versions": fixed_versions,
+                                        "fixed_version_semantics": ("osv_fixed_events"
+                                                                    if fixed_versions
+                                                                    else "none"),
                                         "source": f"osv:{data.get('id', 'export')}"})
         stats["records_kept"] += 1
     return sorted(records.values(), key=lambda r: r["id"]), stats
@@ -214,28 +237,51 @@ def build_kb(cvelist_root: Path | None, osv_root: Path | None, out_dir: Path, *,
         raise ValueError("at least one source directory is required")
     merged = merge_sources(parsed)
     out_dir = Path(out_dir)
-    out_dir.mkdir(parents=True, exist_ok=True)
-    shards = []
-    for index in range(0, len(merged), max_records_per_shard):
-        chunk = merged[index:index + max_records_per_shard]
-        shard_name = f"kb_part_{len(shards):04d}.json"
-        shard_path = out_dir / shard_name
-        payload = json.dumps({"schema": SHARD_SCHEMA, "records": chunk},
-                             ensure_ascii=False, indent=1) + "\n"
-        if len(payload.encode("utf-8")) > _MAX_SHARD_BYTES:
-            raise ValueError(f"shard {shard_name} exceeds {_MAX_SHARD_BYTES} bytes; "
-                             f"lower max_records_per_shard")
-        shard_path.write_bytes(payload.encode("utf-8"))
-        # Round-trip through the canonical loader so bad output fails at build time.
-        load_records(shard_path)
-        shards.append({"file": shard_name, "count": len(chunk),
-                       "sha256": hashlib.sha256(payload.encode("utf-8")).hexdigest()})
-    manifest = {"schema": MANIFEST_SCHEMA, "snapshot_version": snapshot_version,
-                "records_total": len(merged),
-                "records_sha256": _canonical_digest(merged),
-                "shards": shards, "source_stats": source_stats}
-    manifest_path = out_dir / "manifest.json"
-    manifest_path.write_bytes((json.dumps(manifest, ensure_ascii=False, indent=1) + "\n").encode("utf-8"))
+    out_dir.parent.mkdir(parents=True, exist_ok=True)
+    # Build into a staging directory and swap atomically; a failed build leaves
+    # any previous output untouched and the swap replaces stale shards wholly.
+    staging = Path(tempfile.mkdtemp(prefix=out_dir.name + ".staging-", dir=str(out_dir.parent)))
+    try:
+        shards = []
+        for index in range(0, len(merged), max_records_per_shard):
+            chunk = merged[index:index + max_records_per_shard]
+            shard_name = f"kb_part_{len(shards):04d}.json"
+            shard_path = staging / shard_name
+            payload = json.dumps({"schema": SHARD_SCHEMA, "records": chunk},
+                                 ensure_ascii=False, indent=1) + "\n"
+            if len(payload.encode("utf-8")) > _MAX_SHARD_BYTES:
+                raise ValueError(f"shard {shard_name} exceeds {_MAX_SHARD_BYTES} bytes; "
+                                 f"lower max_records_per_shard")
+            shard_path.write_bytes(payload.encode("utf-8"))
+            # Round-trip through the canonical loader so bad output fails at build time.
+            load_records(shard_path)
+            shards.append({"file": shard_name, "count": len(chunk),
+                           "sha256": hashlib.sha256(payload.encode("utf-8")).hexdigest()})
+        manifest = {"schema": MANIFEST_SCHEMA, "snapshot_version": snapshot_version,
+                    "records_total": len(merged),
+                    "records_sha256": _canonical_digest(merged),
+                    "shards": shards, "source_stats": source_stats}
+        manifest_path = staging / "manifest.json"
+        manifest_path.write_bytes((json.dumps(manifest, ensure_ascii=False, indent=1)
+                                   + "\n").encode("utf-8"))
+        # Validate the staged output as a whole before the swap.
+        load_sharded_kb(staging)
+    except BaseException:
+        shutil.rmtree(staging, ignore_errors=True)
+        raise
+    if out_dir.exists():
+        backup = Path(tempfile.mkdtemp(prefix=out_dir.name + ".previous-",
+                                       dir=str(out_dir.parent)))
+        os.rename(out_dir, backup / "previous")
+        try:
+            os.rename(staging, out_dir)
+        except BaseException:
+            os.rename(backup / "previous", out_dir)
+            shutil.rmtree(staging, ignore_errors=True)
+            raise
+        shutil.rmtree(backup, ignore_errors=True)
+    else:
+        os.rename(staging, out_dir)
     return manifest
 
 
@@ -250,7 +296,12 @@ def load_sharded_kb(kb_dir: Path) -> dict:
     for shard in manifest["shards"]:
         if not isinstance(shard, dict) or not isinstance(shard.get("file"), str):
             raise ValueError("invalid manifest shard entry")
-        shard_path = kb_dir / shard["file"]
+        entry = pathlib.PurePosixPath(shard["file"])
+        if entry.is_absolute() or ".." in entry.parts:
+            raise ValueError(f"manifest shard entry escapes kb directory: {shard['file']}")
+        shard_path = kb_dir / entry
+        if not shard_path.resolve().is_relative_to(kb_dir.resolve()):
+            raise ValueError(f"manifest shard entry resolves outside kb directory: {shard['file']}")
         raw = shard_path.read_bytes()
         if "sha256" in shard and hashlib.sha256(raw).hexdigest() != shard["sha256"]:
             raise ValueError(f"shard digest mismatch: {shard['file']}")
