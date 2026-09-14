@@ -43,6 +43,7 @@ class EngineProfileScanTests(unittest.TestCase):
             run.assert_called_once()
             self.assertEqual(len(result['findings']), 1)
             self.assertEqual(result['findings'][0]['source'], 'semgrep')
+            self.assertEqual(len(result['engine_profiles']['semgrep_rule_sha256']['rules.yml']), 64)
 
 
 if __name__ == '__main__':

@@ -1,6 +1,7 @@
 """Run the local WSL Clang adapter over an explicit shard manifest."""
 from __future__ import annotations
 from pathlib import Path
+import hashlib
 from .engine_adapter import run_wsl_clang_analyzer, run_wsl_semgrep, engine_result_to_audit_result, merge_engine_result
 from .engine_profile import load_profile, profile_compile_args
 
@@ -68,5 +69,11 @@ def scan_engine_profile(root, profile_path, *, max_shards=10000, llvm_root="/hom
                 continue
             projected = engine_result_to_audit_result(semgrep, source_root=root)
             result = merge_engine_result(result, projected, source_root=root)
-        result["engine_profiles"] = {"semgrep_rule_files": list(rule_files)}
+        result["engine_profiles"] = {
+            "semgrep_rule_files": list(rule_files),
+            "semgrep_rule_sha256": {
+                rule_file: hashlib.sha256((root / rule_file).read_bytes()).hexdigest()
+                for rule_file in rule_files
+            },
+        }
     return result
