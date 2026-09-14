@@ -27,6 +27,14 @@ class EngineAdapterTests(unittest.TestCase):
         self.assertEqual(result['engine'], 'semgrep')
         self.assertEqual(result['findings'][0]['location']['line'], 3)
 
+    def test_local_engine_routes_semgrep_json(self):
+        from unittest.mock import patch
+        from subprocess import CompletedProcess
+        raw = '{"results": [{"check_id": "r", "path": "a.c", "start": {"line": 3}, "extra": {"message": "x"}}]}'
+        with patch('ohvul.engine_adapter.subprocess.run', return_value=CompletedProcess([], 0, raw, '')):
+            result = __import__('ohvul.engine_adapter', fromlist=['run_local_engine']).run_local_engine('semgrep', 'semgrep', Path('.'))
+        self.assertEqual(result['engine'], 'semgrep')
+
     def test_command_is_local_and_allowlisted(self):
         self.assertEqual(build_local_command("semgrep", "semgrep", Path("."))[0], "semgrep")
         with self.assertRaises(ValueError):

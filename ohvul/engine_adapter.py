@@ -253,6 +253,8 @@ def run_local_engine(engine: str, executable: str, source_root: Path,
         raise ValueError("analysis engine output is not JSON") from exc
     if "runs" in raw:
         return normalize_sarif(raw, engine=engine, source_root=source_root)
+    if engine == "semgrep" and "results" in raw:
+        return normalize_semgrep_json(raw, source_root=source_root)
     return normalize_findings(raw, engine=engine, source_root=source_root)
 
 
