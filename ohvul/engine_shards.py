@@ -37,6 +37,11 @@ def scan_engine_manifest(root, manifest, *, max_shards=10000, llvm_root="/home/a
         raise ValueError("manifest exceeds max_shards")
     results = [scan_engine_shard(root, shard, llvm_root=llvm_root, timeout=timeout, compile_args=compile_args) for shard in shards]
     findings = [f for r in results for f in r["findings"]]
+    findings.sort(key=lambda f: (f.get("location", {}).get("file", ""),
+                                f.get("location", {}).get("line", 0),
+                                f.get("rule", ""), f.get("evidence_id", "")))
+    for index, finding in enumerate(findings, 1):
+        finding["alert_id"] = f"AL-ENG-{index:06d}"
     bundles = [b for r in results for b in r["evidence_bundles"]]
     errors = [e for r in results for e in r.get("input_errors", [])]
     output = {"schema_version": "0.3", "scan": {"root": str(root), "files_scanned": sum(r["engine_runs"] for r in results), "engine": "clang", "engine_version": "22.1.8"}, "findings": findings, "evidence_bundles": bundles, "input_errors": errors, "status": "completed" if not errors else ("partial" if findings else "input_error"), "safety": {"local_only": True, "no_execution": True, "no_network": True}}

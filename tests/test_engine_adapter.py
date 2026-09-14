@@ -5,7 +5,7 @@ from ohvul.engine_adapter import discover_local_engines, normalize_findings, nor
 
 class EngineAdapterTests(unittest.TestCase):
     def test_discovery_has_fixed_engine_set(self):
-        self.assertEqual([x.name for x in discover_local_engines()], ["clang", "semgrep", "codeql", "joern"])
+        self.assertEqual([x.name for x in discover_local_engines()], ["clang", "clang-tidy", "semgrep", "codeql", "joern"])
 
     def test_normalization_forces_candidate_and_safety(self):
         result = normalize_findings({"findings": [{"rule": "x", "location": {"file": "a.c", "line": 3}}]}, engine="clang", source_root=Path("."), engine_version="test")
@@ -44,6 +44,7 @@ class EngineAdapterTests(unittest.TestCase):
     def test_clang_tidy_text_normalization(self):
         text = 'a.c:7:4: warning: possible issue [clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling]\n'
         result = normalize_clang_tidy_text(text, source_root=Path('.'), engine_version='22.1.8')
+        self.assertEqual(result['engine'], 'clang-tidy')
         self.assertEqual(result['findings'][0]['location']['line'], 7)
         self.assertEqual(result['findings'][0]['rule'], 'clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling')
         self.assertEqual(result['findings'][0]['cwe_candidate'], 'CWE-676')

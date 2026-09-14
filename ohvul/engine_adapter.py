@@ -19,7 +19,7 @@ from pathlib import Path
 from ohvul.domain.evidence import make_bundle
 
 
-SUPPORTED_ENGINES = ("clang", "semgrep", "codeql", "joern")
+SUPPORTED_ENGINES = ("clang", "clang-tidy", "semgrep", "codeql", "joern")
 CWE_CANDIDATES = {
     "unix.Malloc": "CWE-416",
     "core.NullDereference": "CWE-476",
@@ -273,7 +273,7 @@ def normalize_clang_tidy_text(raw: str, *, source_root: Path,
                          "description": item["message"],
                          "location": {"file": item["file"], "line": int(item["line"])},
                          "evidence": {"column": int(item["column"])}})
-    return normalize_findings({"findings": findings}, engine="clang",
+    return normalize_findings({"findings": findings}, engine="clang-tidy",
                               source_root=source_root, engine_version=engine_version)
 
 
