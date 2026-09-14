@@ -5,6 +5,7 @@ from pathlib import Path
 from .engine_adapter import engine_result_to_audit_result, run_wsl_clang_analyzer, attach_knowledge_candidates
 from .knowledge_base import load_records
 from .source_snapshot import source_snapshot
+from .engine_profile import load_profile, profile_compile_args
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -17,7 +18,12 @@ def main() -> int:
     parser.add_argument("--knowledge-base", type=Path)
     parser.add_argument("--component")
     parser.add_argument("--version")
+    parser.add_argument("--profile", type=Path)
     args = parser.parse_args()
+    compile_args = ()
+    if args.profile:
+        profile = load_profile(args.profile)
+        compile_args = profile_compile_args(profile, args.source_root)
     if bool(args.source) == bool(args.files_from):
         parser.error("provide exactly one of source or --files-from")
     sources = [args.source] if args.source else []
@@ -33,7 +39,7 @@ def main() -> int:
     normalized = []
     errors = []
     for source in sources:
-        item = run_wsl_clang_analyzer(source, args.source_root, llvm_root=args.llvm_root, timeout=args.timeout)
+        item = run_wsl_clang_analyzer(source, args.source_root, llvm_root=args.llvm_root, timeout=args.timeout, compile_args=compile_args)
         if item.get("status") == "completed":
             normalized.extend(item.get("findings", []))
         else:

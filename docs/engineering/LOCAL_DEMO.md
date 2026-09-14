@@ -17,6 +17,7 @@
 
 ```text
 python -m ohvul.engine_cli <source-file> --source-root <source-root> --output engine.json
+python -m ohvul.engine_cli <source-file> --source-root <source-root> --profile camera_app_engine_profile.json --output engine.json
 ```
 
 显式文件清单扫描：
