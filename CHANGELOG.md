@@ -49,6 +49,7 @@
 - 全量回归更新为 173 项通过、4 项环境相关跳过。
 - Semgrep taint pilot 在合成 C 样本上成功捕获 `getenv`→`strcpy` 数据流；规则和边界记录在 `docs/design/semgrep_taint_pilot.yml`。
 - Semgrep taint pilot 已在 cameraApp 三个真实文件上完成离线复跑：0 条命中、无输入错误；结果仅表示该规则未命中这些文件。
+- 竞赛差距分析文档新增最新代码审查结论和收敛后的执行顺序。
 - 已验证 Semgrep JSON 候选可与基础扫描结果通过 `merge_engine_result` 合并，并通过 `validate_result`。
 - WSL 隔离 venv 安装 Semgrep 1.177.0；cameraApp 本地规则扫描完成且无结果，合成 C 样本可产生候选；新增 Semgrep JSON 统一结果转换。
 - 新增 `run_wsl_semgrep()`：仅接受源码根目录内的本地规则和显式文件清单，禁止远程规则输入。
