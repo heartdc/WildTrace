@@ -7,6 +7,7 @@ from .source_snapshot import source_snapshot
 from .report import build_audit_report, validate_audit_report
 from .engine_shards import scan_engine_manifest, scan_engine_profile
 from .engine_adapter import merge_engine_result
+from .semantic_rules import cross_function_length_candidates, candidates_to_audit_result
 
 
 def main():
@@ -21,6 +22,7 @@ def main():
     parser.add_argument("--report-output",type=pathlib.Path,help="optional candidate-only report")
     parser.add_argument("--engine-files-from",type=pathlib.Path,help="optional UTF-8 relative file list for WSL Clang")
     parser.add_argument("--engine-profile",type=pathlib.Path,help="optional component engine profile for WSL Clang")
+    parser.add_argument("--semantic-files-from",type=pathlib.Path,help="optional UTF-8 relative file list for semantic candidate rules")
     args=parser.parse_args()
     if not args.path.is_dir(): parser.error("path must be an existing local directory")
     if args.report_output and args.report_output.resolve().is_relative_to(args.path.resolve()): parser.error("report must be outside scanned source directory")
@@ -68,6 +70,12 @@ def main():
             engine_result=scan_engine_manifest(args.path,engine_manifest)
             result=merge_engine_result(result,engine_result,source_root=args.path)
             result["engine_scan"]={"status":engine_result.get("status"),"engine_runs":engine_result.get("scan",{}).get("files_scanned"),"input_errors":engine_result.get("input_errors",[])}
+        if args.semantic_files_from:
+            entries=[x.strip() for x in args.semantic_files_from.read_text(encoding="utf-8-sig").splitlines() if x.strip() and not x.lstrip().startswith("#")]
+            semantic_candidates=cross_function_length_candidates(args.path, entries)
+            semantic_result=candidates_to_audit_result(semantic_candidates, root=args.path, source_snapshot_sha256=current_snapshot)
+            result=merge_engine_result(result, semantic_result, source_root=args.path)
+            result["semantic_scan"]={"status":"completed", "files_scanned":len(entries), "candidates":len(semantic_candidates)}
         result["components"]=identify_components(args.path)
         records=load_vulnerability_metadata(args.vuln_db)
         db_digest=hashlib.sha256(args.vuln_db.read_bytes()).hexdigest() if args.vuln_db else None
