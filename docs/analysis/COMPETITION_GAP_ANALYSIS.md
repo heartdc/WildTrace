@@ -228,3 +228,7 @@ FSM 继续负责状态、门控、重试、超时、证据一致性和人工审�
 7. 最后完成受限 Agent、报告、演示和交付材料。
 
 GLM-5.3 可以编辑测试、规则草稿、评测脚本和文档，并通过独立 PR 参与；FSM、证据模型、结果校验和主事务链由 Codex 维护，最终安全判断由用户批准。
+
+### 13.1 跨函数工具试验记录
+
+已在隔离合成 C 样本上用 Semgrep taint 规则验证 `getenv` → `strcpy` 数据流捕获成功。规则保存在 `docs/design/semgrep_taint_pilot.yml`；这只是工具能力试验，不是 OpenHarmony 漏洞结论。下一步应在完整组件 profile 上运行并转换为统一 EvidenceBundle。

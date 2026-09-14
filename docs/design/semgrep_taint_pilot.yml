@@ -1,0 +1,10 @@
+rules:
+  - id: env-to-strcpy
+    languages: [c, cpp]
+    mode: taint
+    message: environment value reaches strcpy; boundary review required
+    severity: WARNING
+    pattern-sources:
+      - pattern: getenv(...)
+    pattern-sinks:
+      - pattern: strcpy($DST, $SRC)
