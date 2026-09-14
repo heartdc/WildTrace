@@ -26,6 +26,13 @@ def load_profile(path: Path) -> dict:
         raise ValueError("profile lists must contain nonempty strings")
     if any(x not in _PROFILE_ENGINES for x in data["engines"]):
         raise ValueError("profile contains unsupported engine")
+    rules = data.get("semgrep_rule_files", [])
+    if not isinstance(rules, list) or any(not isinstance(x, str) or not x for x in rules):
+        raise ValueError("semgrep_rule_files must be a list of nonempty strings")
+    for entry in rules:
+        path = Path(entry)
+        if path.is_absolute() or ".." in path.parts:
+            raise ValueError("Semgrep rule paths must stay relative to source root")
     return data
 
 

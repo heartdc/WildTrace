@@ -1,7 +1,7 @@
 """Run the local WSL Clang adapter over an explicit shard manifest."""
 from __future__ import annotations
 from pathlib import Path
-from .engine_adapter import run_wsl_clang_analyzer, engine_result_to_audit_result
+from .engine_adapter import run_wsl_clang_analyzer, run_wsl_semgrep, engine_result_to_audit_result, merge_engine_result
 from .engine_profile import load_profile, profile_compile_args
 
 
@@ -54,6 +54,19 @@ def scan_engine_profile(root, profile_path, *, max_shards=10000, llvm_root="/hom
     root = Path(root).resolve()
     profile = load_profile(Path(profile_path))
     manifest = {"root": str(root), "shards": [{"files": profile["source_files"]}]}
-    return scan_engine_manifest(root, manifest, max_shards=max_shards,
+    result = scan_engine_manifest(root, manifest, max_shards=max_shards,
                                 llvm_root=llvm_root, timeout=timeout,
                                 compile_args=profile_compile_args(profile, root))
+    rule_files = profile.get("semgrep_rule_files", [])
+    if "semgrep" in profile["engines"] and rule_files:
+        for rule_file in rule_files:
+            semgrep = run_wsl_semgrep(root, root / rule_file,
+                                      tuple(profile["source_files"]), timeout=timeout)
+            if semgrep.get("status") != "completed":
+                result.setdefault("input_errors", []).append({"engine": "semgrep", **semgrep})
+                result["status"] = "partial" if result.get("findings") else "input_error"
+                continue
+            projected = engine_result_to_audit_result(semgrep, source_root=root)
+            result = merge_engine_result(result, projected, source_root=root)
+        result["engine_profiles"] = {"semgrep_rule_files": list(rule_files)}
+    return result
