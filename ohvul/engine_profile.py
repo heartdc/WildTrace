@@ -2,6 +2,7 @@
 from __future__ import annotations
 import json
 import re
+import subprocess
 from pathlib import Path
 from .engine_adapter import windows_to_wsl_path
 
@@ -45,3 +46,21 @@ def validate_profile_sources(profile: dict, source_root: Path) -> dict:
             "missing_files": missing_files, "missing_include_dirs": missing_dirs,
             "source_files": len(profile["source_files"]),
             "include_dirs": len(profile["include_dirs"])}
+
+
+def validate_profile_provenance(profile: dict, source_root: Path) -> dict:
+    """Check recorded repository commits against local Git worktrees."""
+    root = Path(source_root).resolve()
+    mismatches = []
+    for repository, expected in profile["source_repositories"].items():
+        path = root / repository
+        try:
+            completed = subprocess.run(["git", "-C", str(path), "rev-parse", "HEAD"],
+                                       capture_output=True, text=True, timeout=30, check=False)
+        except OSError:
+            completed = None
+        actual = completed.stdout.strip() if completed and completed.returncode == 0 else None
+        if actual != expected:
+            mismatches.append({"repository": repository, "expected": expected, "actual": actual})
+    return {"verified": not mismatches, "mismatches": mismatches,
+            "repositories": len(profile["source_repositories"])}

@@ -1,6 +1,6 @@
 import unittest
 from pathlib import Path
-from ohvul.engine_profile import load_profile, profile_compile_args, validate_profile_sources
+from ohvul.engine_profile import load_profile, profile_compile_args, validate_profile_sources, validate_profile_provenance
 
 
 class EngineProfileTests(unittest.TestCase):
@@ -23,6 +23,11 @@ class EngineProfileTests(unittest.TestCase):
         result = validate_profile_sources(profile, Path('.'))
         self.assertFalse(result['complete'])
         self.assertIn('a.c', result['missing_files'])
+
+    def test_profile_provenance_reports_missing_git_worktree(self):
+        profile = {'source_repositories': {'missing': 'a'*40}}
+        result = validate_profile_provenance(profile, Path('.'))
+        self.assertFalse(result['verified'])
 
 
 if __name__ == '__main__':
