@@ -14,6 +14,7 @@
 - 后续顺序：完成适配层正确性收敛，固定组件 profile 和跨函数工具试验，随后扩展高价值漏洞族、补丁验证、人工评测、真实性能和交付材料。
 - Phase 1 适配器正确性检查点：已完成 alert_id 冲突消解、Clang/clang-tidy/Semgrep 来源保留、外部结果 schema 校验、源码根与快照一致性、显式文件/分片路径、WSL 路径归一化及越界拒绝；178 项测试通过、4 项环境相关跳过。该检查点只证明适配器契约，不证明分析器覆盖率或漏洞成立。
 - Semgrep profile 增量：profile 可声明源码根内的 `semgrep_rule_files`；仅在 engines 明确包含 `semgrep` 时执行，并通过统一结果合并链保留候选状态。规则文件不得使用绝对路径、`..` 或远程来源。
+- 本地 camera Semgrep 试验：在 `C:\Projects\OpenHarmony-complete\tools\wildtrace\camera_pilot.yml` 使用合成 `strcpy` 规则对 camera_ability.cpp 运行本地 Semgrep，规则 SHA-256 为 `CB307513B7BA9C6F00E712BE2C85D0DBBEC7ABEB3F1DF4D5FFBDFEB17B53B5EF`，扫描完成且 0 条诊断；这是组件级静态结果，不是平台漏洞结论。profile 端到端结果仍需单独记录可复现命令输出。
 - 历史记录说明：本文件以下条目为追加式历史记录；如与本节冲突，以本节为准。历史条目不得作为已完成能力的单独证据。
 
 ## 本次已完成
