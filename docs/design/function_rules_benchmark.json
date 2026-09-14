@@ -1,0 +1,110 @@
+[
+  {
+    "id": "t1-overflow-product-size",
+    "code": "void resize(int w, int h) {\n  char *p = malloc(w * h * 4);\n  p[0] = 1;\n}\n",
+    "expected_cwe": ["CWE-190", "CWE-476"],
+    "label": "candidate",
+    "reason": "unchecked w*h*4 feeds malloc size (CWE-190); the unchecked malloc result is also dereferenced (CWE-476)",
+    "language": "C",
+    "component": "sample"
+  },
+  {
+    "id": "s1-sizeof-only",
+    "code": "void copy(void) {\n  struct frame *f = malloc(sizeof(struct frame));\n  if (f == NULL) {\n    return;\n  }\n  f->len = 0;\n}\n",
+    "expected_cwe": [],
+    "label": "safe_control",
+    "reason": "sizeof-only size cannot wrap and the result is null-checked; must raise neither CWE-190 nor CWE-476",
+    "language": "C",
+    "component": "sample"
+  },
+  {
+    "id": "s2-bounds-checked",
+    "code": "void resize(int w, int h) {\n  if (w > 0 && h > 0 && w * h < 4096) {\n    char *p = malloc(w * h);\n    if (p == NULL) {\n      return;\n    }\n    p[0] = 1;\n  }\n}\n",
+    "expected_cwe": [],
+    "label": "safe_control",
+    "reason": "prior bounds check guards the product and the result is null-checked; must raise neither rule",
+    "language": "C",
+    "component": "sample"
+  },
+  {
+    "id": "t2-malloc-deref-no-check",
+    "code": "void f(size_t n) {\n  char *p = malloc(n);\n  p[0] = 'x';\n}\n",
+    "expected_cwe": ["CWE-476"],
+    "label": "candidate",
+    "reason": "malloc result dereferenced with no NULL check between assignment and use",
+    "language": "C",
+    "component": "sample"
+  },
+  {
+    "id": "s3-null-checked",
+    "code": "int f(size_t n) {\n  char *p = malloc(n);\n  if (p == NULL) {\n    return -1;\n  }\n  p[0] = 'x';\n  return 0;\n}\n",
+    "expected_cwe": [],
+    "label": "safe_control",
+    "reason": "explicit NULL check before dereference; must not raise CWE-476",
+    "language": "C",
+    "component": "sample"
+  },
+  {
+    "id": "s4-plain-struct-deref",
+    "code": "void g(struct frame *fr) {\n  fr->len = 1;\n}\n",
+    "expected_cwe": [],
+    "label": "safe_control",
+    "reason": "caller-contract pointer deref, not nullable-return derived; line scanner would flag it",
+    "language": "C",
+    "component": "sample"
+  },
+  {
+    "id": "t3-strcpy-fixed-array",
+    "code": "void f(const char *src) {\n  char buf[64];\n  strcpy(buf, src);\n}\n",
+    "expected_cwe": ["CWE-121"],
+    "label": "candidate",
+    "reason": "unbounded strcpy into fixed-size local stack array",
+    "language": "C",
+    "component": "sample"
+  },
+  {
+    "id": "s5-literal-strcpy",
+    "code": "void f(void) {\n  char buf[64];\n  strcpy(buf, \"ok\");\n}\n",
+    "expected_cwe": [],
+    "label": "safe_control",
+    "reason": "string literal source bounded by constant",
+    "language": "C",
+    "component": "sample"
+  },
+  {
+    "id": "s6-sprintf-no-percent-s",
+    "code": "void f(int value) {\n  char buf[16];\n  sprintf(buf, \"%d\", value);\n}\n",
+    "expected_cwe": [],
+    "label": "safe_control",
+    "reason": "no %s or nonliteral format; copy width bounded for reasonable int",
+    "language": "C",
+    "component": "sample"
+  },
+  {
+    "id": "t4-memcpy-symbolic-size",
+    "code": "void f(const void *src, size_t n) {\n  char buf[32];\n  memcpy(buf, src, n);\n}\n",
+    "expected_cwe": ["CWE-121"],
+    "label": "candidate_requires_context",
+    "reason": "symbolic memcpy size into fixed array; needs caller context to bound n",
+    "language": "C",
+    "component": "sample"
+  },
+  {
+    "id": "s7-memcpy-literal-in-bounds",
+    "code": "void f(const void *src) {\n  char buf[32];\n  memcpy(buf, src, 16);\n}\n",
+    "expected_cwe": [],
+    "label": "safe_control",
+    "reason": "literal size within declared literal capacity",
+    "language": "C",
+    "component": "sample"
+  },
+  {
+    "id": "t5-getenv-deref-no-check",
+    "code": "int f(const char *name) {\n  char *v = getenv(name);\n  return v[0];\n}\n",
+    "expected_cwe": ["CWE-476"],
+    "label": "candidate",
+    "reason": "getenv may return NULL; dereferenced without check",
+    "language": "C",
+    "component": "sample"
+  }
+]
