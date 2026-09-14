@@ -5,7 +5,7 @@ from .detect.vuln_metadata import load_vulnerability_metadata, match_components,
 from .workflow import WorkflowCheckpoint, save_checkpoint, load_checkpoint, AuditJournal
 from .source_snapshot import source_snapshot
 from .report import build_audit_report, validate_audit_report
-from .engine_shards import scan_engine_manifest
+from .engine_shards import scan_engine_manifest, scan_engine_profile
 from .engine_adapter import merge_engine_result
 
 
@@ -20,6 +20,7 @@ def main():
     parser.add_argument("--journal",type=pathlib.Path,help="optional local transaction journal")
     parser.add_argument("--report-output",type=pathlib.Path,help="optional candidate-only report")
     parser.add_argument("--engine-files-from",type=pathlib.Path,help="optional UTF-8 relative file list for WSL Clang")
+    parser.add_argument("--engine-profile",type=pathlib.Path,help="optional component engine profile for WSL Clang")
     args=parser.parse_args()
     if not args.path.is_dir(): parser.error("path must be an existing local directory")
     if args.report_output and args.report_output.resolve().is_relative_to(args.path.resolve()): parser.error("report must be outside scanned source directory")
@@ -55,7 +56,13 @@ def main():
     try:
         if args.checkpoint: save_checkpoint(checkpoint,args.checkpoint,force=args.force)
         result=scan_path(args.path)
-        if args.engine_files_from:
+        if args.engine_files_from and args.engine_profile:
+            parser.error("--engine-files-from and --engine-profile are mutually exclusive")
+        if args.engine_profile:
+            engine_result=scan_engine_profile(args.path,args.engine_profile)
+            result=merge_engine_result(result,engine_result,source_root=args.path)
+            result["engine_scan"]={"status":engine_result.get("status"),"engine_runs":engine_result.get("scan",{}).get("files_scanned"),"input_errors":engine_result.get("input_errors",[])}
+        elif args.engine_files_from:
             entries=[x.strip() for x in args.engine_files_from.read_text(encoding="utf-8-sig").splitlines() if x.strip() and not x.lstrip().startswith("#")]
             engine_manifest={"root":str(args.path.resolve()),"shards":[{"files":entries}]}
             engine_result=scan_engine_manifest(args.path,engine_manifest)

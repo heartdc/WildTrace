@@ -5,6 +5,7 @@
 1. 安装：`python -m pip install -e . --no-deps`
 2. 扫描：`wildtrace <source_root> --output scan.json`
 3. 证据校验：`python -m ohvul.verify scan.json`
+3a. 组件 profile 扫描：`wildtrace <source_root> --engine-profile camera_app_engine_profile.json --output scan.json`
 4. 分支影响比较：`wildtrace-impact base.json revised.json`
 5. 联合验证：`verify-joint checkpoint.json scan.json harness.json`
 6. 合成性能基准：`wildtrace-perf --files 10 --lines 20`
