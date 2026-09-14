@@ -18,6 +18,7 @@
 - 新增 `docs/design/camera_semgrep_profile.json`，固定 camera 组件源码提交、规则相对路径和规则哈希；配置状态为 `candidate_only`，执行仍须先在源码根内人工放置并校验规则文件。
 - 分析能力增量：新增 `ohvul.semantic_facts`，对显式本地 C/C++ 文件提取函数、调用、分配、释放、复制和解引用事实，输出可序列化结构供后续长度传播/生命周期规则使用；这是保守词法事实层，不等同于编译器 AST，也不直接产生漏洞结论。全量测试 182 项通过、4 项环境相关跳过。
 - 长度传播规则增量：新增 `ohvul.semantic_rules.length_candidates`，将显式复制 sink 与附近长度源/边界证据关联，输出 `candidate` 和人工复核问题；修正 sink 行自匹配边界。全量测试 184 项通过、4 项环境相关跳过。
+- 跨函数长度传播增量：新增 `cross_function_length_candidates`，在显式文件集合内关联 caller 长度源、callee 参数和复制 sink；仅输出候选证据。专项测试 3 项通过。
 - 历史记录说明：本文件以下条目为追加式历史记录；如与本节冲突，以本节为准。历史条目不得作为已完成能力的单独证据。
 
 ## 本次已完成
