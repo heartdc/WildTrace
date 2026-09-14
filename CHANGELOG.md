@@ -1060,3 +1060,4 @@ head='''# 当前工程检查点
 - Semgrep profile 输出现在包含每个本地规则文件的 SHA-256，便于跨引擎结果复核和复现。
 - 新增 `docs/design/camera_semgrep_profile.json`，记录 camera 组件固定提交、规则相对路径和哈希；保持 candidate-only 与源码根内规则门禁。
 - 新增保守的 `ohvul.semantic_facts` 事实提取层及越界回归测试，为后续跨函数长度传播和生命周期规则提供统一输入；不升级为漏洞结论。
+- 新增长度传播候选规则，将复制 sink、长度源和边界上下文绑定为可复核证据；修正复制行被误识别为长度源的问题。

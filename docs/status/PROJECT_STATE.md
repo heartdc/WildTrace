@@ -17,6 +17,7 @@
 - 本地 camera Semgrep 试验：在 `C:\Projects\OpenHarmony-complete\tools\wildtrace\camera_pilot.yml` 使用合成 `strcpy` 规则对 camera_ability.cpp 运行本地 Semgrep，规则 SHA-256 为 `CB307513B7BA9C6F00E712BE2C85D0DBBEC7ABEB3F1DF4D5FFBDFEB17B53B5EF`，扫描完成且 0 条诊断；这是组件级静态结果，不是平台漏洞结论。profile 端到端结果仍需单独记录可复现命令输出。
 - 新增 `docs/design/camera_semgrep_profile.json`，固定 camera 组件源码提交、规则相对路径和规则哈希；配置状态为 `candidate_only`，执行仍须先在源码根内人工放置并校验规则文件。
 - 分析能力增量：新增 `ohvul.semantic_facts`，对显式本地 C/C++ 文件提取函数、调用、分配、释放、复制和解引用事实，输出可序列化结构供后续长度传播/生命周期规则使用；这是保守词法事实层，不等同于编译器 AST，也不直接产生漏洞结论。全量测试 182 项通过、4 项环境相关跳过。
+- 长度传播规则增量：新增 `ohvul.semantic_rules.length_candidates`，将显式复制 sink 与附近长度源/边界证据关联，输出 `candidate` 和人工复核问题；修正 sink 行自匹配边界。全量测试 184 项通过、4 项环境相关跳过。
 - 历史记录说明：本文件以下条目为追加式历史记录；如与本节冲突，以本节为准。历史条目不得作为已完成能力的单独证据。
 
 ## 本次已完成
