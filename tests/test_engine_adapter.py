@@ -76,6 +76,26 @@ class EngineAdapterTests(unittest.TestCase):
         result = engine_result_to_audit_result(normalized, source_root=Path('.'), source_snapshot_sha256='a'*64)
         self.assertEqual(result['scan']['source_snapshot_sha256'], 'a'*64)
 
+    def test_engine_projection_normalizes_wsl_path(self):
+        normalized = normalize_findings({'findings': [{'rule': 'R', 'location': {'file': '/mnt/c/scan/a.c', 'line': 2}}]}, engine='clang', source_root=Path('C:/scan'))
+        result = engine_result_to_audit_result(normalized, source_root=Path('C:/scan'))
+        self.assertEqual(result['findings'][0]['location']['file'], 'a.c')
+
+    def test_engine_projection_rejects_location_escape(self):
+        normalized = normalize_findings({'findings': [{'rule': 'R', 'location': {'file': '../outside.c', 'line': 2}}]}, engine='clang', source_root=Path('.'))
+        with self.assertRaises(ValueError):
+            engine_result_to_audit_result(normalized, source_root=Path('.'))
+
+    def test_engine_merge_avoids_alert_id_collision(self):
+        from ohvul.verify import validate_result
+        first = engine_result_to_audit_result(normalize_findings({'findings': [{'rule': 'R', 'location': {'file': 'a.c', 'line': 2}}]}, engine='clang', source_root=Path('.')), source_root=Path('.'))
+        engine = engine_result_to_audit_result(normalize_findings({'findings': [{'rule': 'R', 'location': {'file': 'b.c', 'line': 1}}]}, engine='clang', source_root=Path('.')), source_root=Path('.'))
+        first['findings'][0]['alert_id'] = 'DUP'
+        engine['findings'][0]['alert_id'] = 'DUP'
+        merged = merge_engine_result(first, engine, source_root=Path('.'))
+        self.assertEqual(validate_result(merged), 2)
+        self.assertEqual(len({f['alert_id'] for f in merged['findings']}), 2)
+
     def test_engine_merge_validates_with_result_checker(self):
         from ohvul.verify import validate_result
         base = {'schema_version': '0.3', 'scan': {'root': str(Path('.').resolve())}, 'findings': [], 'evidence_bundles': [], 'safety': {}}

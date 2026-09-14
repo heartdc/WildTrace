@@ -85,16 +85,19 @@ def engine_result_to_audit_result(engine_result: dict, *, source_root: Path,
     if not isinstance(engine_result, dict) or not isinstance(engine_result.get("findings"), list):
         raise ValueError("normalized engine result required")
     bundles, findings = [], []
+    root = Path(source_root).resolve()
     for index, item in enumerate(engine_result["findings"], 1):
         location = item.get("location")
         if not isinstance(location, dict) or not isinstance(location.get("file"), str):
             raise ValueError("engine finding location is required")
+        location = {"file": _normalize_engine_path(location["file"], root),
+                    "line": location.get("line")}
         evidence = dict(item.get("evidence") or {})
         evidence.update({"rule": item.get("rule", "external-rule"),
                          "description": item.get("description", ""),
                          "cwe_mapping_source": item.get("cwe_mapping_source"),
                          "cwe_mapping_version": item.get("cwe_mapping_version")})
-        bundle = make_bundle("static_scan", {"root": str(Path(source_root).resolve()),
+        bundle = make_bundle("static_scan", {"root": str(root),
                                               "file": location["file"],
                                               "line": location.get("line")}, evidence=evidence)
         bundles.append(bundle.to_dict())
@@ -103,7 +106,7 @@ def engine_result_to_audit_result(engine_result: dict, *, source_root: Path,
                          "cwe_mapping_version": item.get("cwe_mapping_version"), "rule": item.get("rule"),
                          "description": item.get("description", ""), "location": location,
                          "evidence": evidence, "evidence_id": bundle.evidence_id, "status": "candidate"})
-    scan = {"root": str(Path(source_root).resolve()),
+    scan = {"root": str(root),
             "files_scanned": len({x["location"]["file"] for x in findings}),
             "engine": engine_result.get("engine"), "engine_version": engine_result.get("engine_version")}
     if source_snapshot_sha256 is not None:
@@ -113,6 +116,20 @@ def engine_result_to_audit_result(engine_result: dict, *, source_root: Path,
     return {"schema_version": "0.3", "scan": scan,
             "findings": findings, "evidence_bundles": bundles,
             "safety": {"local_only": True, "no_execution": True, "no_network": True}}
+
+
+def _normalize_engine_path(value: str, root: Path) -> str:
+    """Normalize Windows/WSL/relative engine paths and reject escapes."""
+    if not isinstance(value, str) or not value:
+        raise ValueError("engine location file is required")
+    candidate = value
+    if re.match(r"^/mnt/[A-Za-z]/", value):
+        candidate = value[5].upper() + ":\\" + value[7:].replace("/", "\\")
+    path = Path(candidate)
+    resolved = path.resolve() if path.is_absolute() else (root / path).resolve()
+    if not resolved.is_relative_to(root):
+        raise ValueError("engine finding location escapes source root")
+    return resolved.relative_to(root).as_posix()
 
 
 def merge_engine_result(base_result: dict, engine_result: dict, *, source_root: Path) -> dict:
@@ -138,7 +155,19 @@ def merge_engine_result(base_result: dict, engine_result: dict, *, source_root: 
         if existing is None:
             indexed[bundle["evidence_id"]] = bundle
             output["evidence_bundles"].append(bundle)
-    output["findings"].extend(engine_result.get("findings", []))
+    used_alert_ids = {f.get("alert_id") for f in output["findings"]}
+    for finding in engine_result.get("findings", []):
+        alert_id = finding.get("alert_id")
+        if alert_id in used_alert_ids:
+            suffix = 1
+            candidate = f"{alert_id}-M{suffix:04d}"
+            while candidate in used_alert_ids:
+                suffix += 1
+                candidate = f"{alert_id}-M{suffix:04d}"
+            finding = dict(finding)
+            finding["alert_id"] = candidate
+        used_alert_ids.add(finding.get("alert_id"))
+        output["findings"].append(finding)
     output["scan"] = {**base_result.get("scan", {}), "engine": engine_result.get("scan", {}).get("engine"),
                        "engine_version": engine_result.get("scan", {}).get("engine_version")}
     output["safety"] = {"local_only": True, "no_execution": True, "no_network": True}
