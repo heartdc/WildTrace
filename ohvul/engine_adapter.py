@@ -122,6 +122,8 @@ def merge_engine_result(base_result: dict, engine_result: dict, *, source_root: 
         raise ValueError("base result must use schema 0.3")
     if base_result.get("scan", {}).get("root") != root or engine_result.get("scan", {}).get("root") != root:
         raise ValueError("scan root mismatch")
+    from .verify import validate_result
+    validate_result(engine_result)
     base_snapshot = base_result.get("scan", {}).get("source_snapshot_sha256")
     engine_snapshot = engine_result.get("scan", {}).get("source_snapshot_sha256")
     if base_snapshot and engine_snapshot and base_snapshot != engine_snapshot:

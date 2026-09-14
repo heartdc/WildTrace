@@ -76,6 +76,12 @@ class EngineAdapterTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             merge_engine_result(base, engine, source_root=Path('.'))
 
+    def test_engine_merge_rejects_unvalidated_result(self):
+        base = {'schema_version': '0.3', 'scan': {'root': str(Path('.').resolve())}, 'findings': [], 'evidence_bundles': [], 'safety': {}}
+        engine = {'schema_version': '0.3', 'scan': {'root': str(Path('.').resolve())}, 'findings': [{'alert_id': 'x'}], 'evidence_bundles': []}
+        with self.assertRaises((ValueError, KeyError)):
+            merge_engine_result(base, engine, source_root=Path('.'))
+
     def test_knowledge_candidate_is_cwe_filtered(self):
         db = {'records': [{'id': 'CVE-2024-1234', 'cwe': ['CWE-476'], 'summary': 'x', 'component': 'camera', 'affected_versions': ['1'], 'fixed_versions': ['2'], 'source': 'local'}], 'records_sha256': 'x'}
         normalized = normalize_findings({'findings': [{'rule': 'core.NullDereference', 'location': {'file': 'a.c', 'line': 2}}]}, engine='clang', source_root=Path('.'))
