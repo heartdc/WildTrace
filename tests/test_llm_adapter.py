@@ -20,10 +20,10 @@ class LlmAdapterTests(unittest.TestCase):
   class Response:
    def __enter__(self): return self
    def __exit__(self,*args): pass
-   def read(self): return json.dumps({'model':'grok-4.6','choices':[{'message':{'content':'draft'}}]}).encode()
+   def read(self, limit=-1): return json.dumps({'model':'grok-4.6','choices':[{'message':{'content':'draft'}}]}).encode()
   old=os.environ.get('OSLOVELACE_API_KEY'); os.environ['OSLOVELACE_API_KEY']='secret-test-key'
   try:
-   with patch('urllib.request.urlopen', return_value=Response()) as call:
+   with patch('ohvul.llm_adapter._open', return_value=Response()) as call:
     result=draft_analysis({'id':'candidate'}); request=call.call_args.args[0]
    self.assertEqual(result['final_verdict'],'undetermined'); self.assertNotIn('secret-test-key', str(result)); self.assertIn('Bearer secret-test-key', request.headers['Authorization'])
   finally:
