@@ -168,6 +168,15 @@ See [semantic rule contract](docs/engineering/SEMANTIC_RULE_CONTRACT.md),
 [measured acceptance](docs/analysis/SEMANTIC_BOUNDARY_AUDIT_20260914.md), and
 [current offline roadmap](docs/status/NEXT_ROADMAP_20260914.md).
 
+## Compiler-derived memory analysis
+
+Use `ohvul.compiler_analysis` or the main CLI's `--compiler-profile` for typed
+object-size checks and bounded exact local scalar propagation. Unknown effects,
+loop state, cleanup and unsupported control flow do not inherit stale values.
+This stage invokes a local syntax-only compiler, not a model or target program.
+See [compiler analysis](docs/engineering/COMPILER_ANALYSIS.md) and
+[current core roadmap](docs/status/NEXT_ROADMAP_20260915.md).
+
 ## Optional LLM drafting (retained; currently paused)
 
 For a local hidden-key prompt and a 300-second optional socket timeout, use

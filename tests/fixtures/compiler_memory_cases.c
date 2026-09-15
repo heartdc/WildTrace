@@ -24,3 +24,20 @@ void sizeof_unevaluated(void) { char d[4],s[8]={0}; (void)sizeof(memcpy(d,s,8));
 void dead_shortcircuit(void) { char d[4],s[8]={0}; (void)(0 && memcpy(d,s,8)); }
 void dead_conditional(void) { char d[4],s[8]={0}; (void)(0 ? memcpy(d,s,8) : (void*)0); }
 void dead_while(void) { char d[4],s[8]={0}; while(0) { memcpy(d,s,8); } }
+
+/* Local-flow contrast cases, never linked into or executed as a program. */
+extern void touch_length(size_t *n);
+void local_length_overflow(void) { char d[4],s[8]={0}; size_t n=8; memcpy(d,s,n); }
+void local_length_fixed(void) { char d[4],s[8]={0}; size_t n=8; n=4; memcpy(d,s,n); }
+void derived_length_overflow(void) { char d[4],s[8]={0}; size_t n=4; size_t m=n+4; memcpy(d,s,m); }
+void branch_join_fixed(int flag) { char d[4],s[8]={0}; size_t n=8; if(flag) n=4; else n=4; memcpy(d,s,n); }
+void branch_join_unknown(int flag) { char d[4],s[8]={0}; size_t n=8; if(flag) n=4; memcpy(d,s,n); }
+void escaped_length_unknown(void) { char d[4],s[8]={0}; size_t n=8; touch_length(&n); memcpy(d,s,n); }
+void loop_length_unknown(int flag) { char d[4],s[8]={0}; size_t n=8; while(flag) { memcpy(d,s,n); n=4; } }
+void loop_fresh_overflow(int flag) { char d[4],s[8]={0}; size_t n=1; while(flag) { n=8; memcpy(d,s,n); } }
+void local_dead_fixed(void) { char d[4],s[8]={0}; int flag=0; if(flag) memcpy(d,s,8); }
+void local_narrow_fixed(void) { char d[4],s[8]={0}; unsigned char n=(unsigned char)260; memcpy(d,s,n); }
+void local_offset_overflow(void) { char d[8],s[8]={0}; size_t off=7; memcpy(d+off,s,2); }
+void local_offset_fixed(void) { char d[8],s[8]={0}; size_t off=6; memcpy(d+off,s,2); }
+void local_return_fixed(void) { char d[4],s[8]={0}; return; memcpy(d,s,8); }
+void volatile_length_unknown(void) { char d[4],s[8]={0}; volatile size_t n=8; memcpy(d,s,n); }

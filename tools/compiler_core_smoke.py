@@ -17,11 +17,17 @@ POSITIVE = {'write_overflow':'CWE-787','read_overflow':'CWE-125',
             'offset_overflow':'CWE-787','typed_overflow':'CWE-787',
             'pointer_size_overflow':'CWE-787','macro_overflow':'CWE-787',
             'fill_overflow':'CWE-787','address_overflow':'CWE-787',
-            'cpp_write_overflow':'CWE-787'}
+            'cpp_write_overflow':'CWE-787', 'local_length_overflow':'CWE-787',
+            'derived_length_overflow':'CWE-787', 'loop_fresh_overflow':'CWE-787',
+            'local_offset_overflow':'CWE-787', 'cpp_local_overflow':'CWE-787'}
 NEGATIVE = {'write_fixed','read_fixed','offset_fixed','typed_fixed','narrowed_fixed',
             'macro_fixed','fill_fixed','dead_branch','address_fixed','sizeof_unevaluated','cpp_write_fixed',
-            'dead_shortcircuit','dead_conditional','dead_while'}
-UNKNOWN = {'dynamic_unknown','indirect_unknown','cpp_custom_unknown'}
+            'dead_shortcircuit','dead_conditional','dead_while', 'local_length_fixed',
+            'branch_join_fixed', 'local_dead_fixed', 'local_narrow_fixed',
+            'local_offset_fixed', 'local_return_fixed'}
+UNKNOWN = {'dynamic_unknown','indirect_unknown','cpp_custom_unknown', 'branch_join_unknown',
+           'escaped_length_unknown','loop_length_unknown','volatile_length_unknown',
+           'cpp_reference_unknown', 'cpp_cleanup_unknown'}
 
 
 def run_smoke(output):
