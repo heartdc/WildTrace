@@ -15,7 +15,7 @@ import plistlib
 import tempfile
 import uuid
 import re
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from ohvul.domain.evidence import make_bundle
 
 
@@ -97,6 +97,7 @@ def engine_result_to_audit_result(engine_result: dict, *, source_root: Path,
         raise ValueError("normalized engine result required")
     bundles, findings = [], []
     root = Path(source_root).resolve()
+    raw_root = Path(source_root)
     declared_root = engine_result.get("source_root")
     if declared_root is not None and (not isinstance(declared_root, str)
                                       or Path(declared_root).resolve() != root):
@@ -113,7 +114,7 @@ def engine_result_to_audit_result(engine_result: dict, *, source_root: Path,
         location = item.get("location")
         if not isinstance(location, dict) or not isinstance(location.get("file"), str):
             raise ValueError("engine finding location is required")
-        location = {"file": _normalize_engine_path(location["file"], root),
+        location = {"file": _normalize_engine_path(location["file"], raw_root),
                     "line": location.get("line")}
         evidence = dict(item.get("evidence") or {})
         evidence.update({"rule": item.get("rule", "external-rule"),
@@ -161,14 +162,27 @@ def _normalize_engine_path(value: str, root: Path) -> str:
     """Normalize Windows/WSL/relative engine paths and reject escapes."""
     if not isinstance(value, str) or not value:
         raise ValueError("engine location file is required")
-    candidate = value
-    if re.match(r"^/mnt/[A-Za-z]/", value):
-        candidate = value[5].upper() + ":\\" + value[7:].replace("/", "\\")
-    path = Path(candidate)
-    resolved = path.resolve() if path.is_absolute() else (root / path).resolve()
-    if not resolved.is_relative_to(root):
+
+    def _as_windows_drive(text: str) -> str:
+        if re.match(r"^/mnt/[A-Za-z]/", text):
+            return text[5].upper() + ":\\" + text[7:].replace("/", "\\")
+        return text
+
+    candidate = PureWindowsPath(_as_windows_drive(value))
+    root_windows = PureWindowsPath(_as_windows_drive(str(root)))
+    if not (root_windows.is_absolute() and root_windows.drive):
+        root_windows = PureWindowsPath(_as_windows_drive(Path(root).resolve().as_posix()))
+    if candidate.is_absolute() and candidate.drive:
+        try:
+            return candidate.relative_to(root_windows).as_posix()
+        except ValueError:
+            raise ValueError("engine finding location escapes source root") from None
+    path = Path(value)
+    resolved_root = root.resolve()
+    resolved = path.resolve() if path.is_absolute() else (resolved_root / path).resolve()
+    if not resolved.is_relative_to(resolved_root):
         raise ValueError("engine finding location escapes source root")
-    return resolved.relative_to(root).as_posix()
+    return resolved.relative_to(resolved_root).as_posix()
 
 
 def merge_engine_result(base_result: dict, engine_result: dict, *, source_root: Path) -> dict:
@@ -464,12 +478,18 @@ def normalize_clang_tidy_text(raw: str, *, source_root: Path,
 
 
 def windows_to_wsl_path(path: Path) -> str:
-    """Map an absolute Windows drive path to the WSL /mnt path."""
-    absolute = path.resolve()
-    drive = absolute.drive.rstrip(":").lower()
-    if not drive or not absolute.is_absolute():
+    """Map an absolute Windows drive path to the WSL /mnt path.
+
+    Uses pure string semantics so behavior is identical on Windows and POSIX
+    hosts; no filesystem access happens here.
+    """
+    candidate = PureWindowsPath(str(path))
+    if not candidate.is_absolute() or not candidate.drive:
         raise ValueError("an absolute Windows path is required")
-    return "/mnt/" + drive + absolute.as_posix()[2:]
+    if candidate.drive.startswith("\\\\"):
+        raise ValueError("UNC paths cannot map into a WSL /mnt drive")
+    drive = candidate.drive.rstrip(":").lower()
+    return "/mnt/" + drive + candidate.as_posix()[2:]
 
 
 def _version_observation(raw, source, *, bare=False):
