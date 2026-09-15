@@ -21,7 +21,7 @@ class Response:
 
 
 def provider(content='{}', **changes):
-    value = {'model': 'grok-4.6', 'choices': [{'message': {'content': content}, 'finish_reason': 'stop'}],
+    value = {'model': 'grok-4.6', 'output_text': content, 'status': 'completed',
              'usage': {'prompt_tokens': 20, 'completion_tokens': 10, 'total_tokens': 30}}
     value.update(changes)
     return json.dumps(value).encode()
@@ -37,12 +37,12 @@ class LlmTransportTests(unittest.TestCase):
         with patch.object(adapter, '_open', return_value=response) as opened:
             result = self.call(max_tokens=1536)
         req = opened.call_args.args[0]
-        self.assertEqual(req.full_url, 'https://oslovelace.com/v1/chat/completions')
+        self.assertEqual(req.full_url, 'https://oslovelace.com/v1/responses')
         self.assertEqual(req.headers['Authorization'], 'Bearer dummy-test-credential')
         self.assertNotIn(b'dummy-test-credential', req.data)
         self.assertNotIn('dummy-test-credential', str(result))
         payload = json.loads(req.data)
-        self.assertEqual(payload['max_tokens'], 1536)
+        self.assertEqual(payload['max_output_tokens'], 1536)
         self.assertEqual(payload['model'], 'grok-4.6')
         self.assertNotIn('tools', payload)
         self.assertEqual(response.limit, adapter.MAX_RESPONSE_BYTES + 1)
@@ -62,7 +62,7 @@ class LlmTransportTests(unittest.TestCase):
             adapter._NoRedirect().redirect_request(request, None, 302, '', {}, 'https://evil.invalid')
 
     def test_invalid_integer_limits_and_model_rejected_before_network(self):
-        for changes in ({'timeout': True}, {'timeout': 0}, {'timeout': 121}, {'timeout': 1.5},
+        for changes in ({'timeout': True}, {'timeout': 0}, {'timeout': 301}, {'timeout': 1.5},
                         {'max_tokens': True}, {'max_tokens': 4097}, {'max_tokens': 0}, {'model': 'other'}):
             with self.subTest(changes=changes), patch.object(adapter, '_open') as opened:
                 with self.assertRaises(ValueError): self.call(**changes)
@@ -74,6 +74,24 @@ class LlmTransportTests(unittest.TestCase):
                 with self.assertRaises(adapter.LlmTransportError) as caught: self.call()
                 self.assertNotIn('dummy-test-credential', str(caught.exception))
                 self.assertEqual(opened.call_count, 1)
+
+    def test_long_timeout_reaches_transport_without_retries(self):
+        for timeout in (120, 121, 300):
+            with self.subTest(timeout=timeout), patch.object(adapter, '_open', return_value=Response(provider())) as opened:
+                self.call(timeout=timeout)
+                self.assertEqual(opened.call_args.args[1], timeout)
+                self.assertEqual(opened.call_count, 1)
+
+    def test_timeout_is_not_http_forbidden(self):
+        for error in (TimeoutError('sensitive'), urllib.error.URLError(TimeoutError('sensitive'))):
+            with patch.object(adapter, '_open', side_effect=error) as opened:
+                with self.assertRaisesRegex(adapter.LlmTransportError, '^transport_timeout$'):
+                    self.call(timeout=300)
+                self.assertEqual(opened.call_count, 1)
+        error = urllib.error.HTTPError('private', 403, 'sensitive', {}, io.BytesIO(b'private'))
+        with patch.object(adapter, '_open', side_effect=error):
+            with self.assertRaisesRegex(adapter.LlmTransportError, '^http_status_403$'):
+                self.call(timeout=300)
 
     def test_http_error_body_is_not_returned(self):
         error = urllib.error.HTTPError('private', 401, 'dummy-test-credential', {}, io.BytesIO(b'secret'))

@@ -1,5 +1,11 @@
 # Explicit LLM review of verified evidence
 
+For local hidden-key entry and ready-to-run PowerShell commands, see
+[local operator guide](LLM_LOCAL_OPERATOR.md). The optional `--evidence` input
+independently revalidates local fragments for request construction and inspection.
+Historical runs keep their original prompts and hashes. Explicit omissions,
+truncation and incomplete searches remain visible; lexical evidence is not proof.
+
 `ohvul.llm_review` adds bounded model proposals after the existing batch, review
 queue and source-context checks. It does not replace those checks or change the
 workflow FSM. A schema-valid draft is not an independently verified analysis.
@@ -32,7 +38,7 @@ Each `--group` must be an existing distinct group. No default first-N selection
 silently discards the remaining queue. Planning records the selected count and
 the queue groups not selected. The current per-run maximum is 32 calls; defaults
 are three calls and 2048 requested output tokens per call. `--max-tokens` accepts
-128–4096; `--timeout` accepts integer seconds from 1–120 (socket timeout, not a
+128–4096; `--timeout` accepts integer seconds from 1–300 (socket timeout, not a
 guaranteed total wall-clock deadline). There are no automatic retries. Any
 transport error stops subsequent selected requests, recording them as `not_run`.
 

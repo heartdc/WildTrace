@@ -18,6 +18,7 @@ ALLOWED_MODELS = {'grok-4.6'}
 MAX_REQUEST_BYTES = 65536
 MAX_RESPONSE_BYTES = 262144
 MAX_CONTENT_BYTES = 32768
+MAX_TIMEOUT_SECONDS = 300
 
 
 class LlmTransportError(RuntimeError):
@@ -57,8 +58,8 @@ def validate_settings(base_url=DEFAULT_BASE_URL, model='grok-4.6', timeout=45, m
         raise ValueError('LLM endpoint must be an explicitly allowlisted HTTPS base URL')
     if model not in ALLOWED_MODELS:
         raise ValueError('model is not allowlisted')
-    if type(timeout) is not int or not 1 <= timeout <= 120:
-        raise ValueError('timeout must be an integer from 1 to 120 seconds')
+    if type(timeout) is not int or not 1 <= timeout <= MAX_TIMEOUT_SECONDS:
+        raise ValueError('timeout must be an integer from 1 to 300 seconds')
     if type(max_tokens) is not int or not 128 <= max_tokens <= 4096:
         raise ValueError('max_tokens must be an integer from 128 to 4096')
     return base_url.rstrip('/')
@@ -101,18 +102,23 @@ def chat_completion(messages, *, base_url=DEFAULT_BASE_URL, model='grok-4.6',
                    or x['role'] not in ('system', 'user') or not isinstance(x['content'], str)
                    for x in messages) or type(json_mode) is not bool):
         raise ValueError('explicit system/user text messages required')
-    payload = {'model': model, 'messages': messages, 'max_tokens': max_tokens,
-               'stream': False, 'temperature': 0}
+    input_text = '\n\n'.join(f"[{item['role']}]\n{item['content']}" for item in messages)
+    # Screen original evidence before serializing it into the Responses input.
+    reject_credentials(input_text.encode('utf-8'))
+    payload = {'model': model, 'input': input_text, 'max_output_tokens': max_tokens,
+               'stream': True}
     if json_mode:
-        payload['response_format'] = {'type': 'json_object'}
+        input_text += '\n\nReturn a single JSON object without Markdown.'
+        payload['input'] = input_text
     raw = _bytes(payload)
     if len(raw) > MAX_REQUEST_BYTES:
         raise ValueError('LLM request exceeds byte limit')
     key = runtime_key(api_key)
     reject_credentials(raw, key)
-    request = urllib.request.Request(endpoint + '/chat/completions', data=raw,
+    request = urllib.request.Request(endpoint + '/responses', data=raw,
         headers={'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json',
-                 'Accept': 'application/json'}, method='POST')
+                 'Accept': 'text/event-stream',
+                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140.0 Safari/537.36'}, method='POST')
     try:
         with _open(request, timeout) as response:
             body = response.read(MAX_RESPONSE_BYTES + 1)
@@ -122,24 +128,55 @@ def chat_completion(messages, *, base_url=DEFAULT_BASE_URL, model='grok-4.6',
         raise LlmTransportError('http_status_' + str(code)) from None
     except LlmTransportError:
         raise
-    except (OSError, ValueError, urllib.error.URLError):
+    except TimeoutError:
+        raise LlmTransportError('transport_timeout') from None
+    except urllib.error.URLError as exc:
+        code = 'transport_timeout' if isinstance(exc.reason, TimeoutError) else 'transport_failed'
+        raise LlmTransportError(code) from None
+    except (OSError, ValueError):
         raise LlmTransportError('transport_failed') from None
     if not isinstance(body, bytes) or len(body) > MAX_RESPONSE_BYTES:
         raise LlmTransportError('response_byte_limit')
     reject_credentials(body, key)
     try:
-        data = _json(body)
-        choice = data['choices'][0]
-        message = choice['message']
-        content = message['content']
-        if message.get('tool_calls') or message.get('function_call'):
-            raise ValueError('tool call')
+        events = []
+        for line in body.decode('utf-8').splitlines():
+            if line.startswith('data:'):
+                value = line[5:].strip()
+                if value and value != '[DONE]':
+                    events.append(_json(value.encode('utf-8')))
+        stream_errors = [event.get('error', {}) for event in events if event.get('type') == 'error']
+        if stream_errors:
+            code = stream_errors[0].get('code') if isinstance(stream_errors[0], dict) else None
+            raise LlmTransportError('provider_' + code if isinstance(code, str) and re.fullmatch(r'[a-z0-9_]+', code) else 'provider_stream_error')
+        if not events:
+            data = _json(body)
+            if data.get('choices') and data['choices'][0].get('message', {}).get('tool_calls'):
+                raise ValueError('tool call')
+            if any(isinstance(item, dict) and item.get('type') in ('function_call', 'computer_call')
+                   for item in data.get('output', [])):
+                raise ValueError('tool call')
+            content = data.get('output_text', '') if isinstance(data.get('output_text'), str) else ''
+            if not content and isinstance(data.get('output'), list):
+                content = ''.join(item.get('text', '') for item in data['output']
+                                  if isinstance(item, dict) and isinstance(item.get('text'), str))
+            if not content:
+                raise ValueError('empty response')
+        else:
+            parts = [event.get('delta', '') for event in events
+                     if event.get('type') == 'response.output_text.delta'
+                     and isinstance(event.get('delta'), str)]
+            content = ''.join(parts)
+            completed = next((event.get('response', {}) for event in reversed(events)
+                              if event.get('type') in ('response.completed', 'response.done')
+                              and isinstance(event.get('response', {}), dict)), {})
+            data = completed if completed else events[-1]
         if not isinstance(content, str) or len(content.encode('utf-8')) > MAX_CONTENT_BYTES:
             raise ValueError('content limit')
         reported = data.get('model')
         if reported is not None and (not isinstance(reported, str) or len(reported) > 200):
             raise ValueError('model metadata')
-        finish = choice.get('finish_reason')
+        finish = data.get('status') or data.get('finish_reason')
         if finish is not None and (not isinstance(finish, str) or len(finish) > 80):
             raise ValueError('finish reason')
     except (ValueError, KeyError, IndexError, TypeError, UnicodeError, RecursionError):

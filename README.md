@@ -149,6 +149,13 @@ See [evidence contract](docs/engineering/EVIDENCE_VALIDATION.md) for scope and l
 
 ## Optional LLM drafting
 
+For a local hidden-key prompt and a 300-second optional socket timeout, use
+`python -X utf8 tools/llm_local.py plan --output .cache/llm-my-plan`, then
+`python -X utf8 tools/llm_local.py run --output .cache/llm-my-live --allow-network`.
+Both output directories must be new. See
+[complete local instructions](docs/engineering/LLM_LOCAL_OPERATOR.md) before running.
+The operator includes verified expanded evidence; plan mode never needs a key.
+
 The optional `ohvul.llm_adapter` reads `OSLOVELACE_API_KEY` only at runtime. Its
 default endpoint is `https://oslovelace.com/v1` and its selected provider model
 identifier is `grok-4.6`. It rejects redirects, bounds requests/responses, sanitizes
@@ -214,6 +221,18 @@ analyzer, target, network or model is called. Review questions remain unknown.
 Output files must be new and outside source/batch directories.
 See [review queue and context](docs/engineering/REVIEW_QUEUE.md) for complete
 commands and limits, and [measured review integration](docs/analysis/REVIEW_PIPELINE_AUDIT_20260914.md).
+
+## Bounded local evidence expansion
+
+`ohvul.review_evidence` extends verified review windows with bounded lexical
+function/macro ranges and same-file call syntax. It keeps original bytes, line
+numbers, conditional variants, explicit truncation and the existing handoff task
+IDs. It does not run a model or close an evidence task. These associations are
+navigation candidates, not AST, control-flow, reachability or vulnerability proof.
+Use `--verify` for independent reconstruction from the same explicit source roots.
+See [local evidence contract](docs/engineering/LOCAL_EVIDENCE.md),
+[measured acceptance](docs/analysis/EVIDENCE_EXPANSION_AUDIT_20260914.md), and
+[next roadmap](docs/status/NEXT_ROADMAP_20260914.md).
 
 ## Local installation and verification
 

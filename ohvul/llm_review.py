@@ -16,6 +16,7 @@ import time
 from .llm_adapter import (DEFAULT_BASE_URL, LlmTransportError, chat_completion,
                           reject_credentials, runtime_key, validate_settings)
 from .review_context import MAX_CONTEXT_BYTES, validate_review_context
+from .llm_evidence import extend_request, EXPANDED_PROMPT_VERSION, EXPANDED_INSTRUCTIONS
 from .review_queue import (MAX_TOTAL_BYTES, canonical_bytes, checked_path, decode_json,
                            exclusive_json, read_bounded, recheck_inputs, sha256,
                            validate_review_queue, _require)
@@ -59,7 +60,8 @@ def _public_transport_error(code):
     return isinstance(code, str) and (code in {
         'runtime_key_missing', 'runtime_key_invalid', 'credential_in_content',
         'credential_like_content_rejected', 'redirect_rejected', 'transport_failed',
-        'response_byte_limit', 'invalid_provider_response'} or
+        'response_byte_limit', 'invalid_provider_response', 'transport_timeout',
+        'provider_stream_error', 'provider_stream_read_error'} or
         re.fullmatch(r'http_status_[1-5][0-9]{2}', code) is not None)
 
 
@@ -91,7 +93,8 @@ def make_request(group, context):
 
 
 def messages_for(request):
-    return [{'role': 'system', 'content': SYSTEM_PROMPT},
+    prompt = SYSTEM_PROMPT + (EXPANDED_INSTRUCTIONS if 'evidence_selection' in request else '')
+    return [{'role': 'system', 'content': prompt},
             {'role': 'user', 'content': canonical_bytes(request).decode('utf-8')}]
 
 
@@ -169,15 +172,25 @@ def validate_draft(value, request):
     reject_credentials(canonical_bytes(value))
 
 
-def _load(summary_path, queue_path, context_path, source_roots):
+def _load(summary_path, queue_path, context_path, source_roots, evidence_path=None):
     captured = [(checked_path(path), read_bounded(path, MAX_TOTAL_BYTES), MAX_TOTAL_BYTES)
                 for path in (summary_path, queue_path, context_path)]
     queue, context = (decode_json(captured[index][1]) for index in (1, 2))
     validate_review_queue(queue, summary_path)
     validate_review_context(context, queue_path, summary_path, source_roots)
+    expansion = None
+    if evidence_path is not None:
+        # Lazy import: expansion itself reuses the base queue/context loader.
+        from .review_evidence import validate_review_evidence, MAX_OUTPUT_BYTES
+        raw = read_bounded(evidence_path, MAX_OUTPUT_BYTES)
+        expansion = decode_json(raw)
+        validate_review_evidence(expansion, summary_path, queue_path, context_path, source_roots)
+        captured.append((checked_path(evidence_path), raw, MAX_OUTPUT_BYTES))
     def recheck():
         recheck_inputs(captured)
         validate_review_context(context, queue_path, summary_path, source_roots)
+        if expansion is not None:
+            validate_review_evidence(expansion, summary_path, queue_path, context_path, source_roots)
     return queue, context, captured, recheck
 
 
@@ -191,7 +204,10 @@ def _plan(queue, context, captured, group_ids, *, base_url, model, timeout, max_
     contexts = {x['group_id']: x for x in context['contexts']}
     _require(all(x in groups and x in contexts for x in group_ids), 'unknown requested group')
     requests = [make_request(groups[x], contexts[x]) for x in group_ids]
-    return {'schema': 'llm-review-plan-0.1', 'prompt_version': PROMPT_VERSION,
+    expansion = decode_json(captured[3][1]) if len(captured) == 4 else None
+    if expansion is not None:
+        requests = [extend_request(request, expansion) for request in requests]
+    plan = {'schema': 'llm-review-plan-0.1', 'prompt_version': PROMPT_VERSION,
             'execution_policy': EXECUTION_POLICY,
             'system_prompt_sha256': sha256(SYSTEM_PROMPT.encode('utf-8')),
             'bindings': dict(zip(('summary_sha256', 'queue_sha256', 'context_sha256'),
@@ -202,6 +218,11 @@ def _plan(queue, context, captured, group_ids, *, base_url, model, timeout, max_
             'automatic_retries': 0, 'selected_groups': list(group_ids),
             'queue_groups_total': len(groups), 'queue_groups_not_selected': len(groups) - len(requests),
             'requests': requests, 'target_executed': False, 'confirmed_vulnerabilities': 0}
+    if expansion is not None:
+        plan['prompt_version'] = EXPANDED_PROMPT_VERSION
+        plan['system_prompt_sha256'] = sha256((SYSTEM_PROMPT + EXPANDED_INSTRUCTIONS).encode('utf-8'))
+        plan['bindings']['evidence_sha256'] = sha256(captured[3][1])
+    return plan
 
 
 def _output(output, summary_path, queue_path, context_path, source_roots):
@@ -258,11 +279,13 @@ def _summary(plan, records, *, bindings_valid):
 
 def run_review(summary_path, queue_path, context_path, source_roots, output, group_ids, *,
                allow_network=False, plan_only=False, api_key=None, base_url=DEFAULT_BASE_URL,
-               model='grok-4.6', timeout=60, max_tokens=2048, max_calls=3):
+               model='grok-4.6', timeout=60, max_tokens=2048, max_calls=3, evidence_path=None):
     _require(type(allow_network) is bool and type(plan_only) is bool, 'invalid execution mode')
     _require(plan_only or allow_network, 'network requires explicit --allow-network')
     output = _output(output, summary_path, queue_path, context_path, source_roots)
-    queue, context, captured, recheck = _load(summary_path, queue_path, context_path, source_roots)
+    if evidence_path is not None:
+        _require(not checked_path(evidence_path).is_relative_to(output), 'output/evidence input conflict')
+    queue, context, captured, recheck = _load(summary_path, queue_path, context_path, source_roots, evidence_path)
     plan = _plan(queue, context, captured, group_ids, base_url=base_url, model=model,
                  timeout=timeout, max_tokens=max_tokens, max_calls=max_calls)
     key = None if plan_only else runtime_key(api_key)
@@ -281,6 +304,8 @@ def run_review(summary_path, queue_path, context_path, source_roots, output, gro
         # without summary.json is never accepted by the offline verifier.
         recheck_inputs(captured)
         validate_review_queue(queue, summary_path)
+        if evidence_path is not None:
+            recheck()  # Recheck expanded source evidence before each paid call.
         record = {'schema': 'llm-review-record-0.1', 'group_id': request['group_id'],
                   'request_sha256': sha256(canonical_bytes(request)), 'outcome': 'transport_failed',
                   'completion': None, 'draft': None, 'error_code': None}
@@ -322,7 +347,7 @@ def run_review(summary_path, queue_path, context_path, source_roots, output, gro
     return summary
 
 
-def inspect_review(output, summary_path, queue_path, context_path, source_roots):
+def inspect_review(output, summary_path, queue_path, context_path, source_roots, *, evidence_path=None):
     """Inspect complete historical records without converting failure to success.
 
     No network or credential lookup. Both completed and incomplete runs may have
@@ -338,7 +363,11 @@ def inspect_review(output, summary_path, queue_path, context_path, source_roots)
         return decode_json(raw)
     plan = read_record('plan.json', MAX_TOTAL_BYTES)
     _require(isinstance(plan, dict), 'invalid saved plan')
-    queue, context, captured, recheck = _load(summary_path, queue_path, context_path, source_roots)
+    uses_expansion = 'evidence_sha256' in plan.get('bindings', {})
+    _require(not uses_expansion or evidence_path is not None,
+             'expanded run requires an explicit evidence path for inspection')
+    queue, context, captured, recheck = _load(summary_path, queue_path, context_path, source_roots,
+                                            evidence_path if uses_expansion else None)
     expected = _plan(queue, context, captured, plan['selected_groups'], base_url=plan['endpoint'],
                      model=plan['model'], timeout=plan['timeout'], max_tokens=plan['max_tokens_per_call'],
                      max_calls=plan['max_calls'])
@@ -403,9 +432,10 @@ def inspect_review(output, summary_path, queue_path, context_path, source_roots)
             'confirmed_vulnerabilities': 0, 'final_verdict': 'undetermined'}
 
 
-def verify_review(output, summary_path, queue_path, context_path, source_roots):
+def verify_review(output, summary_path, queue_path, context_path, source_roots, *, evidence_path=None):
     """Only completed, reference-valid drafts pass; reasoning is not certified."""
-    inspection = inspect_review(output, summary_path, queue_path, context_path, source_roots)
+    inspection = inspect_review(output, summary_path, queue_path, context_path, source_roots,
+                                evidence_path=evidence_path)
     summary = inspection['summary']
     _require(summary['status'] == 'completed', 'run contains failed or rejected drafts')
     return summary
@@ -417,6 +447,7 @@ def main(argv=None):
         parser.add_argument('--' + name, type=Path, required=True)
     parser.add_argument('--source-root', action='append', default=[], metavar='JOB=PATH')
     parser.add_argument('--group', action='append', default=[])
+    parser.add_argument('--evidence', type=Path, help='explicit independently verified local expansion document')
     parser.add_argument('--allow-network', action='store_true')
     parser.add_argument('--key-stdin', action='store_true', help='read one key line from a non-echo pipe; never save it')
     mode = parser.add_mutually_exclusive_group(required=True)
@@ -441,12 +472,14 @@ def main(argv=None):
             _require(bool(separator) and bool(path) and job not in roots, 'invalid explicit root mapping')
             roots[job] = Path(path)
         if args.inspect:
-            value = inspect_review(args.output, args.summary, args.queue, args.context, roots)
+            value = inspect_review(args.output, args.summary, args.queue, args.context, roots,
+                                   evidence_path=args.evidence)
             print('LLM_REVIEW_INSPECTION ' + value['status'] + '; inference_completed=' +
                   str(value['summary']['status'] == 'completed') + '; reasoning_verified=False')
             return 0
         elif args.verify:
-            value = verify_review(args.output, args.summary, args.queue, args.context, roots)
+            value = verify_review(args.output, args.summary, args.queue, args.context, roots,
+                                  evidence_path=args.evidence)
         else:
             if args.key_stdin:
                 _require(args.run and args.allow_network and not sys.stdin.isatty(),
@@ -456,7 +489,7 @@ def main(argv=None):
             value = run_review(args.summary, args.queue, args.context, roots, args.output, args.group,
                 allow_network=args.allow_network, plan_only=args.plan, api_key=key,
                 base_url=args.base_url, model=args.model, timeout=args.timeout,
-                max_tokens=args.max_tokens, max_calls=args.max_calls)
+                max_tokens=args.max_tokens, max_calls=args.max_calls, evidence_path=args.evidence)
         print('LLM_REVIEW_STATUS ' + value['status'] + '; confirmed_vulnerabilities=0')
         return 0 if value['status'] in ('completed', 'prepared') else 1
     except (OSError, ValueError, TypeError, KeyError, LlmTransportError) as exc:

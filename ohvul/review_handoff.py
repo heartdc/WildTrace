@@ -11,6 +11,7 @@ import copy
 from pathlib import Path
 
 from .llm_review import QUESTIONS, _load, inspect_review, make_request
+from .llm_evidence import extend_request
 from .review_queue import (MAX_TOTAL_BYTES, canonical_bytes, checked_path, decode_json,
                            exclusive_json, read_bounded, recheck_inputs, sha256, _require)
 
@@ -18,20 +19,28 @@ MAX_REVIEW_RUNS = 8
 MAX_HANDOFF_BYTES = 16 * 1024 * 1024
 
 
-def _build(summary_path, queue_path, context_path, source_roots, review_runs):
+def evidence_task_id(group_id, question_id, queue_sha256, context_sha256):
+    """Stable identity shared with local evidence expansion; no state change."""
+    return 'ET-' + sha256(canonical_bytes({'group_id': group_id, 'question_id': question_id,
+                                         'queue_sha256': queue_sha256, 'context_sha256': context_sha256}))
+
+
+def _build(summary_path, queue_path, context_path, source_roots, review_runs, evidence_path=None):
     _require(isinstance(review_runs, (list, tuple)) and len(review_runs) <= MAX_REVIEW_RUNS,
              'at most eight explicit historical review runs are supported')
     _require(all(isinstance(p, (str, Path)) for p in review_runs), 'invalid explicit review run path')
     runs = [checked_path(path) for path in review_runs]
     _require(len(set(runs)) == len(runs), 'duplicate review run path')
     queue, context, captured, recheck_source = _load(
-        summary_path, queue_path, context_path, source_roots)
+        summary_path, queue_path, context_path, source_roots, evidence_path)
+    expansion = decode_json(captured[3][1]) if evidence_path is not None else None
     contexts = {item['group_id']: item for item in context['contexts']}
     by_group = {group['group_id']: [] for group in queue['groups']}
     run_records, seen = [], set()
     total_bytes = sum(len(raw) for _, raw, _ in captured)
     for path in runs:
-        inspection = inspect_review(path, summary_path, queue_path, context_path, source_roots)
+        inspection = inspect_review(path, summary_path, queue_path, context_path, source_roots,
+                                    evidence_path=evidence_path)
         plan, summary = inspection['plan'], inspection['summary']
         # Content identity deliberately excludes the enclosing directory. Copying
         # a run cannot make the same historical calls count a second time.
@@ -61,6 +70,8 @@ def _build(summary_path, queue_path, context_path, source_roots, review_runs):
     for group in queue['groups']:
         group_id = group['group_id']
         request = make_request(group, contexts[group_id])
+        if expansion is not None and group_id in expansion['selection']:
+            request = extend_request(request, expansion)
         outcomes, proposals, valid = {}, [], []
         for run_id, record in by_group[group_id]:
             outcome = record['outcome']
@@ -85,7 +96,7 @@ def _build(summary_path, queue_path, context_path, source_roots, review_runs):
                               for item in draft['next_checks'] if item['question_id'] == question_id)
             identity = {'group_id': group_id, 'question_id': question_id,
                         'queue_sha256': sha256(captured[1][1]), 'context_sha256': sha256(captured[2][1])}
-            tasks.append({'task_id': 'ET-' + sha256(canonical_bytes(identity)),
+            tasks.append({'task_id': evidence_task_id(**identity),
                           'question_id': question_id, 'question': questions[question_id]['question'],
                           'state': 'needs_evidence_or_review', 'answer': 'unknown',
                           'human_review_status': 'unreviewed', 'automatic_execution': False,
@@ -120,6 +131,8 @@ def _build(summary_path, queue_path, context_path, source_roots, review_runs):
                              'Evidence requests are text, never executable instructions.',
                              'Local hashes establish consistency, not signed provenance.']}
     _require(len(canonical_bytes(value)) <= MAX_HANDOFF_BYTES, 'handoff exceeds output byte budget')
+    if expansion is not None:
+        value['input_bindings']['evidence_sha256'] = sha256(captured[3][1])
     def recheck():
         recheck_inputs(captured)
         recheck_source()
@@ -127,17 +140,18 @@ def _build(summary_path, queue_path, context_path, source_roots, review_runs):
     return value, recheck, runs, captured
 
 
-def build_review_handoff(summary_path, queue_path, context_path, source_roots, review_runs=()):
-    return _build(summary_path, queue_path, context_path, source_roots, review_runs)[0]
+def build_review_handoff(summary_path, queue_path, context_path, source_roots, review_runs=(), *, evidence_path=None):
+    return _build(summary_path, queue_path, context_path, source_roots, review_runs, evidence_path)[0]
 
 
-def validate_review_handoff(value, summary_path, queue_path, context_path, source_roots, review_runs=()):
-    expected = build_review_handoff(summary_path, queue_path, context_path, source_roots, review_runs)
+def validate_review_handoff(value, summary_path, queue_path, context_path, source_roots, review_runs=(), *, evidence_path=None):
+    expected = build_review_handoff(summary_path, queue_path, context_path, source_roots, review_runs,
+                                    evidence_path=evidence_path)
     _require(canonical_bytes(value) == canonical_bytes(expected), 'handoff differs from verified evidence inputs')
 
 
-def write_review_handoff(summary_path, queue_path, context_path, source_roots, output, *, review_runs=()):
-    value, recheck, runs, captured = _build(summary_path, queue_path, context_path, source_roots, review_runs)
+def write_review_handoff(summary_path, queue_path, context_path, source_roots, output, *, review_runs=(), evidence_path=None):
+    value, recheck, runs, captured = _build(summary_path, queue_path, context_path, source_roots, review_runs, evidence_path)
     exclusive_json(output, value,
                    forbidden_trees=[Path(summary_path).absolute().parent, *source_roots.values(), *runs],
                    input_paths=[p for p, _, _ in captured], before_publish=recheck)
@@ -149,6 +163,7 @@ def main(argv=None):
     for name in ('summary', 'queue', 'context'):
         parser.add_argument('--' + name, type=Path, required=True)
     parser.add_argument('--source-root', action='append', default=[], metavar='JOB=PATH')
+    parser.add_argument('--evidence', type=Path, help='explicit verified expansion used by selected LLM runs')
     parser.add_argument('--llm-run', action='append', default=[], type=Path,
                         help='explicit historical review directory, including bound failures; never invokes a model')
     mode = parser.add_mutually_exclusive_group(required=True)
@@ -164,11 +179,12 @@ def main(argv=None):
             roots[job] = Path(path)
         if args.verify:
             value = decode_json(read_bounded(args.verify, MAX_TOTAL_BYTES))
-            validate_review_handoff(value, args.summary, args.queue, args.context, roots, args.llm_run)
+            validate_review_handoff(value, args.summary, args.queue, args.context, roots, args.llm_run,
+                                     evidence_path=args.evidence)
             print('HANDOFF_VERIFIED: evidence bindings only; no factual or vulnerability verdict')
         else:
             value = write_review_handoff(args.summary, args.queue, args.context, roots, args.output,
-                                          review_runs=args.llm_run)
+                                          review_runs=args.llm_run, evidence_path=args.evidence)
             print('HANDOFF_READY groups=' + str(value['group_count']) + ' open_tasks=' + str(value['open_tasks']) +
                   ' confirmed_vulnerabilities=0')
     except (OSError, ValueError, TypeError, KeyError) as exc:

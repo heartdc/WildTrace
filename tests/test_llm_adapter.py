@@ -20,7 +20,7 @@ class LlmAdapterTests(unittest.TestCase):
   class Response:
    def __enter__(self): return self
    def __exit__(self,*args): pass
-   def read(self, limit=-1): return json.dumps({'model':'grok-4.6','choices':[{'message':{'content':'draft'}}]}).encode()
+   def read(self, limit=-1): return json.dumps({'model':'grok-4.6','output_text':'draft','status':'completed'}).encode()
   old=os.environ.get('OSLOVELACE_API_KEY'); os.environ['OSLOVELACE_API_KEY']='secret-test-key'
   try:
    with patch('ohvul.llm_adapter._open', return_value=Response()) as call:
@@ -29,6 +29,5 @@ class LlmAdapterTests(unittest.TestCase):
   finally:
    if old is None: os.environ.pop('OSLOVELACE_API_KEY',None)
    else: os.environ['OSLOVELACE_API_KEY']=old
-
 
 
