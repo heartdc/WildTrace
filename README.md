@@ -147,9 +147,62 @@ and [competition readiness](docs/status/COMPETITION_READINESS_20260914.md).
 Saved schema 0.3 results can be checked offline using `python -m ohvul.verify result.json`.
 See [evidence contract](docs/engineering/EVIDENCE_VALIDATION.md) for scope and limitations.
 
-## Optional LLM drafting
+## Current offline engineering track
 
-The optional `ohvul.llm_adapter` reads `OSLOVELACE_API_KEY` only at runtime. It sends structured candidate evidence for drafting and always returns `final_verdict=undetermined`. Do not place keys in source, config files, fixtures, logs, or commits. Calls are explicit; the scanner does not invoke the network automatically.
+LLM integration work and remote retries are paused by the project owner. Existing
+optional model code is retained; no key is required for the current development
+track. Next priorities are restricted compilation-database input, compiler-level
+facts, multi-family regression data, offline review and measured performance.
+
+`--semantic-files-from` now uses explicit execution records: failed reads do not
+count as coverage, and failed execution or a changed file list blocks successful
+publication. Semantic execution `completed` is distinct from
+`analysis_coverage.status=partial_lexical_analysis`. Preprocessor, type and
+control-flow unknowns remain visible; zero candidates is not a safety finding.
+Local and caller/parameter observations remain candidate-only with source hashes.
+`snprintf` uses the second argument as its size, and complex/ambiguous cases are
+not resolved through line proximity or last-definition-wins. Generic length
+advisories keep CWE unknown instead of automatically asserting CWE-120.
+
+See [semantic rule contract](docs/engineering/SEMANTIC_RULE_CONTRACT.md),
+[measured acceptance](docs/analysis/SEMANTIC_BOUNDARY_AUDIT_20260914.md), and
+[current offline roadmap](docs/status/NEXT_ROADMAP_20260914.md).
+
+## Optional LLM drafting (retained; currently paused)
+
+For a local hidden-key prompt and a 300-second optional socket timeout, use
+`python -X utf8 tools/llm_local.py plan --output .cache/llm-my-plan`, then
+`python -X utf8 tools/llm_local.py run --output .cache/llm-my-live --allow-network`.
+Both output directories must be new. See
+[complete local instructions](docs/engineering/LLM_LOCAL_OPERATOR.md) before running.
+The operator includes verified expanded evidence; plan mode never needs a key.
+
+The optional `ohvul.llm_adapter` reads `OSLOVELACE_API_KEY` only at runtime. Its
+default endpoint is `https://oslovelace.com/v1` and its selected provider model
+identifier is `grok-4.6`. It rejects redirects, bounds requests/responses, sanitizes
+transport errors, and does not retry automatically. Do not place keys in source,
+config files, fixtures, logs, or commits. The scanner stays offline by default.
+
+`ohvul.llm_review` now connects the verified batch/queue/source context to
+structured, evidence-referenced model proposals. Use `--plan` without network,
+`--run --allow-network` for an explicitly authorized bounded selection, and
+`--verify` for independent local checks. Model outputs never confirm a
+vulnerability, execute tools, remove a candidate or change the FSM. The initial
+live requests returned HTTP 403. A later retry was blocked at tool-side credential
+input before any API request; it is not evidence of a new provider failure.
+Successful online inference is not yet accepted.
+See [LLM review contract](docs/engineering/LLM_REVIEW.md).
+
+`--inspect` now checks complete historical records, including failed runs, without
+calling a model. `bound_incomplete` means records are consistent, not inference
+success; `--verify` remains strict. New plans record the stop-after-transport-error
+policy, while old records keep their original, explicitly legacy policy status.
+
+`ohvul.review_handoff` combines the verified queue/context and explicitly selected
+historical LLM runs into evidence follow-up tasks. All five questions remain open
+for every group; model statements are separately cited untrusted proposals, not
+facts, commands or automatic approvals. Failed and unselected groups remain visible.
+See [handoff commands and independent verification](docs/engineering/REVIEW_HANDOFF.md).
 
 ## Explicit multi-component batches
 
@@ -189,6 +242,18 @@ analyzer, target, network or model is called. Review questions remain unknown.
 Output files must be new and outside source/batch directories.
 See [review queue and context](docs/engineering/REVIEW_QUEUE.md) for complete
 commands and limits, and [measured review integration](docs/analysis/REVIEW_PIPELINE_AUDIT_20260914.md).
+
+## Bounded local evidence expansion
+
+`ohvul.review_evidence` extends verified review windows with bounded lexical
+function/macro ranges and same-file call syntax. It keeps original bytes, line
+numbers, conditional variants, explicit truncation and the existing handoff task
+IDs. It does not run a model or close an evidence task. These associations are
+navigation candidates, not AST, control-flow, reachability or vulnerability proof.
+Use `--verify` for independent reconstruction from the same explicit source roots.
+See [local evidence contract](docs/engineering/LOCAL_EVIDENCE.md),
+[measured acceptance](docs/analysis/EVIDENCE_EXPANSION_AUDIT_20260914.md), and
+[next roadmap](docs/status/NEXT_ROADMAP_20260914.md).
 
 ## Local installation and verification
 

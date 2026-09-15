@@ -7,7 +7,8 @@ from .source_snapshot import source_snapshot
 from .report import build_audit_report, validate_audit_report
 from .engine_shards import scan_engine_manifest, scan_engine_profile
 from .engine_adapter import merge_engine_result
-from .semantic_rules import cross_function_length_candidates, candidates_to_audit_result
+from .semantic_rules import scan_semantic_files
+from .semantic_syntax import read_file_list
 
 
 def main():
@@ -62,6 +63,7 @@ def main():
     checkpoint.result_sha256=None
     journal=AuditJournal(args.journal) if args.journal else None
     if journal: journal.append("begin",checkpoint.task_id,source_snapshot_sha256=current_snapshot)
+    semantic_list_raw = None
     try:
         if args.checkpoint: save_checkpoint(checkpoint,args.checkpoint,force=args.force)
         result=scan_path(args.path)
@@ -84,11 +86,18 @@ def main():
             if engine_result.get("status") != "completed":
                 raise ValueError("requested engine scan did not complete: " + str(engine_result.get("status")))
         if args.semantic_files_from:
-            entries=[x.strip() for x in args.semantic_files_from.read_text(encoding="utf-8-sig").splitlines() if x.strip() and not x.lstrip().startswith("#")]
-            semantic_candidates=cross_function_length_candidates(args.path, entries)
-            semantic_result=candidates_to_audit_result(semantic_candidates, root=args.path, source_snapshot_sha256=current_snapshot)
+            semantic_list_raw, entries = read_file_list(args.semantic_files_from)
+            semantic_result = scan_semantic_files(args.path, entries, source_snapshot_sha256=current_snapshot)
+            if semantic_result['status'] != 'completed':
+                raise ValueError('requested semantic scan did not complete: ' + json.dumps(semantic_result['input_errors']))
             result=merge_engine_result(result, semantic_result, source_root=args.path)
-            result["semantic_scan"]={"status":"completed", "files_scanned":len(entries), "candidates":len(semantic_candidates)}
+            result['semantic_scan'] = {
+                'status': semantic_result['status'], 'files_scanned': semantic_result['scan']['files_scanned'],
+                'scan': semantic_result['scan'], 'candidates': len(semantic_result['findings']),
+                'analysis_coverage': semantic_result['analysis_coverage'],
+                'analysis_issues': semantic_result['analysis_issues'],
+                'input_errors': semantic_result['input_errors'], 'file_results': semantic_result['file_results'],
+                'file_list_sha256': hashlib.sha256(semantic_list_raw).hexdigest()}
         result["components"]=identify_components(args.path)
         records=load_vulnerability_metadata(args.vuln_db)
         db_digest=hashlib.sha256(args.vuln_db.read_bytes()).hexdigest() if args.vuln_db else None
@@ -106,6 +115,8 @@ def main():
         # before publishing either output. This is not a filesystem transaction.
         if source_snapshot(args.path) != current_snapshot:
             raise ValueError("source snapshot changed during audit")
+        if semantic_list_raw is not None and read_file_list(args.semantic_files_from)[0] != semantic_list_raw:
+            raise ValueError('semantic file list changed during audit')
         if args.output:
             raw=(text+"\n").encode("utf-8")
             args.output.parent.mkdir(parents=True, exist_ok=True)

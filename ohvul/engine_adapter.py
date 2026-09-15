@@ -173,10 +173,24 @@ def _normalize_engine_path(value: str, root: Path) -> str:
     if not (root_windows.is_absolute() and root_windows.drive):
         root_windows = PureWindowsPath(_as_windows_drive(Path(root).resolve().as_posix()))
     if candidate.is_absolute() and candidate.drive:
+        if '..' in candidate.parts or '..' in root_windows.parts:
+            raise ValueError("engine finding location contains parent traversal")
         try:
-            return candidate.relative_to(root_windows).as_posix()
+            relative = candidate.relative_to(root_windows).as_posix()
         except ValueError:
             raise ValueError("engine finding location escapes source root") from None
+        # PureWindowsPath supports portable mapping, not filesystem containment.
+        # On a native host retain the resolved-path check (including link escapes).
+        native_path = Path(str(candidate))
+        native_root = Path(str(root_windows))
+        if not native_path.is_absolute() and Path(value).is_absolute() and root.is_absolute():
+            native_path, native_root = Path(value), root
+        if native_path.is_absolute():
+            resolved, resolved_root = native_path.resolve(), native_root.resolve()
+            if not resolved.is_relative_to(resolved_root):
+                raise ValueError("engine finding location escapes resolved source root")
+            return resolved.relative_to(resolved_root).as_posix()
+        return relative
     path = Path(value)
     resolved_root = root.resolve()
     resolved = path.resolve() if path.is_absolute() else (resolved_root / path).resolve()
