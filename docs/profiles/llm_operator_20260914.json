@@ -1,0 +1,18 @@
+{
+  "schema": "llm-local-operator-0.1",
+  "summary": ".cache/real_components_c0d3/batch/summary-0005.json",
+  "queue": ".cache/review_33f843/queue.json",
+  "context": ".cache/review_33f843/context.json",
+  "evidence": ".cache/evidence_1ca10/expanded.json",
+  "source_roots": {
+    "camera_app": "C:/Projects/OpenHarmony-complete",
+    "hilog_featured": "C:/Projects/OpenHarmony-complete",
+    "securec": "C:/Projects/OpenHarmony-complete/third_party/bounds_checking_function"
+  },
+  "groups": ["RG-935568e96ca77b67538e53ce76649bd644832ebad539a6aeebe7985b889df693"],
+  "base_url": "https://oslovelace.com/v1",
+  "model": "grok-4.6",
+  "timeout": 300,
+  "max_tokens": 3072,
+  "max_calls": 1
+}

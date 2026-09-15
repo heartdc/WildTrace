@@ -8,6 +8,9 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 import re
 from pathlib import Path
+from bisect import bisect_right
+from .source_scope import local_input_path, relative_paths, is_link
+from .source_structure import MAX_SOURCE_BYTES, source_structure, function_at
 
 
 @dataclass(frozen=True)
@@ -35,45 +38,56 @@ _DEREF = re.compile(r"(?:->|\*\s*[A-Za-z_]\w*)")
 
 def extract_facts(path: Path, *, root: Path | None = None) -> list[SemanticFact]:
     """Extract conservative facts from one local C/C++ file."""
-    path = Path(path).resolve()
-    if not path.is_file():
-        raise ValueError("source file is required")
-    root = Path(root).resolve() if root else path.parent
+    path = Path(path).absolute()
+    if any(is_link(p) for p in (path, *path.parents)):
+        raise ValueError("source path must not contain links")
+    root = Path(root).absolute() if root else path.parent
+    if any(is_link(p) for p in (root, *root.parents)) or not root.is_dir():
+        raise ValueError('source root must be an existing unlinked directory')
+    root = root.resolve()
+    path = path.resolve()
     if not path.is_relative_to(root):
         raise ValueError("source file escapes root")
     relative = path.relative_to(root).as_posix()
-    lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+    path = local_input_path(root, relative)
+    if not path.is_file():
+        raise ValueError("source file is required")
+    with path.open('rb') as stream:
+        raw = stream.read(MAX_SOURCE_BYTES + 1)
+    if len(raw) > MAX_SOURCE_BYTES:
+        raise ValueError('source byte budget exceeded')
+    text = raw.decode('utf-8-sig')
+    structure = source_structure(text)
+    lines = text.splitlines()
     facts: list[SemanticFact] = []
-    current: str | None = None
-    for number, line in enumerate(lines, 1):
-        match = _FUNCTION.search(line)
-        if match:
-            current = match.group(1)
-            facts.append(SemanticFact("function", relative, number, current, current, line.strip()))
-        for call in _CALL.finditer(line):
-            symbol = call.group(1)
-            if symbol not in {"if", "for", "while", "switch", "catch"}:
-                facts.append(SemanticFact("call", relative, number, current, symbol, line.strip()))
-        if _ALLOC.search(line):
-            facts.append(SemanticFact("allocation", relative, number, current, None, line.strip()))
-        release = _RELEASE.search(line)
-        if release:
-            facts.append(SemanticFact("release", relative, number, current, release.group(1), line.strip()))
-        copy = _COPY.search(line)
-        if copy:
-            facts.append(SemanticFact("copy", relative, number, current, copy.group(1), line.strip()))
-        if _DEREF.search(line):
-            facts.append(SemanticFact("dereference", relative, number, current, None, line.strip()))
-    return facts
+    for function in structure['functions']:
+        number = function['name_line']
+        facts.append(SemanticFact('function', relative, number, function['symbol'],
+                                  function['symbol'], lines[number - 1].strip()))
+    for call in structure['calls']:
+        number = call['line']
+        facts.append(SemanticFact('call', relative, number, call['function'],
+                                  call['symbol'], lines[number - 1].strip()))
+    for kind, pattern in (('allocation', _ALLOC), ('release', _RELEASE), ('copy', _COPY), ('dereference', _DEREF)):
+        for match in pattern.finditer(structure['code']):
+            number = bisect_right(structure['line_starts'], match.start())
+            symbol = match.group(1) if kind in ('release', 'copy') else None
+            facts.append(SemanticFact(kind, relative, number, function_at(structure, match.start()),
+                                      symbol, lines[number - 1].strip()))
+    return sorted(facts, key=lambda f: f.line)
 
 
 def extract_tree(root: Path, relative_files: list[str]) -> list[dict]:
     """Extract and serialize facts for an explicit local file list."""
-    root = Path(root).resolve()
+    root = Path(root).absolute()
+    names = relative_paths(relative_files, nonempty=True)
+    if any(is_link(p) for p in (root, *root.parents)) or not root.is_dir():
+        raise ValueError('source root must be an existing unlinked directory')
+    root = root.resolve()
+    paths = [local_input_path(root, name) for name in names]
+    if any(not path.is_file() for path in paths):
+        raise ValueError('explicit source is missing')
     facts = []
-    for relative in relative_files:
-        candidate = (root / relative).resolve()
-        if not candidate.is_relative_to(root):
-            raise ValueError("source file escapes root")
+    for candidate in paths:
         facts.extend(extract_facts(candidate, root=root))
     return [fact.to_dict() for fact in facts]
