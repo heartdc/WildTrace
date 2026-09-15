@@ -211,6 +211,51 @@ class CompileDatabaseTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.build()
 
+    def test_output_like_unknown_flags_are_not_silently_dropped(self):
+        for flag in ('-openmp', '-objc-arc', '-oa.o', '-MFa.d'):
+            item = copy.deepcopy(self.entry)
+            item['arguments'].insert(1, flag)
+            self.save([item])
+            self.assertEqual(self.build()['units'][0]['error_code'], 'unsupported_compile_argument')
+
+    def test_mutated_generated_profile_prevents_success_summary(self):
+        original = importer.exclusive_json
+        def corrupt(path, value, **kwargs):
+            result = original(path, value, **kwargs)
+            if Path(path).name.endswith('.profile.json'):
+                Path(path).write_text('{}', encoding='utf8')
+            return result
+        with patch.object(importer, 'exclusive_json', side_effect=corrupt), self.assertRaises(ValueError):
+            self.write()
+        self.assertFalse((self.output / 'summary.json').exists())
+
+    def test_symlink_ancestor_rejected_before_import(self):
+        original = __import__('ohvul.component_batch', fromlist=['is_link']).is_link
+        with patch('ohvul.component_batch.is_link',
+                   side_effect=lambda p: p == self.root or original(p)):
+            with self.assertRaises(ValueError):
+                self.build()
+
+    def test_exported_profile_reaches_real_local_git_validation(self):
+        import os
+        import subprocess
+        from ohvul.engine_profile import prepare_profile
+        env = {k: v for k, v in os.environ.items() if not k.upper().startswith('GIT_')}
+        env.update(GIT_CONFIG_GLOBAL=os.devnull, GIT_CONFIG_NOSYSTEM='1', GIT_TERMINAL_PROMPT='0')
+        command = ['git', '-c', 'core.hooksPath=' + str(self.base / 'disabled-hooks'),
+                   '-c', 'core.autocrlf=false', '-c', 'user.name=Local Fixture',
+                   '-c', 'user.email=fixture@example.invalid', '-C', str(self.root)]
+        for args in (['init', '-q'], ['add', '.'], ['commit', '-qm', 'synthetic inputs']):
+            subprocess.run(command + args, env=env, check=True, capture_output=True, timeout=30)
+        pin = subprocess.check_output(command + ['rev-parse', 'HEAD'], env=env, text=True, timeout=30).strip()
+        self.profile['source_repositories'] = {'.': pin}
+        self.template.write_text(json.dumps(self.profile), encoding='utf8')
+        self.write()
+        profile, receipt = prepare_profile(next(self.output.glob('unit-*.profile.json')), self.root)
+        self.assertTrue(receipt['provenance']['verified'])
+        self.assertEqual(profile['source_files'], ['a.c'])
+        self.assertEqual(profile['defines'], ['ACTIVE=1'])
+
 
 if __name__ == '__main__':
     unittest.main()

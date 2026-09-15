@@ -91,7 +91,9 @@ def _unit(entry, index, root, database_parent, template):
                 option, value = name, arguments[position]
                 position += 1
                 break
-            if flag.startswith(name) and len(flag) > len(name):
+            # Only -I/-D attached values are unambiguous in this subset.
+            # Do not misread -objc... / -openmp... as an attached -o output.
+            if name in ('-I', '-D') and flag.startswith(name) and len(flag) > len(name):
                 option, value = name, flag[len(name):]
                 break
         if option == '-I':
@@ -236,8 +238,12 @@ def write_import(database, source_root, template, output):
     result, recheck = _build(database, root, template)
     recheck()
     output.mkdir()
-    for name, value in _artifacts(result).items():
+    artifacts = _artifacts(result)
+    for name, value in artifacts.items():
         exclusive_json(output / name, value, before_publish=recheck)
+    for name, value in artifacts.items():
+        _require(canonical_bytes(decode_json(read_bounded(output / name, MAX_OUTPUT_BYTES)))
+                 == canonical_bytes(value), 'generated profile changed before summary publication')
     exclusive_json(output / 'summary.json', result, before_publish=recheck)
     return result
 

@@ -9,6 +9,8 @@ from .engine_shards import scan_engine_manifest, scan_engine_profile
 from .engine_adapter import merge_engine_result
 from .semantic_rules import scan_semantic_files
 from .semantic_syntax import read_file_list
+from .compiler_analysis import run_compiler_profile
+from .review_queue import read_bounded
 
 
 def main():
@@ -24,6 +26,7 @@ def main():
     parser.add_argument("--engine-files-from",type=pathlib.Path,help="optional UTF-8 relative file list for WSL Clang")
     parser.add_argument("--engine-profile",type=pathlib.Path,help="optional component engine profile for WSL Clang")
     parser.add_argument("--semantic-files-from",type=pathlib.Path,help="optional UTF-8 relative file list for semantic candidate rules")
+    parser.add_argument("--compiler-profile",type=pathlib.Path,help="explicit fixed-version profile for Clang AST facts and typed memory checks")
     args=parser.parse_args()
     if not args.path.is_dir(): parser.error("path must be an existing local directory")
     if args.engine_files_from and args.engine_profile:
@@ -35,7 +38,7 @@ def main():
         parser.error("--journal requires --output and --checkpoint")
     destinations = [p for p in (args.output, args.checkpoint, args.journal, args.report_output) if p]
     for index, path in enumerate(destinations):
-        for other in destinations[index + 1:] + [p for p in (args.vuln_db, args.engine_profile, args.engine_files_from, args.semantic_files_from) if p]:
+        for other in destinations[index + 1:] + [p for p in (args.vuln_db, args.engine_profile, args.engine_files_from, args.semantic_files_from, args.compiler_profile) if p]:
             if path.resolve() == other.resolve() or (path.exists() and other.exists() and path.samefile(other)):
                 parser.error("output, checkpoint, journal and database must be distinct")
     for path in (args.output,args.checkpoint,args.journal):
@@ -64,6 +67,7 @@ def main():
     journal=AuditJournal(args.journal) if args.journal else None
     if journal: journal.append("begin",checkpoint.task_id,source_snapshot_sha256=current_snapshot)
     semantic_list_raw = None
+    compiler_profile_raw = None
     try:
         if args.checkpoint: save_checkpoint(checkpoint,args.checkpoint,force=args.force)
         result=scan_path(args.path)
@@ -98,6 +102,16 @@ def main():
                 'analysis_issues': semantic_result['analysis_issues'],
                 'input_errors': semantic_result['input_errors'], 'file_results': semantic_result['file_results'],
                 'file_list_sha256': hashlib.sha256(semantic_list_raw).hexdigest()}
+        if args.compiler_profile:
+            compiler_profile_raw = read_bounded(args.compiler_profile, 1024*1024)
+            compiler_result = run_compiler_profile(args.path, args.compiler_profile)
+            if compiler_result['status'] != 'completed' or not compiler_result['input_bindings_valid']:
+                raise ValueError('requested compiler AST analysis did not complete')
+            result = merge_engine_result(result, compiler_result, source_root=args.path)
+            result['compiler_facts'] = compiler_result['compiler_facts']
+            result['compiler_scan'] = {k:compiler_result[k] for k in (
+                'status','scan','file_results','compiler_profile_validation','compiler_version',
+                'compiler_probes','input_bindings_valid','analysis_scope')}
         result["components"]=identify_components(args.path)
         records=load_vulnerability_metadata(args.vuln_db)
         db_digest=hashlib.sha256(args.vuln_db.read_bytes()).hexdigest() if args.vuln_db else None
@@ -117,6 +131,8 @@ def main():
             raise ValueError("source snapshot changed during audit")
         if semantic_list_raw is not None and read_file_list(args.semantic_files_from)[0] != semantic_list_raw:
             raise ValueError('semantic file list changed during audit')
+        if compiler_profile_raw is not None and read_bounded(args.compiler_profile,1024*1024) != compiler_profile_raw:
+            raise ValueError('compiler profile changed during audit')
         if args.output:
             raw=(text+"\n").encode("utf-8")
             args.output.parent.mkdir(parents=True, exist_ok=True)
