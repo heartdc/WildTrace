@@ -1,5 +1,6 @@
 """Engine identity comes from observed output, never installation assumptions."""
 import hashlib
+import os
 import json
 import plistlib
 import subprocess
@@ -26,6 +27,7 @@ class EngineProvenanceTests(unittest.TestCase):
         result = normalize_semgrep_json({'version': '99.1.2', 'results': []}, source_root=Path('.'))
         self.assertEqual(result['engine_version'], '99.1.2')
 
+    @unittest.skipUnless(os.name == "nt", "WSL bridge requires a Windows host")
     def test_unobserved_semgrep_version_stays_unknown(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -36,6 +38,7 @@ class EngineProvenanceTests(unittest.TestCase):
                 result = run_wsl_semgrep(root, root / 'rules.yml', ('a.c',))
             self.assertEqual(result['engine_version'], 'unknown')
 
+    @unittest.skipUnless(os.name == "nt", "WSL bridge requires a Windows host")
     def test_tidy_uses_selected_toolchain_and_observed_version(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -93,6 +96,7 @@ class EngineProvenanceTests(unittest.TestCase):
             self.assertEqual(result['scan']['engine_version'], 'unknown')
             self.assertEqual({x['engine_version'] for x in result['file_results']}, {'99.1.0', '99.2.0'})
 
+    @unittest.skipUnless(os.name == "nt", "WSL bridge requires a Windows host")
     def test_failed_tidy_version_probe_does_not_claim_a_version(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
