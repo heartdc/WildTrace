@@ -1,0 +1,20 @@
+{
+  "schema": "component-batch-0.1",
+  "jobs": [
+    {
+      "id": "camera_app",
+      "source_root": "C:\\Projects\\OpenHarmony-complete",
+      "profile": "C:\\Projects\\LSH\\docs\\profiles\\camera_app_captured_20260914.json"
+    },
+    {
+      "id": "securec",
+      "source_root": "C:\\Projects\\OpenHarmony-complete\\third_party\\bounds_checking_function",
+      "profile": "C:\\Projects\\LSH\\docs\\profiles\\securec_captured_20260914.json"
+    },
+    {
+      "id": "hilog_featured",
+      "source_root": "C:\\Projects\\OpenHarmony-complete",
+      "profile": "C:\\Projects\\LSH\\docs\\profiles\\hilog_featured_captured_20260914.json"
+    }
+  ]
+}

@@ -1,12 +1,12 @@
 """Offline analysis-engine adapter contracts and local tool discovery.
 
-This module does not install, download, or execute analyzers.  It provides a
-small normalization boundary so an installed local engine can be added later
-without changing the FSM or evidence model.
+Normalization is offline. Explicit run_* adapters execute installed local
+analyzers; they do not install tools or execute the analyzed target program.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass
+import copy
 import hashlib
 import json
 import shutil
@@ -21,11 +21,11 @@ from ohvul.domain.evidence import make_bundle
 
 SUPPORTED_ENGINES = ("clang", "clang-tidy", "semgrep", "codeql", "joern")
 CWE_CANDIDATES = {
-    "unix.Malloc": "CWE-416",
     "core.NullDereference": "CWE-476",
+    "clang-analyzer-core.NullDereference": "CWE-476",
     "clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling": "CWE-676",
 }
-CWE_MAPPING_VERSION = "1"
+CWE_MAPPING_VERSION = "2"
 
 
 @dataclass(frozen=True)
@@ -46,7 +46,7 @@ def normalize_findings(raw: dict, *, engine: str, source_root: Path,
     """Normalize an engine JSON result without upgrading candidate status."""
     if engine not in SUPPORTED_ENGINES:
         raise ValueError("unsupported analysis engine")
-    if not isinstance(raw, dict) or not isinstance(raw.get("findings", []), list):
+    if not isinstance(raw, dict) or not isinstance(raw.get("findings"), list):
         raise ValueError("engine result must contain a findings list")
     root = source_root.resolve()
     findings = []
@@ -57,14 +57,25 @@ def normalize_findings(raw: dict, *, engine: str, source_root: Path,
         if not isinstance(location, dict) or not isinstance(location.get("file"), str):
             raise ValueError("engine finding location is required")
         rule = str(item.get("rule", "external-rule"))
-        cwe = item.get("cwe_candidate") or CWE_CANDIDATES.get(rule)
+        cwe = item.get('cwe_candidate')
+        mapping_source = None
+        mapping_version = None
+        if cwe is not None:
+            if not isinstance(cwe, str) or not re.fullmatch(r'CWE-[1-9][0-9]*', cwe):
+                raise ValueError('invalid engine-reported CWE identifier')
+            mapping_source = 'engine_reported'
+        elif engine in ('clang', 'clang-tidy'):
+            cwe = CWE_CANDIDATES.get(rule)
+            if cwe:
+                mapping_source = 'builtin_engine_rule_map'
+                mapping_version = CWE_MAPPING_VERSION
         findings.append({
             "source": engine,
             "engine_version": engine_version,
             "rule": rule,
             "cwe_candidate": cwe,
-            "cwe_mapping_source": "builtin_engine_rule_map" if cwe else None,
-            "cwe_mapping_version": CWE_MAPPING_VERSION if cwe else None,
+            "cwe_mapping_source": mapping_source,
+            "cwe_mapping_version": mapping_version,
             "description": str(item.get("description", "")),
             "location": {"file": location["file"], "line": location.get("line")},
             "evidence": item.get("evidence", {}),
@@ -86,6 +97,18 @@ def engine_result_to_audit_result(engine_result: dict, *, source_root: Path,
         raise ValueError("normalized engine result required")
     bundles, findings = [], []
     root = Path(source_root).resolve()
+    declared_root = engine_result.get("source_root")
+    if declared_root is not None and (not isinstance(declared_root, str)
+                                      or Path(declared_root).resolve() != root):
+        raise ValueError("engine source root mismatch")
+    status = engine_result.get("status", "unknown")
+    if status not in {"completed", "partial", "input_error", "timeout", "not_run", "unknown"}:
+        raise ValueError("invalid engine execution status")
+    errors = engine_result.get("input_errors", [])
+    if not isinstance(errors, list) or any(not isinstance(item, dict) for item in errors):
+        raise ValueError("invalid engine input errors")
+    if errors and status == "completed":
+        raise ValueError("completed engine result contains input errors")
     for index, item in enumerate(engine_result["findings"], 1):
         location = item.get("location")
         if not isinstance(location, dict) or not isinstance(location.get("file"), str):
@@ -94,6 +117,9 @@ def engine_result_to_audit_result(engine_result: dict, *, source_root: Path,
                     "line": location.get("line")}
         evidence = dict(item.get("evidence") or {})
         evidence.update({"rule": item.get("rule", "external-rule"),
+                         "cwe_candidate": item.get("cwe_candidate"),
+                         "engine": item.get("source", engine_result.get("engine", "external")),
+                         "engine_version": item.get("engine_version", engine_result.get("engine_version", "unknown")),
                          "description": item.get("description", ""),
                          "cwe_mapping_source": item.get("cwe_mapping_source"),
                          "cwe_mapping_version": item.get("cwe_mapping_version")})
@@ -102,20 +128,33 @@ def engine_result_to_audit_result(engine_result: dict, *, source_root: Path,
                                               "line": location.get("line")}, evidence=evidence)
         bundles.append(bundle.to_dict())
         findings.append({"alert_id": f"AL-ENG-{index:06d}", "source": item.get("source", engine_result.get("engine", "external")),
+                         "engine_version": evidence['engine_version'],
                          "cwe_candidate": item.get("cwe_candidate"), "cwe_mapping_source": item.get("cwe_mapping_source"),
                          "cwe_mapping_version": item.get("cwe_mapping_version"), "rule": item.get("rule"),
                          "description": item.get("description", ""), "location": location,
                          "evidence": evidence, "evidence_id": bundle.evidence_id, "status": "candidate"})
     scan = {"root": str(root),
-            "files_scanned": len({x["location"]["file"] for x in findings}),
+            "files_scanned": engine_result.get("files_scanned"),
+            "files_with_findings": len({x["location"]["file"] for x in findings}),
             "engine": engine_result.get("engine"), "engine_version": engine_result.get("engine_version")}
+    for field in ("files_scanned", "files_requested", "files_attempted", "files_failed", "files_skipped"):
+        value = engine_result.get(field)
+        if value is not None and (type(value) is not int or value < 0):
+            raise ValueError("invalid engine coverage counter")
+        if field in engine_result:
+            scan[field] = value
     if source_snapshot_sha256 is not None:
-        if not isinstance(source_snapshot_sha256, str) or len(source_snapshot_sha256) != 64:
+        if not isinstance(source_snapshot_sha256, str) or not re.fullmatch(r"[0-9a-f]{64}", source_snapshot_sha256):
             raise ValueError("invalid source snapshot digest")
         scan["source_snapshot_sha256"] = source_snapshot_sha256
-    return {"schema_version": "0.3", "scan": scan,
+    result = {"schema_version": "0.3", "scan": scan, "status": status,
+            "input_errors": copy.deepcopy(errors),
             "findings": findings, "evidence_bundles": bundles,
             "safety": {"local_only": True, "no_execution": True, "no_network": True}}
+    for field in ("engine_runs", "file_results", "execution", "version_observation"):
+        if field in engine_result:
+            result[field] = copy.deepcopy(engine_result[field])
+    return result
 
 
 def _normalize_engine_path(value: str, root: Path) -> str:
@@ -143,7 +182,7 @@ def merge_engine_result(base_result: dict, engine_result: dict, *, source_root: 
     validate_result(engine_result)
     base_snapshot = base_result.get("scan", {}).get("source_snapshot_sha256")
     engine_snapshot = engine_result.get("scan", {}).get("source_snapshot_sha256")
-    if base_snapshot and engine_snapshot and base_snapshot != engine_snapshot:
+    if bool(base_snapshot) != bool(engine_snapshot) or (base_snapshot and base_snapshot != engine_snapshot):
         raise ValueError("scan source snapshot mismatch")
     output = {**base_result, "findings": list(base_result.get("findings", [])),
               "evidence_bundles": list(base_result.get("evidence_bundles", []))}
@@ -168,8 +207,63 @@ def merge_engine_result(base_result: dict, engine_result: dict, *, source_root: 
             finding["alert_id"] = candidate
         used_alert_ids.add(finding.get("alert_id"))
         output["findings"].append(finding)
-    output["scan"] = {**base_result.get("scan", {}), "engine": engine_result.get("scan", {}).get("engine"),
-                       "engine_version": engine_result.get("scan", {}).get("engine_version")}
+    def observations(result):
+        if "engine_observations" in result:
+            return copy.deepcopy(result["engine_observations"])
+        scan = result.get("scan", {})
+        if not scan.get("engine"):
+            return []
+        return [{"engine": scan["engine"], "engine_version": scan.get("engine_version"),
+                 "status": result.get("status", "unknown"), "scan": copy.deepcopy(scan),
+                 "input_errors": copy.deepcopy(result.get("input_errors", [])),
+                 "file_results": copy.deepcopy(result.get("file_results")),
+                 "execution": copy.deepcopy(result.get("execution")),
+                 "version_observation": copy.deepcopy(result.get("version_observation")),
+                 "engine_profiles": copy.deepcopy(result.get("engine_profiles")),
+                 "engine_runs": result.get("engine_runs")}]
+
+    runs = observations(base_result) + observations(engine_result)
+    errors = copy.deepcopy(base_result.get("input_errors", [])) + copy.deepcopy(engine_result.get("input_errors", []))
+    output["engine_observations"] = runs
+    profiles = []
+    for value in (base_result, engine_result):
+        receipts = list(value.get('profile_validations', []))
+        if 'profile_validation' in value:
+            receipts.append(value['profile_validation'])
+        for receipt in receipts:
+            if (not isinstance(receipt, dict) or receipt.get('source_root') != root
+                    or not isinstance(receipt.get('profile_sha256'), str)
+                    or not re.fullmatch(r'[0-9a-f]{64}', receipt['profile_sha256'])):
+                raise ValueError('invalid profile validation receipt')
+            if receipt not in profiles:
+                profiles.append(copy.deepcopy(receipt))
+    if profiles:
+        output['profile_validations'] = profiles
+        if len(profiles) == 1:
+            output['profile_validation'] = copy.deepcopy(profiles[0])
+        else:
+            output.pop('profile_validation', None)
+    output["input_errors"] = errors
+    counts = [run.get("engine_runs") for run in runs]
+    output["engine_runs"] = sum(counts) if counts and all(type(count) is int for count in counts) else None
+    statuses = [run["status"] for run in runs]
+    failed = bool(errors) or any(s in ("input_error", "timeout", "partial") for s in statuses)
+    succeeded = any(s in ("completed", "partial") for s in statuses)
+    output["status"] = ("partial" if succeeded else "input_error") if failed else (
+        "completed" if statuses and all(s == "completed" for s in statuses) else "unknown")
+    engines = sorted({run["engine"] for run in runs})
+    output["scan"] = {**base_result.get("scan", {}), "engines": engines,
+                      "engine": engines[0] if len(engines) == 1 else "multiple",
+                      "engine_version": runs[0]["engine_version"] if len(runs) == 1 else "multiple"}
+    # Different engines may analyze the same file. Never add their counts or
+    # infer coverage from diagnostics; preserve the per-engine observations.
+    if runs and all(isinstance(run.get("file_results"), list) for run in runs):
+        successful_files = {item["source_file"] for run in runs for item in run["file_results"]
+                            if item.get("status") == "completed"}
+        output["scan"]["files_scanned"] = len(successful_files)
+    else:
+        output["scan"]["files_scanned"] = None
+    output["scan"]["coverage_scope"] = "engine_observations"
     output["safety"] = {"local_only": True, "no_execution": True, "no_network": True}
     return output
 
@@ -231,23 +325,47 @@ def normalize_sarif(raw: dict, *, engine: str, source_root: Path,
 def normalize_semgrep_json(raw: dict, *, source_root: Path,
                            engine_version: str = "unknown") -> dict:
     """Convert Semgrep JSON results into candidate findings."""
-    if not isinstance(raw, dict) or not isinstance(raw.get("results", []), list):
+    if not isinstance(raw, dict) or not isinstance(raw.get("results"), list):
         raise ValueError("expected Semgrep JSON result")
+    observation = _version_observation(raw.get('version'), 'semgrep_json', bare=True)
+    if observation['status'] == 'observed':
+        engine_version = observation['version']
     findings = []
     for item in raw["results"]:
         if not isinstance(item, dict):
-            continue
+            raise ValueError("invalid Semgrep finding")
         start = item.get("start", {})
         path = item.get("path")
         if not isinstance(path, str) or not isinstance(start, dict):
-            continue
+            raise ValueError("invalid Semgrep location")
         extra = item.get("extra", {})
+        if not isinstance(extra, dict):
+            raise ValueError("invalid Semgrep finding metadata")
         findings.append({"rule": item.get("check_id", "semgrep-rule"),
                          "description": extra.get("message", ""),
                          "location": {"file": path, "line": start.get("line")},
                          "evidence": {"severity": extra.get("severity", "WARNING")}})
-    return normalize_findings({"findings": findings}, engine="semgrep",
-                              source_root=source_root, engine_version=engine_version)
+    result = normalize_findings({"findings": findings}, engine="semgrep",
+                                source_root=source_root, engine_version=engine_version)
+    result['version_observation'] = observation
+    errors = raw.get("errors", [])
+    if not isinstance(errors, list) or any(not isinstance(error, dict) for error in errors):
+        raise ValueError("invalid Semgrep errors")
+    result["input_errors"] = [{**error, "engine": "semgrep"} for error in errors]
+    paths = raw.get("paths", {})
+    if not isinstance(paths, dict):
+        raise ValueError("invalid Semgrep paths")
+    if "scanned" in paths:
+        if not isinstance(paths["scanned"], list) or any(not isinstance(path, str) for path in paths["scanned"]):
+            raise ValueError("invalid Semgrep scanned paths")
+        root = Path(source_root).resolve()
+        scanned = sorted({_normalize_engine_path(path, root) for path in paths["scanned"]})
+        result["files_scanned"] = len(scanned)
+        result["file_results"] = [{"engine": "semgrep", "source_file": str(root / path), "status": "completed"}
+                                  for path in scanned]
+    if errors:
+        result["status"] = "partial" if result.get("files_scanned", 0) else "input_error"
+    return result
 
 
 def build_local_command(engine: str, executable: str, source_root: Path) -> list[str]:
@@ -294,20 +412,33 @@ def normalize_clang_plist(raw: bytes, *, source_root: Path,
         document = plistlib.loads(raw)
     except Exception as exc:
         raise ValueError("invalid clang plist output") from exc
+    if not isinstance(document, dict) or not isinstance(document.get("diagnostics"), list):
+        raise ValueError("clang plist lacks a diagnostics list")
+    observation = _version_observation(document.get('clang_version'), 'clang_plist')
+    if observation['status'] == 'observed':
+        engine_version = observation['version']
     findings = []
     files = document.get("files", [])
+    if not isinstance(files, list):
+        raise ValueError("invalid clang plist files")
     for diagnostic in document.get("diagnostics", []):
+        if not isinstance(diagnostic, dict):
+            raise ValueError("invalid clang diagnostic")
         location = diagnostic.get("location", {})
+        if not isinstance(location, dict):
+            raise ValueError("invalid clang diagnostic location")
         file_ref = location.get("file")
-        path = files[file_ref] if isinstance(file_ref, int) and file_ref < len(files) else file_ref
+        path = files[file_ref] if type(file_ref) is int and 0 <= file_ref < len(files) else file_ref
         if not isinstance(path, str):
-            continue
+            raise ValueError("invalid clang diagnostic file reference")
         findings.append({"rule": diagnostic.get("check_name", "clang-analyzer"),
                          "description": diagnostic.get("description", ""),
                          "location": {"file": path, "line": location.get("line")},
                          "evidence": {"path": path}})
-    return normalize_findings({"findings": findings}, engine="clang",
-                              source_root=source_root, engine_version=engine_version)
+    result = normalize_findings({"findings": findings}, engine="clang",
+                                source_root=source_root, engine_version=engine_version)
+    result['version_observation'] = observation
+    return result
 
 
 _TIDY_DIAGNOSTIC = re.compile(r"^(?P<file>.+?):(?P<line>\d+):(?P<column>\d+): warning: (?P<message>.*?)(?: \[(?P<rule>[^]]+)\])?$")
@@ -341,6 +472,52 @@ def windows_to_wsl_path(path: Path) -> str:
     return "/mnt/" + drive + absolute.as_posix()[2:]
 
 
+def _version_observation(raw, source, *, bare=False):
+    """An output observation, not a trusted binary identity or signature."""
+    text = raw if isinstance(raw, str) else ''
+    version = r'(\d+\.\d+(?:\.\d+){0,2}(?:[-+][A-Za-z0-9_.-]+)?)'
+    match = re.fullmatch(version, text.strip()) if bare else re.search(
+        r'(?:clang|LLVM) version\s+' + version, text)
+    return {'source': source, 'status': 'observed' if match else 'unknown',
+            'version': match.group(1) if match else 'unknown', 'raw': text[:8192],
+            'output_sha256': hashlib.sha256(text.encode('utf-8')).hexdigest()}
+
+
+def _tidy_version(executable):
+    command = ['wsl.exe', '-d', 'Ubuntu', '--', executable, '--version']
+    try:
+        run = subprocess.run(command, capture_output=True, text=True, encoding='utf-8',
+                             errors='replace', timeout=10, shell=False, check=False)
+        observed = _version_observation(run.stdout, 'version_command')
+        if run.returncode != 0:
+            observed.update(status='unknown', version='unknown')
+        observed.update(command=command, returncode=run.returncode,
+                        stderr=run.stderr[-8192:])
+        return observed
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        return {'source': 'version_command', 'command': command, 'status': 'unknown',
+                'version': 'unknown', 'reason': type(exc).__name__}
+
+
+def _record_execution(result, command, completed, *, report=None):
+    execution = {'command': list(command), 'returncode': completed.returncode,
+                 'stdout_sha256': hashlib.sha256(completed.stdout.encode('utf-8')).hexdigest(),
+                 'stderr_sha256': hashlib.sha256(completed.stderr.encode('utf-8')).hexdigest(),
+                 'version_observation': copy.deepcopy(result.get('version_observation', {}))}
+    if report is not None:
+        execution['report_sha256'] = hashlib.sha256(report).hexdigest()
+    result['execution'] = execution
+    for finding in result.get('findings', []):
+        finding['evidence'] = {**finding.get('evidence', {}),
+                               'engine_execution': copy.deepcopy(execution)}
+    # Metadata and evidence changed after normalization; do not leave a stale digest.
+    if 'adapter_sha256' in result:
+        payload = {key: value for key, value in result.items() if key != 'adapter_sha256'}
+        result['adapter_sha256'] = hashlib.sha256(json.dumps(
+            payload, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+    return result
+
+
 def run_wsl_clang_analyzer(source_file: Path, source_root: Path, *,
                            llvm_root: str = "/home/airgap/llvm",
                            compile_args: tuple[str, ...] = (),
@@ -372,10 +549,10 @@ def run_wsl_clang_analyzer(source_file: Path, source_root: Path, *,
                     "source_root": str(source_root), "returncode": completed.returncode,
                     "stderr": completed.stderr[-8192:],
                     "safety": {"local_only": True, "no_execution": True, "no_network": True}}
-        result = normalize_clang_plist(output.read_bytes(), source_root=source_root,
-                                       engine_version="22.1.8")
+        raw = output.read_bytes()
+        result = normalize_clang_plist(raw, source_root=source_root)
         result["status"] = "completed"
-        return result
+        return _record_execution(result, command, completed, report=raw)
     except subprocess.TimeoutExpired:
         return {"schema_version": "0.1", "engine": "clang", "status": "timeout",
                 "source_file": str(source_file), "source_root": str(source_root),
@@ -388,6 +565,7 @@ def run_wsl_clang_analyzer(source_file: Path, source_root: Path, *,
 
 
 def run_wsl_clang_tidy(source_file: Path, source_root: Path, *,
+                       llvm_root: str = "/home/airgap/llvm",
                        compile_args: tuple[str, ...] = (),
                        checks: str = "-*,clang-analyzer-*", timeout: int = 300) -> dict:
     """Run clang-tidy in WSL for one local source file."""
@@ -396,7 +574,12 @@ def run_wsl_clang_tidy(source_file: Path, source_root: Path, *,
         raise ValueError("source file must be inside source root")
     if not isinstance(checks, str) or not checks.strip():
         raise ValueError("checks must be nonempty")
-    command = ["wsl.exe", "-d", "Ubuntu", "--", "/home/airgap/llvm/bin/clang-tidy",
+    if type(timeout) is not int or not 0 < timeout <= 900:
+        raise ValueError('timeout must be between 1 and 900 seconds')
+    if not isinstance(compile_args, tuple) or not all(isinstance(x, str) for x in compile_args):
+        raise ValueError('compile_args must be a tuple of strings')
+    executable = llvm_root + '/bin/clang-tidy'
+    command = ["wsl.exe", "-d", "Ubuntu", "--", executable,
                windows_to_wsl_path(source_file), "-checks=" + checks, "--", *compile_args]
     try:
         completed = subprocess.run(command, capture_output=True, text=True,
@@ -404,12 +587,14 @@ def run_wsl_clang_tidy(source_file: Path, source_root: Path, *,
     except subprocess.TimeoutExpired:
         return {"schema_version": "0.1", "engine": "clang-tidy", "status": "timeout",
                 "source_file": str(source_file), "safety": {"local_only": True, "no_execution": True, "no_network": True}}
+    observation = _tidy_version(executable)
     result = normalize_clang_tidy_text(completed.stdout + completed.stderr,
-                                       source_root=source_root, engine_version="22.1.8")
+                                       source_root=source_root, engine_version=observation['version'])
+    result['version_observation'] = observation
     result["status"] = "completed" if completed.returncode == 0 else "input_error"
     if completed.returncode != 0:
         result["stderr"] = completed.stderr[-8192:]
-    return result
+    return _record_execution(result, command, completed)
 
 
 def run_wsl_semgrep(source_root: Path, rule_file: Path, relative_files: tuple[str, ...], *,
@@ -437,8 +622,15 @@ def run_wsl_semgrep(source_root: Path, rule_file: Path, relative_files: tuple[st
         raw = json.loads(completed.stdout)
     except json.JSONDecodeError as exc:
         raise ValueError("Semgrep output is not JSON") from exc
-    result = normalize_semgrep_json(raw, source_root=root, engine_version="1.177.0")
-    result["status"] = "completed" if completed.returncode == 0 else "input_error"
+    result = normalize_semgrep_json(raw, source_root=root)
+    result["engine_runs"] = 1
+    if completed.returncode == 0 and not result.get("input_errors"):
+        result["status"] = "completed"
+    elif completed.returncode != 0:
+        result["status"] = "partial" if result.get("files_scanned", 0) else "input_error"
+        result.setdefault("input_errors", []).append({"engine": "semgrep", "status": "input_error",
+                                                       "returncode": completed.returncode,
+                                                       "stderr": completed.stderr[-8192:]})
     if completed.returncode != 0:
         result["stderr"] = completed.stderr[-8192:]
-    return result
+    return _record_execution(result, command, completed, report=completed.stdout.encode('utf-8'))

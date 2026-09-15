@@ -63,7 +63,7 @@ class EngineAdapterTests(unittest.TestCase):
         self.assertEqual(result['findings'][0]['rule'], 'clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling')
         self.assertEqual(result['findings'][0]['cwe_candidate'], 'CWE-676')
         self.assertEqual(result['findings'][0]['cwe_mapping_source'], 'builtin_engine_rule_map')
-        self.assertEqual(result['findings'][0]['cwe_mapping_version'], '1')
+        self.assertEqual(result['findings'][0]['cwe_mapping_version'], '2')
 
     def test_engine_projection_validates_with_result_checker(self):
         from ohvul.verify import validate_result
