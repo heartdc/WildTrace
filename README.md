@@ -149,7 +149,32 @@ See [evidence contract](docs/engineering/EVIDENCE_VALIDATION.md) for scope and l
 
 ## Optional LLM drafting
 
-The optional `ohvul.llm_adapter` reads `OSLOVELACE_API_KEY` only at runtime. It sends structured candidate evidence for drafting and always returns `final_verdict=undetermined`. Do not place keys in source, config files, fixtures, logs, or commits. Calls are explicit; the scanner does not invoke the network automatically.
+The optional `ohvul.llm_adapter` reads `OSLOVELACE_API_KEY` only at runtime. Its
+default endpoint is `https://oslovelace.com/v1` and its selected provider model
+identifier is `grok-4.6`. It rejects redirects, bounds requests/responses, sanitizes
+transport errors, and does not retry automatically. Do not place keys in source,
+config files, fixtures, logs, or commits. The scanner stays offline by default.
+
+`ohvul.llm_review` now connects the verified batch/queue/source context to
+structured, evidence-referenced model proposals. Use `--plan` without network,
+`--run --allow-network` for an explicitly authorized bounded selection, and
+`--verify` for independent local checks. Model outputs never confirm a
+vulnerability, execute tools, remove a candidate or change the FSM. The initial
+live requests returned HTTP 403. A later retry was blocked at tool-side credential
+input before any API request; it is not evidence of a new provider failure.
+Successful online inference is not yet accepted.
+See [LLM review contract](docs/engineering/LLM_REVIEW.md).
+
+`--inspect` now checks complete historical records, including failed runs, without
+calling a model. `bound_incomplete` means records are consistent, not inference
+success; `--verify` remains strict. New plans record the stop-after-transport-error
+policy, while old records keep their original, explicitly legacy policy status.
+
+`ohvul.review_handoff` combines the verified queue/context and explicitly selected
+historical LLM runs into evidence follow-up tasks. All five questions remain open
+for every group; model statements are separately cited untrusted proposals, not
+facts, commands or automatic approvals. Failed and unselected groups remain visible.
+See [handoff commands and independent verification](docs/engineering/REVIEW_HANDOFF.md).
 
 ## Explicit multi-component batches
 
