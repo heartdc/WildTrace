@@ -4,7 +4,7 @@ WildTrace is a defensive, local-only source auditing project.
 
 ## Scope
 
-Only authorized local source, fixed versions, and isolated synthetic harnesses are in scope. The project does not scan internet targets, probe remote services, execute target code, generate real attack payloads, or submit reports automatically.
+Only authorized local source, fixed versions, and isolated synthetic harnesses are in scope. The project does not scan internet targets, probe remote services, execute target code, generate real attack payloads, or submit reports automatically. The sole scoped exception is an explicitly signed [Isolated Execution Authorization](docs/engineering/EXECUTION_AUTHORIZATION.md): until that document is signed by all owners, the no-target-execution rule above applies in full.
 
 ## Optional remote drafting
 
