@@ -1,0 +1,31 @@
+{
+  "schema": "engine-profile-0.1",
+  "component": "hilog_lite/featured",
+  "source_root_label": "OpenHarmony-complete",
+  "source_repositories": {
+    "base/hiviewdfx/hilog_lite": "88291aa0b5818c6b1729c19c9a229bf65bf3cb80",
+    "third_party/bounds_checking_function": "2ae82839ecaaa7d031e66ccbd2076d671acfd615"
+  },
+  "source_files": [
+    "base/hiviewdfx/hilog_lite/frameworks/featured/hilog.cpp",
+    "base/hiviewdfx/hilog_lite/frameworks/featured/hiview_log.c"
+  ],
+  "include_dirs": [
+    "base/hiviewdfx/hilog_lite/interfaces/native/innerkits/hilog",
+    "base/hiviewdfx/hilog_lite/interfaces/native/innerkits",
+    "third_party/bounds_checking_function/include"
+  ],
+  "defines": [],
+  "extra_compile_args": [
+    "-Wall",
+    "-fno-common",
+    "-fno-strict-aliasing",
+    "-O2"
+  ],
+  "engines": [
+    "clang-static-analyzer",
+    "clang-tidy"
+  ],
+  "status": "host-static-inputs-not-product-build",
+  "disclaimer": "Featured non-LiteOS-M BUILD.gn source/config branch with privacy retained; host static analysis only, not a complete product build or platform impact verification."
+}

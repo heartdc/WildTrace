@@ -17,7 +17,7 @@ class RuleBenchmarkTests(unittest.TestCase):
     result=scan_path(root)
     findings=[x for x in result['findings'] if x['location']['file']==path.name]
     observed={x['cwe_candidate'] for x in findings}
-    self.assertTrue(set(case['expected_cwe']).issubset(observed),case['id'])
+    self.assertEqual(set(case['expected_cwe']), observed, case['id'])
     if case['label']=='reviewed_suppressed': self.assertFalse(findings,case['id'])
 
 if __name__=='__main__': unittest.main()
@@ -40,13 +40,16 @@ class ExtendedBenchmarkTests(unittest.TestCase):
     path=root/(case['id']+'.c'); path.write_text(case['code']); observed={x['cwe_candidate'] for x in scan_path(root)['findings'] if x['location']['file']==path.name}; self.assertIn(expected[case['id']],observed)
 
 class SafeCounterexampleTests(unittest.TestCase):
- def test_checked_pointer_case_is_kept_as_explicit_false_positive_candidate(self):
+ def test_checked_pointer_case_has_observation_instead_of_false_positive(self):
   import json,pathlib,tempfile
   from ohvul.detect.scanner import scan_path
   cases=json.loads(pathlib.Path('docs/design/rule_benchmark.json').read_text(encoding='utf-8'))
   case=next(x for x in cases if x['id']=='checked_pointer_safe_control')
   with tempfile.TemporaryDirectory() as d:
-   root=pathlib.Path(d); path=root/(case['id']+'.c'); path.write_text(case['code']); findings=scan_path(root)['findings']; self.assertTrue(any(x['cwe_candidate']=='CWE-476' for x in findings)); self.assertEqual(case['expected_cwe'],[])
+    root=pathlib.Path(d); path=root/(case['id']+'.c'); path.write_text(case['code']); result=scan_path(root)
+    self.assertFalse(any(x['cwe_candidate']=='CWE-476' for x in result['findings']))
+    self.assertTrue(any(x['evidence']['decision']=='same_expression_guard' for x in result['rule_observations']))
+    self.assertEqual(case['expected_cwe'],[])
 
 class BenchmarkReasonTests(unittest.TestCase):
  def test_every_case_has_explanation_reason(self):
@@ -98,11 +101,15 @@ class BenchmarkInputTests(unittest.TestCase):
     result = evaluate([dict(self.case, id='display / label', language=language)])
    self.assertEqual(result['results'][0]['id'], 'display / label')
 
- def test_existing_snapshot_is_unchanged(self):
+ def test_historical_snapshot_is_preserved_and_current_labels_are_matched(self):
   root = pathlib.Path(__file__).resolve().parents[1] / 'docs' / 'design'
   cases = json.loads((root / 'rule_benchmark.json').read_text(encoding='utf-8'))
   snapshot = json.loads((root / 'rule_benchmark_report.json').read_text(encoding='utf-8-sig'))
-  self.assertEqual(evaluate(cases), snapshot)
+  # The old measured result is history, not a mandate to preserve known errors.
+  self.assertEqual(snapshot['candidate_metrics'], dict(tp=5,fp=2,fn=0,precision=5/7,recall=1.0))
+  current=evaluate(cases)
+  self.assertEqual(current['candidate_metrics'], dict(tp=5,fp=0,fn=0,precision=1.0,recall=1.0))
+  self.assertTrue(all(item['observed']==item['expected'] for item in current['results']))
 
  def test_empty_benchmark_has_no_rates(self):
   result = evaluate([])

@@ -22,18 +22,26 @@ Rules are intentionally conservative candidates. They are not vulnerability verd
 When an authorized WSL LLVM installation is available, run the adapter on a single file or an explicit relative file list:
 
 ```powershell
-python -m ohvul.engine_cli .\source.c --source-root . --output engine.json
-python -m ohvul.engine_cli --files-from files.txt --source-root . --output engine.json
+python -m ohvul.engine_cli .\authorized-source\source.c --source-root .\authorized-source --output engine.json
+python -m ohvul.engine_cli --files-from files.txt --source-root .\authorized-source --output engine.json
 ```
 
 Optional local CVE/CWE matching requires all three values:
 
 ```powershell
-python -m ohvul.engine_cli .\source.c --source-root . `
+python -m ohvul.engine_cli .\authorized-source\source.c --source-root .\authorized-source `
   --knowledge-base local-kb.json --component component-name --version 1.0
 ```
 
 Engine findings remain candidates. Missing build inputs produce `input_error` and must not be interpreted as a clean scan.
+
+The engine CLI returns 0 only for completed execution, 1 for partial/input-error
+diagnostic results, and a nonzero argument/publication error otherwise. Output
+must be outside the scanned source tree; replacing an existing diagnostic output
+requires `--force`. The main CLI blocks successful publication when an explicitly
+requested engine fails. Unknown engine file coverage is `null`, not zero; consult
+`engine_observations` for per-engine status, file outcomes, and error details.
+See [engine execution audit](docs/analysis/ENGINE_EXECUTION_AUDIT_20260914.md).
 
 Candidate benchmark results can be measured after manual annotation:
 
@@ -48,7 +56,93 @@ python -m ohvul.engine_benchmark --bootstrap-output cases.json `
   --source-snapshot <sha256> --component <name> --version <version> engine-result.json
 ```
 
+## Profile provenance and source input contracts
+
+`--engine-profile` requires an `engine-profile-0.1` document with explicit,
+nonempty source/repository/engine selections. Every declared repository must be
+an actual local Git worktree root at the recorded full commit, with no observed
+tracked or untracked changes. Sources and include directories must belong to
+declared repositories. Selected target files must be tracked and not hidden by
+assume-unchanged/skip-worktree flags. Configured Git filters are rejected; the
+provenance check does not recurse into undeclared submodules.
+
+Profile paths must be relative and must not contain symbolic links, junctions,
+parent traversal or duplicate aliases. Include paths and macros use their typed
+fields. Extra compiler arguments are restricted to a small reviewed subset;
+response files, plugins, arbitrary forwarding and output flags are rejected.
+The exact profile-byte hash and observed repository checks are emitted as
+`profile_validation`; profile bytes and repository state are rechecked after
+analysis. These are local observations, not signatures or proof of platform impact.
+
+The standalone `engine_cli --profile` accepts only a Clang-only profile and sources
+declared by it. Use the main CLI for profiles selecting multiple engines:
+
+```powershell
+python -m ohvul.cli .\authorized-source --engine-profile .\profiles\component.json --output .\out\findings.json
+```
+
+Historical camera profile metadata does not bypass these gates. Its dependency
+repository declarations must be completed and locally verified before it can be
+used with the stricter execution path; this batch did not verify an OpenHarmony checkout.
+
+Capture missing repository pins from the owners of explicitly declared sources
+and include directories, without changing any existing commit or rule-hash pin:
+
+```powershell
+python -m ohvul.profile_capture --template .\profiles\template.json --source-root .\authorized-source --output .\profiles\captured.json
+```
+
+The output must be new, outside the source tree, and have an existing parent
+directory. There is no force-refresh mode. Wrong existing pins, dirty dependencies,
+missing inputs, or changes during capture reject publication. Capture does not
+discover undeclared transitive build inputs, execute analyzers, or verify platform
+impact. The generated file must pass normal execution-time validation again.
+
+Engine versions are observed from Clang plist, Semgrep JSON, or a clang-tidy
+version query, rather than assumed from an installation path. Missing or failed
+version observations remain `unknown`. Execution commands, return codes and output
+digests are included in candidate evidence; merged results preserve
+`profile_validations`. These are content bindings, not binary signatures.
+
+## Opt-in real static-analyzer integration demo
+
+```powershell
+python tools/synthetic_static_demo.py --output .cache\synthetic-demo-new
+```
+
+This requires the existing WSL Ubuntu LLVM installation used by the adapters. It
+creates two disposable local Git repositories in a new output directory, captures
+their dependency profile, and runs real Clang and clang-tidy on synthetic unsafe
+and safe controls. It verifies the result/report/journal chain and checks that a
+wrong repository pin cannot publish a successful result. It never executes the
+sample code or modifies project Git, and does not demonstrate an OpenHarmony
+vulnerability or establish detection accuracy. Existing output directories are
+never replaced. See the [component integration audit](docs/analysis/COMPONENT_INTEGRATION_AUDIT_20260914.md).
+
+## Builtin scanner error handling
+
+The builtin scanner now records read/UTF-8 decode/enumeration errors explicitly.
+`files_scanned` counts successful reads and decodes only. Partial/all-failed scans
+are `partial`/`input_error`, and the main CLI blocks successful publication.
+Directory enumeration failure sets `scope_complete=false` and an unknown
+`files_requested` (`null`); `files_discovered` remains the observed count. Skipped
+symbolic-link files and directories are listed, not claimed as analyzed. Successful
+file records and findings include the SHA-256 of the source bytes actually read.
+See [profile and scanner audit](docs/analysis/PROFILE_SCANNER_AUDIT_20260914.md).
+
 ## Evidence validation
+
+Candidate quality rules now mask comments and literals and retain narrow syntax
+filter decisions in `rule_observations`, with source hashes and an undetermined
+verdict. Recognized direct-return guards are not general proofs of safety; macro,
+volatile, complex control-flow and alias contexts need further analysis. Unknown
+engine checkers keep an unknown CWE. Exact Clang null-dereference aliases use
+mapping version 2, and new CWE values are bound to candidate evidence.
+
+The historical eight-case benchmark snapshot is preserved. Current results on
+that development-used synthetic set must not be advertised as real-world
+vulnerability accuracy. See [candidate quality audit](docs/analysis/CANDIDATE_QUALITY_AUDIT_20260914.md)
+and [competition readiness](docs/status/COMPETITION_READINESS_20260914.md).
 
 Saved schema 0.3 results can be checked offline using `python -m ohvul.verify result.json`.
 See [evidence contract](docs/engineering/EVIDENCE_VALIDATION.md) for scope and limitations.
@@ -56,6 +150,45 @@ See [evidence contract](docs/engineering/EVIDENCE_VALIDATION.md) for scope and l
 ## Optional LLM drafting
 
 The optional `ohvul.llm_adapter` reads `OSLOVELACE_API_KEY` only at runtime. It sends structured candidate evidence for drafting and always returns `final_verdict=undetermined`. Do not place keys in source, config files, fixtures, logs, or commits. Calls are explicit; the scanner does not invoke the network automatically.
+
+## Explicit multi-component batches
+
+Captured real-source inputs for camera, securec and hilog are in `docs/profiles/`.
+They are host static-analysis profiles, not complete OpenHarmony product builds.
+Repository pins remain constraints and are checked at execution time.
+
+```powershell
+python -m ohvul.component_batch --manifest docs/profiles/real_components_20260914.batch.json --output .cache/preflight-new --preflight-only --timeout 60
+python -m ohvul.component_batch --manifest docs/profiles/real_components_20260914.batch.json --output .cache/batch-new --timeout 60
+```
+
+The output directory must be new. Preflight `ready` is not analyzed `completed`.
+Only the final `summary-NNNN.json` accepts the complete batch; retain per-job
+receipts and candidate reports. Failed jobs do not prevent other valid jobs,
+but the overall command is nonzero and cannot claim a successful whole batch.
+See [batch contract](docs/engineering/COMPONENT_BATCH.md),
+[real component audit](docs/analysis/REAL_COMPONENT_BATCH_AUDIT_20260914.md), and
+[human decisions and environments](docs/status/HUMAN_ACTIONS_20260914.md).
+
+## Verified candidate review inputs
+
+`ohvul.review_queue` turns an explicitly selected completed batch into a
+deterministic review queue. It verifies result/report/receipt hashes, states,
+profile and source bindings; all diagnostic observations are retained.
+Grouping is for review only, not vulnerability counting.
+
+```powershell
+python -m ohvul.review_queue --summary .cache/real_components_c0d3/batch/summary-0005.json --output .cache/review-new.json
+python -m ohvul.review_queue --summary .cache/real_components_c0d3/batch/summary-0005.json --verify .cache/review-new.json
+```
+
+The optional `ohvul.review_context` requires explicit `--source-root JOB=PATH`
+arguments and rechecks source snapshots before/after extracting original-line
+text windows. It does not follow source paths from JSON automatically, and no
+analyzer, target, network or model is called. Review questions remain unknown.
+Output files must be new and outside source/batch directories.
+See [review queue and context](docs/engineering/REVIEW_QUEUE.md) for complete
+commands and limits, and [measured review integration](docs/analysis/REVIEW_PIPELINE_AUDIT_20260914.md).
 
 ## Local installation and verification
 
@@ -65,3 +198,6 @@ python -m unittest discover -s tests -q
 ```
 
 No API key is required for scanning or tests. Configure `OSLOVELACE_API_KEY` only when explicitly using the optional drafting adapter.
+
+Profile provenance checks and their tests require a local Git executable. Tests
+create temporary synthetic Git repositories; they do not commit the project checkout.

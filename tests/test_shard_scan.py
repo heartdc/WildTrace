@@ -19,7 +19,9 @@ class ShardScanTests(unittest.TestCase):
    root=Path(d); (root/'a.c').write_text('void f(char*d,const char*s){strcpy(d,s);}')
    result=scan_shard(root, build_manifest(root,1)['shards'][0]); merged=merge_shard_results([result],root)
    self.assertEqual(merged['findings'][0]['alert_id'],'AL-000001')
-   self.assertEqual(validate_result(merged), 1)
+   self.assertEqual(len(merged['findings']), 1)
+   self.assertEqual(len(merged['rule_observations']), 2)
+   self.assertEqual(validate_result(merged), 3)
    with self.assertRaises(ValueError): merge_shard_results([result], Path(d)/'other')
    altered=dict(result); altered['evidence_bundles']=[dict(result['evidence_bundles'][0], artifacts=[])]
    with self.assertRaises(ValueError): merge_shard_results([result, altered], root)

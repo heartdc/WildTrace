@@ -1,0 +1,57 @@
+{
+  "schema": "engine-profile-0.1",
+  "component": "camera_sample_app/cameraApp",
+  "source_root_label": "OpenHarmony-complete",
+  "source_repositories": {
+    "applications/sample/camera": "f41db9875943bc560444827d2effd5e16e4e821d",
+    "base/hiviewdfx/hilog_lite": "88291aa0b5818c6b1729c19c9a229bf65bf3cb80",
+    "build": "71de884ecc242fa7757c5506e3a3606b9d51c5b0",
+    "foundation/ability/ability_lite": "ac5b043bc0b53cfa3c3da9e5f87c0ee5d14df803",
+    "foundation/arkui/ui_lite": "5e110c435eb04aa4b06d1f54c64d7d6d6653cc50",
+    "foundation/bundlemanager/bundle_framework_lite": "1f69d929ae91e565075b9eca0b45f511a0d2b5b6",
+    "foundation/communication/ipc": "a36ce279edb3045cef80853f3fb65c6005a5e48a",
+    "foundation/graphic/graphic_utils_lite": "e11d497fb1918a5775d44688584ce802b9e041c1",
+    "foundation/graphic/surface_lite": "4ed2deddbcf598532104f67747a9b81e7548898b",
+    "foundation/multimedia/camera_lite": "4e47221967da4b0139eaebba37ed1a7aecad5233",
+    "foundation/multimedia/media_lite": "d12b568dd4c7229d98d1bf1a93e210bd12cdca93",
+    "foundation/multimedia/media_utils_lite": "4e534766c33bdc459bdfe943bb000ccb683fd8f6",
+    "third_party/bounds_checking_function": "2ae82839ecaaa7d031e66ccbd2076d671acfd615"
+  },
+  "source_files": [
+    "applications/sample/camera/cameraApp/cameraApp/src/main/cpp/camera_ability.cpp",
+    "applications/sample/camera/cameraApp/cameraApp/src/main/cpp/camera_ability_slice.cpp",
+    "applications/sample/camera/cameraApp/cameraApp/src/main/cpp/camera_manager.cpp"
+  ],
+  "include_dirs": [
+    "applications/sample/camera/cameraApp/cameraApp/src/main/cpp",
+    "foundation/ability/ability_lite/interfaces/kits/ability_lite",
+    "foundation/bundlemanager/bundle_framework_lite/interfaces/kits/bundle_lite",
+    "foundation/ability/ability_lite/interfaces/kits/want_lite",
+    "foundation/arkui/ui_lite/interfaces/kits",
+    "foundation/arkui/ui_lite/interfaces/innerkits",
+    "foundation/graphic/graphic_utils_lite/interfaces/kits",
+    "foundation/graphic/graphic_utils_lite/interfaces/innerkits",
+    "foundation/graphic/surface_lite/interfaces/kits",
+    "foundation/multimedia/camera_lite/interfaces/kits",
+    "foundation/multimedia/media_lite/interfaces/kits/recorder_lite",
+    "foundation/multimedia/media_utils_lite/interfaces/kits",
+    "third_party/bounds_checking_function/include",
+    "base/hiviewdfx/hilog_lite/interfaces/native/kits/hilog",
+    "foundation/communication/ipc/interfaces/innerkits/c/ipc/include",
+    "foundation/communication/ipc/interfaces/innerkits/ipc_core/include"
+  ],
+  "defines": [
+    "ABILITY_WINDOW_SUPPORT"
+  ],
+  "extra_compile_args": [
+    "-Wno-c++11-narrowing"
+  ],
+  "engines": [
+    "clang-static-analyzer",
+    "clang-tidy"
+  ],
+  "status": "local-inputs-captured-not-platform-verified",
+  "disclaimer": "Local profile capture only. Existing pins preserved. No analyzer or target executed; not a vulnerability verdict.",
+  "semgrep_rule_files": [],
+  "semgrep_rule_sha256": {}
+}
