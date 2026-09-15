@@ -147,7 +147,28 @@ and [competition readiness](docs/status/COMPETITION_READINESS_20260914.md).
 Saved schema 0.3 results can be checked offline using `python -m ohvul.verify result.json`.
 See [evidence contract](docs/engineering/EVIDENCE_VALIDATION.md) for scope and limitations.
 
-## Optional LLM drafting
+## Current offline engineering track
+
+LLM integration work and remote retries are paused by the project owner. Existing
+optional model code is retained; no key is required for the current development
+track. Next priorities are restricted compilation-database input, compiler-level
+facts, multi-family regression data, offline review and measured performance.
+
+`--semantic-files-from` now uses explicit execution records: failed reads do not
+count as coverage, and failed execution or a changed file list blocks successful
+publication. Semantic execution `completed` is distinct from
+`analysis_coverage.status=partial_lexical_analysis`. Preprocessor, type and
+control-flow unknowns remain visible; zero candidates is not a safety finding.
+Local and caller/parameter observations remain candidate-only with source hashes.
+`snprintf` uses the second argument as its size, and complex/ambiguous cases are
+not resolved through line proximity or last-definition-wins. Generic length
+advisories keep CWE unknown instead of automatically asserting CWE-120.
+
+See [semantic rule contract](docs/engineering/SEMANTIC_RULE_CONTRACT.md),
+[measured acceptance](docs/analysis/SEMANTIC_BOUNDARY_AUDIT_20260914.md), and
+[current offline roadmap](docs/status/NEXT_ROADMAP_20260914.md).
+
+## Optional LLM drafting (retained; currently paused)
 
 For a local hidden-key prompt and a 300-second optional socket timeout, use
 `python -X utf8 tools/llm_local.py plan --output .cache/llm-my-plan`, then
