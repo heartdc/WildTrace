@@ -66,7 +66,7 @@ sanitizer 报告（如有）、产物哈希、parent_run_id（用于独立复现
 | 角色 | 账号 | 签署（日期 + commit/PR 引用） |
 |---|---|---|
 | 仓库所有者 | @heartdc | 已签署：2026-09-16，PR #20 |
-| 维护者 | @AerGap | （待签） |
+| 维护者 | @AerGap | 已签署：2026-09-15，PR #20 |
 
 ---
 
@@ -74,7 +74,7 @@ sanitizer 报告（如有）、产物哈希、parent_run_id（用于独立复现
 
 | 登记号 | 根目录（本地路径） | 内容说明 | 登记日期 |
 |---|---|---|---|
-| A-1 | OpenHarmony-complete 检出（具体路径由执行环境配置提供） | 已通过 profile 来源校验的 OpenHarmony 组件源码 | 待登记 |
+| A-1 | C:\Projects\OpenHarmony-complete | 已通过 profile 来源校验的 OpenHarmony 组件源码；仅限人工指定的只读本地树 | 2026-09-15 |
 
 ## 附录 B：执行环境登记表
 
