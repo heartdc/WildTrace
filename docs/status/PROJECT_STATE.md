@@ -795,3 +795,7 @@ Git adapter 记录 observed_branch 和 changed_files，并生成 scope_sha256 �
 ## Phase 5 本地提交区间增量（2026-09-12）
 
 新增 git_scope.inspect_range，按固定日期范围读取本地提交列表和变更文件；测试通过。
+## 当前运行级案例状态（2026-09-15）
+
+- 固定 cJSON 提交 `388cfc96925e4fb41a30735b270736626d26615d` 的本地 MergePatch 案例已在已签署授权范围内完成 bubblewrap 隔离运行：原版/独立副本出现预期 `library_uaf_observed`，补丁与控制组通过功能控制。
+- 运行矩阵为 `passed`，但这是公开已知库案例；OpenHarmony 产品可达性未建立，确认产品漏洞数仍为 0。详见 `docs/analysis/CJSON_RUNTIME_CASE_20260915.md`。
