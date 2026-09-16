@@ -240,6 +240,91 @@ def run_compiler_profile(source_root, profile_path, *, selected_files=None, time
     return result
 
 
+def compiler_evidence_summary(result):
+    """Offline consistency check of compiler evidence inside a saved batch.
+
+    Does not open embedded paths or execute a compiler. Hashes bind the recorded
+    facts; they do not authenticate a producer or prove semantic correctness.
+    """
+    from .review_queue import _require, _digest, canonical_bytes
+    import copy
+    _require(result.get('status') == 'completed' and result.get('input_bindings_valid') is True,
+             'compiler analysis is incomplete or input bindings changed')
+    units = result.get('compiler_facts')
+    _require(isinstance(units, list) and 0 < len(units) <= MAX_FILES, 'missing compiler facts')
+    runs = result.get('engine_observations', [result])
+    runs = [x for x in runs if x.get('engine', x.get('scan', {}).get('engine')) == ENGINE]
+    _require(len(runs) == 1, 'exactly one compiler execution observation required')
+    run = runs[0]
+    scan = run.get('scan', {})
+    records = run.get('file_results')
+    _require(run.get('status') == 'completed' and not run.get('input_errors')
+             and isinstance(records, list) and len(records) == len(units), 'compiler file coverage mismatch')
+    for key in ('files_scanned', 'files_requested', 'files_attempted'):
+        _require(type(scan.get(key)) is int and scan[key] == len(units), 'compiler coverage count mismatch')
+    _require(type(scan.get('files_failed')) is int and scan['files_failed'] == 0,
+             'failed compiler files cannot be accepted')
+    generic = result.get('profile_validation', {})
+    pv = result.get('compiler_profile_validation')
+    _require(isinstance(pv, dict) and canonical_bytes(pv) == canonical_bytes(
+        {k: v for k, v in generic.items() if k != 'source_snapshot_sha256'}), 'compiler profile binding mismatch')
+    _require(type(pv.get('inputs', {}).get('source_files')) is int
+             and pv['inputs']['source_files'] == len(units), 'compiler did not cover the full batch profile')
+    _require(scan.get('root') == result['scan']['root']
+             and scan.get('source_snapshot_sha256') == result['scan']['source_snapshot_sha256'],
+             'compiler source binding mismatch')
+    def execution(record):
+        _require(isinstance(record, dict) and record.get('status') == 'completed'
+                 and type(record.get('returncode')) is int and record['returncode'] == 0,
+                 'compiler execution did not complete')
+        for key in ('stdout_sha256', 'stderr_sha256'):
+            _digest(record.get(key))
+    probes = result.get('compiler_probes', {})
+    for key in ('version', 'layout'):
+        execution(probes.get(key))
+    version = result.get('compiler_version')
+    _require(isinstance(version, dict) and isinstance(version.get('version'), str), 'missing compiler version')
+    names = relative_paths([u.get('source_file') for u in units], nonempty=True)
+    record_names = relative_paths([r.get('relative_file') for r in records], nonempty=True)
+    _require(set(names) == set(record_names), 'compiler fact/file identity mismatch')
+    by_name = dict(zip(record_names, records))
+    original_findings, summaries = [], []
+    for unit in units:
+        _require(unit.get('schema') == 'clang-main-file-facts-0.1', 'invalid compiler fact schema')
+        _digest(unit.get('source_sha256'))
+        _digest(unit.get('facts_sha256'))
+        _require(digest({k: v for k, v in unit.items() if k != 'facts_sha256'}) == unit['facts_sha256'],
+                 'compiler facts digest mismatch')
+        rec = by_name[unit['source_file']]
+        execution(rec.get('execution'))
+        _require(rec.get('status') == 'completed' and rec.get('facts_sha256') == unit['facts_sha256']
+                 and rec.get('source_sha256') == unit['source_sha256'], 'compiler file/facts binding mismatch')
+        for key in ('functions', 'calls', 'findings', 'issues'):
+            _require(isinstance(unit.get(key), list), 'invalid compiler fact collection')
+        _require(isinstance(unit.get('statistics'), dict) and isinstance(unit.get('coverage'), dict),
+                 'missing compiler coverage limitations')
+        original_findings.extend((unit, f) for f in unit['findings'])
+        summaries.append({k: copy.deepcopy(unit[k]) for k in (
+            'source_file', 'source_sha256', 'facts_sha256', 'statistics', 'coverage', 'issues')})
+    actual = [f for f in result.get('findings', []) if f.get('source') == ENGINE]
+    _require(len(actual) == len(original_findings), 'compiler findings were dropped or added')
+    for unit, original in original_findings:
+        matches = [f for f in actual if all(canonical_bytes(f.get(k)) == canonical_bytes(v)
+                   for k, v in original.items() if k != 'evidence')
+                   and all(canonical_bytes(f.get('evidence', {}).get(k)) == canonical_bytes(v)
+                           for k, v in original.get('evidence', {}).items())]
+        _require(bool(matches), 'compiler diagnostic differs from its facts')
+        finding = matches[0]
+        ev = finding['evidence']
+        _require(ev.get('facts_sha256') == unit['facts_sha256']
+                 and ev.get('profile_sha256') == pv['profile_sha256']
+                 and ev.get('compiler_execution') == by_name[unit['source_file']]['execution'],
+                 'compiler candidate execution binding mismatch')
+        actual.remove(finding)
+    return {'engine': ENGINE, 'compiler_version': version['version'], 'files_scanned': len(units),
+            'units': summaries, 'target_executed': False, 'confirmed_vulnerabilities': 0}
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--root', type=Path, required=True)
