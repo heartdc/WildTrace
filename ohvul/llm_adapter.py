@@ -14,7 +14,7 @@ import urllib.request
 
 DEFAULT_BASE_URL = 'https://oslovelace.com/v1'
 ALLOWED_BASE_URLS = {DEFAULT_BASE_URL, 'https://www.oslovelace.com/v1'}
-ALLOWED_MODELS = {'grok-4.6'}
+ALLOWED_MODELS = {'grok-4.6', 'gpt-6-astra'}
 MAX_REQUEST_BYTES = 65536
 MAX_RESPONSE_BYTES = 262144
 MAX_CONTENT_BYTES = 32768
