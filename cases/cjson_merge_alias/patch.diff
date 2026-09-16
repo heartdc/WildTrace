@@ -1,0 +1,13 @@
+--- a/cJSON_Utils.c
++++ b/cJSON_Utils.c
+@@ -1325,8 +1325,9 @@
+     if (!cJSON_IsObject(patch))
+     {
+         /* scalar value, array or NULL, just duplicate */
++        cJSON *duplicate = cJSON_Duplicate(patch, 1);
+         cJSON_Delete(target);
+-        return cJSON_Duplicate(patch, 1);
++        return duplicate;
+     }
+ 
+     if (!cJSON_IsObject(target))
