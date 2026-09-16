@@ -1,5 +1,7 @@
 # Changelog
 
+- 完成固定 cJSON MergePatch 案例的授权 bubblewrap 运行矩阵：原版/独立副本观察到预期库级 UAF，补丁与控制组通过；产品可达性仍未知，产品漏洞确认数为 0。
+
 - 新增 `docs/design/camera_app_engine_profile.json`，固化 cameraApp 组件的提交、文件、include、define 和引擎参数。
 - 新增 `engine_profile` loader，校验组件 profile 并生成 WSL 编译参数。
 - profile loader 增加完整 commit SHA 和相对路径边界校验，修正 IPC profile commit 摘要。

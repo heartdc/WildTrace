@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import hashlib
 import json
 import os
@@ -11,6 +12,8 @@ import time
 
 from .engine_profile import prepare_profile, recheck_profile, _read_profile
 from .engine_shards import scan_engine_profile
+from .engine_adapter import merge_engine_result, engine_result_to_audit_result
+from .compiler_analysis import run_compiler_profile
 from .report.schema import build_audit_report, validate_report_against_result
 from .source_scope import is_link
 from .source_snapshot import source_snapshot
@@ -22,6 +25,18 @@ DEFAULT_MAX_JOBS = 32
 BOUNDARY = {'candidate_only': True, 'confirmed_vulnerabilities': 0,
             'local_only': True, 'target_executed': False, 'no_network': True}
 _RESERVED = re.compile(r'(?i)(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\..*)?')
+
+
+def selection_engines(analyses, profile_engines):
+    """Separate executable analysis stages from a profile's compile settings."""
+    if analyses not in (['profile-engines'], ['compiler-ast'], ['profile-engines', 'compiler-ast']):
+        raise ValueError('explicit ordered analysis selection required')
+    if (not isinstance(profile_engines, list) or not profile_engines
+            or any(x not in ('clang-static-analyzer', 'clang-tidy', 'semgrep') for x in profile_engines)
+            or len(set(profile_engines)) != len(profile_engines)):
+        raise ValueError('invalid profile engine selection')
+    return (list(profile_engines) if 'profile-engines' in analyses else []) + (
+        ['compiler-ast'] if 'compiler-ast' in analyses else [])
 
 
 def _hash(raw):
@@ -69,7 +84,9 @@ def _read_manifest(path):
     return raw
 
 
-def _validate(manifest, output, max_jobs, timeout, preflight_only):
+def _validate(manifest, output, max_jobs, timeout, preflight_only, *, existing_output=False):
+    if type(existing_output) is not bool:
+        raise ValueError('existing-output mode must be boolean')
     if type(max_jobs) is not int or max_jobs <= 0:
         raise ValueError('max_jobs must be a positive integer')
     if (type(timeout) is not int or not 1 <= timeout <= 900
@@ -81,14 +98,20 @@ def _validate(manifest, output, max_jobs, timeout, preflight_only):
         raise ValueError('invalid JSON constant: ' + value)
     data = json.loads(raw.decode('utf-8-sig'), object_pairs_hook=_unique, parse_constant=constant)
     if (not isinstance(data, dict) or set(data) != {'schema', 'jobs'}
-            or data['schema'] != 'component-batch-0.1' or not isinstance(data['jobs'], list)
+            or data['schema'] not in ('component-batch-0.1', 'component-batch-0.2') or not isinstance(data['jobs'], list)
             or not 1 <= len(data['jobs']) <= max_jobs):
         raise ValueError('invalid batch schema or job count')
     ids = set()
+    modern = data['schema'] == 'component-batch-0.2'
     # Complete the structural pass before touching any job path.
     for job in data['jobs']:
-        if not isinstance(job, dict) or set(job) != {'id', 'source_root', 'profile'}:
+        fields = {'id', 'source_root', 'profile'} | ({'analyses'} if modern else set())
+        if not isinstance(job, dict) or set(job) != fields:
             raise ValueError('invalid job fields')
+        if modern:
+            selection_engines(job['analyses'], ['clang-static-analyzer'])
+            if 'compiler-ast' in job['analyses'] and timeout > 120:
+                raise ValueError('compiler-ast timeout must be at most 120 seconds')
         name = job['id']
         if (not isinstance(name, str) or not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_-]{0,63}', name)
                 or _RESERVED.fullmatch(name) or name.lower() in ids):
@@ -116,10 +139,14 @@ def _validate(manifest, output, max_jobs, timeout, preflight_only):
             raise ValueError('output/source collision')
         if profile.is_relative_to(output) or output == profile:
             raise ValueError('output/profile collision')
-        jobs.append({'id': job['id'], 'source_root': root, 'profile': profile})
+        jobs.append({'id': job['id'], 'source_root': root, 'profile': profile,
+                     'modern': modern, 'analyses': job.get('analyses', ['profile-engines'])})
     if manifest.is_relative_to(output):
         raise ValueError('output/manifest collision')
-    if output.exists() or not output.parent.is_dir():
+    if existing_output:
+        if not output.is_dir():
+            raise ValueError('saved output directory must exist')
+    elif output.exists() or not output.parent.is_dir():
         raise ValueError('output must be new with an existing parent')
     return manifest, raw, output, jobs
 
@@ -175,12 +202,64 @@ def _check_result(result, job, receipt, snapshot):
         raise ValueError('result source binding mismatch')
     if result.get('profile_validation') != {**receipt, 'source_snapshot_sha256': snapshot}:
         raise ValueError('result profile receipt mismatch')
+    if job['modern'] and 'compiler-ast' in job['analyses']:
+        from .compiler_analysis import compiler_evidence_summary
+        compiler_evidence_summary(result)
     observations = result.get('engine_observations', [result])
     if (not isinstance(observations, list) or not observations
             or any(x.get('status') != 'completed' or x.get('input_errors') for x in observations)
             or result.get('status') != 'completed' or result.get('input_errors')
             or any(x.get('status') != 'completed' for x in result.get('file_results', []))):
         raise ValueError('analysis did not complete')
+    if job['modern']:
+        names = {'clang-static-analyzer': 'clang', 'clang-tidy': 'clang-tidy',
+                 'semgrep': 'semgrep', 'compiler-ast': 'wildtrace-clang-ast'}
+        selection = result['analysis_selection']
+        expected = selection_engines(selection['analyses'], selection['profile_engines'])
+        observed = {o.get('engine', o.get('scan', {}).get('engine')) for o in observations}
+        if selection['analyses'] != job['analyses'] or observed != {names[x] for x in expected}:
+            raise ValueError('requested analysis stage did not execute')
+
+
+def _analyze_selected(job, profile, snapshot, timeout):
+    """Reuse engines; preserve successful sibling evidence on stage failure."""
+    root, path = job['source_root'], job['profile']
+    outputs, failures = [], []
+    compiler = None
+    for stage in job['analyses']:
+        try:
+            result = (scan_engine_profile(root, path, timeout=timeout) if stage == 'profile-engines'
+                      else run_compiler_profile(root, path, timeout=timeout))
+            validate_result(result)
+            result = copy.deepcopy(result)
+            if stage == 'compiler-ast':
+                compiler = result
+                # Preserve the actual compiler receipt, not a synthesized successful one.
+                result['profile_validation'] = {**result['compiler_profile_validation'],
+                                                'source_snapshot_sha256': snapshot}
+            outputs.append(result)
+        except (OSError, ValueError, TypeError, KeyError) as exc:
+            failures.append({'analysis': stage, 'type': type(exc).__name__,
+                             'message': str(exc)[:2048], 'coverage': 'unknown'})
+    if outputs:
+        combined = outputs[0]
+        for result in outputs[1:]:
+            combined = merge_engine_result(combined, result, source_root=root)
+    else:
+        combined = engine_result_to_audit_result({
+            'engine': 'unobserved-stage', 'status': 'input_error', 'findings': [],
+            'files_scanned': None, 'input_errors': list(failures)},
+            source_root=root, source_snapshot_sha256=snapshot)
+    if compiler is not None:
+        for key in ('compiler_facts', 'compiler_profile_validation', 'compiler_version',
+                    'compiler_probes', 'analysis_scope', 'input_bindings_valid'):
+            combined[key] = copy.deepcopy(compiler[key])
+    if failures:
+        combined['input_errors'] = combined.get('input_errors', []) + failures
+        combined['status'] = 'partial' if outputs else 'input_error'
+    combined['analysis_selection'] = {'analyses': list(job['analyses']),
+                                      'profile_engines': list(profile['engines'])}
+    return combined
 
 
 def run_batch(manifest, output, *, preflight_only=False, max_jobs=DEFAULT_MAX_JOBS, timeout=300):
@@ -188,7 +267,8 @@ def run_batch(manifest, output, *, preflight_only=False, max_jobs=DEFAULT_MAX_JO
     manifest, raw, output, jobs = _validate(manifest, output, max_jobs, timeout, preflight_only)
     output.mkdir()  # Exclusive, after validation of the ENTIRE manifest.
     started = time.monotonic()
-    summary = {'schema': 'component-batch-summary-0.1', 'preflight_only': preflight_only,
+    version = '0.2' if jobs[0]['modern'] else '0.1'
+    summary = {'schema': 'component-batch-summary-' + version, 'preflight_only': preflight_only,
                'status': 'running', 'manifest': str(manifest), 'manifest_sha256': _hash(raw),
                'max_jobs': max_jobs, 'timeout_seconds': timeout, 'boundary': BOUNDARY,
                'jobs': [{'id': j['id'], 'status': 'pending', 'artifacts': {}} for j in jobs]}
@@ -219,7 +299,7 @@ def run_batch(manifest, output, *, preflight_only=False, max_jobs=DEFAULT_MAX_JO
         tick = time.monotonic()
         folder = output / job['id']
         phase = 'preflight'
-        receipt_data = {'schema': 'component-batch-receipt-0.1', 'boundary': BOUNDARY,
+        receipt_data = {'schema': 'component-batch-receipt-' + version, 'boundary': BOUNDARY,
                         'manifest_sha256': _hash(raw), 'source_root': str(job['source_root']),
                         'profile': str(job['profile']), 'profile_receipts': [], 'preflight_only': preflight_only}
         try:
@@ -236,11 +316,17 @@ def run_batch(manifest, output, *, preflight_only=False, max_jobs=DEFAULT_MAX_JO
             entry['inputs'] = {k: receipt_data[k] for k in
                                ('manifest_sha256', 'profile_sha256', 'source_snapshot_sha256', 'source_root', 'profile')}
             entry['selected_engines'] = profile['engines']
+            if job['modern']:
+                selection = {'analyses': list(job['analyses']), 'profile_engines': list(profile['engines'])}
+                entry['analysis_selection'] = copy.deepcopy(selection)
+                receipt_data['analysis_selection'] = copy.deepcopy(selection)
+                entry['selected_engines'] = selection_engines(job['analyses'], profile['engines'])
             if not preflight_only:
                 phase = 'analysis'
                 entry['analysis_attempted'] = True
                 scan_tick = time.monotonic()
-                result = scan_engine_profile(job['source_root'], job['profile'], timeout=timeout)
+                result = (_analyze_selected(job, profile, snapshot, timeout) if job['modern'] else
+                          scan_engine_profile(job['source_root'], job['profile'], timeout=timeout))
                 entry['analysis_seconds'] = time.monotonic() - scan_tick
                 phase = 'publication'
                 entry['artifacts']['result'] = _publish(folder / 'result.json', result)
