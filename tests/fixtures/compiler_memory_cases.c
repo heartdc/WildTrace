@@ -41,3 +41,20 @@ void local_offset_overflow(void) { char d[8],s[8]={0}; size_t off=7; memcpy(d+of
 void local_offset_fixed(void) { char d[8],s[8]={0}; size_t off=6; memcpy(d+off,s,2); }
 void local_return_fixed(void) { char d[4],s[8]={0}; return; memcpy(d,s,8); }
 void volatile_length_unknown(void) { char d[4],s[8]={0}; volatile size_t n=8; memcpy(d,s,n); }
+
+/* Branch-bound cases: static-only and without an executable entry point. */
+extern void range_opaque(void);
+void range_upper_fixed(size_t n) { char d[4],s[16]={0}; if(n>sizeof d) return; memcpy(d,s,n); }
+void range_write_overflow(size_t n) { char d[4],s[16]={0}; if(n>4 && n<=8) memcpy(d,s,n); }
+void range_read_overflow(size_t n) { char d[16],s[4]={0}; if(n>4 && n<=8) memcpy(d,s,n); }
+void range_negative_overflow(int n) { char d[4]; if(n<0) memset(d,0,n); }
+void range_overwritten_overflow(size_t n) { char d[4],s[8]={0}; if(n<=4) { n=8; memcpy(d,s,n); } }
+void range_overlap_review(size_t n) { char d[4],s[8]={0}; if(n<=8) memcpy(d,s,n); }
+void range_join_review(int flag) { char d[4],s[8]={0}; size_t n; if(flag) n=4; else n=8; memcpy(d,s,n); }
+void range_signed_fixed(int n) { char d[4],s[16]={0}; if(n<0 || n>4) return; memcpy(d,s,n); }
+void range_clamp_fixed(size_t n) { char d[4],s[16]={0}; if(n>4) n=4; memcpy(d,s,n); }
+void range_arithmetic_fixed(size_t n) { char d[4],s[16]={0}; if(n<=3) memcpy(d,s,n+1); }
+void range_late_unknown(size_t n) { char d[4],s[16]={0}; memcpy(d,s,n); if(n>4) return; }
+void range_effect_unknown(size_t n) { char d[4],s[16]={0}; if(n<=4) { range_opaque(); memcpy(d,s,n); } }
+void range_narrow_unknown(size_t n) { char d[4],s[16]={0}; if((unsigned char)n<=4) memcpy(d,s,n); }
+void range_loop_unknown(size_t n) { char d[4],s[16]={0}; if(n>4) return; while(n) { memcpy(d,s,n); ++n; } }

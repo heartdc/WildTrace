@@ -1,6 +1,6 @@
-"""Bounded exact-value transfer for automatic integer locals in a Clang AST.
+"""Bounded integer transfer and branch constraints in a Clang AST.
 
-No symbolic ranges, alias analysis, interprocedural summaries or CFG proof.
+No relational solver, alias analysis, interprocedural summaries or CFG proof.
 Unknown effects kill facts instead of reusing an initializer indefinitely.
 Declaration IDs are used only in memory; persisted evidence uses source ranges.
 """
@@ -16,9 +16,10 @@ UNSTRUCTURED = {'GotoStmt', 'IndirectGotoStmt', 'LabelStmt', 'SwitchStmt',
                 'CXXTryStmt', 'GCCAsmStmt', 'MSAsmStmt', 'CoroutineBodyStmt', 'CleanupAttr'}
 
 
-def scalar_events(body, layout, location):
+def scalar_events(body, layout, location, *, parameters=(), include_ranges=False):
     # Runtime import avoids a module cycle: integer() itself never invokes flow.
     from .clang_facts import children, nodes, typed, integer, size_of, _integer_type, _coerce, FUNCTIONS
+    from .clang_ranges import interval, type_interval, coerce_interval, exact_values, comparison_reference
 
     all_nodes = list(nodes(body))
     variable_array = any((n.get('kind') == 'VarDecl' and '[' in typed(n) and size_of(typed(n), layout) is None)
@@ -27,6 +28,7 @@ def scalar_events(body, layout, location):
                              size_of(n['argType']['qualType'], layout) is None) for n in all_nodes)
     disabled = variable_array or any(n.get('kind') in UNSTRUCTURED for n in all_nodes)
     declarations = {n['id']: n for n in all_nodes if n.get('kind') == 'VarDecl' and 'id' in n}
+    declarations.update({n['id']: n for n in parameters if n.get('kind') == 'ParmVarDecl' and 'id' in n})
     eligible = {key for key, n in declarations.items()
                 if n.get('storageClass') not in ('static', 'extern') and not n.get('tls')
                 and not re.search(r'\b(?:volatile|_Atomic|atomic)\b', typed(n))
@@ -41,7 +43,11 @@ def scalar_events(body, layout, location):
         issue_codes.add('variable_array_evaluation_not_summarized')
 
     def vals(env):
-        return {key: binding['value'] for key, binding in env.items()}
+        return exact_values(env)
+
+    def binding(bounds, evidence):
+        return {'lower': bounds[0], 'upper': bounds[1],
+                'value': bounds[0] if bounds[0] == bounds[1] else None, 'evidence': evidence}
 
     def value(node, env):
         return integer(node, layout, values=vals(env))
@@ -63,26 +69,95 @@ def scalar_events(body, layout, location):
             return left
         out = {}
         for key in left.keys() & right.keys():
-            if left[key]['value'] != right[key]['value']:
-                continue
             refs = left[key]['evidence'] + [x for x in right[key]['evidence'] if x not in left[key]['evidence']]
             if len(refs) <= MAX_ORIGINS:
-                out[key] = {'value': left[key]['value'], 'evidence': refs}
+                out[key] = binding((min(left[key]['lower'], right[key]['lower']),
+                                    max(left[key]['upper'], right[key]['upper'])), refs)
         return out
 
     def set_value(env, key, expr, point):
-        found = _coerce(value(expr, env), typed(declarations.get(key, {})), layout)
+        found = coerce_interval(interval(expr, layout, env), typed(declarations.get(key, {})), layout)
         refs = origins(expr, env)
         env.pop(key, None)
         where = location(point)
         if disabled or key not in eligible or found is None or where is None:
             return
         ref = {'symbol': declarations[key].get('name'), 'type': typed(declarations[key]),
-               'value': found, 'location': where, 'basis': 'compiler_local_scalar_assignment'}
+               'location': where, 'basis': 'compiler_local_scalar_assignment'}
+        ref.update({'value': found[0]} if found[0] == found[1] else
+                   {'range': {'lower': found[0], 'upper': found[1]}})
         if ref not in refs:
             refs.append(ref)
         if len(refs) <= MAX_ORIGINS:
-            env[key] = {'value': found, 'evidence': refs}
+            env[key] = binding(found, refs)
+
+    def assume(node, truth, env, budget=None):
+        if env is None or disabled:
+            return env
+        budget = [128] if budget is None else budget
+        budget[0] -= 1
+        if budget[0] < 0:
+            issue_codes.add('integer_condition_refinement_budget')
+            return env
+        known = interval(node, layout, env)
+        if known == (0, 0):
+            return env if not truth else None
+        if known is not None and (known[0] > 0 or known[1] < 0):
+            return env if truth else None
+        kind, inner = node.get('kind'), children(node)
+        if kind == 'ParenExpr' and len(inner) == 1:
+            return assume(inner[0], truth, env, budget)
+        if kind == 'UnaryOperator' and node.get('opcode') == '!' and len(inner) == 1:
+            return assume(inner[0], not truth, env, budget)
+        op = node.get('opcode')
+        if kind == 'BinaryOperator' and op in ('&&', '||') and len(inner) == 2:
+            sequential = (op == '&&' and truth) or (op == '||' and not truth)
+            if sequential:
+                return assume(inner[1], truth, assume(inner[0], truth, env, budget), budget)
+            first = assume(inner[0], truth, env, budget)
+            second = assume(inner[1], truth, assume(inner[0], not truth, env, budget), budget)
+            return merge(first, second)
+        if kind != 'BinaryOperator' or op not in ('<', '<=', '>', '>=', '==', '!=') or len(inner) != 2:
+            return env
+        bound_expr = inner[1]
+        key, bound = comparison_reference(inner[0], layout), value(bound_expr, env)
+        if key is None or bound is None:
+            bound_expr = inner[0]
+            key, bound = comparison_reference(inner[1], layout), value(bound_expr, env)
+            op = {'<': '>', '<=': '>=', '>': '<', '>=': '<=', '==': '==', '!=': '!='}[op]
+        if key not in eligible or bound is None:
+            issue_codes.add('integer_guard_relation_unresolved')
+            return env
+        old = env.get(key)
+        domain = type_interval(typed(declarations[key]), layout)
+        low, high = (old['lower'], old['upper']) if old else domain
+        effective = op if truth else {'<': '>=', '<=': '>', '>': '<=', '>=': '<', '==': '!=', '!=': '=='}[op]
+        if effective == '<': high = min(high, bound - 1)
+        elif effective == '<=': high = min(high, bound)
+        elif effective == '>': low = max(low, bound + 1)
+        elif effective == '>=': low = max(low, bound)
+        elif effective == '==': low, high = max(low, bound), min(high, bound)
+        elif low == bound: low += 1
+        elif high == bound: high -= 1
+        if low > high:
+            return None
+        where = location(node)
+        if where is None:
+            issue_codes.add('integer_guard_location_unresolved')
+            return env
+        refs = list(old['evidence']) if old else []
+        refs.extend(ref for ref in origins(bound_expr, env) if ref not in refs)
+        ref = {'basis': 'compiler_integer_branch_constraint', 'symbol': declarations[key].get('name'),
+               'type': typed(declarations[key]), 'location': where, 'assumed_branch': truth,
+               'comparison': op, 'boundary': bound, 'range': {'lower': low, 'upper': high}}
+        if ref not in refs:
+            refs.append(ref)
+        if len(refs) > MAX_ORIGINS:
+            issue_codes.add('integer_guard_evidence_budget')
+            return env
+        result = dict(env)
+        result[key] = binding((low, high), refs)
+        return result
 
     def has_effect(node):
         kind = node.get('kind', '')
@@ -147,8 +222,11 @@ def scalar_events(body, layout, location):
             if cond is not None:
                 branch = inner[1] if cond else inner[2] if len(inner) == 3 else None
                 return visit(branch, env, depth+1) if branch else env
-            left = visit(inner[1], dict(env), depth+1)
-            right = visit(inner[2], dict(env), depth+1) if len(inner) == 3 else env
+            refinable = not has_effect(inner[0])
+            yes = assume(inner[0], True, dict(env)) if refinable else dict(env)
+            no = assume(inner[0], False, dict(env)) if refinable else dict(env)
+            left = visit(inner[1], yes, depth+1) if yes is not None else None
+            right = visit(inner[2], no, depth+1) if no is not None and len(inner) == 3 else no
             return merge(left, right)
         if kind in ('IfStmt', 'ConditionalOperator', 'BinaryConditionalOperator'):
             issue_codes.add('unsupported_condition_shape')
@@ -163,7 +241,9 @@ def scalar_events(body, layout, location):
             short = cond is not None and ((node['opcode'] == '&&' and cond == 0) or (node['opcode'] == '||' and cond != 0))
             if short:
                 return env
-            right = visit(inner[1], dict(env), depth+1)
+            needed = node['opcode'] == '&&'
+            right_env = assume(inner[0], needed, dict(env)) if not has_effect(inner[0]) else dict(env)
+            right = visit(inner[1], right_env, depth+1) if right_env is not None else None
             return right if cond is not None else merge(env, right)
         if kind in ('WhileStmt', 'ForStmt', 'DoStmt', 'CXXForRangeStmt'):
             # Every iteration starts unknown; fresh body assignments remain useful.
@@ -185,8 +265,9 @@ def scalar_events(body, layout, location):
             for child in inner:
                 visit(child, dict(current), depth+1)
             refs = origins(node, current)
-            events.append((node, vals(current) if len(refs) <= MAX_ORIGINS else {},
-                           refs if len(refs) <= MAX_ORIGINS else []))
+            accepted_env = current if len(refs) <= MAX_ORIGINS else {}
+            event = (node, vals(accepted_env), refs if len(refs) <= MAX_ORIGINS else [])
+            events.append((*event, dict(accepted_env)) if include_ranges else event)
             # Callee side effects/ref parameters/escapes are not modeled.
             return {}
         if kind in ('BinaryOperator', 'UnaryOperator', 'CompoundAssignOperator') and has_effect(node):
@@ -214,5 +295,7 @@ def scalar_events(body, layout, location):
                 return None
         return env
 
-    visit(body, {})
+    initial = {key: binding(type_interval(typed(n), layout), []) for key, n in declarations.items()
+               if not disabled and key in eligible and n.get('kind') == 'ParmVarDecl'}
+    visit(body, initial)
     return events, sorted(issue_codes)

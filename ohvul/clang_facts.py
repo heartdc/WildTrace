@@ -281,9 +281,12 @@ def extract_compiler_facts(ast, source_bytes, *, source_file, compiler_file, lay
         functions.append(info)
         local_decls = {n['id']: n for n in nodes(bodies[0]) if n.get('kind') == 'VarDecl' and 'id' in n}
         from .clang_flow import scalar_events
-        events, flow_issues = scalar_events(bodies[0], layout, location)
+        from .clang_ranges import interval
+        parameters = [p for p in children(function) if p.get('kind') == 'ParmVarDecl']
+        events, flow_issues = scalar_events(bodies[0], layout, location,
+                                            parameters=parameters, include_ranges=True)
         issues.extend({'kind': code, 'function': name} for code in flow_issues)
-        for n, values, flow_evidence in events:
+        for n, values, flow_evidence, range_bindings in events:
             kind, inner = n.get('kind'), children(n)
             where = location(n)
             if where is None or not inner:
@@ -293,10 +296,22 @@ def extract_compiler_facts(ast, source_bytes, *, source_file, compiler_file, lay
             decl = declarations.get(ref.get('id'), {})
             direct = kind == 'CallExpr' and ref.get('kind') == 'FunctionDecl'
             target = ref.get('name') if direct else None
-            args = [{'type': typed(a), 'constant_integer': integer(a, layout, values=values),
-                     'object': _object(a, local_decls, layout, values=values)} for a in inner[1:]]
+            args = []
+            for argument in inner[1:]:
+                bounds = interval(argument, layout, range_bindings)
+                refs = []
+                for child in nodes(argument):
+                    binding = range_bindings.get(child.get('referencedDecl', {}).get('id'))
+                    for evidence in binding['evidence'] if binding else []:
+                        if evidence not in refs:
+                            refs.append(evidence)
+                args.append({'type': typed(argument), 'constant_integer': integer(argument, layout, values=values),
+                    'object': _object(argument, local_decls, layout, values=values),
+                    'integer_range': {'lower': bounds[0], 'upper': bounds[1]} if bounds is not None else None,
+                    'range_evidence': refs if len(refs) <= 64 else []})
             flow = {'mode': ('constant_only_fallback' if 'local_scalar_flow_disabled_unstructured_control' in flow_issues
                              else 'bounded_exact_local_values'), 'evidence': flow_evidence,
+                    'interval_extension': 'bounded_scalar_constraints',
                     'general_ranges_proven': False, 'callee_effects_summarized': False}
             call = {'function': name, 'function_type': typed(function), 'location': where,
                     'callee': {'name': target, 'type': ref.get('type', {}).get('qualType'),
@@ -310,42 +325,61 @@ def extract_compiler_facts(ast, source_bytes, *, source_file, compiler_file, lay
                 for side, index, cwe in [('write', 0, 'CWE-787')] + ([] if target.endswith('memset') else [('read', 1, 'CWE-125')]):
                     obj = args[index]['object']
                     check = {'side': side, 'requested_bytes': count, 'object': obj, 'status': 'unknown'}
-                    if count is not None and obj is not None:
+                    bounds = args[2]['integer_range']
+                    ranged = count is None and bounds is not None and bool(args[2]['range_evidence'])
+                    if obj is not None and (count is not None or ranged):
+                        low, high = (count, count) if count is not None else (bounds['lower'], bounds['upper'])
                         remaining = max(0, obj['capacity_bytes'] - obj['offset_bytes'])
-                        exceeds = count > 0 and (obj['offset_bytes'] < 0 or count > remaining)
-                        check.update(available_bytes=remaining, status='exceeds_known_object' if exceeds else 'within_known_object')
+                        exceeds = low > 0 and (obj['offset_bytes'] < 0 or low > remaining)
+                        possible = high > 0 and (obj['offset_bytes'] < 0 or high > remaining)
+                        check.update(available_bytes=remaining,
+                                     status='exceeds_known_object' if exceeds else
+                                            'may_exceed_known_object' if possible else 'within_known_object')
+                        if ranged:
+                            check.update(requested_bytes_range=dict(bounds), range_evidence=args[2]['range_evidence'],
+                                         path_feasibility='not_proven')
                         if exceeds:
-                            findings.append({'source': 'wildtrace-clang-ast', 'rule': 'compiler.constant-buffer-' + side,
+                            length = str(count) if count is not None else str((low, high))
+                            findings.append({'source': 'wildtrace-clang-ast',
+                                'rule': ('compiler.range-buffer-' if ranged else 'compiler.constant-buffer-') + side,
                                 'cwe_candidate': cwe, 'cwe_mapping_source': 'typed_object_size_rule',
                                 'cwe_mapping_version': '1', 'location': {'file': source_file, 'line': where['line']},
-                                'description': f'{target}: {count} bytes {side} exceeds the known array region if this call executes',
+                                'description': f'{target}: {length} bytes {side} exceeds the known array region if this call executes',
                                 'evidence': {'file_sha256': hashlib.sha256(source_bytes).hexdigest(),
                                              'function': info, 'call_location': where, 'callee_type': call['callee'],
-                                             'memory_check': dict(check), 'rule_version': '2', 'scalar_flow': flow,
+                                             'memory_check': dict(check), 'rule_version': '3', 'scalar_flow': flow,
                                              'reachability': 'not_proven', 'platform_impact': 'not_verified'},
                                 'status': 'candidate'})
                     call['memory_checks'].append(check)
             elif target in MEMORY_APIS:
                 call['memory_semantics'] = 'unrecognized_or_overridden_builtin'
             calls.append(call)
-    value = {'schema': 'clang-main-file-facts-0.1', 'analysis_version': '2', 'source_file': source_file,
+    value = {'schema': 'clang-main-file-facts-0.1', 'analysis_version': '3', 'source_file': source_file,
              'source_sha256': hashlib.sha256(source_bytes).hexdigest(), 'target_layout': layout,
              'functions': functions, 'calls': calls, 'findings': findings, 'issues': issues,
              'coverage': {'scope': 'main_file_function_bodies', 'compiler_ast': True,
                           'control_flow_proven': False, 'interprocedural_analysis': False,
                           'dynamic_lengths_proven': False, 'exact_local_scalar_flow': True,
+                          'bounded_integer_intervals': True, 'path_feasibility_proven': False,
                           'macro_configuration': 'selected_compiler_configuration'},
              'limitations': ['An in-bounds observation is not a general safety verdict.',
-                             'Only direct builtins with fixed objects and constant or exact local scalar lengths are checked.',
+                             'Only direct builtins with fixed objects and supported integer lengths are checked.',
                              'Unknown branch values, side effects and loop-carried values are not guessed.',
-                             'Pointer variables, heap objects, members and general dynamic ranges remain unknown.',
-                             'Call reachability, effective guards, lifetime and security impact are not established.',
+                             'Finite intervals and selected scalar comparisons are not general relational analysis.',
+                             'Overlapping ranges remain observations, not definite violations or feasible witnesses.',
+                             'Pointer variables, heap objects, members and relational dynamic ranges remain unknown.',
+                             'Call reachability, lifetime and security impact are not established.',
                              'Header function bodies and unresolved source locations are outside main-file coverage.']}
     value['statistics'] = {'functions': len(functions), 'calls': len(calls),
         'resolved_direct_calls': sum(c['callee']['resolution']=='compiler_direct_declaration' for c in calls),
         'indirect_or_unresolved_calls': sum(c['callee']['resolution']!='compiler_direct_declaration' for c in calls),
         'numeric_memory_checks': sum(z['status']!='unknown' for c in calls for z in c['memory_checks']),
         'unknown_memory_checks': sum(z['status']=='unknown' for c in calls for z in c['memory_checks']),
-        'calls_with_local_scalar_evidence': sum(bool(c['scalar_flow']['evidence']) for c in calls)}
+        'calls_with_local_scalar_evidence': sum(bool(c['scalar_flow']['evidence']) for c in calls),
+        'calls_with_integer_range_evidence': sum(any(a['range_evidence'] and a['integer_range'] is not None
+                                                    for a in c['arguments']) for c in calls),
+        'range_memory_checks': sum('requested_bytes_range' in z for c in calls for z in c['memory_checks']),
+        'possible_extent_observations': sum(z['status'] == 'may_exceed_known_object'
+                                           for c in calls for z in c['memory_checks'])}
     value['facts_sha256'] = digest(value)
     return value
