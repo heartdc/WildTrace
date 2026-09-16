@@ -21,6 +21,11 @@ MAX_NODES = 400000
 MAX_DEPTH = 300
 MEMORY_APIS = {'memcpy', 'memmove', 'memset', '__builtin_memcpy',
               '__builtin_memmove', '__builtin_memset'}
+# Handle deleters for the narrow lifetime-sequence rule. cJSON_Delete is the
+# reviewed public-case deleter; free is the generic one. User definitions in
+# the same redeclaration chain disable the assumption.
+DELETERS = {'free', 'cJSON_Delete'}
+FRESH_ALLOCATORS = {'malloc', 'calloc'}
 FUNCTIONS = {'FunctionDecl', 'CXXMethodDecl', 'CXXConstructorDecl', 'CXXDestructorDecl'}
 WRAPPERS = {'ParenExpr', 'ImplicitCastExpr', 'CStyleCastExpr', 'CXXStaticCastExpr',
             'CXXReinterpretCastExpr', 'ExprWithCleanups', 'ConstantExpr'}
@@ -74,6 +79,26 @@ def layout_from_macros(raw):
 
 def _plain(t):
     return ' '.join(re.sub(r'\b(const|volatile|restrict|__restrict|__restrict__)\b', '', t).split())
+
+
+def _handle_pointee(t):
+    """Struct-like pointee name of an object handle, or None.
+
+    Only handles whose pointee is a named (struct) type participate in the
+    lifetime-sequence rule; void*, character and scalar pointers are excluded
+    because same-type spelling there does not imply related objects.
+    """
+    t = _plain(t)
+    if not t.endswith('*') or t.endswith('**') or '(' in t or '[' in t:
+        return None
+    base = t[:-1].strip()
+    words = base.split()
+    basics = {'void', 'char', 'short', 'int', 'long', 'float', 'double',
+              'bool', '_Bool', 'unsigned', 'signed'}
+    if (not words or len(words) > 2 or words[-1] in basics
+            or not re.fullmatch(r'(?:struct\s+)?[A-Za-z_]\w*', base)):
+        return None
+    return base
 
 
 _POINTER_DECL = re.compile(r'\(\s*\*+\s*\)')
@@ -311,12 +336,31 @@ def extract_compiler_facts(ast, source_bytes, *, source_file, compiler_file, lay
                                for p in children(function) if p.get('kind') == 'ParmVarDecl']}
         functions.append(info)
         local_decls = {n['id']: n for n in nodes(bodies[0]) if n.get('kind') == 'VarDecl' and 'id' in n}
+        # Handle writes and fresh local allocations for the lifetime rule.
+        # A write with unknown position (offset None) is treated as "may lie
+        # between", so the conservative outcome is suppression, never a flag.
+        writes, fresh = {}, set()
+        for node in nodes(bodies[0]):
+            if node.get('kind') == 'BinaryOperator' and node.get('opcode') == '=' and children(node):
+                assigned = _unwrap(children(node)[0])
+                if isinstance(assigned, dict) and assigned.get('kind') == 'DeclRefExpr':
+                    ident = assigned.get('referencedDecl', {}).get('id')
+                    if ident is not None:
+                        writes.setdefault(ident, []).append(
+                            node.get('range', {}).get('begin', {}).get('offset'))
+            elif node.get('kind') == 'VarDecl' and node.get('id'):
+                if any(c.get('kind') == 'CallExpr' and children(c) and
+                       isinstance(_unwrap(children(c)[0]), dict) and
+                       _unwrap(children(c)[0]).get('referencedDecl', {}).get('name') in FRESH_ALLOCATORS
+                       for c in nodes(node) if c is not node):
+                    fresh.add(node['id'])
         from .clang_flow import scalar_events
         from .clang_ranges import interval
         parameters = [p for p in children(function) if p.get('kind') == 'ParmVarDecl']
         events, flow_issues = scalar_events(bodies[0], layout, location,
                                             parameters=parameters, include_ranges=True)
         issues.extend({'kind': code, 'function': name} for code in flow_issues)
+        deleted = {}
         for n, values, flow_evidence, range_bindings in events:
             kind, inner = n.get('kind'), children(n)
             where = location(n)
@@ -384,6 +428,68 @@ def extract_compiler_facts(ast, source_bytes, *, source_file, compiler_file, lay
                     call['memory_checks'].append(check)
             elif target in MEMORY_APIS:
                 call['memory_semantics'] = 'unrecognized_or_overridden_builtin'
+            call['lifetime_checks'] = []
+            if target is not None:
+                handles, seen_handles = [], set()
+                for argument in inner[1:]:
+                    aref = _unwrap(argument)
+                    if not isinstance(aref, dict) or aref.get('kind') != 'DeclRefExpr':
+                        continue
+                    adecl = declarations.get(aref.get('referencedDecl', {}).get('id'))
+                    if not isinstance(adecl, dict) or adecl.get('kind') not in ('VarDecl', 'ParmVarDecl'):
+                        continue
+                    base = _handle_pointee(typed(adecl))
+                    ident = aref.get('referencedDecl', {}).get('id')
+                    # Display names come from the declaration; process-local AST
+                    # ids never enter descriptions or evidence.
+                    handle_name = adecl.get('name') or '<unnamed>'
+                    if base and ident not in seen_handles:
+                        seen_handles.add(ident)
+                        handles.append((ident, handle_name, base))
+                if target in DELETERS and handles and canonical(ref.get('id')) not in defined:
+                    ident, handle_name, base = handles[0]
+                    deleted[ident] = {'offset': where['byte_offset'], 'base': base,
+                                      'callee': target, 'location': where,
+                                      'handle': handle_name}
+                for ident, handle_name, base in handles:
+                    if ident in fresh:
+                        # A fresh local allocation cannot alias any pre-existing
+                        # handle, so its use is never the freed object.
+                        continue
+                    for dident, record in deleted.items():
+                        if (record['base'] != base or where['byte_offset'] <= record['offset']
+                                or dident in fresh):
+                            continue
+                        between = [w for w in writes.get(ident, []) + writes.get(dident, [])
+                                   if w is None or record['offset'] < w < where['byte_offset']]
+                        if between:
+                            continue
+                        same = ident == dident
+                        rule = ('compiler.lifetime-use-after-delete' if same
+                                else 'compiler.lifetime-aliased-handle-use')
+                        check = {'rule': rule, 'used_handle': handle_name, 'handle_type': base + ' *',
+                                 'delete_callee': record['callee'], 'deleted_handle': record['handle'],
+                                 'deleted_at': record['location'], 'used_at': where,
+                                 'alias_proven': same, 'path_feasibility': 'not_proven',
+                                 'suppression_guards': ['used_or_deleted_handle_is_fresh_local_allocation',
+                                                        'handle_reassigned_between',
+                                                        'pointee_type_mismatch']}
+                        call['lifetime_checks'].append(check)
+                        description = (f'{target}: "{handle_name}" used after {record["callee"]} deleted '
+                                       + ('the same handle' if same else f'same-type handle "{record["handle"]}"')
+                                       + f' earlier in {name}'
+                                       + ('' if same else '; candidate only if the handles alias at this call site'))
+                        findings.append({'source': 'wildtrace-clang-ast',
+                            'rule': rule, 'cwe_candidate': 'CWE-416',
+                            'cwe_mapping_source': 'deleter_sequence_rule', 'cwe_mapping_version': '1',
+                            'location': {'file': source_file, 'line': where['line']},
+                            'description': description,
+                            'evidence': {'file_sha256': hashlib.sha256(source_bytes).hexdigest(),
+                                         'function': info, 'call_location': where,
+                                         'lifetime_check': dict(check), 'rule_version': '1',
+                                         'scalar_flow': flow, 'reachability': 'not_proven',
+                                         'platform_impact': 'not_verified'},
+                            'status': 'candidate'})
             calls.append(call)
     value = {'schema': 'clang-main-file-facts-0.1', 'analysis_version': '3', 'source_file': source_file,
              'source_sha256': hashlib.sha256(source_bytes).hexdigest(), 'target_layout': layout,
@@ -411,6 +517,8 @@ def extract_compiler_facts(ast, source_bytes, *, source_file, compiler_file, lay
                                                     for a in c['arguments']) for c in calls),
         'range_memory_checks': sum('requested_bytes_range' in z for c in calls for z in c['memory_checks']),
         'possible_extent_observations': sum(z['status'] == 'may_exceed_known_object'
-                                           for c in calls for z in c['memory_checks'])}
+                                           for c in calls for z in c['memory_checks']),
+        'lifetime_sequence_candidates': sum(z['rule'].startswith('compiler.lifetime-')
+                                            for c in calls for z in c['lifetime_checks'])}
     value['facts_sha256'] = digest(value)
     return value

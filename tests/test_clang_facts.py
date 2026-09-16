@@ -156,6 +156,123 @@ class CompilerFactsTests(unittest.TestCase):
         value = analyze(fixture(a='char[16]', b='char[16]', count=sized)[0])
         self.assertEqual({f['cwe_candidate'] for f in value['findings']}, {'CWE-787', 'CWE-125'})
 
+    # --- lifecycle (deleter-sequence) rule ---------------------------------
+
+    def life_call(self, source, marker, fn_id, fn_name, fn_type, args):
+        return {'kind': 'CallExpr', 'range': {'begin': {'offset': source.index(marker)}},
+                'type': {'qualType': 'void'}, 'inner': [
+                    {'kind': 'DeclRefExpr', 'referencedDecl': {'id': fn_id, 'kind': 'FunctionDecl',
+                        'name': fn_name, 'type': {'qualType': fn_type}}}, *args]}
+
+    def life_tree(self, source, name, params, body, ftype):
+        params = params if isinstance(params, list) else [params]
+        return {'kind': 'TranslationUnitDecl', 'inner': [
+            {'kind': 'FunctionDecl', 'id': 'fn', 'name': name,
+             'loc': {'file': '/source/a.c', 'offset': source.index(name.encode())},
+             'range': {'begin': {'offset': 0}}, 'type': {'qualType': ftype},
+             'inner': [*params, {'kind': 'CompoundStmt', 'inner': body}]}]}
+
+    def test_delete_then_same_type_handle_flags_aliased_use(self):
+        source = (b'typedef struct cJSON cJSON;\n'
+                  b'void merge(cJSON *target, cJSON *patch) {\n'
+                  b'    cJSON_Delete(target);\n'
+                  b'    cJSON_Duplicate(patch, 1);\n'
+                  b'}\n')
+        params = [{'kind': 'ParmVarDecl', 'id': 'target', 'name': 'target', 'type': {'qualType': 'cJSON *'}},
+                  {'kind': 'ParmVarDecl', 'id': 'patch', 'name': 'patch', 'type': {'qualType': 'cJSON *'}}]
+        delete = self.life_call(source, b'cJSON_Delete', 'del', 'cJSON_Delete', 'void (cJSON *)',
+                                [cast(reference('target', 'cJSON *'), 'void *', 'BitCast')])
+        use = self.life_call(source, b'cJSON_Duplicate', 'dup', 'cJSON_Duplicate',
+                             'cJSON *(const cJSON *, int)',
+                             [cast(reference('patch', 'cJSON *'), 'const cJSON *'), literal(1)])
+        value = analyze(self.life_tree(source, 'merge', params, [delete, use],
+                                       'void (cJSON *, cJSON *)'), source=source)
+        self.assertEqual([f['rule'] for f in value['findings']],
+                         ['compiler.lifetime-aliased-handle-use'])
+        self.assertEqual(value['findings'][0]['cwe_candidate'], 'CWE-416')
+        check = value['findings'][0]['evidence']['lifetime_check']
+        self.assertFalse(check['alias_proven'])
+        self.assertEqual((check['deleted_handle'], check['used_handle']), ('target', 'patch'))
+        self.assertEqual(value['statistics']['lifetime_sequence_candidates'], 1)
+        self.assertEqual(value['calls'][1]['lifetime_checks'][0]['rule'],
+                         'compiler.lifetime-aliased-handle-use')
+
+    def test_same_handle_after_delete_and_fixed_ordering(self):
+        source = (b'typedef struct obj obj;\n'
+                  b'void use(obj *handle) {\n'
+                  b'    free(handle);\n'
+                  b'    sink(handle);\n'
+                  b'}\n')
+        params = {'kind': 'ParmVarDecl', 'id': 'handle', 'name': 'handle', 'type': {'qualType': 'obj *'}}
+        free = self.life_call(source, b'free', 'fr', 'free', 'void (void *)',
+                              [cast(reference('handle', 'obj *'), 'void *', 'BitCast')])
+        sink = self.life_call(source, b'sink', 'sk', 'sink', 'void (obj *)',
+                              [reference('handle', 'obj *')])
+        value = analyze(self.life_tree(source, 'use', params, [free, sink],
+                                       'void (obj *)'), source=source)
+        self.assertEqual([f['rule'] for f in value['findings']],
+                         ['compiler.lifetime-use-after-delete'])
+        self.assertTrue(value['findings'][0]['evidence']['lifetime_check']['alias_proven'])
+        # Using the handle BEFORE the delete is the reviewed safe ordering.
+        safe = analyze(self.life_tree(source, 'use', params, [sink, free],
+                                      'void (obj *)'), source=source)
+        self.assertEqual(safe['findings'], [])
+
+    def test_reassignment_and_fresh_allocation_between_suppress(self):
+        source = (b'typedef struct cJSON cJSON;\n'
+                  b'void merge(cJSON *target, cJSON *patch) {\n'
+                  b'    cJSON_Delete(target);\n'
+                  b'    patch = other;\n'
+                  b'    cJSON_Duplicate(patch, 1);\n'
+                  b'}\n')
+        params = [{'kind': 'ParmVarDecl', 'id': 'target', 'name': 'target', 'type': {'qualType': 'cJSON *'}},
+                  {'kind': 'ParmVarDecl', 'id': 'patch', 'name': 'patch', 'type': {'qualType': 'cJSON *'}}]
+        delete = self.life_call(source, b'cJSON_Delete', 'del', 'cJSON_Delete', 'void (cJSON *)',
+                                [cast(reference('target', 'cJSON *'), 'void *', 'BitCast')])
+        assign = {'kind': 'BinaryOperator', 'opcode': '=', 'type': {'qualType': 'cJSON *'},
+                  'range': {'begin': {'offset': source.index(b'patch = other')}},
+                  'inner': [reference('patch', 'cJSON *'), reference('other', 'cJSON *')]}
+        use = self.life_call(source, b'cJSON_Duplicate', 'dup', 'cJSON_Duplicate',
+                             'cJSON *(const cJSON *, int)',
+                             [cast(reference('patch', 'cJSON *'), 'const cJSON *'), literal(1)])
+        value = analyze(self.life_tree(source, 'merge', params, [delete, assign, use],
+                                       'void (cJSON *, cJSON *)'), source=source)
+        self.assertEqual(value['findings'], [])
+        # A fresh local allocation cannot alias any pre-existing handle.
+        fresh = {'kind': 'VarDecl', 'id': 'kept', 'name': 'kept', 'type': {'qualType': 'cJSON *'},
+                 'inner': [{'kind': 'CallExpr', 'inner': [
+                     {'kind': 'DeclRefExpr', 'referencedDecl': {'id': 'mal', 'kind': 'FunctionDecl',
+                         'name': 'malloc', 'type': {'qualType': 'void *(unsigned long)'}}}, literal(16)]}]}
+        use_kept = self.life_call(source, b'cJSON_Duplicate', 'dup', 'cJSON_Duplicate',
+                                  'cJSON *(const cJSON *, int)',
+                                  [cast(reference('kept', 'cJSON *'), 'const cJSON *'), literal(1)])
+        value = analyze(self.life_tree(source, 'merge', params, [delete, fresh, use_kept],
+                                       'void (cJSON *, cJSON *)'), source=source)
+        self.assertEqual(value['findings'], [])
+
+    def test_different_pointee_and_user_defined_deleter_ignored(self):
+        source = (b'typedef struct obj obj;\n'
+                  b'typedef struct other other;\n'
+                  b'void mixed(obj *dropped, other *kept) {\n'
+                  b'    free(dropped);\n'
+                  b'    use_other(kept);\n'
+                  b'}\n')
+        params = [{'kind': 'ParmVarDecl', 'id': 'dropped', 'name': 'dropped', 'type': {'qualType': 'obj *'}},
+                  {'kind': 'ParmVarDecl', 'id': 'kept', 'name': 'kept', 'type': {'qualType': 'other *'}}]
+        delete = self.life_call(source, b'free', 'fr', 'free', 'void (void *)',
+                                [cast(reference('dropped', 'obj *'), 'void *', 'BitCast')])
+        use = self.life_call(source, b'use_other', 'uo', 'use_other', 'void (other *)',
+                             [reference('kept', 'other *')])
+        value = analyze(self.life_tree(source, 'mixed', params, [delete, use],
+                                       'void (obj *, other *)'), source=source)
+        self.assertEqual(value['findings'], [])
+        # A same-chain user definition of the deleter disables the assumption.
+        tree = self.life_tree(source, 'mixed', params, [delete, use], 'void (obj *, other *)')
+        tree['inner'].append({'kind': 'FunctionDecl', 'id': 'other_free', 'previousDecl': 'fr',
+                              'name': 'free', 'inner': [{'kind': 'CompoundStmt'}]})
+        value = analyze(tree, source=source)
+        self.assertEqual(value['findings'], [])
+
     def test_unsigned_narrowing_and_negative_size_conversion(self):
         self.assertEqual(integer(cast(literal(300), 'unsigned char'), LAYOUT), 44)
         negative = {'kind': 'UnaryOperator', 'opcode': '-', 'type': {'qualType': 'int'}, 'inner': [literal(1)]}
