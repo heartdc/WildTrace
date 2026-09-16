@@ -112,6 +112,10 @@ def _build(summary_path, queue_path, context_path, source_roots, review_runs, ev
                        'model_review_state': ('proposals_require_review' if valid else
                                               'no_accepted_draft' if outcomes else 'not_requested'),
                        'priority_proposals': proposals, 'tasks': tasks, 'final_verdict': 'undetermined'})
+        if 'compiler_context' in group:
+            # Separate recorded compiler observations from model opinions. No task
+            # is automatically answered, approved, closed or scheduled to execute.
+            groups[-1]['compiler_context'] = copy.deepcopy(group['compiler_context'])
     value = {'schema': 'review-evidence-handoff-0.1',
              'input_bindings': dict(zip(('summary_sha256', 'queue_sha256', 'context_sha256'),
                                        (sha256(item[1]) for item in captured[:3]))),

@@ -76,19 +76,48 @@ def _plain(t):
     return ' '.join(re.sub(r'\b(const|volatile|restrict|__restrict|__restrict__)\b', '', t).split())
 
 
+_POINTER_DECL = re.compile(r'\(\s*\*+\s*\)')
+
+
+def _array_parts(t):
+    """Split trailing constant dimensions of a fixed-array type spelling.
+
+    A parenthesized pointer declarator ('char (*)[4]', 'void (*)(int)') makes
+    the outermost object a pointer, so any dimensions belong to the pointee.
+    Every other parenthesized declarator (arrays of pointers to arrays,
+    references, function types) is outside the supported subset and must stay
+    unknown rather than receive a precise but wrong size.
+    """
+    t = _plain(t)
+    if _POINTER_DECL.search(t) or '(' in t:
+        return None
+    dims = []
+    while True:
+        matched = re.search(r'\[([0-9]+)\]$', t)
+        if not matched:
+            break
+        dims.append(int(matched.group(1)))
+        t = t[:matched.start()].rstrip()
+    if not dims or '[' in t or not t:
+        return None
+    return t, dims
+
+
 def size_of(t, layout):
     t = _plain(t)
-    dims = re.findall(r'\[([0-9]+)\]', t)
-    if '[' in t:
-        base = re.sub(r'\[[0-9]+\]', '', t).strip()
-        if not dims or '[' in base:
-            return None
+    if _POINTER_DECL.search(t):
+        return layout.get('pointer')
+    parts = _array_parts(t)
+    if parts is not None:
+        base, dims = parts
         size = size_of(base, layout)
         for count in dims:
-            if size is None or int(count) > 2**40:
+            if size is None or count > 2**40:
                 return None
-            size *= int(count)
+            size *= count
         return size if size is not None and size <= 2**63 else None
+    if '(' in t or '[' in t:
+        return None
     if '*' in t or t.endswith('&'):
         return layout.get('pointer')
     t = re.sub(r'\b(unsigned|signed)\b', '', t).strip() or 'int'
@@ -176,7 +205,9 @@ def _object(node, declarations, layout, depth=0, *, values=None):
         return _object(inner[0], declarations, layout, depth+1, values=values)
     if kind == 'DeclRefExpr':
         decl = declarations.get(node.get('referencedDecl', {}).get('id'))
-        if not decl or decl.get('kind') != 'VarDecl' or '[' not in typed(decl):
+        if not decl or decl.get('kind') != 'VarDecl' or _array_parts(typed(decl)) is None:
+            # Only fixed arrays are capacity-bearing objects; pointers (even
+            # pointers to arrays) and unsupported declarators stay unknown.
             return None
         size = size_of(typed(decl), layout)
         if size is None:

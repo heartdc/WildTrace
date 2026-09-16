@@ -116,6 +116,46 @@ class CompilerFactsTests(unittest.TestCase):
         sized['inner'] = [reference('p','char *')]
         self.assertEqual(len(analyze(fixture(count=sized)[0])['findings']), 1)
 
+    def test_pointer_to_array_size_is_pointer_size(self):
+        # Reproduced against real Clang 22.1.8: 'char (*p)[4]' has sizeof ==
+        # sizeof(void*) == 8. Treating the [4] as an outer array dimension
+        # yielded 32 and two false overflow candidates against char[16] buffers.
+        thirty_two_bit = {**LAYOUT, 'pointer': 4}
+        self.assertEqual(size_of('char (*)[4]', LAYOUT), 8)
+        self.assertEqual(size_of('char (*)[4]', thirty_two_bit), 4)
+        self.assertEqual(size_of('char const (* restrict)[4]', LAYOUT), 8)
+        self.assertEqual(size_of('void (*)(int)', LAYOUT), 8)
+        self.assertEqual(size_of('char (*)[4][8]', LAYOUT), 8)
+        self.assertEqual(size_of('char *[4]', LAYOUT), 32)
+        self.assertEqual(size_of('char *[4]', thirty_two_bit), 16)
+        self.assertIsNone(size_of('char (*[4])[8]', LAYOUT))
+        self.assertIsNone(size_of('int (&)[4]', LAYOUT))
+
+    def test_sizeof_pointer_to_array_does_not_flag_fixed_buffers(self):
+        sized = {'kind': 'UnaryExprOrTypeTraitExpr', 'name': 'sizeof',
+                 'type': {'qualType': 'unsigned long'},
+                 'inner': [reference('p', 'char (*)[4]')]}
+        value = analyze(fixture(a='char[16]', b='char[16]', count=sized)[0])
+        self.assertEqual(value['findings'], [])
+        self.assertEqual([c['status'] for c in value['calls'][0]['memory_checks']],
+                         ['within_known_object'] * 2)
+
+    def test_pointer_to_array_variable_is_not_a_fixed_object(self):
+        tree, _, call = fixture(a='char[16]', b='char[16]', count=literal(8))
+        call['inner'][2] = cast(reference('p', 'char (*)[4]'), 'void *', 'BitCast')
+        value = analyze(tree)
+        self.assertIsNone(value['calls'][0]['arguments'][1]['object'])
+        self.assertEqual([c['status'] for c in value['calls'][0]['memory_checks']],
+                         ['within_known_object', 'unknown'])
+        self.assertEqual(value['findings'], [])
+
+    def test_sizeof_pointer_array_still_flags_both_sides(self):
+        sized = {'kind': 'UnaryExprOrTypeTraitExpr', 'name': 'sizeof',
+                 'type': {'qualType': 'unsigned long'},
+                 'inner': [reference('q', 'char *[4]')]}
+        value = analyze(fixture(a='char[16]', b='char[16]', count=sized)[0])
+        self.assertEqual({f['cwe_candidate'] for f in value['findings']}, {'CWE-787', 'CWE-125'})
+
     def test_unsigned_narrowing_and_negative_size_conversion(self):
         self.assertEqual(integer(cast(literal(300), 'unsigned char'), LAYOUT), 44)
         negative = {'kind': 'UnaryOperator', 'opcode': '-', 'type': {'qualType': 'int'}, 'inner': [literal(1)]}

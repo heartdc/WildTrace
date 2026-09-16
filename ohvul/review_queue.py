@@ -142,7 +142,7 @@ def _profile(receipt, inputs):
                  and item['expected'] == item.get('actual'), 'repository check is not matched')
 
 
-def _validate_job(job, result, report, receipt, manifest_digest):
+def _validate_job(job, result, report, receipt, manifest_digest, *, version='0.1'):
     _require(job.get('status') == 'completed' and job.get('analysis_attempted') is True,
              'job has not completed analysis')
     inputs = job.get('inputs')
@@ -152,7 +152,7 @@ def _validate_job(job, result, report, receipt, manifest_digest):
     for key in ('source_root', 'profile'):
         _text(inputs.get(key), key)
     _require(inputs['manifest_sha256'] == manifest_digest, 'job manifest mismatch')
-    _require(isinstance(receipt, dict) and receipt.get('schema') == 'component-batch-receipt-0.1'
+    _require(isinstance(receipt, dict) and receipt.get('schema') == 'component-batch-receipt-' + version
              and receipt.get('outcome') == 'completed' and receipt.get('preflight_only') is False
              and receipt.get('error') is None and receipt.get('acceptance') == 'requires_final_summary',
              'receipt is not a completed observation')
@@ -176,6 +176,21 @@ def _validate_job(job, result, report, receipt, manifest_digest):
                  {k: v for k, v in pv.items() if k != 'source_snapshot_sha256'}, 'profile observations disagree')
     selected = job.get('selected_engines')
     engine_names = {'clang-static-analyzer': 'clang', 'clang-tidy': 'clang-tidy', 'semgrep': 'semgrep'}
+    if version == '0.2':
+        from .component_batch import selection_engines
+        selection = job.get('analysis_selection')
+        _require(isinstance(selection, dict) and set(selection) == {'analyses', 'profile_engines'},
+                 'missing explicit analysis selection')
+        _require(canonical_bytes(selection) == canonical_bytes(receipt.get('analysis_selection'))
+                 == canonical_bytes(result.get('analysis_selection')), 'analysis selection differs from receipt/result')
+        expected_selection = selection_engines(selection['analyses'], selection['profile_engines'])
+        _require(selected == expected_selection, 'declared and selected analysis engines differ')
+        engine_names['compiler-ast'] = 'wildtrace-clang-ast'
+        if 'compiler-ast' in selection['analyses']:
+            from .compiler_analysis import compiler_evidence_summary
+            compiler_evidence_summary(result)
+        else:
+            _require('compiler_facts' not in result, 'unrequested compiler facts')
     _require(isinstance(selected, list) and bool(selected)
              and all(isinstance(s, str) and s in engine_names for s in selected)
              and len(set(selected)) == len(selected), 'invalid selected engines')
@@ -251,6 +266,8 @@ def _questions(family, rule):
         category = 'api_advisory'
     elif family == 'clang-analyzer' and rule == 'core.NullDereference':
         category = 'memory_safety_candidate'
+    elif family == 'wildtrace-clang-ast' and re.fullmatch(r'compiler\.(?:constant|range)-buffer-(?:read|write)', rule):
+        category = 'memory_safety_candidate'
     questions = [
         ('reachability', 'Is the reported path reachable in the selected product configuration?'),
         ('input_control', 'Which external inputs or principals can influence this path?'),
@@ -265,10 +282,12 @@ def _load_queue(summary_path):
     summary_path = checked_path(summary_path)
     raw = read_bounded(summary_path, MAX_SUMMARY_BYTES)
     summary = decode_json(raw)
-    _require(isinstance(summary, dict) and summary.get('schema') == 'component-batch-summary-0.1'
+    _require(isinstance(summary, dict) and summary.get('schema') in (
+                 'component-batch-summary-0.1', 'component-batch-summary-0.2')
              and summary.get('status') == 'completed' and summary.get('preflight_only') is False,
              'explicit summary must be completed and non-preflight')
     _boundary(summary.get('boundary'))
+    version = '0.2' if summary['schema'].endswith('0.2') else '0.1'
     manifest_digest = _digest(summary.get('manifest_sha256'))
     jobs = summary.get('jobs')
     _require(isinstance(jobs, list) and 0 < len(jobs) <= MAX_JOBS, 'invalid job count')
@@ -306,7 +325,7 @@ def _load_queue(summary_path):
             loaded[label] = decode_json(data)
             artifact_refs[label] = {'path': job['id'] + '/' + filename, 'sha256': digest, 'bytes': size}
         try:
-            _validate_job(job, loaded['result'], loaded['report'], loaded['receipt'], manifest_digest)
+            _validate_job(job, loaded['result'], loaded['report'], loaded['receipt'], manifest_digest, version=version)
         except (KeyError, TypeError, AttributeError) as exc:
             raise ValueError('malformed batch evidence: ' + job['id']) from exc
         result = loaded['result']
@@ -316,6 +335,11 @@ def _load_queue(summary_path):
                   'profile_sha256': inputs['profile_sha256'], 'status': 'completed',
                   'raw_diagnostics': len(result['findings']), 'scan': copy.deepcopy(result['scan']),
                   'selected_engines': copy.deepcopy(job.get('selected_engines', [])), 'artifacts': artifact_refs}
+        if version == '0.2':
+            source['analysis_selection'] = copy.deepcopy(job['analysis_selection'])
+            if 'compiler-ast' in job['analysis_selection']['analyses']:
+                from .compiler_analysis import compiler_evidence_summary
+                source['compiler_analysis'] = compiler_evidence_summary(result)
         sources.append(source)
         bindings.append({'job': job['id'], 'artifacts': artifact_refs})
         for finding in result['findings']:
@@ -330,6 +354,20 @@ def _load_queue(summary_path):
                 category, questions = _questions(family, rule)
                 groups[key] = {**identity, 'group_id': 'RG-' + key, 'category': category,
                                'final_verdict': 'undetermined', 'review_questions': questions, 'observations': []}
+                if 'compiler_analysis' in source:
+                    related = []
+                    for unit in result['compiler_facts']:
+                        if unit['source_file'] != identity['location']['file']:
+                            continue
+                        for call in unit['calls']:
+                            if call.get('location', {}).get('line') == identity['location']['line']:
+                                related.append({'facts_sha256': unit['facts_sha256'],
+                                                'source_sha256': unit['source_sha256'],
+                                                'call': copy.deepcopy(call)})
+                    _require(len(related) <= 128, 'compiler call context budget exceeded')
+                    groups[key]['compiler_context'] = {
+                        'match': 'same_file_and_line_not_proven_diagnostic_equivalence',
+                        'observations': related, 'reasoning_verified': False, 'target_executed': False}
             groups[key]['observations'].append({**copy.deepcopy(finding),
                   'result_sha256': artifact_refs['result']['sha256']})
     ordered = sorted(groups.values(), key=lambda g: (g['job'], g['location']['file'],
