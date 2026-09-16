@@ -78,6 +78,14 @@ def _plain(t):
 
 def size_of(t, layout):
     t = _plain(t)
+    # Parenthesized pointer declarators — char (*)[4], void (*)(int) — are
+    # pointers regardless of the array/function suffix; other parenthesized
+    # forms cannot be modeled here and must stay unknown rather than produce
+    # a plausible wrong number.
+    if '(' in t:
+        if re.search(r'\(\s*\*', t):
+            return layout.get('pointer')
+        return None
     dims = re.findall(r'\[([0-9]+)\]', t)
     if '[' in t:
         base = re.sub(r'\[[0-9]+\]', '', t).strip()

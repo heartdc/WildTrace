@@ -222,6 +222,18 @@ class CompilerFactsTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             layout_from_macros('#define __CHAR_BIT__ 16\n')
 
+    def test_parenthesized_declarators_are_pointers_or_unknown(self):
+        # Audit P1 regression: char (*)[4] is a pointer (8), not 4 * 8.
+        self.assertEqual(size_of('char (*)[4]', LAYOUT), LAYOUT.get('pointer'))
+        self.assertEqual(size_of('int (*)(int, char *)', LAYOUT), LAYOUT.get('pointer'))
+        self.assertEqual(size_of('const char * restrict (*)[8]', LAYOUT), LAYOUT.get('pointer'))
+        # Unmodelable parenthesized forms stay unknown, never a wrong number.
+        self.assertIsNone(size_of('char (custom_suffix)', LAYOUT))
+        # Arrays of pointers keep their correct composite size.
+        self.assertEqual(size_of('int *[4]', LAYOUT), 4 * LAYOUT.get('pointer'))
+        # Plain arrays unchanged.
+        self.assertEqual(size_of('int[4]', LAYOUT), 16)
+
     def test_normalized_output_omits_process_local_ast_ids(self):
         tree, _, _ = fixture()
         changed = copy.deepcopy(tree)
