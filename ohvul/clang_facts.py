@@ -2,7 +2,7 @@
 
 This is NOT a control-flow, reachability, alias, lifetime or exploitability proof.
 Only compiler-recognized memory builtins with explicit array objects and known
-integer lengths receive a numeric check. Everything else remains observable.
+constant or bounded local scalar lengths receive a numeric check.
 Raw Clang process-local declaration IDs are never used as persistent identities.
 """
 from __future__ import annotations
@@ -119,13 +119,15 @@ def _coerce(value, t, layout):
     return value if -(1 << (bits-1)) <= value < (1 << (bits-1)) else None
 
 
-def integer(node, layout, depth=0):
-    """Evaluate only literal/sizeof/pure integer trees; no variable-flow guessing."""
+def integer(node, layout, depth=0, *, values=None):
+    """Pure integer evaluation; optional values come only from explicit local flow."""
     if depth > 64:
         return None
     kind, inner = node.get('kind'), children(node)
     value = None
-    if kind in ('IntegerLiteral', 'CharacterLiteral', 'ConstantExpr') and 'value' in node:
+    if kind == 'DeclRefExpr' and values is not None:
+        value = values.get(node.get('referencedDecl', {}).get('id'))
+    elif kind in ('IntegerLiteral', 'CharacterLiteral', 'ConstantExpr') and 'value' in node:
         try:
             value = int(node['value'])
         except (TypeError, ValueError):
@@ -138,13 +140,13 @@ def integer(node, layout, depth=0):
              else typed(inner[0]) if len(inner) == 1 else '')
         value = size_of(t, layout)
     elif kind in WRAPPERS and len(inner) == 1:
-        value = integer(inner[0], layout, depth+1)
+        value = integer(inner[0], layout, depth+1, values=values)
     elif kind == 'UnaryOperator' and len(inner) == 1:
-        a = integer(inner[0], layout, depth+1)
+        a = integer(inner[0], layout, depth+1, values=values)
         if a is not None:
             value = {'+': lambda: a, '-': lambda: -a, '~': lambda: ~a, '!': lambda: int(not a)}.get(node.get('opcode'), lambda: None)()
     elif kind == 'BinaryOperator' and len(inner) == 2:
-        a, b = (integer(x, layout, depth+1) for x in inner)
+        a, b = (integer(x, layout, depth+1, values=values) for x in inner)
         if a is not None and b is not None:
             op = node.get('opcode')
             if op in ('+', '-', '*', '&', '|', '^', '==', '!=', '<', '<=', '>', '>='):
@@ -162,7 +164,7 @@ def _unwrap(node):
     return node
 
 
-def _object(node, declarations, layout, depth=0):
+def _object(node, declarations, layout, depth=0, *, values=None):
     if depth > 64:
         return None
     kind, inner = node.get('kind'), children(node)
@@ -171,7 +173,7 @@ def _object(node, declarations, layout, depth=0):
         # pointer conversions, pointer aliases and scalar variables are unknown.
         if 'Cast' in kind and node.get('castKind') not in ('NoOp', 'BitCast', 'ArrayToPointerDecay'):
             return None
-        return _object(inner[0], declarations, layout, depth+1)
+        return _object(inner[0], declarations, layout, depth+1, values=values)
     if kind == 'DeclRefExpr':
         decl = declarations.get(node.get('referencedDecl', {}).get('id'))
         if not decl or decl.get('kind') != 'VarDecl' or '[' not in typed(decl):
@@ -189,12 +191,12 @@ def _object(node, declarations, layout, depth=0):
         sub = _unwrap(inner[0])
         if sub.get('kind') == 'ArraySubscriptExpr' and len(children(sub)) == 2:
             base, index = children(sub)
-            result = _object(base, declarations, layout, depth+1)
-            amount, step = integer(index, layout), size_of(typed(sub), layout)
+            result = _object(base, declarations, layout, depth+1, values=values)
+            amount, step = integer(index, layout, values=values), size_of(typed(sub), layout)
             if result is not None and amount is not None and step is not None:
                 return {**result, 'offset_bytes': result['offset_bytes'] + amount*step}
             return None
-        return _object(sub, declarations, layout, depth+1)
+        return _object(sub, declarations, layout, depth+1, values=values)
     if kind == 'BinaryOperator' and node.get('opcode') in ('+', '-') and len(inner) == 2:
         base, number = inner
         if '*' not in typed(base) and node.get('opcode') == '+':
@@ -202,8 +204,8 @@ def _object(node, declarations, layout, depth=0):
         t = _plain(typed(base))
         if not t.endswith('*'):
             return None
-        step, amount = size_of(t[:-1].strip(), layout), integer(number, layout)
-        result = _object(base, declarations, layout, depth+1)
+        step, amount = size_of(t[:-1].strip(), layout), integer(number, layout, values=values)
+        result = _object(base, declarations, layout, depth+1, values=values)
         if result is not None and amount is not None and step is not None:
             sign = -1 if node.get('opcode') == '-' else 1
             return {**result, 'offset_bytes': result['offset_bytes'] + sign*amount*step}
@@ -278,36 +280,11 @@ def extract_compiler_facts(ast, source_bytes, *, source_file, compiler_file, lay
                                for p in children(function) if p.get('kind') == 'ParmVarDecl']}
         functions.append(info)
         local_decls = {n['id']: n for n in nodes(bodies[0]) if n.get('kind') == 'VarDecl' and 'id' in n}
-        pending = [bodies[0]]
-        while pending:
-            n = pending.pop()
+        from .clang_flow import scalar_events
+        events, flow_issues = scalar_events(bodies[0], layout, location)
+        issues.extend({'kind': code, 'function': name} for code in flow_issues)
+        for n, values, flow_evidence in events:
             kind, inner = n.get('kind'), children(n)
-            if kind in FUNCTIONS or kind in ('UnaryExprOrTypeTraitExpr', 'CXXNoexceptExpr', 'LambdaExpr'):
-                continue
-            if kind == 'BinaryOperator' and n.get('opcode') in ('&&','||') and len(inner)==2:
-                left = integer(inner[0],layout)
-                if left is not None and ((n['opcode']=='&&' and left==0) or (n['opcode']=='||' and left!=0)):
-                    pending.append(inner[0])
-                    continue
-            if kind == 'ConditionalOperator' and len(inner)==3:
-                cond = integer(inner[0],layout)
-                if cond is not None:
-                    pending.extend([inner[0],inner[1] if cond else inner[2]])
-                    continue
-            if kind == 'WhileStmt' and len(inner)==2 and integer(inner[0],layout)==0:
-                pending.append(inner[0])
-                continue
-            if kind == 'IfStmt' and not n.get('hasInit') and not n.get('hasVar') and len(inner) in (2, 3):
-                condition = integer(inner[0], layout)
-                if condition is not None:
-                    pending.append(inner[0])
-                    chosen = inner[1] if condition else inner[2] if len(inner) == 3 else None
-                    if chosen:
-                        pending.append(chosen)
-                    continue
-            pending.extend(reversed(inner))
-            if kind not in ('CallExpr', 'CXXMemberCallExpr', 'CXXOperatorCallExpr'):
-                continue
             where = location(n)
             if where is None or not inner:
                 issues.append({'kind': 'call_location_unresolved', 'function': name})
@@ -316,13 +293,16 @@ def extract_compiler_facts(ast, source_bytes, *, source_file, compiler_file, lay
             decl = declarations.get(ref.get('id'), {})
             direct = kind == 'CallExpr' and ref.get('kind') == 'FunctionDecl'
             target = ref.get('name') if direct else None
-            args = [{'type': typed(a), 'constant_integer': integer(a, layout),
-                     'object': _object(a, local_decls, layout)} for a in inner[1:]]
+            args = [{'type': typed(a), 'constant_integer': integer(a, layout, values=values),
+                     'object': _object(a, local_decls, layout, values=values)} for a in inner[1:]]
+            flow = {'mode': ('constant_only_fallback' if 'local_scalar_flow_disabled_unstructured_control' in flow_issues
+                             else 'bounded_exact_local_values'), 'evidence': flow_evidence,
+                    'general_ranges_proven': False, 'callee_effects_summarized': False}
             call = {'function': name, 'function_type': typed(function), 'location': where,
                     'callee': {'name': target, 'type': ref.get('type', {}).get('qualType'),
                                'mangled_name': decl.get('mangledName'),
                                'resolution': 'compiler_direct_declaration' if direct else 'unresolved_or_indirect'},
-                    'arguments': args, 'memory_checks': [], 'reachability': 'not_proven'}
+                    'arguments': args, 'memory_checks': [], 'scalar_flow': flow, 'reachability': 'not_proven'}
             builtin = target in MEMORY_APIS and canonical(ref.get('id')) not in defined and any(
                 a.get('kind') == 'BuiltinAttr' for a in children(decl))
             if builtin and len(args) == 3:
@@ -341,28 +321,31 @@ def extract_compiler_facts(ast, source_bytes, *, source_file, compiler_file, lay
                                 'description': f'{target}: {count} bytes {side} exceeds the known array region if this call executes',
                                 'evidence': {'file_sha256': hashlib.sha256(source_bytes).hexdigest(),
                                              'function': info, 'call_location': where, 'callee_type': call['callee'],
-                                             'memory_check': dict(check), 'rule_version': '1',
+                                             'memory_check': dict(check), 'rule_version': '2', 'scalar_flow': flow,
                                              'reachability': 'not_proven', 'platform_impact': 'not_verified'},
                                 'status': 'candidate'})
                     call['memory_checks'].append(check)
             elif target in MEMORY_APIS:
                 call['memory_semantics'] = 'unrecognized_or_overridden_builtin'
             calls.append(call)
-    value = {'schema': 'clang-main-file-facts-0.1', 'source_file': source_file,
+    value = {'schema': 'clang-main-file-facts-0.1', 'analysis_version': '2', 'source_file': source_file,
              'source_sha256': hashlib.sha256(source_bytes).hexdigest(), 'target_layout': layout,
              'functions': functions, 'calls': calls, 'findings': findings, 'issues': issues,
              'coverage': {'scope': 'main_file_function_bodies', 'compiler_ast': True,
                           'control_flow_proven': False, 'interprocedural_analysis': False,
-                          'dynamic_lengths_proven': False, 'macro_configuration': 'selected_compiler_configuration'},
+                          'dynamic_lengths_proven': False, 'exact_local_scalar_flow': True,
+                          'macro_configuration': 'selected_compiler_configuration'},
              'limitations': ['An in-bounds observation is not a general safety verdict.',
-                             'Only direct builtins with fixed objects and pure constant lengths are checked.',
-                             'Pointer variables, heap objects, members and dynamic lengths remain unknown.',
+                             'Only direct builtins with fixed objects and constant or exact local scalar lengths are checked.',
+                             'Unknown branch values, side effects and loop-carried values are not guessed.',
+                             'Pointer variables, heap objects, members and general dynamic ranges remain unknown.',
                              'Call reachability, effective guards, lifetime and security impact are not established.',
                              'Header function bodies and unresolved source locations are outside main-file coverage.']}
     value['statistics'] = {'functions': len(functions), 'calls': len(calls),
         'resolved_direct_calls': sum(c['callee']['resolution']=='compiler_direct_declaration' for c in calls),
         'indirect_or_unresolved_calls': sum(c['callee']['resolution']!='compiler_direct_declaration' for c in calls),
         'numeric_memory_checks': sum(z['status']!='unknown' for c in calls for z in c['memory_checks']),
-        'unknown_memory_checks': sum(z['status']=='unknown' for c in calls for z in c['memory_checks'])}
+        'unknown_memory_checks': sum(z['status']=='unknown' for c in calls for z in c['memory_checks']),
+        'calls_with_local_scalar_evidence': sum(bool(c['scalar_flow']['evidence']) for c in calls)}
     value['facts_sha256'] = digest(value)
     return value
