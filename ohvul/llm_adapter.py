@@ -13,12 +13,23 @@ import urllib.error
 import urllib.request
 
 DEFAULT_BASE_URL = 'https://oslovelace.com/v1'
-ALLOWED_BASE_URLS = {DEFAULT_BASE_URL, 'https://www.oslovelace.com/v1'}
-ALLOWED_MODELS = {'grok-4.6'}
+ANTHROPIC_BASE_URLS = {'https://api.z.ai/api/anthropic'}
+ALLOWED_BASE_URLS = {DEFAULT_BASE_URL, 'https://www.oslovelace.com/v1'} | ANTHROPIC_BASE_URLS
+ALLOWED_MODELS = {'grok-4.6', 'glm-5.3'}
 MAX_REQUEST_BYTES = 65536
 MAX_RESPONSE_BYTES = 262144
 MAX_CONTENT_BYTES = 32768
 MAX_TIMEOUT_SECONDS = 300
+
+
+def canonical_request_payload(messages, model, max_tokens):
+    """The exact non-secret logical payload bound by review request digests.
+
+    Wire encodings are protocol-specific translations of this payload; the
+    digest binds model, messages and token budget, not transport framing.
+    """
+    return {'model': model, 'messages': messages, 'max_tokens': max_tokens,
+            'stream': False, 'temperature': 0, 'response_format': {'type': 'json_object'}}
 
 
 class LlmTransportError(RuntimeError):
@@ -93,15 +104,110 @@ def _usage(value):
     return {name: value[name] for name in names}
 
 
+def _anthropic_usage(value):
+    if not isinstance(value, dict):
+        return None
+    prompt, completion = value.get('input_tokens'), value.get('output_tokens')
+    if (type(prompt) is not int or type(completion) is not int
+            or not 0 <= prompt <= 10**9 or not 0 <= completion <= 10**9):
+        return None
+    return {'prompt_tokens': prompt, 'completion_tokens': completion, 'total_tokens': prompt + completion}
+
+
+def _anthropic_completion(messages, *, endpoint, model, timeout, max_tokens, api_key):
+    """One bounded Anthropic Messages request; no stream, retry or redirect.
+
+    request_sha256 covers the canonical logical payload, byte-identical to what
+    llm_review.request_digest reconstructs, so completions stay bound to the
+    exact prompt and evidence. The JSON-output instruction already lives in the
+    caller's system prompt; messages are never mutated here.
+    """
+    raw = _bytes(canonical_request_payload(messages, model, max_tokens))
+    if len(raw) > MAX_REQUEST_BYTES:
+        raise ValueError('LLM request exceeds byte limit')
+    reject_credentials('\n\n'.join(f"[{item['role']}]\n{item['content']}" for item in messages).encode('utf-8'))
+    key = runtime_key(api_key)
+    reject_credentials(raw, key)
+    system = '\n\n'.join(item['content'] for item in messages if item['role'] == 'system')
+    user = '\n\n'.join(item['content'] for item in messages if item['role'] == 'user')
+    # glm-5.3 emits reasoning blocks by default; they can consume the entire
+    # token budget before any answer text. Disabled keeps text-only output.
+    wire = {'model': model, 'max_tokens': max_tokens, 'temperature': 0,
+            'thinking': {'type': 'disabled'},
+            'messages': [{'role': 'user', 'content': user}]}
+    if system:
+        wire['system'] = system
+    if len(_bytes(wire)) > MAX_REQUEST_BYTES:
+        raise ValueError('LLM request exceeds byte limit')
+    request = urllib.request.Request(endpoint + '/v1/messages', data=_bytes(wire),
+        headers={'x-api-key': key, 'anthropic-version': '2023-06-01',
+                 'Content-Type': 'application/json', 'Accept': 'application/json',
+                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140.0 Safari/537.36'}, method='POST')
+    try:
+        with _open(request, timeout) as response:
+            body = response.read(MAX_RESPONSE_BYTES + 1)
+    except urllib.error.HTTPError as exc:
+        code = exc.code
+        exc.close()
+        raise LlmTransportError('http_status_' + str(code)) from None
+    except LlmTransportError:
+        raise
+    except TimeoutError:
+        raise LlmTransportError('transport_timeout') from None
+    except urllib.error.URLError as exc:
+        code = 'transport_timeout' if isinstance(exc.reason, TimeoutError) else 'transport_failed'
+        raise LlmTransportError(code) from None
+    except (OSError, ValueError):
+        raise LlmTransportError('transport_failed') from None
+    if not isinstance(body, bytes) or len(body) > MAX_RESPONSE_BYTES:
+        raise LlmTransportError('response_byte_limit')
+    reject_credentials(body, key)
+    try:
+        data = _json(body)
+        if not isinstance(data, dict) or data.get('type') not in (None, 'message'):
+            raise ValueError('not a message response')
+        blocks = data.get('content')
+        if not isinstance(blocks, list):
+            raise ValueError('missing content blocks')
+        content = ''.join(block.get('text', '') for block in blocks
+                          if isinstance(block, dict) and block.get('type') == 'text'
+                          and isinstance(block.get('text'), str))
+        if not content or len(content.encode('utf-8')) > MAX_CONTENT_BYTES:
+            raise ValueError('content limit')
+        reported = data.get('model')
+        if reported is not None and (not isinstance(reported, str) or len(reported) > 200):
+            raise ValueError('model metadata')
+        # Normalize Anthropic stop vocabulary to the adapter's neutral terms so
+        # downstream completeness checks stay protocol-independent.
+        finish = {'end_turn': 'stop', 'stop_sequence': 'stop',
+                  'max_tokens': 'length'}.get(data.get('stop_reason'), data.get('stop_reason'))
+        if finish is not None and (not isinstance(finish, str) or len(finish) > 80):
+            raise ValueError('finish reason')
+    except (ValueError, KeyError, IndexError, TypeError, UnicodeError, RecursionError):
+        raise LlmTransportError('invalid_provider_response') from None
+    return {'content': content, 'requested_model': model, 'reported_model': reported,
+            'finish_reason': finish, 'usage': _anthropic_usage(data.get('usage')),
+            'request_sha256': hashlib.sha256(raw).hexdigest(),
+            'response_sha256': hashlib.sha256(body).hexdigest(),
+            'content_sha256': hashlib.sha256(content.encode('utf-8')).hexdigest(),
+            'endpoint': endpoint, 'max_tokens': max_tokens,
+            'model_identity': 'provider_reported_not_independently_verified'}
+
+
 def chat_completion(messages, *, base_url=DEFAULT_BASE_URL, model='grok-4.6',
                     timeout=45, max_tokens=2048, api_key=None, json_mode=True):
     """One paid request at most. Invalid/failed requests are never retried here."""
     endpoint = validate_settings(base_url, model, timeout, max_tokens)
     if (not isinstance(messages, list) or not 1 <= len(messages) <= 8
-            or any(not isinstance(x, dict) or set(x) != {'role', 'content'}
-                   or x['role'] not in ('system', 'user') or not isinstance(x['content'], str)
-                   for x in messages) or type(json_mode) is not bool):
+           or any(not isinstance(x, dict) or set(x) != {'role', 'content'}
+                  or x['role'] not in ('system', 'user') or not isinstance(x['content'], str)
+                  for x in messages) or type(json_mode) is not bool):
         raise ValueError('explicit system/user text messages required')
+    if endpoint in ANTHROPIC_BASE_URLS:
+        # json_mode belongs to the Responses protocol only; the review system
+        # prompt already fixes the JSON output contract for Messages requests.
+        return _anthropic_completion(messages, endpoint=endpoint, model=model,
+                                     timeout=timeout, max_tokens=max_tokens, api_key=api_key)
     input_text = '\n\n'.join(f"[{item['role']}]\n{item['content']}" for item in messages)
     # Screen original evidence before serializing it into the Responses input.
     reject_credentials(input_text.encode('utf-8'))

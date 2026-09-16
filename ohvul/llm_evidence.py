@@ -10,7 +10,7 @@ import copy
 from .review_queue import canonical_bytes, _require
 from .llm_adapter import reject_credentials
 
-EXPANDED_PROMPT_VERSION = 'defensive-evidence-review-expanded-1'
+EXPANDED_PROMPT_VERSION = 'defensive-evidence-review-expanded-2'
 MAX_EVIDENCE_REQUEST_BYTES = 48 * 1024
 EXPANDED_INSTRUCTIONS = '''
 Additional E1, E2, ... catalog entries are original-source fragments. You may
