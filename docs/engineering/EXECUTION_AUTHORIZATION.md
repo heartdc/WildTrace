@@ -80,4 +80,4 @@ sanitizer 报告（如有）、产物哈希、parent_run_id（用于独立复现
 
 | 登记号 | 镜像/工具链 | sanitizer 配置 | 登记日期 |
 |---|---|---|---|
-| B-1 | 待登记（建议：固定版本 Ubuntu + clang/llvm，与 WSL 分析工具链同源） | `-fsanitize=address,undefined -fno-omit-frame-pointer -g` | 待登记 |
+| B-1 | WSL Ubuntu + LLVM/Clang 22.1.8；版本指纹需在执行任务启动时重新记录 | -fsanitize=address,undefined -fno-omit-frame-pointer -g；仅在沙箱门四查通过后使用 | 2026-09-15 |
