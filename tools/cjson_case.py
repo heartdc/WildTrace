@@ -34,6 +34,11 @@ NEW = (b'        cJSON *duplicate = cJSON_Duplicate(patch, 1);\n'
        b'        cJSON_Delete(target);\n        return duplicate;')
 CONTROLS = ('independent', 'detached', 'object-merge', 'object-delete')
 ALIASES = ('subtree', 'scalar-subtree', 'self-array')
+INDEPENDENT_SCOPE = 'fresh build and namespace; same driver, not independent human review'
+LIMITATIONS = ['No signed attestation; hashes bind local records only.',
+               'Namespace configuration is not an immutable VM image.',
+               'ASan requires large virtual address space; no hard RAM limit is asserted.',
+               'The non-object alias fix does not validate all MergePatch alias cases.']
 
 
 def sha(raw: bytes) -> str:
@@ -52,6 +57,10 @@ def local_path(value: str | Path) -> Path:
     text = str(value)
     if os.name == 'posix' and re.match(r'^[A-Za-z]:[\\/]', text):
         text = '/mnt/' + text[0].lower() + '/' + text[3:].replace('\\', '/')
+    if os.name == 'nt' and re.match(r'^/mnt/[a-z]/', text):
+        # Recorded WSL paths must resolve on the Windows host too, so offline
+        # verification is not bound to the machine that executed the matrix.
+        text = text[5].upper() + ':/' + text[7:]
     return checked_path(text)
 
 
@@ -163,6 +172,25 @@ def classify(returncode: int, log: str, *, timed_out=False, output_limited=False
     return 'unexpected'
 
 
+def _selection(variant):
+    """The exact per-variant run schedule; shared by execution and offline verify."""
+    if variant == 'original':
+        return [('subtree', False)] * 3 + [(x, s) for x in CONTROLS for s in (False, True)]
+    if variant == 'independent':
+        return [('subtree', False)]
+    if variant == 'patched':
+        return [(x, s) for x in ALIASES + CONTROLS for s in (False, True)]
+    raise ValueError('Unknown matrix variant')
+
+
+def _log_bytes(runtime: Path, name) -> bytes:
+    if (not isinstance(name, str) or not name or '/' in name or '\\' in name
+            or name in ('.', '..') or Path(name).name != name
+            or not re.fullmatch(r'[A-Za-z0-9._-]+', name)):
+        raise ValueError('Unsafe recorded log name')
+    return read_bounded(runtime / name, 2 * 1024 * 1024)
+
+
 def sandbox(source: Path, binary_dir: Path, *, build: bool) -> list[str]:
     return ['/usr/bin/bwrap', '--unshare-all', '--die-with-parent', '--new-session',
         '--cap-drop', 'ALL', '--ro-bind', '/usr', '/usr', '--symlink', 'usr/bin', '/bin',
@@ -242,9 +270,7 @@ def execute(folder: Path, authorized: bool) -> dict:
         if build['exit_code'] or build['timed_out'] or build['output_limited']:
             exclusive_json(logs / 'incomplete.json', {'rows': rows, 'status': 'build_failed'})
             raise ValueError('Build failed; no success verdict')
-        selections = ([('subtree', False)] * 3 + [(x, s) for x in CONTROLS for s in (False, True)]
-                      if variant == 'original' else [('subtree', False)] if variant == 'independent'
-                      else [(x, s) for x in ALIASES + CONTROLS for s in (False, True)])
+        selections = _selection(variant)
         for i, (name, sensitive) in enumerate(selections):
             invocation = ['/usr/bin/prlimit', '--cpu=10', '--fsize=1048576', '--nproc=64', '--',
                           '/out/probe', name] + (['sensitive'] if sensitive else [])
@@ -263,21 +289,102 @@ def execute(folder: Path, authorized: bool) -> dict:
         'isolation': isolation, 'compiler_version_record': version,
         'compiler_binary_sha256': sha(Path('/home/airgap/llvm/bin/clang').read_bytes()),
         'target_executed': True, 'public_known_case': True,
-        'independent_scope': 'fresh build and namespace; same driver, not independent human review',
+        'independent_scope': INDEPENDENT_SCOPE,
         'product_reachability': 'not_established', 'confirmed_product_vulnerabilities': 0,
-        'limitations': ['No signed attestation; hashes bind local records only.',
-                        'Namespace configuration is not an immutable VM image.',
-                        'ASan requires large virtual address space; no hard RAM limit is asserted.',
-                        'The non-object alias fix does not validate all MergePatch alias cases.']}
+        'limitations': LIMITATIONS}
     exclusive_json(logs / 'acceptance.json', result)
     if not passed:
         raise ValueError('Unexpected reproduction/control result; inspect preserved logs')
     return result
 
 
+def verify_runtime(folder: Path) -> dict:
+    """Offline recheck of one saved runtime matrix. Reads logs; executes nothing.
+
+    Recomputes every recorded classification from the preserved log bytes with
+    the same classifier and schedule the authorized run used, so a relabelled
+    or trimmed matrix cannot verify even if its recorded hashes were rewritten.
+    """
+    folder = local_path(folder)
+    verify_prepared(folder)
+    runtime = folder / 'runtime'
+    doc = json.loads(read_bounded(runtime / 'acceptance.json', 8 * 1024 * 1024))
+    if not isinstance(doc, dict) or doc.get('schema') != 'cjson-observed-matrix-0.1':
+        raise ValueError('Unexpected runtime matrix schema')
+    if doc.get('prepared_sha256') != sha((folder / 'prepared.json').read_bytes()):
+        raise ValueError('Matrix is not bound to this prepared case')
+    labels = {'target_executed': True, 'public_known_case': True,
+              'product_reachability': 'not_established', 'confirmed_product_vulnerabilities': 0,
+              'independent_scope': INDEPENDENT_SCOPE, 'limitations': LIMITATIONS}
+    for key, value in labels.items():
+        if doc.get(key) != value:
+            raise ValueError('Runtime boundary label changed: ' + key)
+    isolation = doc.get('isolation')
+    if (not isinstance(isolation, dict) or isolation.get('host_mount') or isolation.get('home')
+            or not isinstance(isolation.get('netns'), str) or not isinstance(isolation.get('pidns'), str)
+            or 'lo' not in str(isolation.get('netdev', ''))):
+        raise ValueError('Recorded isolation observation is missing or failed its gate')
+    version = doc.get('compiler_version_record')
+    if not isinstance(version, dict) or version.get('exit_code') != 0:
+        raise ValueError('Compiler identity record is missing or failed')
+    if sha(_log_bytes(runtime, version.get('log'))) != version.get('log_sha256'):
+        raise ValueError('Compiler identity log bytes changed')
+    if not re.fullmatch(r'[0-9a-f]{64}', str(doc.get('compiler_binary_sha256'))):
+        raise ValueError('Compiler binary digest is malformed')
+    rows = doc.get('rows')
+    if not isinstance(rows, list) or not rows:
+        raise ValueError('Runtime matrix has no rows')
+    expected_rows = []
+    for variant in ('original', 'independent', 'patched'):
+        expected_rows.append(('build', variant, None, None))
+        expected_rows += [('run', variant, name, sensitive) for name, sensitive in _selection(variant)]
+    if len(rows) != len(expected_rows):
+        raise ValueError('Runtime matrix row count differs from the executed schedule')
+    binaries, counts = {}, {}
+    for row, (phase, variant, name, sensitive) in zip(rows, expected_rows):
+        if (not isinstance(row, dict) or row.get('phase') != phase or row.get('variant') != variant
+                or row.get('case') != name or row.get('case_sensitive') != sensitive):
+            raise ValueError('Runtime matrix row differs from the executed schedule')
+        if (type(row.get('exit_code')) is not int or type(row.get('timed_out')) is not bool
+                or type(row.get('output_limited')) is not bool):
+            raise ValueError('Malformed execution observation')
+        raw = _log_bytes(runtime, row.get('log'))
+        if sha(raw) != row.get('log_sha256'):
+            raise ValueError('Preserved log bytes differ from the recorded digest: ' + str(row.get('log')))
+        recomputed = classify(row['exit_code'], raw.decode('utf-8', 'replace'),
+                              timed_out=row['timed_out'], output_limited=row['output_limited'])
+        if recomputed != row.get('classification'):
+            raise ValueError('Recorded classification differs from the preserved log')
+        counts[recomputed] = counts.get(recomputed, 0) + 1
+        if phase == 'build':
+            if row['exit_code'] or row['timed_out'] or row['output_limited']:
+                raise ValueError('Matrix records a failed build as an accepted row')
+            continue
+        expected = ('library_uaf_observed' if variant in ('original', 'independent')
+                    and name == 'subtree' else 'functional_control_passed')
+        if row.get('expected') != expected or row.get('passed') is not (recomputed == expected):
+            raise ValueError('Run expectation or pass flag differs from the recomputed outcome')
+        digest = str(row.get('binary_sha256'))
+        if not re.fullmatch(r'[0-9a-f]{64}', digest) or binaries.setdefault(variant, digest) != digest:
+            raise ValueError('Run rows of one variant disagree about the executed binary')
+        probe = runtime / variant / 'probe'
+        if probe.is_file() and sha(read_bounded(probe, 64 * 1024 * 1024)) != digest:
+            raise ValueError('Preserved probe binary differs from the recorded digest')
+    passed = all(r.get('passed', True) for r in rows)
+    if doc.get('status') != ('passed' if passed else 'failed'):
+        raise ValueError('Recorded matrix status differs from the recomputed rows')
+    return {'schema': 'cjson-runtime-verified-0.1', 'status': doc['status'],
+            'rows': len(rows), 'classifications': counts,
+            'uaf_reproduced': counts.get('library_uaf_observed', 0),
+            'controls_passed': counts.get('functional_control_passed', 0),
+            'prepared_sha256': doc['prepared_sha256'], 'target_executed': True,
+            'confirmed_product_vulnerabilities': 0,
+            'verified_offline_without_execution': True}
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('mode', choices=('prepare', 'verify', 'run'))
+    parser.add_argument('mode', choices=('prepare', 'verify', 'verify-runtime', 'run'))
     parser.add_argument('--source', type=Path)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--execute-authorized', action='store_true')
@@ -291,6 +398,10 @@ def main(argv=None):
             if args.execute_authorized:
                 raise ValueError('verify never executes targets')
             value = verify_prepared(args.output)
+        elif args.mode == 'verify-runtime':
+            if args.execute_authorized:
+                raise ValueError('verify-runtime never executes targets')
+            value = verify_runtime(args.output)
         else:
             value = execute(args.output, args.execute_authorized)
         print(json.dumps({'mode': args.mode, 'status': value.get('status', 'prepared_inputs_verified'),

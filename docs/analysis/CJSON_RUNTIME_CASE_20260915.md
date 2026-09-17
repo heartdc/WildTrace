@@ -10,10 +10,14 @@
 - 原版构建：成功；
 - 独立构建：成功；
 - 补丁版构建：成功；
-- 原版和独立副本：各 4 次预期 `library_uaf_observed`；
+- 原版 subtree 3 次、独立构建 subtree 1 次，共 4 次 `library_uaf_observed`（2026-09-16 勘误：
+  原文误写为"各 4 次"；执行器排程及 `acceptance.json` 矩阵实际为 3+1，未补跑、未改动旧证据）；
+- 3 个构建阶段日志无预期分类，分类器如实记录为 `unexpected`，非失败；
 - 补丁及控制组：22 次 `functional_control_passed`；
 - 运行矩阵：`passed`，`target_executed=true`；
-- 运行目录：`.cache/cjson-runtime-wsl/runtime/acceptance.json`。
+- 运行目录：`.cache/cjson-runtime-wsl/runtime/acceptance.json`；
+- 离线复核（2026-09-16 起）：`python -X utf8 tools/cjson_case.py verify-runtime --output <案例目录>`
+  逐日志重算分类、排程、`passed` 与状态，并核对 prepared 绑定与 probe 二进制摘要；不执行任何目标。
 
 ## 边界
 
