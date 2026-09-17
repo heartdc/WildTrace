@@ -266,7 +266,9 @@ def _questions(family, rule):
         category = 'api_advisory'
     elif family == 'clang-analyzer' and rule == 'core.NullDereference':
         category = 'memory_safety_candidate'
-    elif family == 'wildtrace-clang-ast' and re.fullmatch(r'compiler\.(?:constant|range)-buffer-(?:read|write)', rule):
+    elif family == 'wildtrace-clang-ast' and re.fullmatch(
+            r'compiler\.(?:(?:constant|range)-buffer-(?:read|write)|lifetime-(?:use-after-delete|aliased-handle-use))',
+            rule):
         category = 'memory_safety_candidate'
     questions = [
         ('reachability', 'Is the reported path reachable in the selected product configuration?'),
