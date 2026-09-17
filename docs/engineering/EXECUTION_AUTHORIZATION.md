@@ -75,9 +75,16 @@ sanitizer 报告（如有）、产物哈希、parent_run_id（用于独立复现
 | 登记号 | 根目录（本地路径） | 内容说明 | 登记日期 |
 |---|---|---|---|
 | A-1 | C:\Projects\OpenHarmony-complete | 已通过 profile 来源校验的 OpenHarmony 组件源码；仅限人工指定的只读本地树 | 2026-09-15 |
+| A-2 | C:\Projects\OpenHarmony\third_party\cJSON | 钉定提交 `388cfc96` 的 cJSON 检出（merge-alias 运行案例源码）；仅限经人工审查入库的案例 harness 所声明的文件，只读 | 2026-09-16 |
 
 ## 附录 B：执行环境登记表
 
 | 登记号 | 镜像/工具链 | sanitizer 配置 | 登记日期 |
 |---|---|---|---|
-| B-1 | 待登记（建议：固定版本 Ubuntu + clang/llvm，与 WSL 分析工具链同源） | `-fsanitize=address,undefined -fno-omit-frame-pointer -g` | 待登记 |
+| B-1 | WSL Ubuntu + LLVM/Clang 22.1.8；版本指纹需在执行任务启动时重新记录 | `-fsanitize=address,undefined -fno-omit-frame-pointer -g`；仅在沙箱门四查通过后使用 | 2026-09-15 |
+
+### 登记说明
+
+- B-1 曾于 2026-09-15 在案例分支（be62bf7，#23 前身）登记，#23 合并时因冲突解析丢失；本行按原文恢复，登记日期保留首次登记日。
+- A-2 为新登记（2026-09-16），依据维护者 @AerGap 当日书面指示提交；按 §7 扩大范围需重签之约定，经仓库所有者在合并 PR 中审批后生效。
+- 如实记录：2026-09-15 的 cJSON 案例运行发生时，其源码根不在附录 A 任何登记项内（当时仅有 A-1），属该次运行授权依据中的登记缺口；本登记向前生效，不追溯补足该次运行的登记状态。
