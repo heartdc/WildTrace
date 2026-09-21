@@ -1,0 +1,24 @@
+# Narrow fix for CVE-2026-82209 adapted to OpenHarmony third_party/curl
+# (upstream 95c1e891 assumes the is_public_suffix() wrapper introduced by a
+# later refactor; OH's 20260819-snapshot cookie.c checks PSL inline).
+# Core semantics preserved verbatim: an accepted cookie whose domain is
+# itself a public suffix must not stay tailmatching.
+#
+# Apply against lib/cookie.c @ f044ac3 (sha256 0327ce5c...).
+--- a/lib/cookie.c
++++ b/lib/cookie.c
+@@ -1049,6 +1049,13 @@
+         Curl_strntolower(lcookie, co->domain, clen);
+         lcookie[clen] = 0;
+         acceptable = psl_is_cookie_domain_acceptable(psl, lcase, lcookie);
++
++        /* CVE-2026-82209: if the cookie is acceptable, but is set for a PSL
++           domain, then it cannot be tailmatching */
++        if(acceptable && co->tailmatch &&
++           curl_strequal(co->domain, domain) &&
++           psl_is_public_suffix(psl, lcookie))
++          co->tailmatch = FALSE;
++
+         Curl_psl_release(data);
+       }
+       else
