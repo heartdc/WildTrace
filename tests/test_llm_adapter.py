@@ -32,9 +32,11 @@ class LlmAdapterTests(unittest.TestCase):
  def test_zai_anthropic_endpoint_is_allowlisted(self):
   from ohvul.llm_adapter import validate_settings
   self.assertEqual(validate_settings('https://api.z.ai/api/anthropic','glm-5.3',300,3072),'https://api.z.ai/api/anthropic')
+  self.assertEqual(validate_settings('https://api.z.ai/api/anthropic','glm-5.2',300,3072),'https://api.z.ai/api/anthropic')
   self.assertEqual(validate_settings('https://oslovelace.com/v1','grok-4.6',45,2048),'https://oslovelace.com/v1')
   with self.assertRaises(ValueError): validate_settings('https://api.z.ai/api/paas','glm-5.3',45,2048)
   with self.assertRaises(ValueError): validate_settings('https://api.z.ai/api/anthropic','gpt-9',45,2048)
+  with self.assertRaises(ValueError): validate_settings('https://api.z.ai/api/anthropic','glm-4.6',45,2048)
  def test_anthropic_messages_wire_usage_and_digest_binding(self):
   import hashlib, json
   from unittest.mock import patch
