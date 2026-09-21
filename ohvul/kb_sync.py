@@ -146,8 +146,22 @@ def parse_osv(root: Path, ecosystems: set[str]) -> tuple[list[dict], dict]:
             continue
         aliases = [a for a in data.get("aliases", []) if isinstance(a, str)]
         identifier = next((a for a in aliases if _CVE_ID.fullmatch(a)), None)
+        cve_origin = "alias" if identifier is not None else None
         if identifier is None and isinstance(data.get("id"), str) and _CVE_ID.fullmatch(data["id"]):
             identifier = data["id"]
+            cve_origin = "id"
+        if identifier is None:
+            # OSS-Fuzz exports often carry no aliases at all; their CVE links
+            # live in references. Derived ids are weaker evidence and are
+            # labeled as such on the record.
+            for reference in data.get("references", []):
+                url = reference.get("url") if isinstance(reference, dict) else None
+                if isinstance(url, str):
+                    found = _CVE_ID.search(url)
+                    if found:
+                        identifier = found.group(0)
+                        cve_origin = "reference"
+                        break
         if identifier is None:
             stats["skipped_non_cve"] += 1
             continue
@@ -203,6 +217,7 @@ def parse_osv(root: Path, ecosystems: set[str]) -> tuple[list[dict], dict]:
                                         "fixed_version_semantics": ("osv_fixed_events"
                                                                     if fixed_versions
                                                                     else "none"),
+                                        "cve_origin": cve_origin or "alias",
                                         "source": f"osv:{data.get('id', 'export')}"})
         stats["records_kept"] += 1
     return sorted(records.values(), key=lambda r: r["id"]), stats

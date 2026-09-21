@@ -71,10 +71,21 @@ def _cvelist_dir(target: Path) -> Path:
     return target
 
 
+_OSV_REFERENCE_CVE = {
+    "id": "OSV-2024-9",
+    "summary": "No aliases but references carry the CVE link",
+    "references": [{"type": "REPORT",
+                    "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-0009"}],
+    "affected": [{"package": {"ecosystem": "OSS-Fuzz", "name": "refonly"},
+                  "versions": ["3.0"]}],
+}
+
+
 def _osv_dir(target: Path) -> Path:
     _write(target, "osv-export/OSV-2024-7.json", _OSV_RECORD)
     _write(target, "osv-export/OSV-2024-8.json", _OSV_NON_CVE)
     _write(target, "osv-export/GHSA-1111.json", _OSV_OTHER_ECOSYSTEM)
+    _write(target, "osv-export/OSV-2024-9.json", _OSV_REFERENCE_CVE)
     _write(target, "osv-export/broken.json", "[]")
     return target
 
@@ -119,7 +130,9 @@ class ParseOsvTests(unittest.TestCase):
 
     def test_keeps_cve_aliased_allowlisted_records_only(self):
         records, stats = parse_osv(self.root, {"OSS-Fuzz"})
-        self.assertEqual([r["id"] for r in records], ["CVE-2024-0003"])
+        self.assertEqual([r["id"] for r in records], ["CVE-2024-0003", "CVE-2024-0009"])
+        self.assertEqual(records[1]["cve_origin"], "reference")
+        self.assertEqual(records[0]["cve_origin"], "alias")
         record = records[0]
         self.assertEqual(record["component"], "mediacodec")
         self.assertEqual(record["cwe"], ["CWE-416"])
@@ -149,10 +162,10 @@ class BuildAndVerifyTests(unittest.TestCase):
         manifest = build_kb(self.cvelist, self.osv, self.out,
                             snapshot_version="2026-09-14",
                             max_records_per_shard=1)
-        self.assertEqual(manifest["records_total"], 3)
-        self.assertEqual(len(manifest["shards"]), 3)
+        self.assertEqual(manifest["records_total"], 4)
+        self.assertEqual(len(manifest["shards"]), 4)
         database = load_sharded_kb(self.out)
-        self.assertEqual(len(database["records"]), 3)
+        self.assertEqual(len(database["records"]), 4)
         self.assertEqual(database["snapshot_version"], "2026-09-14")
         self.assertEqual(database["records_sha256"], manifest["records_sha256"])
         # Same digest formula as the canonical single-file loader.
@@ -211,7 +224,7 @@ class CliTests(unittest.TestCase):
             self.assertEqual(built.returncode, 0, built.stderr)
             payload = json.loads(built.stdout)
             self.assertEqual(payload["status"], "built")
-            self.assertEqual(payload["records"], 3)
+            self.assertEqual(payload["records"], 4)
             verified = subprocess.run([sys.executable, "-m", "ohvul.kb_sync", "verify",
                                        "--kb", str(out)], capture_output=True, text=True)
             self.assertEqual(verified.returncode, 0, verified.stderr)
