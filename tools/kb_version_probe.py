@@ -24,6 +24,40 @@ _NAME_LINE = re.compile(r"^\s*Name\s*[:：]\s*(\S+)\s*$", re.M | re.I)
 MAX_README_BYTES = 262144
 
 
+def _read_manifest(readme: Path):
+    """(name, version) declared by a README.OpenSource, or None.
+
+    Real OpenHarmony trees carry a JSON-array manifest ("Name" / "Version
+    Number" keys, CRLF endings); the older plain-text Name:/Version: layout
+    stays supported. The first entry declaring a version wins."""
+    raw = readme.read_bytes()[:MAX_README_BYTES]
+    text = raw.decode("utf-8", "replace")
+    stripped = text.lstrip()
+    if stripped.startswith("["):
+        try:
+            # Vendored manifests in the wild sometimes carry trailing commas;
+            # tolerate them rather than skipping the whole component.
+            entries = json.loads(re.sub(r",(\s*[}\]])", r"\1", stripped))
+        except (ValueError, TypeError):
+            return None
+        if not isinstance(entries, list):
+            return None
+        for entry in entries:
+            if not isinstance(entry, dict):
+                continue
+            name = entry.get("Name") or entry.get("name")
+            version = entry.get("Version Number") or entry.get("Version")
+            if isinstance(version, str) and version.strip():
+                return ((name.strip() if isinstance(name, str) and name.strip() else None),
+                        version.strip())
+        return None
+    version = _VERSION_LINE.search(text)
+    if version is None:
+        return None
+    extracted = _NAME_LINE.search(text)
+    return (extracted.group(1) if extracted else None, version.group(1))
+
+
 def probe_component_versions(source_root: Path):
     """Yield (directory, readme_name, extracted_name, version) per component."""
     root = Path(source_root).resolve()
@@ -34,15 +68,12 @@ def probe_component_versions(source_root: Path):
     for readme in sorted(base.rglob("README.OpenSource")):
         if not readme.is_file():
             continue
-        raw = readme.read_bytes()[:MAX_README_BYTES]
-        text = raw.decode("utf-8", "replace")
-        version = _VERSION_LINE.search(text)
-        if version is None:
+        manifest = _read_manifest(readme)
+        if manifest is None:
             continue
-        extracted = _NAME_LINE.search(text)
+        name, version = manifest
         yield (readme.parent.relative_to(root).as_posix(), readme.name,
-               extracted.group(1) if extracted else readme.parent.name,
-               version.group(1))
+               name if name else readme.parent.name, version)
 
 
 def _component_alias(component: str) -> str:
