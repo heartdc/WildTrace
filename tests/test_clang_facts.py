@@ -129,6 +129,16 @@ class CompilerFactsTests(unittest.TestCase):
         self.assertEqual(size_of('char *[4]', LAYOUT), 32)
         self.assertEqual(size_of('char *[4]', thirty_two_bit), 16)
         self.assertIsNone(size_of('char (*[4])[8]', LAYOUT))
+
+    def test_unmodelable_parenthesized_and_named_declarators_stay_unknown(self):
+        # Parse failures must stay unknown, never a plausible wrong number
+        # (audit principle); named pointer declarators ('(*p)') do not match
+        # the pointer-declarator pattern and are conservatively unknown too —
+        # qualType spellings normally omit parameter names, so this is a
+        # documented limitation rather than a precision gap in practice.
+        self.assertIsNone(size_of('char (custom_suffix)', LAYOUT))
+        self.assertIsNone(size_of('char (*p)[4]', LAYOUT))
+        self.assertIsNone(size_of('int (x, y)', LAYOUT))
         self.assertIsNone(size_of('int (&)[4]', LAYOUT))
 
     def test_sizeof_pointer_to_array_does_not_flag_fixed_buffers(self):
