@@ -4,7 +4,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-from tools.kb_version_probe import probe
+from tools.kb_version_probe import probe, probe_component_versions
 
 _KB = [
     {"id": "CVE-2020-1111", "cwe": ["CWE-125"], "summary": "OOB read in demo.",
@@ -23,6 +23,38 @@ class ProbeTests(unittest.TestCase):
         (directory / "README.OpenSource").write_text(
             f"OpenHarmony third_party component\n\nName: {name}\nVersion: {version}\nLicense: MIT\n",
             encoding="utf-8")
+
+    def test_json_manifest_and_crlf_are_parsed(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            modern = root / "third_party" / "modernlib"
+            modern.mkdir(parents=True)
+            (modern / "README.OpenSource").write_bytes(
+                b'[\r\n    {\r\n    "Name": "modernlib",\r\n'
+                b'    "License": "MIT",\r\n'
+                b'    "Version Number": "1.2.0",\r\n    }\r\n]\r\n')
+            vprefixed = root / "third_party" / "vlib"
+            vprefixed.mkdir(parents=True)
+            (vprefixed / "README.OpenSource").write_text(
+                '[{"Name": "vlib", "Version Number": "v2.0"}]', encoding="utf-8")
+            entries = list(probe_component_versions(root))
+            by_dir = {e[0]: e for e in entries}
+            self.assertEqual(by_dir["third_party/modernlib"][2:], ("modernlib", "1.2.0"))
+            self.assertEqual(by_dir["third_party/vlib"][2:], ("vlib", "v2.0"))
+
+    def test_broken_or_versionless_manifests_are_skipped(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for name, content in (
+                ("brokenjson", "[{oops"),
+                ("noversion", '[{"Name": "noversion"}]'),
+                ("empty", "")):
+                folder = root / "third_party" / name
+                folder.mkdir(parents=True)
+                (folder / "README.OpenSource").write_text(content, encoding="utf-8")
+            self.assertEqual(list(probe_component_versions(root)), [])
 
     def test_exact_and_unresolved(self):
         with tempfile.TemporaryDirectory() as directory:
