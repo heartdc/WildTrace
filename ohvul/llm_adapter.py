@@ -15,7 +15,7 @@ import urllib.request
 DEFAULT_BASE_URL = 'https://oslovelace.com/v1'
 ANTHROPIC_BASE_URLS = {'https://api.z.ai/api/anthropic'}
 ALLOWED_BASE_URLS = {DEFAULT_BASE_URL, 'https://www.oslovelace.com/v1'} | ANTHROPIC_BASE_URLS
-ALLOWED_MODELS = {'grok-4.6', 'glm-5.3'}
+ALLOWED_MODELS = {'grok-4.6', 'glm-5.3', 'gpt-6-astra'}
 MAX_REQUEST_BYTES = 65536
 MAX_RESPONSE_BYTES = 262144
 MAX_CONTENT_BYTES = 32768
