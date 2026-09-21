@@ -14,8 +14,9 @@
   "oh_source": {
     "repo": "https://gitcode.com/openharmony/third_party_curl",
     "commit": "f044ac3ac942adc9c56efd9a47854a7049a9a78f",
-    "lib_cookie_c_sha256": "0327ce5c68308fde4337fe01f808073433e86dc05a09b3406e77243be1bf6ff2",
+    "lib_cookie_c_sha256": "3d0fbebf7733674d7375bf5f938102d4fb728fcd0ca598b0b761c174e25e97e6",
     "version_label": "8.8.0 (stale; actual code = upstream 20260819 snapshot)",
+    "digest_note": "canonical digest computed on a native LF checkout; a Windows autocrlf checkout yields CRLF variant 0327ce5c... — content conclusions unaffected",
     "gap_evidence": "upstream fix 2026-08-28 postdates the 20260819 snapshot; no backport commit found (grep CVE id + recent log); OH's lib/cookie.c retains the pre-refactor PSL structure without the tailmatch-clearing logic at the psl_is_cookie_domain_acceptable call site (line ~1049)"
   },
   "vulnerability": {
