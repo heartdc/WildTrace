@@ -40,3 +40,12 @@ clang -std=c99 -g -fsanitize=address,undefined -DUSE_LIBPSL \
 
 库级验证，产品可达性 not_established（OH 产品的 libcurl cookie 使用面待分析）；
 提交奖励计划由所有者人工执行。
+
+## 提交记录
+
+- **2026-09-21 已提交**：工单号 **OHSA26-092226014**（submissionId
+  228159005971714048，账号北辰522，状态"已提交"）。表单要点：类型=信息与
+  隐私泄露类/敏感信息泄露；文件路径=lib/cookie.c / 代码行:1049；引入点
+  =c140bd78（2016-03-02，`git log -S` 考证）；附件 5 件打包。提交文案存于
+  `D:\cve_data\submission_82209\奖励计划表单v2_82209.md`。
+- 下一步：跟进平台审核状态；第二案 CVE-2026-80231 文案已备好待提交。

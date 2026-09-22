@@ -1,0 +1,32 @@
+{
+  "schema": "case-specific-validation-0.2",
+  "id": "ffmpeg-ty-ac3-trim-underflow",
+  "component": "third_party/ffmpeg",
+  "cve_reference": "CVE-2026-65704",
+  "cwe_candidate": "CWE-191 (underflow leading to CWE-787)",
+  "discovery_method": "kb_gap_audit.py pipeline + batch L4 (gap_likely) + manual L4: ty.c:576 retains the pre-fix 'pkt->size -= 2;' in the Series2 AC3 branch",
+  "new_discovery": false,
+  "public_upstream": {
+    "fix_commit": "https://github.com/FFmpeg/FFmpeg/commit/de771bd52774a52d45b0e2c82e56995a1ef40df7",
+    "fix_date": "2026-07-13",
+    "fix_subject": "avformat/ty: don't let the Series2 AC3 trim underflow the packet size (Fixes: negative-size-param)"
+  },
+  "oh_source": {
+    "repo": "https://gitcode.com/openharmony/third_party_ffmpeg",
+    "head_commit": "0a0c4dd33c (2026-09-10)",
+    "baseline": "FFmpeg 7.1.1, snapshot 2026-06-01",
+    "equivalence": "ty.c byte-identical to upstream n7.1.1",
+    "l4_evidence": "ty.c:576 is the pre-fix form; upstream diff applies clean to the OH checkout (git apply --check OK, no adaptation needed). Boundary note: the sibling 'pkt->size -= 2' at ty.c:640 is guarded by pkt->size > AC3_PKT_LENGTH and is NOT affected — upstream fix leaves it unchanged"
+  },
+  "vulnerability": {
+    "summary": "TY demuxer Series2 AC3 branch trims packet size by 2 even when the packet size is 0/1, underflowing the int to negative and driving negative-size packet operations.",
+    "trigger": "Series2 AC3 TiVo stream where ac3_pkt_size accumulates near AC3_PKT_LENGTH and a trailing audio rec has size <= 1 (upstream repro: ty-s2-ac3-negative-size-single-file.ffconcat)",
+    "verification_level": "source-level confirmed; runtime repro path documented (construct Series2 AC3 TY chunks) but not executed — declared as such",
+    "runtime_status": "not_run"
+  },
+  "controls": [
+    {"name": "guarded-sibling", "desc": "ty.c:640 identical trim is protected by pkt->size > AC3_PKT_LENGTH; must remain untouched in backport"}
+  ],
+  "submission_materials": "D:/cve_data/submission_65704/ (对照.txt, patch.diff = upstream verbatim applies clean, form draft, attachments zip)",
+  "notes": "ffmpeg gap batch case 4 of 5 gap_likely; 52296/66038/70628 still pending manual L4"
+}

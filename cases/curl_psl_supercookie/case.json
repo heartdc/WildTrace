@@ -33,5 +33,21 @@
   "build_requirements": "libcurl sources (OH tree) built with USE_LIBPSL; libpsl dev package; POSIX sockets (loopback only)",
   "runtime_status": "not_run",
   "product_reachability": "not_established",
-  "notes": "patch.diff is ADAPTED to OH's pre-refactor structure (upstream's is_public_suffix wrapper does not exist there); the second upstream hunk (check reordering) is defense-in-depth and intentionally omitted from the narrow patch."
+  "notes": "patch.diff is ADAPTED to OH's pre-refactor structure (upstream's is_public_suffix wrapper does not exist there); the second upstream hunk (check reordering) is defense-in-depth and intentionally omitted from the narrow patch.",
+  "submission": {
+    "platform": "OpenHarmony 漏洞奖励计划 (https://bugbounty.openharmony.cn)",
+    "ticket": "OHSA26-092226014",
+    "submission_id": "228159005971714048",
+    "submitted_at": "2026-09-21",
+    "account": "北辰522",
+    "status": "已提交",
+    "form": {
+      "type": "信息与隐私泄露类 / 敏感信息泄露",
+      "repo": "third_party_curl",
+      "file_path": "lib/cookie.c / 代码行:1049",
+      "introduced_by": "c140bd7891488993f09ff7454e106b724e9b85d5 (2016-03-02 'cookie: do not refuse cookies for localhost', git -S traced)",
+      "oh_version": "OpenHarmony-v7.0-Release（2026-08-21）",
+      "attachments": "附件包_CVE-2026-82209.zip (poc.c / patch.diff / 运行验证记录.md / curl_gap_verification.json / upstream_fix_verbatim.patch)"
+    }
+  }
 }
