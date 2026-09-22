@@ -149,10 +149,13 @@ See [evidence contract](docs/engineering/EVIDENCE_VALIDATION.md) for scope and l
 
 ## Current offline engineering track
 
-LLM integration work and remote retries are paused by the project owner. Existing
-optional model code is retained; no key is required for the current development
-track. Next priorities are restricted compilation-database input, compiler-level
-facts, multi-family regression data, offline review and measured performance.
+The LLM pause was lifted on 2026-09-16: a bounded online review acceptance
+passed through the z.ai Anthropic transport (`glm-5.3`), and `gpt-6-astra`
+joined `grok-4.6`/`glm-5.3` on the allowlist for dual-model cross-validation.
+The 29-group full review and the dual-model run are still pending execution.
+Current priorities are the version probe on a fixed OpenHarmony tree,
+gap-case submission follow-up, triage P0 implementation, and measured
+full-tree performance. See [2026-09-22 audit and plan](docs/status/AUDIT_REMAINING_PLAN_20260922.md).
 
 `--semantic-files-from` now uses explicit execution records: failed reads do not
 count as coverage, and failed execution or a changed file list blocks successful
@@ -177,7 +180,7 @@ This stage invokes a local syntax-only compiler, not a model or target program.
 See [compiler analysis](docs/engineering/COMPILER_ANALYSIS.md) and
 [current core roadmap](docs/status/NEXT_ROADMAP_20260915.md).
 
-## Optional LLM drafting (retained; currently paused)
+## Optional LLM drafting (online review acceptance passed)
 
 For a local hidden-key prompt and a 300-second optional socket timeout, use
 `python -X utf8 tools/llm_local.py plan --output .cache/llm-my-plan`, then
@@ -199,7 +202,9 @@ structured, evidence-referenced model proposals. Use `--plan` without network,
 vulnerability, execute tools, remove a candidate or change the FSM. The initial
 live requests returned HTTP 403. A later retry was blocked at tool-side credential
 input before any API request; it is not evidence of a new provider failure.
-Successful online inference is not yet accepted.
+A bounded online review acceptance passed on 2026-09-16 via the z.ai Anthropic
+transport (`glm-5.3`); `gpt-6-astra` is allowlisted for dual-model
+cross-validation. The 29-group full review and the dual-model run are pending.
 See [LLM review contract](docs/engineering/LLM_REVIEW.md).
 
 `--inspect` now checks complete historical records, including failed runs, without
