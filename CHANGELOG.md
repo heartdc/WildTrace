@@ -1,5 +1,40 @@
 # Changelog
 
+# 2026-09-22（补录 2026-09-16 → 09-22 断档）
+
+## 缺口案例批量落库与奖励计划提交
+
+- 新增 `tools/kb_gap_audit.py` 四信号 L1-L4 上游修复缺口审计流水线，产出 curl×2 与 ffmpeg×5 共 7 个公开 CVE 缺口案例（`cases/`，均为 new_discovery=false、产品可达性 not_established、确认漏洞数 0）。
+- ffmpeg 五案：CVE-2026-66036/66041 完成 WSL ASan/UBSan 运行时对照矩阵验证（补丁组干净、对照组通过）；CVE-2026-64832 源级 L4（运行时需 NVDEC GPU，not_run）；CVE-2026-65704/52296 源级对照（上游补丁 verbatim 可应用）。
+- 已向 OpenHarmony 漏洞奖励计划提交 2 案：OHSA26-092209031（curl CVE-2026-80231）、OHSA26-092226014（curl CVE-2026-82209，2026-09-21）；另 5 案 ffmpeg 提交材料已备好（`D:/cve_data/submission_*`）待人工提交。
+
+## 隔离执行授权与 cJSON 运行时闭环（09-16）
+
+- 隔离执行授权文档双签合并（`docs/engineering/EXECUTION_AUTHORIZATION.md`）；登记 WSL 工具链 B-1 与 cJSON 源码根 A-2。
+- cJSON MergePatch 案例授权 bubblewrap 运行矩阵通过：原版/独立副本观察到预期库级 UAF，补丁与控制组通过；第二复现者独立复现 26/26。
+- 新增 `verify-runtime` 离线复核 cJSON 案例矩阵；生命周期 deleter 序列规则在 cJSON 案例回验。
+
+## LLM 在线链路恢复（09-16/09-21）
+
+- z.ai Anthropic 传输接入并有界在线评审验收通过（glm-5.3）；gpt-6-astra 加入白名单用于双模型交叉验证。29 组全量评审与双模型运行待执行，模型输出仍不作为漏洞结论。
+
+## CVE 知识库运营化与版本探针（09-21）
+
+- 伙伴导入 72 条双审记录（arkcompiler_ets_runtime、kernel_liteos_a、dsoftbus 等）；OSV 引用规范化；446 条第三方目标子知识库。
+- 版本探针解析 JSON 数组型 README.OpenSource 清单；清单名内嵌版本的规范化漏报修复与回归测试（PR #45）。
+- 技术说明书初稿 v0.9（`docs/deliverables/TECHNICAL_SPEC.md`，交付物 2）；隔离执行沙箱与四信号 triage 设计稿合并（均未实现，待主线决策 S1-S5 / A1-A5）。
+
+## curl PSL 案例（09-21/09-22）
+
+- 新增 curl 中间形态源级验证报告（`docs/analysis/CURL_MIDDLEFORM_VERIFY_20260921.md`）与 curl PSL supercookie 案例（CVE-2026-82209，首个中间形态案例）。
+- 修复 cookie.c 固定摘要为原生 LF 规范值；补运行时验证记录并修复 PoC 控制模式。
+
+## 2026-09-22 审计与清理
+
+- 全面审计与剩余工作规划落库：`docs/status/AUDIT_REMAINING_PLAN_20260922.md`。
+- 落库此前未跟踪的 6 个案例目录与 `kb_gap_audit` 工具；记录两案 OHSA 提交工单。
+- 移除 CHANGELOG 中误嵌入的 PROJECT_STATE 重写脚本片段。
+
 - 完成固定 cJSON MergePatch 案例的授权 bubblewrap 运行矩阵：原版/独立副本观察到预期库级 UAF，补丁与控制组通过；产品可达性仍未知，产品漏洞确认数为 0。
 
 - 新增 `docs/design/camera_app_engine_profile.json`，固化 cameraApp 组件的提交、文件、include、define 和引擎参数。
@@ -1013,22 +1048,6 @@
 ## Knowledge base file size gate
 
 - 本地知识库新增 16 MiB 文件大小限制。
-from pathlib import Path
-p=Path('docs/status/PROJECT_STATE.md')
-s=p.read_text(encoding='utf-8-sig')
-marker='## 本次已完成'
-idx=s.index(marker)
-head='''# 当前工程检查点
-
-## 当前有效状态（2026-09-12）
-
-- 阶段：Phase 6 性能评测和交付准备，Phase 4 与 Phase 5 的允许范围闭环已完成。
-- Phase 4：静态证据独立复核、合成 harness、FSM local_verification、checkpoint/result/harness 联合校验、源码快照绑定和人工审核门控已完成；不执行真实目标代码。
-- Phase 5：本地分片/结果比较、补丁路径和 SHA-256 校验、影响报告草稿、任务绑定与审核批次接入已完成；真实 Git 固定版本和提交区间 adapter 仍待实现。
-- Phase 6：性能基准、峰值内存、吞吐退化比较、性能快照、CI smoke 和演示文档已完成原型；真实授权 OpenHarmony 子树长期性能数据、最终用户手册和交付包仍待实现。
-- 最近验证：python -m unittest discover -s tests -q，共 139 项，135 通过、4 跳过。
-- 当前结论：项目是可运行的防御性 MVP，不是已完成的比赛成品；候选发现不等于漏洞确认，主机测试不等于 OpenHarmony 平台结论。
-- 后续顺序：先完成本地固定版本输入契约，再实现 Git adapter、补丁前后闭环、正式审核链和知识库接入，最后完成真实授权子树性能与交付材料。
 
 ## Current state and acceptance calibration
 
