@@ -76,8 +76,19 @@ def probe_component_versions(source_root: Path):
                name if name else readme.parent.name, version)
 
 
+_VERSION_TOKEN = re.compile(r"^[vV]?\d+(\.\d+)+$")
+
+
 def _component_alias(component: str) -> str:
     normalized = component.strip().lower()
+    # Some manifests embed the version in the Name field ("OpenSSL 3.0.9");
+    # strip trailing version-like tokens so the alias can match KB spellings.
+    while normalized:
+        head, _, tail = normalized.rpartition(" ")
+        if tail and head and _VERSION_TOKEN.match(tail):
+            normalized = head
+        else:
+            break
     aliases = {"third_party_cjson": "cjson", "cjson": "cjson"}
     return aliases.get(normalized, normalized)
 

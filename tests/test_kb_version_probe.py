@@ -108,3 +108,30 @@ class ProbeTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class NameWithVersionTests(unittest.TestCase):
+    def test_alias_strips_embedded_version(self):
+        from tools.kb_version_probe import _component_alias
+        self.assertEqual(_component_alias("OpenSSL 3.0.9"), "openssl")
+        self.assertEqual(_component_alias("zlib 1.2.13"), "zlib")
+        self.assertEqual(_component_alias("libxml2 2.12.0"), "libxml2")
+        self.assertEqual(_component_alias("v1.2.3"), "v1.2.3")   # no head -> keep
+        self.assertEqual(_component_alias("openssl"), "openssl")
+        self.assertEqual(_component_alias("cJSON"), "cjson")
+
+    def test_manifest_name_with_version_matches_kb(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            comp = root / "third_party" / "openssl"
+            comp.mkdir(parents=True)
+            (comp / "README.OpenSource").write_text(
+                json.dumps([{"Name": "OpenSSL 3.0.9", "License": "Apache-2.0",
+                             "Version Number": "3.0.9"}]), encoding="utf-8")
+            kb = root / "kb.json"
+            kb.write_text(json.dumps({"schema": "0.1", "records": [
+                {"id": "CVE-2023-1234", "cwe": [], "summary": "x",
+                 "component": "openssl", "affected_versions": ["3.0.9"],
+                 "fixed_versions": [], "source": "https://e/1"}]}), encoding="utf-8")
+            report = probe(root, [kb])
+            self.assertEqual(report["exact_candidates"][0]["cve"], "CVE-2023-1234")
