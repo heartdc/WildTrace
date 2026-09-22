@@ -1,0 +1,30 @@
+{
+  "schema": "case-specific-validation-0.2",
+  "id": "ffmpeg-dvbsub-parser-capacity-overflow",
+  "component": "third_party/ffmpeg",
+  "cve_reference": "CVE-2026-70628",
+  "cwe_candidate": "CWE-190 (leading to CWE-787)",
+  "discovery_method": "kb_gap_audit.py pipeline + manual L4 2026-09-22; gap_l4_batch row for this CVE used the wrong reference commit (c6ec28b1 = 2005 introducer) and was corrected by hand: real fix is 93f2a525 (= branch backport 02fc47e1, diffs identical)",
+  "new_discovery": false,
+  "public_upstream": {
+    "fix_commit": "https://github.com/FFmpeg/FFmpeg/commit/93f2a525ec6c7b467bae68322720d10188fc6e30",
+    "fix_date": "2026-07-22",
+    "fix_subject": "avcodec/dvbsub_parser: avoid signed overflow in the capacity check"
+  },
+  "oh_source": {
+    "repo": "https://gitcode.com/openharmony/third_party_ffmpeg",
+    "head_commit": "0a0c4dd33c (2026-09-10)",
+    "baseline": "FFmpeg 7.1.1",
+    "equivalence": "dvbsub_parser.c byte-identical to upstream n7.1.1",
+    "l4_evidence": "dvbsub_parse() capacity guard at line 106 is still the signed-overflow-prone three-term form 'buf_size - buf_pos + pc->packet_index > PARSE_BUF_SIZE'; upstream one-line rewrite applies clean to OH checkout (git apply --check pass 2026-09-22)",
+    "gap_semantics": "version-baseline gap (fix 2026-07-22 postdates the vendored n7.1.1 tag and the repo snapshot); CVE ref list includes the 2005 introducer commit c6ec28b1 which is NOT the fix"
+  },
+  "vulnerability": {
+    "summary": "DVB subtitle parser capacity guard adds three attacker-influenced ints and can signed-overflow (CWE-190), bypassing the bound so the copy overruns the 64 KiB stack buffer packet_buf (CWE-787); attack surface per CVE record is a crafted WTV file.",
+    "verification_level": "source-level confirmed (three-sided L4, reference-commit errata documented); runtime observation path documented (ASan stack-buffer-overflow via crafted DVB subtitle stream) but not executed - declared as such",
+    "runtime_status": "not_run"
+  },
+  "controls": [],
+  "submission_materials": "D:/cve_data/submission_70628/ (对照.txt with ref errata, patch.diff = upstream verbatim applies clean, upstream_fix_93f2a52.diff, form draft)",
+  "notes": "closes the ffmpeg gap batch: 70628 was the second of the two pending manual-L4 candidates (2026-09-22)"
+}

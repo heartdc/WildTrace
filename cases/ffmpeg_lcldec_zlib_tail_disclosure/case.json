@@ -1,0 +1,30 @@
+{
+  "schema": "case-specific-validation-0.2",
+  "id": "ffmpeg-lcldec-zlib-tail-disclosure",
+  "component": "third_party/ffmpeg",
+  "cve_reference": "CVE-2026-66038",
+  "cwe_candidate": "CWE-908",
+  "discovery_method": "kb_gap_audit.py pipeline + batch L4 (gap_likely) + manual L4 2026-09-22: mszh_decomp/zlib_decomp short-output return paths lack tail memset; upstream diff applies clean",
+  "new_discovery": false,
+  "public_upstream": {
+    "fix_commit": "https://github.com/FFmpeg/FFmpeg/commit/e7cbfd1c507b57a806a5825b87d609963e862c8c",
+    "fix_date": "2026-06-28",
+    "fix_subject": "avcodec/lcldec: zero the not-decoded tail to avoid heap disclosure"
+  },
+  "oh_source": {
+    "repo": "https://gitcode.com/openharmony/third_party_ffmpeg",
+    "head_commit": "0a0c4dd33c (2026-09-10)",
+    "baseline": "FFmpeg 7.1.1",
+    "equivalence": "lcldec.c byte-identical to upstream n7.1.1",
+    "l4_evidence": "mszh_decomp returns without zeroing destptr..destptr_end (~line 121); zlib_decomp short-inflation path returns without zeroing decomp_buf tail (~lines 155-156); upstream diff applies clean to OH checkout (git apply --check pass 2026-09-22)",
+    "gap_semantics": "version-baseline gap (fix 2026-06-28 postdates the vendored n7.1.1 tag 2025-02-19 and the repo snapshot 2026-06-01)"
+  },
+  "vulnerability": {
+    "summary": "LCL/ZLIB video decoder leaves the not-decoded tail of decomp_buf uninitialized on short decompression and emits it as frame data: heap uninitialized-memory disclosure (CWE-908).",
+    "verification_level": "source-level confirmed (three-sided L4); runtime observation path documented (MSAN / short-inflate stream) but not executed - declared as such",
+    "runtime_status": "not_run"
+  },
+  "controls": [],
+  "submission_materials": "D:/cve_data/submission_66038/ (对照.txt, patch.diff = upstream verbatim applies clean, upstream_fix_e7cbfd1.diff, form draft)",
+  "notes": "closes the ffmpeg gap batch: 66038 was one of the two pending manual-L4 candidates noted in ffmpeg_wmaenc/ffmpeg_ty cases (2026-09-22)"
+}
