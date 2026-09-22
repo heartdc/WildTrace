@@ -97,6 +97,8 @@ int main(int argc, char **argv) {
     set_cookie = "flavor=good; Domain=poc.localhost; Path=/";
     expect_tailmatch = 1;   /* retained on both builds */
   } else { fprintf(stderr, "unknown mode\n"); return 2; }
+  const int control_host = (strcmp(mode, "non-psl-control") == 0);
+  const char *host = control_host ? "poc.localhost" : "localhost";
 
   uint16_t port = 0;
   int fd = make_listener(&port);
@@ -106,8 +108,8 @@ int main(int argc, char **argv) {
   if(pthread_create(&th, NULL, serve_once, &cfg) != 0) { close(fd); return 2; }
 
   char url[128], resolve[64];
-  snprintf(url, sizeof(url), "http://localhost:%u/", (unsigned)port);
-  snprintf(resolve, sizeof(resolve), "localhost:%u:127.0.0.1", (unsigned)port);
+  snprintf(url, sizeof(url), "http://%s:%u/", host, (unsigned)port);
+  snprintf(resolve, sizeof(resolve), "%s:%u:127.0.0.1", host, (unsigned)port);
 
   CURL *curl = curl_easy_init();
   if(!curl) { close(fd); return 2; }
