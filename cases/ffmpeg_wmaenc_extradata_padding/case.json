@@ -1,0 +1,30 @@
+{
+  "schema": "case-specific-validation-0.2",
+  "id": "ffmpeg-wmaenc-extradata-padding",
+  "component": "third_party/ffmpeg",
+  "cve_reference": "CVE-2026-52296",
+  "cwe_candidate": "CWE-125",
+  "discovery_method": "kb_gap_audit.py pipeline + batch L4 (gap_likely) + manual L4: wmaenc.c encode_init still allocates extradata without AV_INPUT_BUFFER_PADDING_SIZE",
+  "new_discovery": false,
+  "public_upstream": {
+    "fix_commit": "https://github.com/FFmpeg/FFmpeg/commit/23227a444de4a8f7696f46660cdd044b460f7e47",
+    "fix_date": "2026-05-03",
+    "fix_subject": "avcodec/wmaenc: Fix missing padding in extradata"
+  },
+  "oh_source": {
+    "repo": "https://gitcode.com/openharmony/third_party_ffmpeg",
+    "head_commit": "0a0c4dd33c (2026-09-10)",
+    "baseline": "FFmpeg 7.1.1",
+    "equivalence": "wmaenc.c byte-identical to upstream n7.1.1",
+    "l4_evidence": "encode_init allocates av_malloc(4) (WMAV1) / av_mallocz(10) (WMAV2) without AV_INPUT_BUFFER_PADDING_SIZE; upstream diff applies clean to OH checkout",
+    "gap_semantics": "version-baseline gap (fix 2026-05-03 predates the repo snapshot date 2026-06-01 but postdates the vendored n7.1.1 tag 2025-02) — wording in the form uses baseline gap, not time-window gap"
+  },
+  "vulnerability": {
+    "summary": "WMA encoder extradata buffer lacks the FFmpeg-mandated input padding, letting downstream consumers that read extradata with padding assumptions read past the allocation (OOB read).",
+    "verification_level": "source-level confirmed; runtime observation path documented (ASan on the padded-block extradata consumer) but not executed — declared as such",
+    "runtime_status": "not_run"
+  },
+  "controls": [],
+  "submission_materials": "D:/cve_data/submission_52296/ (对照.txt, patch.diff = upstream verbatim applies clean, form draft, attachments zip)",
+  "notes": "ffmpeg gap batch case 5 of 5 gap_likely; 66038/70628 + 2 already_fixed re-checks still pending"
+}

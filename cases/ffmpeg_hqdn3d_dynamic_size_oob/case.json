@@ -1,0 +1,33 @@
+{
+  "schema": "case-specific-validation-0.2",
+  "id": "ffmpeg-hqdn3d-dynamic-size-oob",
+  "component": "third_party/ffmpeg",
+  "cve_reference": "CVE-2026-66036",
+  "cwe_candidate": "CWE-122",
+  "discovery_method": "kb_gap_audit.py pipeline + batch L4 (l4_batch_ffmpeg.py gap_likely) + manual L4: OH vf_hqdn3d.c lacks even the master-era EINVAL guard (67-line drift vs master pre-fix), config_input allocates line buffers by link width while do_denoise runs by frame dimensions",
+  "new_discovery": false,
+  "public_upstream": {
+    "fix_commit": "https://github.com/FFmpeg/FFmpeg/commit/5d7112c60e6f0f0742ce47d448e6da0718a70f4c",
+    "fix_date": "2026-07-22",
+    "fix_subject": "avfilter/vf_hqdn3d: support dynamic frame sizes (also whitelists hqdn3d in ff_filter_frame)"
+  },
+  "oh_source": {
+    "repo": "https://gitcode.com/openharmony/third_party_ffmpeg",
+    "head_commit": "0a0c4dd33c (2026-09-10)",
+    "baseline": "FFmpeg 7.1.1, README.OpenSource last change 2026-06-01",
+    "equivalence": "vf_hqdn3d.c AND avfilter.c both byte-identical to upstream n7.1.1",
+    "l4_evidence": "7.1.1 filter_frame has no size check at all (upstream added an EINVAL guard only after 7.1.1, then full dynamic support in the fix); config_input allocates s->line[i] = av_malloc_array(inlink->w) while do_denoise uses AV_CEIL_RSHIFT(in->width/height)"
+  },
+  "vulnerability": {
+    "summary": "hqdn3d denoise line buffers are allocated for the configured link width, but denoise runs with the frame's own dimensions; a frame with larger dimensions writes past the line buffers (heap OOB write).",
+    "trigger": "push a larger frame through a graph containing hqdn3d; direct trigger via buffersrc pass-through (no link mutation needed — more natural than CVE-2026-66041)",
+    "assert_caveat": "default builds abort earlier at the ff_filter_frame av_assert1 (also a crash); --assert-level=0 (oss-fuzz condition) reaches the OOB write",
+    "verification_level": "runtime-verified 2x2 matrix (2026-09-21): orig trigger -> ASan heap-buffer-overflow WRITE size 2 at denoise_spatial vf_hqdn3d.c:98 into the 128-byte (64*int16) config_input:269 allocation, exit 1; patched (narrow EINVAL guard) trigger -> clean reject exit 0; control identical on both",
+    "runtime_status": "verified"
+  },
+  "controls": [
+    {"name": "constant-size", "desc": "same-size frames: filter output identical on original and patched (no regression)"}
+  ],
+  "submission_materials": "D:/cve_data/submission_66036/ (poc_hqdn3d.c, patch.diff narrow guard, runtime record, form draft, attachments zip)",
+  "notes": "ffmpeg gap batch case 3 of 5 gap_likely; 65704/52296/66038/70628 still pending manual L4"
+}

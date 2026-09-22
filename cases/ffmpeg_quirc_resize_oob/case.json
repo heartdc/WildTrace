@@ -1,0 +1,47 @@
+{
+  "schema": "case-specific-validation-0.2",
+  "id": "ffmpeg-quirc-resize-oob",
+  "component": "third_party/ffmpeg",
+  "cve_reference": "CVE-2026-66041",
+  "cwe_candidate": "CWE-787",
+  "discovery_method": "kb_gap_audit.py four-signal pipeline (L1 cve-grep negative + L2 disclosure 2026-07-04 > snapshot 2026-06-01 + L3 baseline 7.1.1 in [7.0, 8.1.2) + L4 source signature confirmed)",
+  "new_discovery": false,
+  "public_upstream": {
+    "fix_commit": "https://github.com/FFmpeg/FFmpeg/commit/4da9812e25894fb51d62a8875cfa8eb39b5e20f5",
+    "fix_date": "2026-07-05",
+    "fix_subject": "avfilter/vf_quirc: resize the quirc buffers when the input size changes"
+  },
+  "oh_source": {
+    "repo": "https://gitcode.com/openharmony/third_party_ffmpeg",
+    "head_commit": "0a0c4dd33c (2026-09-10)",
+    "baseline": "FFmpeg 7.1.1, README.OpenSource last change 2026-06-01",
+    "vf_quirc_c_blob": "afd172fa347b7ed4d412fe418a6023ac3e111914",
+    "l4_evidence": "OH vf_quirc.c has quirc_resize only in config_input (initial size); filter_frame copies into the quirc buffer with no dimension-change check and QuircContext carries no width/height fields — the exact pre-fix structure upstream 4da9812 changed"
+  },
+  "vulnerability": {
+    "summary": "vf_quirc filter: a crafted PGS/SUP subtitle whose later frames have dimensions differing from the configured input writes out of bounds of the quirc buffer allocated for the first frame's size (heap OOB write).",
+    "trigger": "feed a subtitle stream with mismatched frame dimensions through the quirc filter",
+    "verification_level": "runtime-verified 2x3 matrix (2026-09-21, WSL2 Ubuntu 24.04, clang 18.1.3 + ASan/UBSan): original build linkgrow -> heap-buffer-overflow WRITE of size 512 into the 4096-byte (64x64) quirc_resize allocation, write site filter_frame vf_quirc.c:102, exit 1; patched (4da9812e applied clean) linkgrow -> CASE_DONE exit 0; control/trigger identical on both builds (no regression). PoC uses public libavfilter API only",
+    "runtime_status": "verified",
+    "introduced_by": "030e1401451200566a5303f35cbe1456e31dd81e (2024-01-01 'lavfi: add quirc filter')",
+    "submission_materials": "D:/cve_data/submission_66041/ (poc_quirc.c, upstream fix diff, runtime record, gap audit, form draft)",
+    "submission": {
+      "platform": "OpenHarmony 漏洞奖励计划 (https://bugbounty.openharmony.cn)",
+      "ticket": "OHSA26-092224881",
+      "submission_id": "228180140511727616",
+      "submitted_at": "2026-09-21",
+      "status": "已提交",
+      "form": {
+        "type": "内存破坏与执行类 / 缓冲区溢出",
+        "repo": "third_party_ffmpeg",
+        "file_path": "libavfilter/vf_quirc.c / 代码行:102",
+        "introduced_by": "030e1401451200566a5303f35cbe1456e31dd81e",
+        "oh_version": "OpenHarmony-v7.0-Release（2026-08-21）"
+      }
+    }
+  },
+  "controls": [
+    {"name": "same-size-subtitle", "desc": "frames matching config_input dimensions: filter works unchanged on both original and patched"}
+  ],
+  "notes": "part of the ffmpeg gap batch (audit 2026-09-21); candidate for platform submission after optional runtime matrix"
+}
