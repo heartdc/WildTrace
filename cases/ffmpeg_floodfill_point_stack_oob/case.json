@@ -1,0 +1,29 @@
+{
+  "schema": "case-specific-validation-0.2",
+  "id": "ffmpeg-floodfill-point-stack-oob",
+  "component": "third_party/ffmpeg",
+  "cve_reference": "CVE-2026-65705",
+  "cwe_candidate": "CWE-787",
+  "discovery_method": "batch L4 + ref triage (real fix 24c322fd; first-cited f186c50 is a same-day cleanup commit)",
+  "new_discovery": false,
+  "public_upstream": {
+    "fix_commit": "https://github.com/FFmpeg/FFmpeg/commit/24c322fdb232",
+    "fix_date": "2026-07-13",
+    "fix_subject": "avfilter/vf_floodfill: size the point stack for the current frame (Fixes: out of array access; repro 8aj_floodfill_dynamic_size.pgm)"
+  },
+  "oh_source": {
+    "repo": "https://gitcode.com/openharmony/third_party_ffmpeg",
+    "head_commit": "0a0c4dd33c",
+    "baseline": "FFmpeg 7.1.1, snapshot 2026-06-01",
+    "equivalence": "vf_floodfill.c byte-identical to upstream n7.1.1",
+    "l4_evidence": "config_input allocates s->points = av_calloc(inlink->w * inlink->h, 4 * sizeof(Points)) once; filter_frame pushes points with frame->width/height bounds — OOB write when frame exceeds config size. Upstream diff applies clean"
+  },
+  "vulnerability": {
+    "summary": "Flood-fill point stack is allocated for the configured link size (with 4x slack) but driven by the current frame's dimensions; a sufficiently larger frame overruns the stack.",
+    "verification_level": "source-level confirmed; family equivalence to runtime-verified CVE-2026-66036/66041. Runtime attempt documented honestly: poc_floodfill.c built (GRAY8 direct graph), 512^2/8192^2/12288^2/1x1->64^2 parameter sets did not trigger ASan — the 4x allocation slack keeps the LIFO flood-fill stack depth below capacity for uniform frames, and >256MB frame allocations fail; a non-uniform pattern (checkerboard/spiral) to maximize DFS depth is left as follow-up",
+    "runtime_status": "attempted_not_triggered"
+  },
+  "controls": [],
+  "submission_materials": "D:/cve_data/submission_65705/",
+  "notes": "size-family member 4 of 4; runtime evidence for the family carried by hqdn3d/quirc"
+}

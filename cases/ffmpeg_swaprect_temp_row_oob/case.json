@@ -1,0 +1,29 @@
+{
+  "schema": "case-specific-validation-0.2",
+  "id": "ffmpeg-swaprect-temp-row-oob",
+  "component": "third_party/ffmpeg",
+  "cve_reference": "CVE-2026-65706",
+  "cwe_candidate": "CWE-787",
+  "discovery_method": "batch L4 (gap_likely, recalibrated tool) + manual L4",
+  "new_discovery": false,
+  "public_upstream": {
+    "fix_commit": "https://github.com/FFmpeg/FFmpeg/commit/a7e38b617b32f996beaa371bbf04b39907d7a527",
+    "fix_date": "2026-07-13",
+    "fix_subject": "avfilter/vf_swaprect: size the temp row buffer for the widest plane (Fixes: out of array access; repro 7aj_swaprect_odd17_nv12.nut)"
+  },
+  "oh_source": {
+    "repo": "https://gitcode.com/openharmony/third_party_ffmpeg",
+    "head_commit": "0a0c4dd33c",
+    "baseline": "FFmpeg 7.1.1, snapshot 2026-06-01",
+    "equivalence": "vf_swaprect.c byte-identical to upstream n7.1.1",
+    "l4_evidence": "vf_swaprect.c:223 allocates the temp row buffer as av_malloc_array(inlink->w, pixsteps[0]) — plane 0's step only; upstream fix sizes it across all planes (width<<shift * pixstep max, with INT_MAX check). Applies clean"
+  },
+  "vulnerability": {
+    "summary": "Row-swap temp buffer is sized for plane 0 only; formats where another plane's width*pixstep exceeds it (e.g. NV12 with odd widths, per the upstream repro) overrun the buffer during row exchange.",
+    "verification_level": "source-level confirmed; family equivalence to runtime-verified CVE-2026-66036/66041; runtime repro path documented (nv12 odd-width input per upstream sample name)",
+    "runtime_status": "not_run"
+  },
+  "controls": [],
+  "submission_materials": "D:/cve_data/submission_65706/",
+  "notes": "size-family member; closes the last of the 21-gap ffmpeg batch — all 21 now have case records or batch-triage evidence"
+}

@@ -1,0 +1,32 @@
+{
+  "schema": "case-specific-validation-0.2",
+  "id": "openssl-ocb-oneshot-iv-discard",
+  "component": "third_party/openssl",
+  "cve_reference": "CVE-2026-45445",
+  "cwe_candidate": "CWE-325",
+  "discovery_method": "kb_gap_audit.py on third_party_openssl (only gap_candidate out of 81 CVEs — the repo has 31 explicit backports, showing active maintenance) + L4",
+  "new_discovery": false,
+  "public_upstream": {
+    "fix_commit": "https://github.com/openssl/openssl/commit/843c9b94ca9c2ed248bb30127bb4f3d7af0d607c (plus 787a6dfb/983d54b5)",
+    "fix_date": "2026-06-09 advisory batch",
+    "fix_subject": "Apply the buffered IV on the AES-OCB EVP_Cipher() path"
+  },
+  "oh_source": {
+    "repo": "https://gitcode.com/openharmony/third_party_openssl",
+    "baseline": "OpenSSL 3.0.9, snapshot 2024-10-18",
+    "equivalence": "cipher_aes_ocb.c differs from upstream 3.0.9 by 5 lines (OH-own in==NULL Final handling); vulnerable one-shot path identical",
+    "l4_evidence": "aes_ocb_cipher (cipher_aes_ocb.c:497) lacks the key_set/update_iv head check; narrow patch (source-file part of upstream diff) applies clean"
+  },
+  "vulnerability": {
+    "summary": "AES-OCB one-shot EVP_Cipher() path never flushes the buffered IV; when it is the first data operation, the effective OCB nonce is 0 regardless of the caller's IV — catastrophic nonce reuse under the same key, silent at the API level.",
+    "trigger": "EVP_Cipher() as the first data operation on an AES-OCB context (no prior streaming call)",
+    "verification_level": "runtime-verified 2x2 matrix (2026-09-23, WSL2 clang, OH checkout static build): S1 (no AAD, body one-shot vs streaming) orig -> ct=DIFF tag=DIFF exit 1 (direct observation of nonce-0 encryption); S2 (AAD streaming + body one-shot) orig -> SAME (streaming AAD already flushed the IV — corroborates mechanism); patched -> both SAME, S2 unchanged (no regression)",
+    "runtime_status": "verified",
+    "crypto_note": "first cryptographic-class case in the series; verified by ciphertext/tag semantic equivalence, no memory observation needed"
+  },
+  "controls": [
+    {"name": "aad-streaming-first", "desc": "S2 shape: one-shot body after streaming AAD behaves correctly on both builds (IV flushed by the streaming call)"}
+  ],
+  "submission_materials": "D:/cve_data/submission_45445/ (runtime record, poc_ocb_iv.c, narrow patch, 对照.txt, form draft, attachments zip)",
+  "notes": "openssl component first case; PoC iteration note — an early draft omitted EncryptFinal on the one-shot pass and misread the tag mismatch; the final PoC finalizes both passes symmetrically and the S1/S2 split isolates the IV-discard precisely"
+}
