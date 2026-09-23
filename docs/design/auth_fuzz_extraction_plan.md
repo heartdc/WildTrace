@@ -1,6 +1,7 @@
 # auth fuzz 提取施工图（CVE 挖掘 P0-2 第三靶）
 
-状态：方案论证完成，待施工（2026-09-23 记录，GLM）
+状态：**施工完成，长跑挂机中**（2026-09-23，GLM；实施记录见 §7 与
+`D:/cve_data/fuzz_authdev/README.md`）
 目标：对 authentication 模块的网络消息解析做结构感知 fuzz——
 dsoftbus 最大的纯解析攻击面。预计工时 2-4 小时（含调试）。
 
@@ -99,3 +100,48 @@ dsoftbus 最大的纯解析攻击面。预计工时 2-4 小时（含调试）。
 - anonymizer 提取包（可选）：`D:/cve_data/fuzz_anonymizer/`
 - WSL 工具链：clang 18.1.3（~/fv 的 ffmpeg 构建可作编译环境参照）
 - 侦察记录：本文件 + 对话 2026-09-23（函数依赖扫描脚本输出）
+
+## 7. 施工记录（2026-09-23）
+
+成品：`D:/cve_data/fuzz_authdev/`（WSL 镜像 ~/fa，build.sh 一键重建）。
+种子 6 枚零崩溃；120s 快测 1,494,196 runs 无崩溃（cov 2602 / ft 9879）；
+12h 长跑（-max_total_time=43200）挂机中，~12.5k exec/s。
+
+### 7.1 方案级偏差（影响 §3 依赖图，已按实况修正实施）
+
+1. **JSON_*（JsonObj API）底层是 nlohmann::json（C++），不是 cJSON。**
+   DSoftBus 4.0.2 的 `adapter/common/json/nlohmann/softbus_adapter_json.cpp`
+   为唯一实现。§3.A"复用 fuzz_jsonutils 当 JSON 后端"的假设不成立——
+   用 cJSON 复刻会把靶面换成自写 shim，证据链作废。实际做法：
+   引入该 cpp 原文件 + nlohmann v3.11.3 单头（jsDelivr 取得，检出内无
+   third_party），与 C 主体经 extern "C" 边界混编（clang/clang++ 18.1.3）。
+   cJSON 保留真实现——凭证协商子链（CreateJsonObjectFromString/
+   cJSON_Duplicate/GetJsonObjectNumberItem）生产上就是 cJSON 面。
+   **生产双解析器形态完整落地**。
+2. cJSON_Utils.c 不需要（A 层包本就没有，提取链不触 MergePatch）→
+   §5"已知噪音 cJSON 87933"被结构性排除，无需换补丁版 cJSON。
+3. §4.5 编译行更正：实际为 harness/extracted/softbus_json_utils/cJSON/
+   anonymizer（gnu11 C）+ softbus_adapter_json.cpp（c++17）六单元，
+   clang++ -fsanitize=fuzzer,address,undefined 链接。
+4. 轮换维在施工图基础上增加两维：isConnectServer（IsCmdMatchByDeviceId
+   分支）与初始 idType（SetExchangeIdTypeAndValue 客户端 NETWORKID 分支），
+   连同 connInfo.type×isServer 共 4 维，取自输入前 4 字节。
+
+### 7.2 C 级 stub 落地差异（相对 §3.C 预案）
+
+- SoftBusGenerateStrHash 未走"真 crypto"也未走恒错，用确定性 FNV 变体：
+  只替换 hash 值不替换长度/边界行为（提取链对 hash 值无分支判断）
+- GetFd/SoftBusSocketGetPeerName 给固定 127.0.0.1 而非恒错：
+  使 DevIpHash→hex→strcmp 深路径可达（该分支否则死码）
+- LnnGetLocalNodeInfo 返回 feature 含 BIT_INFO_COMPRESS 的静态节点：
+  compress 协商分支由远端 JSON 字段驱动（本靶输入面）
+- Anonymize 家族按 §3.C 备选带上了真提取包（fuzz_anonymizer）
+- securec stub 的 strcpy_s/memset_s 补齐**真实边界语义**——
+  JSON_GetStringFromObject 的定长缓冲防护就在这层，语义弱化会吞洞/造假阳性
+
+### 7.3 结构裁剪明细（§3.D）
+
+AuthConnInfo（仅 type）、NodeInfo（feature/aclState）、AuthManager（占位）
+三处裁剪，均已在 stub/auth_framework.h 逐条声明差异并核对"提取链不触碰
+被裁字段"；AuthSessionInfo 字段与原结构一致（nodeInfo 类型为裁剪版）。
+

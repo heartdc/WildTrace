@@ -1,5 +1,17 @@
 # Changelog
 
+# 2026-09-23（auth fuzz 第一 harness 建成挂机）
+
+## CVE 挖掘 P0-2 第三靶施工完成（dsoftbus auth DeviceId 链）
+
+- `UnpackDeviceIdJson`（auth_session_json.c:2107）全链 harness 建成：`D:/cve_data/fuzz_authdev/`（WSL 镜像 ~/fa，build.sh 一键重建）。30 函数逐字原样提取（file:line 标注），C 级 stub 约 20 处取向注明，D 级三处结构裁剪逐条声明差异。
+- 方案级偏差（已回写施工图 §7）：DSoftBus 4.0.2 的 `JSON_*`/JsonObj API 底层为 nlohmann::json（C++）而非 cJSON——引入 OH 原 `softbus_adapter_json.cpp` + nlohmann v3.11.3（jsDelivr）与 C 主体混编；cJSON 保留真实现承载凭证协商子链，生产双解析器形态完整落地。cJSON_Utils 未编译，CVE-2026-87933 噪音面被结构性排除。
+- 验证：6 枚结构化种子回归通过；120s 快测 1,494,196 runs 零崩溃（cov 2602/ft 9879，约 12k exec/s）；12h 长跑（-max_total_time=43200）挂机中。确认产品漏洞数口径不变（0），崩溃待分诊。
+
+## 第四靶施工图落盘（DeviceInfo 消息链）
+
+- `docs/design/deviceinfo_fuzz_extraction_plan.md`：靶 `UnpackDeviceInfoMessage`（auth_session_json.c:3388），A/C/D 资产全复用第三靶，D 级升级为全量 NodeInfo（三头整拷约 370 行）；头号嫌疑族已标记（BtV1 的 `OptInt64` 8 字节写 32 位 netCapacity——struct 内越界形态）。
+
 # 2026-09-22（补录 2026-09-16 → 09-22 断档）
 
 ## 缺口案例批量落库与奖励计划提交

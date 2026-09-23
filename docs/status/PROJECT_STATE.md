@@ -1,3 +1,10 @@
+## 当前验收状态（2026-09-23，auth fuzz 第一 harness 建成挂机）
+
+- CVE 挖掘 P0-2 第三靶（dsoftbus auth DeviceId 消息链）harness 建成并挂机：`D:/cve_data/fuzz_authdev/`（WSL 镜像 ~/fa）。`UnpackDeviceIdJson`（auth_session_json.c:2107）全链提取 30 函数逐字原样（file:line 标注），双解析器形态完整（`JSON_*` 经真 nlohmann v3.11.3 adapter + 凭证协商子链真 cJSON）；6 枚结构化种子回归通过，120s 快测 1,494,196 runs 零崩溃（cov 2602/ft 9879），12h 长跑（-max_total_time=43200）挂机中，约 12k exec/s。施工记录与方案级偏差（nlohmann 非 cJSON）见 `docs/design/auth_fuzz_extraction_plan.md` §7。
+- 第四靶（DeviceInfo 消息，`UnpackDeviceInfoMessage` auth_session_json.c:3388）施工图已论证落盘：`docs/design/deviceinfo_fuzz_extraction_plan.md`。A/C/D 资产全部复用第三靶；头号嫌疑族已标记（UnpackDeviceInfoBtV1 的 `OptInt64` 写 32 位 netCapacity 字段的 8 字节覆写形态——struct 内越界，UBSan 分诊）。
+- 漏洞结论口径不变：auth 两靶目前均为"运行中/待分诊"，确认产品漏洞数仍为 0；崩溃分诊走 fuzz_authdev README 命令 + 2×2 验证线。
+- 第三靶长跑结束（预计 09-24 凌晨）后的收割动作：取 `-print_final_stats/-print_coverage` 不可达函数清单 → 决定第四靶开工与现靶 stage-2（密钥 stub 换真 AES-GCM）取舍。
+
 ## 当前验收状态（2026-09-22，审计对齐与缺口案例落库）
 
 - 全量回归 847 项运行、843 通过、4 项环境跳过；CI（offline-tests：unittest 全量 + 性能冒烟 + 凭据扫描）通过。
