@@ -1,0 +1,30 @@
+{
+  "schema": "case-specific-validation-0.2",
+  "id": "ffmpeg-cfhd-transform2-width-oob",
+  "component": "third_party/ffmpeg",
+  "cve_reference": "CVE-2026-70632",
+  "cwe_candidate": "CWE-787",
+  "discovery_method": "kb_gap_audit pipeline + batch L4 (initially misjudged already_fixed because the cvelist refs cite the 2020 introducing commit 1006a215 first; newest-ref recalibration + manual L4 with both real fix commits)",
+  "new_discovery": false,
+  "public_upstream": {
+    "fix_commit": "https://github.com/FFmpeg/FFmpeg/commit/db05df9d135fb56a4babb836d5e9f5c1d984e087 and 16b2049d4d5222db6cd7c031409058571c94f6a9",
+    "fix_date": "2026-07-31 / 2026-08-02",
+    "fix_subject": "avcodec/cfhd: reject transform-2 output wider than the plane (Fixes: out of array access; repro cfhd_transform2_output_width_oob.avi)"
+  },
+  "oh_source": {
+    "repo": "https://gitcode.com/openharmony/third_party_ffmpeg",
+    "head_commit": "0a0c4dd33c",
+    "baseline": "FFmpeg 7.1.1, snapshot 2026-06-01",
+    "equivalence": "cfhd.c byte-identical to upstream n7.1.1",
+    "l4_evidence": "cfhd.c:969 and :1010 plane-size checks lack 'lowpass_width * 2 > s->plane[plane].width'; the similar check at :1049 is pre-existing code on another path. Both upstream fix diffs apply clean",
+    "ref_triage": "cvelist refs include introducing commit 1006a215 (2020-08 'add 3d transform support') which is NOT the fix — documented in 对照.txt"
+  },
+  "vulnerability": {
+    "summary": "CFHD transform-2 output width (lowpass_width*2) is stream-controlled and unbounded by plane width; decode writes past the plane allocation — heap OOB write, triggerable during stream probing via a crafted AVI.",
+    "verification_level": "source-level confirmed; runtime repro via upstream oss-fuzz sample name documented",
+    "runtime_status": "not_run"
+  },
+  "controls": [],
+  "submission_materials": "D:/cve_data/submission_70632/",
+  "notes": "ffmpeg gap batch; second already_fixed false-positive root cause (stale ref ordering) fixed in l4_batch_ffmpeg.py"
+}
