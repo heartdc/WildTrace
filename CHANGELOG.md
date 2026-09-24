@@ -1,5 +1,17 @@
 # Changelog
 
+# 2026-09-24（第四靶建成 + 案例台账）
+
+## CVE 挖掘 P0-2 第四靶施工完成（dsoftbus auth DeviceInfo 链）
+
+- `UnpackDeviceInfoMessage`（auth_session_json.c:3388）全链 harness `fuzz_authdeinfo`：约 25 函数逐字原样提取；D 级升级为全量 NodeInfo（lnn_node_info/device_info/connect_info 三头链）；设备类型转换族（lnn_device_info.c 表+ConvertStringToInt）与 StrCmpIgnoreCase 随链提取；base64 为 RFC4648 声明式重实现（mbedtls 3.x 依赖 constant-time 内部头链未引入，契约对齐点在 base64_ref.c 头注记）。
+- 验证：6 枚结构化种子零崩溃（基线 cov 1422/ft 2496）；120s 快测 2,076,080 runs 零崩溃（约 17k exec/s）；8h 长跑与第三靶并行挂机。T3 隔夜被宿主机休眠中断（有效 3.3h/1.223 亿执行零崩溃），白班重启后继续。
+- build.sh 双目标化 + rsync 运行时状态排除（挂机中重建安全）；T3/T4 共享 A 层与 stub 生态。
+
+## 单一案例台账（审计 P0.2）
+
+- `docs/status/CASE_LEDGER_20260924.md`：13 例逐案区分源码核验/真实库复现/产品影响/提交材料/工单/官方接受；发现并记录三处漂移（nvdec OHSA26-092224773 已提交 vs PROJECT_STATE"待提交"口径、cjson runtime_status=not_run vs CHANGELOG 09-16 运行矩阵通过、审计机另有 quirc 嵌套提交与 FFI/triage 未提交工作集）。
+
 # 2026-09-23（追加：整树快照修复——审计 P1-1）
 
 ## source_snapshot / engine_shards 有界化（审计 2026-09-23 P1-1）
