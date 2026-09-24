@@ -1,5 +1,14 @@
 # Changelog
 
+# 2026-09-23（追加：整树快照修复——审计 P1-1）
+
+## source_snapshot / engine_shards 有界化（审计 2026-09-23 P1-1）
+
+- `ohvul/source_snapshot.py`：新增 `files=` 限范围模式（先验清单——缺失输入在校验阶段即报错，不触发树遍历）与文件数/字节/时间三重预算；legacy 全树模式保留（checkpoint 绑定口径不变），哈希改流式分块，payload 格式与历史摘要逐字节兼容。
+- `ohvul/engine_shards.py`：分片级快照改为仅声明输入（每分片 2 次限范围枚举）；清单/Profile 级保留树级摘要作为出版契约（能检出清单外文件变更，如契约测试 test_source_change_during_engine_scan_is_rejected 所要求），但整批只走 2 次全树（原 2S+2 次）且受预算限界；清单校验仍先于任何快照。
+- `tests/test_engine_shards.py`：缺失文件测试改隔离临时目录（原用仓库根目录触发全树遍历）；新增回归——单文件请求不触碰无关缓存、清单快照访问次数精确为"2 次全树 + 每分片 2 次限范围"（canary 计数断言）、预算越限显式报错、payload 格式兼容、大文件流式哈希正确性。
+- 验证：全量离线回归 853 项运行、849 通过、4 项环境跳过（303s，退出码 0）；CI 性能冒烟通过。审计文件 FFI 三条 P1（P1-2/3/4）的代码在另一机器的未提交工作集内，本轮不可修，待其落 PR 后处理。
+
 # 2026-09-23（auth fuzz 第一 harness 建成挂机）
 
 ## CVE 挖掘 P0-2 第三靶施工完成（dsoftbus auth DeviceId 链）

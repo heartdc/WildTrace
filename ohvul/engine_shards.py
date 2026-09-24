@@ -9,6 +9,14 @@ from .engine_profile import prepare_profile, recheck_profile, profile_compile_ar
 from .source_snapshot import source_snapshot
 
 
+def _valid_relative(root, relative):
+    path = Path(relative)
+    source = (root / path).resolve()
+    ok = not (path.is_absolute() or path.drive or ".." in path.parts
+              or (root / path).is_symlink() or not source.is_relative_to(root) or not source.is_file())
+    return ok, source
+
+
 def scan_engine_shard(root, shard, *, llvm_root="/home/airgap/llvm", timeout=300, compile_args=(), engine="clang"):
     root = Path(root).resolve()
     files = shard.get("files") if isinstance(shard, dict) else None
@@ -20,15 +28,16 @@ def scan_engine_shard(root, shard, *, llvm_root="/home/airgap/llvm", timeout=300
         raise ValueError("invalid engine shard")
     if len({os.path.normcase(str((root / path).resolve())) for path in files}) != len(files):
         raise ValueError("duplicate files in engine shard")
-    before = source_snapshot(root)
+    # Audit 2026-09-23 P1-1: validate the declared list and snapshot the
+    # declared inputs only, so a missing input never triggers a tree walk.
+    checked = [_valid_relative(root, relative) for relative in files]
+    valid_rels = [relative for relative, (ok, _) in zip(files, checked) if ok]
+    before = source_snapshot(root, files=valid_rels)
     normalized, errors, file_results = [], [], []
     attempted = succeeded = 0
     versions = set()
-    for relative in files:
-        path = Path(relative)
-        source = (root / path).resolve()
-        if (path.is_absolute() or path.drive or ".." in path.parts
-                or (root / path).is_symlink() or not source.is_relative_to(root) or not source.is_file()):
+    for relative, (valid, source) in zip(files, checked):
+        if not valid:
             error = {"engine": engine, "status": "input_error", "source_file": str(source),
                      "reason": "file must be an explicit relative non-symlink path in root"}
             errors.append(error)
@@ -65,7 +74,7 @@ def scan_engine_shard(root, shard, *, llvm_root="/home/airgap/llvm", timeout=300
                               for finding in result["findings"])
         else:
             errors.append(record)
-    if source_snapshot(root) != before:
+    if source_snapshot(root, files=valid_rels) != before:
         raise ValueError("source snapshot changed during engine scan")
     status = "completed" if not errors else ("partial" if succeeded else "input_error")
     return engine_result_to_audit_result({
@@ -93,6 +102,11 @@ def scan_engine_manifest(root, manifest, *, max_shards=10000, llvm_root="/home/a
         declared.extend(shard["files"])
     if len({os.path.normcase(str((root / path).resolve())) for path in declared}) != len(declared):
         raise ValueError("duplicate files across engine shards")
+    # Audit 2026-09-23 P1-1: the manifest keeps one tree-level snapshot
+    # before and after the whole batch (the publication contract detects
+    # changes to files outside the manifest as well), but per-shard work is
+    # scoped to the declared inputs, so S shards no longer cost S whole-tree
+    # walks and the tree walk itself is budget-bounded.
     before = source_snapshot(root)
     results = [scan_engine_shard(root, shard, llvm_root=llvm_root, timeout=timeout, compile_args=compile_args, engine=engine) for shard in shards]
     findings = [f for r in results for f in r["findings"]]
@@ -103,7 +117,7 @@ def scan_engine_manifest(root, manifest, *, max_shards=10000, llvm_root="/home/a
         finding["alert_id"] = f"AL-ENG-{index:06d}"
     bundles = [b for r in results for b in r["evidence_bundles"]]
     errors = [e for r in results for e in r.get("input_errors", [])]
-    if source_snapshot(root) != before or any(r["scan"]["source_snapshot_sha256"] != before for r in results):
+    if source_snapshot(root) != before:
         raise ValueError("source snapshot changed across engine shards")
     versions = {r['scan']['engine_version'] for r in results}
     scan = {"root": str(root), "engine": engine, "engine_version": next(iter(versions)) if len(versions) == 1 else 'unknown',
