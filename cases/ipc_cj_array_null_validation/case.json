@@ -1,0 +1,33 @@
+{
+  "schema": "wildtrace-candidate-case-0.2",
+  "case_id": "ipc-cj-array-null-validation",
+  "component": "foundation/communication/ipc/interfaces/innerkits/cj",
+  "status": "candidate_source_equivalent_reproduction",
+  "cwe_candidate": ["CWE-476"],
+  "confirmed_vulnerability": false,
+  "candidate": {
+    "source": "foundation/communication/ipc/interfaces/innerkits/cj/src/message_sequence_impl.cpp",
+    "lines": [367, 386],
+    "entry_point": "foundation/communication/ipc/interfaces/innerkits/cj/src/ipc_ffi.cpp:365-381",
+    "input_type": "foundation/communication/ipc/interfaces/innerkits/cj/include/ipc_utils_ffi.h:78-81",
+    "description": "CJ_WriteByteArray iterates value.data for a positive len without checking data for null."
+  },
+  "source_equivalent_result": ".cache/cj-array-equivalent/result.json",
+  "validation_evidence": {
+    "asan": "Clang 21.1.8 ASan/UBSan reports zero-page SEGV at value.data[i] for data=null,len=1",
+    "controls": "len=0 and one valid byte return normally",
+    "platform_binary_linked": false
+  },
+  "runtime_scope": {
+    "target_executed": false,
+    "open_harmony_binary_linked": false,
+    "network": false,
+    "production_data": false,
+    "model_invoked": false
+  },
+  "limitations": [
+    "The harness copies the loop and uses local stubs.",
+    "Supported CJ caller reachability and process privilege boundary remain unverified."
+  ],
+  "next_gate": "Link the FFI library in an isolated OpenHarmony build and verify the exported API returns CHECK_PARAM_ERROR instead of crashing."
+}
