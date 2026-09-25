@@ -4,9 +4,11 @@ WildTrace is a defensive, local-only source auditing project.
 
 ## Scope
 
-Authorized local source and fixed versions are in scope. Target execution is
-disabled by default. The project does not scan internet targets, probe remote
-services, generate weaponized payloads, or submit reports automatically.
+Authorized local source and fixed versions are in scope. Target execution is disabled by default. An authorized, isolated verification profile may enable execution of approved OpenHarmony code and PoC harnesses for a registered source scope and fixed environment. High-risk actions (crash/DoS, memory-safety triggering, privilege-boundary testing, external submission, or access to shared/real devices) require a separate written approval record. The project does not scan internet targets, probe remote services, generate weaponized payloads, or submit reports automatically.
+
+## Authorization and isolated validation
+
+Authorization changes the permitted test scope; it does not turn a candidate into a confirmed vulnerability. Every runtime validation must bind the source commit or snapshot, registered component scope, isolated environment/toolchain, PoC or harness digest, resource limits, and an approval record when the action is high risk. Results remain evidence for human review and must be labelled as such.
 
 ## Explicit local case validation
 

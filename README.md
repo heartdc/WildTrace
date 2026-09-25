@@ -17,6 +17,17 @@ python -m ohvul.cli .\path\to\authorized\source --output findings.json
 
 Rules are intentionally conservative candidates. They are not vulnerability verdicts.
 
+## Candidate triage
+
+To split a saved scan into deterministic manual-review lanes without invoking a model:
+
+```powershell
+python -m ohvul.candidate_triage --result findings.json --output triage.json
+python -m ohvul.candidate_triage --result findings.json --verify triage.json
+```
+
+The triage file retains every alert and records `confirmed_vulnerabilities: 0`; lane order is a worklist hint, not a severity or exploitability claim.
+
 ## Local Clang engine
 
 When an authorized WSL LLVM installation is available, run the adapter on a single file or an explicit relative file list:
