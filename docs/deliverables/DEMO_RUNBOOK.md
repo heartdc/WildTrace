@@ -21,9 +21,14 @@ python -m ohvul.candidate_triage --result .\demo-out\findings.json --verify .\de
 
 ## 真实案例片段
 
-可以展示 `cases/cjson_merge_alias` 或 IPC/KV 案例的证据文件，但必须在画面中标出验证层级：公开已知案例、源码等价 reproducer、真实库构建、产品可达性和官方接受是独立状态。当前 IPC/KV 案例不能演示为已链接 OpenHarmony 二进制。
+可以展示 `cases/cjson_merge_alias` 或 IPC/KV 案例的证据文件，但必须在画面中标出验证层级：公开已知案例、源码等价 reproducer、真实库构建、产品可达性和官方接受是独立状态。
+
+2026-09-25 已生成自定义 x86_64 配置的真实 `libcj_ipc_ffi.z.so`，可以展示构建退出码、ELF、摘要及导出符号。修复隔离基础运行库后，未修改的 IPC 库已通过对象创建/大小查询及正常字节数组写入—读回检查。展示时必须同时说明基础运行库补丁和不完整的产品服务环境，不展示为官方产品复现；KV 真实库未完成。历史案例中的等价基线与新构建证据分别说明，不能自动提升案例状态。证据目录和摘要见 `docs/analysis/REAL_BUILD_PROBE_20260925.md`。
 
 ## 录屏交付清单
+
+真实库正常调用的可复跑命令见 `tools/validation_cases/README_IPC_NORMAL.md`。
+该命令要求已准备好的隔离构建树和新证据目录；运行时补丁必须随演示说明。
 
 - 演示环境的 Python、工具链和源码提交摘要；
 - 每条命令及退出码；
