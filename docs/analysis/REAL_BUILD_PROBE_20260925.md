@@ -7,7 +7,7 @@
 ## 已核查证据
 
 - 源码根：`C:/Projects/OpenHarmony`。`.cache/oh-real-root-20260922` 的源码目录是 junction，真实路径会回到该原树，不能称为隔离副本。
-- 根 `.gn` 已按 `build/core/gn/dotfile.gn` 补齐；修改前的单行文件摘要保存在 `.cache/oh-real-root-20260922/gn.backup-20260925` 及同名 `.sha256`。当前补齐文件 SHA-256：`F4F622E59A1586E96A50BAC485320F58ADDFD2EA23C1DB6D1168DD221521A537`。
+- 探测期间曾按 `build/core/gn/dotfile.gn` 临时补齐根 `.gn`；修改前的单行文件摘要保存在 `.cache/oh-real-root-20260922/gn.backup-20260925` 及同名 `.sha256`。探测结束后已恢复原文件，当前原始 `.gn` 与备份 SHA-256 均为 `EC6E59E1FC6EF1B037A3D5670653240F82C07129FCA005F4595F73867ED78A84`。
 - 预置 GN：`prebuilts/build-tools/linux-x86/bin/gn`，ELF x86-64，GN `1.13.2 (127dd2a6d582)`；Ninja 文件存在，版本输出为 `1.13.2`。
 - `rk3568` PRELOAD 已生成到 `out/preloader/rk3568`，配置为 `target_cpu=arm`、`target_os=ohos`，parts 同时包含 `communication:ipc` 与 `distributeddatamgr:kv_store`。
 - IPC 目标只有 `support_jsapi=true` 才编译八个真实 CJ 源文件；否则只是空 shared library。
