@@ -6,34 +6,40 @@ import os
 import subprocess
 from .engine_adapter import run_wsl_clang_analyzer, run_wsl_clang_tidy, run_wsl_semgrep, engine_result_to_audit_result, merge_engine_result
 from .engine_profile import prepare_profile, recheck_profile, profile_compile_args
+from .source_scope import local_input_path, relative_path
 from .source_snapshot import source_snapshot
 
 
-def scan_engine_shard(root, shard, *, llvm_root="/home/airgap/llvm", timeout=300, compile_args=(), engine="clang"):
-    root = Path(root).resolve()
-    files = shard.get("files") if isinstance(shard, dict) else None
-    if not root.is_dir():
-        raise ValueError("source root must be an existing directory")
-    if engine not in ("clang", "clang-tidy"):
-        raise ValueError("unsupported per-file engine")
-    if not isinstance(files, list) or not files or any(not isinstance(x, str) or not x.strip() for x in files):
-        raise ValueError("invalid engine shard")
-    if len({os.path.normcase(str((root / path).resolve())) for path in files}) != len(files):
-        raise ValueError("duplicate files in engine shard")
-    before = source_snapshot(root)
-    normalized, errors, file_results = [], [], []
+def _resolve_shard(root, files, engine):
+    resolved, errors, records = [], [], []
+    for value in files:
+        try:
+            name = relative_path(value)
+            source = local_input_path(root, name)
+            if not source.is_file():
+                raise ValueError("file must be an explicit relative non-symlink path in root")
+            resolved.append((name, source))
+            records.append(None)
+        except (OSError, ValueError) as exc:
+            source = (root / value).resolve() if isinstance(value, str) else root
+            error = {"engine": engine, "status": "input_error", "source_file": str(source),
+                     "reason": str(exc)[:8192]}
+            errors.append(error)
+            records.append(error)
+    return resolved, errors, records
+
+
+def _scan_resolved(root, resolved, initial_records, errors, *, snapshot,
+                   llvm_root, timeout, compile_args, engine):
+    normalized, file_results = [], []
     attempted = succeeded = 0
     versions = set()
-    for relative in files:
-        path = Path(relative)
-        source = (root / path).resolve()
-        if (path.is_absolute() or path.drive or ".." in path.parts
-                or (root / path).is_symlink() or not source.is_relative_to(root) or not source.is_file()):
-            error = {"engine": engine, "status": "input_error", "source_file": str(source),
-                     "reason": "file must be an explicit relative non-symlink path in root"}
-            errors.append(error)
-            file_results.append(error)
+    iterator = iter(resolved)
+    for initial in initial_records:
+        if initial is not None:
+            file_results.append(initial)
             continue
+        _, source = next(iterator)
         attempted += 1
         try:
             if engine == "clang":
@@ -65,20 +71,62 @@ def scan_engine_shard(root, shard, *, llvm_root="/home/airgap/llvm", timeout=300
                               for finding in result["findings"])
         else:
             errors.append(record)
-    if source_snapshot(root) != before:
-        raise ValueError("source snapshot changed during engine scan")
     status = "completed" if not errors else ("partial" if succeeded else "input_error")
-    return engine_result_to_audit_result({
+    output = engine_result_to_audit_result({
         "engine": engine, "engine_version": next(iter(versions)) if len(versions) == 1 else "unknown",
         "source_root": str(root), "findings": normalized, "status": status,
-        "engine_runs": attempted, "files_requested": len(files), "files_attempted": attempted,
-        "files_scanned": succeeded, "files_failed": len(files) - succeeded, "files_skipped": 0,
+        "engine_runs": attempted, "files_requested": len(initial_records), "files_attempted": attempted,
+        "files_scanned": succeeded, "files_failed": len(initial_records) - succeeded, "files_skipped": 0,
         "input_errors": errors, "file_results": file_results,
-    }, source_root=root, source_snapshot_sha256=before)
+    }, source_root=root, source_snapshot_sha256=snapshot)
+    return output
 
 
-def scan_engine_manifest(root, manifest, *, max_shards=10000, llvm_root="/home/airgap/llvm", timeout=300, compile_args=(), engine="clang"):
+def scan_engine_shard(root, shard, *, llvm_root="/home/airgap/llvm", timeout=300, compile_args=(), engine="clang"):
     root = Path(root).resolve()
+    files = shard.get("files") if isinstance(shard, dict) else None
+    if not root.is_dir():
+        raise ValueError("source root must be an existing directory")
+    if engine not in ("clang", "clang-tidy"):
+        raise ValueError("unsupported per-file engine")
+    if not isinstance(files, list) or not files or any(not isinstance(x, str) or not x.strip() for x in files):
+        raise ValueError("invalid engine shard")
+    if len({os.path.normcase(str((root / path).resolve())) for path in files}) != len(files):
+        raise ValueError("duplicate files in engine shard")
+    resolved, errors, records = _resolve_shard(root, files, engine)
+    if not resolved:
+        return _scan_resolved(root, resolved, records, errors, snapshot=None,
+                              llvm_root=llvm_root, timeout=timeout,
+                              compile_args=compile_args, engine=engine)
+    before = source_snapshot(root)
+    output = _scan_resolved(root, resolved, records, errors, snapshot=before,
+                            llvm_root=llvm_root, timeout=timeout,
+                            compile_args=compile_args, engine=engine)
+    if source_snapshot(root) != before:
+        raise ValueError("source snapshot changed during engine scan")
+    return output
+
+
+def scan_engine_manifest(root, manifest, *, max_shards=10000, llvm_root="/home/airgap/llvm", timeout=300,
+                         compile_args=(), engine="clang"):
+    root = Path(root).resolve()
+    prepared = _prepare_manifest(root, manifest, max_shards, engine)
+    if not any(resolved for resolved, _, _ in prepared):
+        return _scan_manifest(root, prepared, None, llvm_root=llvm_root,
+                              timeout=timeout, compile_args=compile_args, engine=engine)
+    before = source_snapshot(root)
+    output = _scan_manifest(root, prepared, before, llvm_root=llvm_root,
+                            timeout=timeout, compile_args=compile_args, engine=engine)
+    if source_snapshot(root) != before:
+        raise ValueError("source snapshot changed across engine shards")
+    return output
+
+
+def _prepare_manifest(root, manifest, max_shards, engine):
+    if not root.is_dir():
+        raise ValueError("source root must be an existing directory")
+    if engine not in ("clang", "clang-tidy"):
+        raise ValueError("unsupported per-file engine")
     if not isinstance(manifest, dict) or manifest.get("root") != str(root):
         raise ValueError("manifest root mismatch")
     shards = manifest.get("shards")
@@ -93,8 +141,15 @@ def scan_engine_manifest(root, manifest, *, max_shards=10000, llvm_root="/home/a
         declared.extend(shard["files"])
     if len({os.path.normcase(str((root / path).resolve())) for path in declared}) != len(declared):
         raise ValueError("duplicate files across engine shards")
-    before = source_snapshot(root)
-    results = [scan_engine_shard(root, shard, llvm_root=llvm_root, timeout=timeout, compile_args=compile_args, engine=engine) for shard in shards]
+    return [_resolve_shard(root, shard["files"], engine) for shard in shards]
+
+
+def _scan_manifest(root, prepared, before, *, llvm_root, timeout, compile_args, engine):
+    # Only callers owning a before/after whole-tree check may reuse this digest.
+    results = [_scan_resolved(root, resolved, records, list(errors), snapshot=before,
+                              llvm_root=llvm_root, timeout=timeout,
+                              compile_args=compile_args, engine=engine)
+               for resolved, errors, records in prepared]
     findings = [f for r in results for f in r["findings"]]
     findings.sort(key=lambda f: (f.get("location", {}).get("file", ""),
                                 f.get("location", {}).get("line", 0),
@@ -103,11 +158,10 @@ def scan_engine_manifest(root, manifest, *, max_shards=10000, llvm_root="/home/a
         finding["alert_id"] = f"AL-ENG-{index:06d}"
     bundles = [b for r in results for b in r["evidence_bundles"]]
     errors = [e for r in results for e in r.get("input_errors", [])]
-    if source_snapshot(root) != before or any(r["scan"]["source_snapshot_sha256"] != before for r in results):
-        raise ValueError("source snapshot changed across engine shards")
     versions = {r['scan']['engine_version'] for r in results}
-    scan = {"root": str(root), "engine": engine, "engine_version": next(iter(versions)) if len(versions) == 1 else 'unknown',
-            "source_snapshot_sha256": before}
+    scan = {"root": str(root), "engine": engine, "engine_version": next(iter(versions)) if len(versions) == 1 else 'unknown'}
+    if before is not None:
+        scan["source_snapshot_sha256"] = before
     for field in ("files_requested", "files_attempted", "files_scanned", "files_failed", "files_skipped"):
         scan[field] = sum(r["scan"][field] for r in results)
     output = {"schema_version": "0.3", "scan": scan, "findings": findings, "evidence_bundles": bundles,
@@ -128,12 +182,15 @@ def scan_engine_profile(root, profile_path, *, max_shards=10000, llvm_root="/hom
     rule_files = profile.get("semgrep_rule_files", [])
     if "semgrep" in profile["engines"] and not rule_files:
         raise ValueError("selected Semgrep requires explicit local rule files")
-    before = source_snapshot(root)
     manifest = {"root": str(root), "shards": [{"files": profile["source_files"]}]}
+    prepared = {engine: _prepare_manifest(root, manifest, max_shards, engine)
+                for selected, engine in (("clang-static-analyzer", "clang"), ("clang-tidy", "clang-tidy"))
+                if selected in profile["engines"]}
+    before = source_snapshot(root)
     result = None
     for selected, engine in (("clang-static-analyzer", "clang"), ("clang-tidy", "clang-tidy")):
         if selected in profile["engines"]:
-            part = scan_engine_manifest(root, manifest, max_shards=max_shards,
+            part = _scan_manifest(root, prepared[engine], before,
                                        llvm_root=llvm_root, timeout=timeout, engine=engine,
                                        compile_args=profile_compile_args(profile, root))
             result = part if result is None else merge_engine_result(result, part, source_root=root)

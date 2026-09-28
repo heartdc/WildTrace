@@ -1,0 +1,39 @@
+{
+  "schema": "wildtrace-candidate-case-0.2",
+  "case_id": "kv-ffi-array-validation",
+  "component": "foundation/distributeddatamgr/kv_store",
+  "status": "candidate_source_equivalent_reproduction",
+  "cwe_candidate": [
+    "CWE-476",
+    "CWE-125"
+  ],
+  "confirmed_vulnerability": false,
+  "candidate": {
+    "source": "foundation/distributeddatamgr/kv_store/frameworks/cj/src/distributed_kv_store_impl.cpp",
+    "lines": [
+      373,
+      378
+    ],
+    "entry_point": "foundation/distributeddatamgr/kv_store/frameworks/cj/src/distributed_kv_store_ffi.cpp:135-142",
+    "input_type": "foundation/distributeddatamgr/kv_store/frameworks/cj/include/distributed_kv_store_impl.h:107-110",
+    "description": "CArrEntry.size controls a loop that dereferences CArrEntry.head without checking negative/positive bounds or null head."
+  },
+  "source_equivalent_result": ".cache/kv-ffi-equivalent/result.json",
+  "runtime_scope": {
+    "target_executed": false,
+    "open_harmony_binary_linked": false,
+    "network": false,
+    "production_data": false,
+    "model_invoked": false
+  },
+  "limitations": [
+    "The harness copies the conversion function and uses local type stubs.",
+    "Windows access violation is not a platform vulnerability confirmation.",
+    "FFI caller reachability and process privilege boundary remain unverified."
+  ],
+  "next_gate": "Build or obtain a complete OpenHarmony FFI library and run the malformed input cases in an isolated process.",
+  "validation_evidence": {
+    "asan": "WSL Clang 21.1.8; zero-page SEGV for null head in both conversion paths; controls normal",
+    "platform_binary_linked": false
+  }
+}
