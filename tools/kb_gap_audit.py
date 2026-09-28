@@ -154,6 +154,12 @@ def collect_product_cves(cvelist_root: Path, product: str, since_year: int):
 
 
 def cve_grep(repo: Path, cve_id: str) -> list:
+    """L1 backport evidence: commit messages AND repo-root patch files.
+
+    Some OH component repos (e.g. third_party_libxml2) carry backports as
+    in-tree *.patch files applied by BUILD.gn rather than commits; a
+    filename match in the root tree counts as evidence (tracked patch
+    files are applied by the build)."""
     out = _git(repo, "log", "--all", "-i", "--format=%h%x00%cI%x00%s",
                f"--grep={cve_id}")
     rows = []
@@ -163,6 +169,14 @@ def cve_grep(repo: Path, cve_id: str) -> list:
         parts = line.split("\x00", 2)
         rows.append({"sha": parts[0], "date": parts[1][:10],
                      "subject": parts[2][:160] if len(parts) > 2 else ""})
+    tree = _git(repo, "ls-tree", "--name-only", "HEAD")
+    suffix = cve_id.split("-")[-1]
+    for name in tree.splitlines():
+        base = name.strip()
+        if base.endswith(".patch") and (cve_id.lower() in base.lower()
+                                        or "-" + suffix + "-" in base):
+            rows.append({"sha": "patch-file", "date": "",
+                         "subject": base[:160]})
     return rows
 
 
