@@ -21,6 +21,7 @@ from .engine_profile import prepare_profile, recheck_profile, profile_compile_ar
 from .review_queue import checked_path, read_bounded, decode_json, exclusive_json
 from .source_scope import relative_paths, local_input_path
 from .source_snapshot import source_snapshot
+from .toolchain import resolve_clang_bin, wsl_prefix
 from .report.schema import build_audit_report, validate_report_against_result
 from .verify import validate_result
 
@@ -29,17 +30,16 @@ MAX_FILES = 128
 STDERR_LIMIT = 256 * 1024
 RAW_AST_LIMIT = 256 * 1024 * 1024
 MAX_JSON_LINE = 2 * 1024 * 1024
-COMPILER = '/home/airgap/llvm/bin/clang'
 
 
 def _command(arguments, timeout):
-    prefix = ['wsl.exe', '-d', 'Ubuntu', '--'] if os.name == 'nt' else []
+    prefix = wsl_prefix()
     # Fixed executable and wrapper, no shell. Driver config discovery and common
     # implicit include-path injections are disabled. No command from input is run.
     return prefix + ['/usr/bin/timeout', '--kill-after=2s', str(timeout) + 's',
                      '/usr/bin/env', '-u', 'CPATH', '-u', 'C_INCLUDE_PATH',
                      '-u', 'CPLUS_INCLUDE_PATH', '-u', 'OBJC_INCLUDE_PATH',
-                     '-u', 'CCC_OVERRIDE_OPTIONS', COMPILER, '--no-default-config', *arguments]
+                     '-u', 'CCC_OVERRIDE_OPTIONS', resolve_clang_bin(), '--no-default-config', *arguments]
 
 
 def _invoke(command, timeout, *, output_limit=MAX_AST_BYTES, compact_json=False, ast_source=None, ast_file=None):

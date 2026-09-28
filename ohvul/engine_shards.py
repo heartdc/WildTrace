@@ -82,7 +82,7 @@ def _scan_resolved(root, resolved, initial_records, errors, *, snapshot,
     return output
 
 
-def scan_engine_shard(root, shard, *, llvm_root="/home/airgap/llvm", timeout=300, compile_args=(), engine="clang"):
+def scan_engine_shard(root, shard, *, llvm_root=None, timeout=300, compile_args=(), engine="clang"):
     root = Path(root).resolve()
     files = shard.get("files") if isinstance(shard, dict) else None
     if not root.is_dir():
@@ -107,7 +107,7 @@ def scan_engine_shard(root, shard, *, llvm_root="/home/airgap/llvm", timeout=300
     return output
 
 
-def scan_engine_manifest(root, manifest, *, max_shards=10000, llvm_root="/home/airgap/llvm", timeout=300,
+def scan_engine_manifest(root, manifest, *, max_shards=10000, llvm_root=None, timeout=300,
                          compile_args=(), engine="clang"):
     root = Path(root).resolve()
     prepared = _prepare_manifest(root, manifest, max_shards, engine)
@@ -173,7 +173,7 @@ def _scan_manifest(root, prepared, before, *, llvm_root, timeout, compile_args, 
     return output
 
 
-def scan_engine_profile(root, profile_path, *, max_shards=10000, llvm_root="/home/airgap/llvm", timeout=300):
+def scan_engine_profile(root, profile_path, *, max_shards=10000, llvm_root=None, timeout=300):
     """Run the files declared by a validated component profile."""
     root = Path(root).resolve()
     profile, validation = prepare_profile(Path(profile_path), root)

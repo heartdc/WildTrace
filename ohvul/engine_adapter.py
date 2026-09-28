@@ -14,6 +14,8 @@ import subprocess
 import plistlib
 import tempfile
 import uuid
+
+from .toolchain import resolve_llvm_root, resolve_semgrep_bin, wsl_prefix
 import re
 from pathlib import Path, PureWindowsPath
 from ohvul.domain.evidence import make_bundle
@@ -553,7 +555,7 @@ def _record_execution(result, command, completed, *, report=None):
 
 
 def run_wsl_clang_analyzer(source_file: Path, source_root: Path, *,
-                           llvm_root: str = "/home/airgap/llvm",
+                           llvm_root: str | None = None,
                            compile_args: tuple[str, ...] = (),
                            timeout: int = 300) -> dict:
     """Run Clang Static Analyzer in WSL against one local source file.
@@ -561,6 +563,7 @@ def run_wsl_clang_analyzer(source_file: Path, source_root: Path, *,
     Compilation failures are returned as ``input_error`` records so callers
     cannot confuse an unusable build context with a clean scan.
     """
+    llvm_root = resolve_llvm_root() if llvm_root is None else llvm_root
     source_file = Path(source_file).resolve()
     source_root = Path(source_root).resolve()
     if not source_file.is_file() or not source_file.is_relative_to(source_root):
@@ -572,7 +575,7 @@ def run_wsl_clang_analyzer(source_file: Path, source_root: Path, *,
     try:
         if not isinstance(compile_args, tuple) or not all(isinstance(x, str) for x in compile_args):
             raise ValueError("compile_args must be a tuple of strings")
-        command = ["wsl.exe", "-d", "Ubuntu", "--", llvm_root + "/bin/clang",
+        command = [*wsl_prefix(), llvm_root + "/bin/clang",
                    "--analyze", "-Xanalyzer", "-analyzer-output=plist",
                    *compile_args, windows_to_wsl_path(source_file), "-o", windows_to_wsl_path(output)]
         completed = subprocess.run(command, capture_output=True, text=True,
@@ -599,10 +602,11 @@ def run_wsl_clang_analyzer(source_file: Path, source_root: Path, *,
 
 
 def run_wsl_clang_tidy(source_file: Path, source_root: Path, *,
-                       llvm_root: str = "/home/airgap/llvm",
+                       llvm_root: str | None = None,
                        compile_args: tuple[str, ...] = (),
                        checks: str = "-*,clang-analyzer-*", timeout: int = 300) -> dict:
     """Run clang-tidy in WSL for one local source file."""
+    llvm_root = resolve_llvm_root() if llvm_root is None else llvm_root
     source_file, source_root = Path(source_file).resolve(), Path(source_root).resolve()
     if not source_file.is_file() or not source_file.is_relative_to(source_root):
         raise ValueError("source file must be inside source root")
@@ -613,7 +617,7 @@ def run_wsl_clang_tidy(source_file: Path, source_root: Path, *,
     if not isinstance(compile_args, tuple) or not all(isinstance(x, str) for x in compile_args):
         raise ValueError('compile_args must be a tuple of strings')
     executable = llvm_root + '/bin/clang-tidy'
-    command = ["wsl.exe", "-d", "Ubuntu", "--", executable,
+    command = [*wsl_prefix(), executable,
                windows_to_wsl_path(source_file), "-checks=" + checks, "--", *compile_args]
     try:
         completed = subprocess.run(command, capture_output=True, text=True,
@@ -632,9 +636,10 @@ def run_wsl_clang_tidy(source_file: Path, source_root: Path, *,
 
 
 def run_wsl_semgrep(source_root: Path, rule_file: Path, relative_files: tuple[str, ...], *,
-                    semgrep_root: str = "/home/airgap/semgrep-venv/bin/semgrep",
+                    semgrep_root: str | None = None,
                     timeout: int = 300) -> dict:
     """Run Semgrep with a local rule file and explicit local file list."""
+    semgrep_root = resolve_semgrep_bin() if semgrep_root is None else semgrep_root
     root, rule_file = Path(source_root).resolve(), Path(rule_file).resolve()
     if not rule_file.is_file() or not rule_file.is_relative_to(root):
         raise ValueError("Semgrep rule file must be inside source root")

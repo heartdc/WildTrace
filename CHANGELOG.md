@@ -1,3 +1,9 @@
+# 2026-09-28（追加：工具链预检 + 比赛报告组装器）
+
+- `ohvul/toolchain.py`：LLVM/semgrep 路径集中解析（`OHVUL_LLVM_BIN`/`OHVUL_LLVM_ROOT`/`OHVUL_SEMGREP_BIN` env 覆盖 → 内置默认，未设时行为不变），`python -m ohvul.toolchain_preflight` 以真实传输通道跑 `--version` 探针（required=clang/clang-tidy，optional=semgrep；WSL 桥条件化，修复审计 §89 的 `/home/airgap` 硬编码与 WSL 绑定）。compiler_analysis/engine_adapter/engine_shards/engine_cli 全部接线（None 哨兵解析）。测试 10 项。
+- `ohvul/competition_report.py`（审计 P1.7）：15 案 case.json 的防御性投影 → 比赛报告 JSON+Markdown（证据完整度六维矩阵、缺失维度显式列出、confirmed 只投影不推断）。测试 6 项。`docs/deliverables/VIDEO_SCRIPT.md`：演示分镜与录制前预检清单（衔接 DEMO_RUNBOOK 与新预检命令）。
+- 全量回归 864 项通过（4 项环境跳过）。
+
 # Changelog
 
 # 2026-09-28（auth fuzz 双靶收割 + PR 收敛）

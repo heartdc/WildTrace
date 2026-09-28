@@ -15,7 +15,8 @@ def main() -> int:
     parser.add_argument("--files-from", type=Path, help="UTF-8 file with one relative source path per line")
     parser.add_argument("--output", type=Path)
     parser.add_argument("--force", action="store_true", help="allow replacing an existing diagnostic output")
-    parser.add_argument("--llvm-root", default="/home/airgap/llvm")
+    parser.add_argument("--llvm-root", default=None,
+                        help="LLVM root; defaults to OHVUL_LLVM_ROOT or built-in")
     parser.add_argument("--timeout", type=int, default=300)
     parser.add_argument("--knowledge-base", type=Path)
     parser.add_argument("--component")
