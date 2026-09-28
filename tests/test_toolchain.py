@@ -114,11 +114,12 @@ class EngineWiringTests(unittest.TestCase):
 
     def test_engine_adapter_resolves_root_when_unset(self):
         from ohvul import engine_adapter
-        with patch.dict(os.environ, {'OHVUL_LLVM_ROOT': '/opt/fake-llvm'}, clear=False), \
-             patch.object(engine_adapter.subprocess, 'run') as run, \
-             patch.object(engine_adapter, '_tidy_version', return_value={'version': 'x'}):
-            run.return_value = subprocess.CompletedProcess(
-                [], 0, stdout='', stderr='')
+        with (patch.dict(os.environ, {'OHVUL_LLVM_ROOT': '/opt/fake-llvm'}, clear=False),
+             patch.object(engine_adapter, 'windows_to_wsl_path',
+                          side_effect=lambda path: str(path)),
+             patch.object(engine_adapter.subprocess, 'run') as run,
+             patch.object(engine_adapter, '_tidy_version', return_value={'version': 'x'})):
+            run.return_value = subprocess.CompletedProcess([], 0, stdout='', stderr='')
             with tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 source = root / 'a.c'
