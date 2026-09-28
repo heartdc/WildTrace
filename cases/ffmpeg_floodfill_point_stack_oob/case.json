@@ -25,5 +25,18 @@
   },
   "controls": [],
   "submission_materials": "D:/cve_data/submission_65705/",
-  "notes": "size-family member 4 of 4; runtime evidence for the family carried by hqdn3d/quirc"
+  "notes": "size-family member 4 of 4; runtime evidence for the family carried by hqdn3d/quirc",
+  "submission": {
+    "platform": "OpenHarmony 漏洞奖励计划 (https://bugbounty.openharmony.cn)",
+    "ticket": "OHSA26-092800126",
+    "submitted_at": "2026-09-28",
+    "account": "北辰522",
+    "status": "已提交",
+    "form": {
+      "type": "内存破坏与执行类 / 越界读写",
+      "repo": "third_party_ffmpeg",
+      "oh_version": "OpenHarmony-v7.0-Release（2026-08-21）",
+      "attachments": "附件包_CVE-2026-65705.zip, patch.diff, poc_floodfill.c, upstream_fix_24c322f.diff, 上游修复对照.txt"
+    }
+  }
 }

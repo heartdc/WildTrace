@@ -26,5 +26,19 @@
   },
   "controls": [],
   "submission_materials": "D:/cve_data/submission_52296/ (对照.txt, patch.diff = upstream verbatim applies clean, form draft, attachments zip)",
-  "notes": "ffmpeg gap batch case 5 of 5 gap_likely; 66038/70628 + 2 already_fixed re-checks still pending"
+  "notes": "ffmpeg gap batch case 5 of 5 gap_likely; 66038/70628 + 2 already_fixed re-checks still pending",
+  "submission": {
+    "platform": "OpenHarmony 漏洞奖励计划 (https://bugbounty.openharmony.cn)",
+    "ticket": "OHSA26-092819230",
+    "submitted_at": "2026-09-28",
+    "account": "北辰522",
+    "status": "已提交",
+    "form": {
+      "type": "内存破坏与执行类 / 越界读写",
+      "repo": "third_party_ffmpeg",
+      "oh_version": "OpenHarmony-v7.0-Release（2026-08-21）",
+      "attachments": "patch.diff, upstream_fix_23227a4.diff, 上游修复对照.txt, 附件包_CVE-2026-52296.zip"
+    },
+    "note": "名称字段表单异常存成代码仓名，已发工单评论补正（OHSA26-092819230）"
+  }
 }

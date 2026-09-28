@@ -25,5 +25,18 @@
   },
   "controls": [],
   "submission_materials": "D:/cve_data/submission_66037/",
-  "notes": "ffmpeg gap batch; surfaced the batch tool's generic-line false-positive mode (now fixed in l4_batch_ffmpeg.py)"
+  "notes": "ffmpeg gap batch; surfaced the batch tool's generic-line false-positive mode (now fixed in l4_batch_ffmpeg.py)",
+  "submission": {
+    "platform": "OpenHarmony 漏洞奖励计划 (https://bugbounty.openharmony.cn)",
+    "ticket": "OHSA26-092835171",
+    "submitted_at": "2026-09-28",
+    "account": "北辰522",
+    "status": "已提交",
+    "form": {
+      "type": "拒绝服务与配置类 / 系统拒绝服务 (DoS)",
+      "repo": "third_party_ffmpeg",
+      "oh_version": "OpenHarmony-v7.0-Release（2026-08-21）",
+      "attachments": "附件包_CVE-2026-66037.zip, patch.diff, upstream_fix_8670835.diff, 上游修复对照.txt"
+    }
+  }
 }

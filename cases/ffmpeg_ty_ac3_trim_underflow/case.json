@@ -25,8 +25,24 @@
     "runtime_status": "not_run"
   },
   "controls": [
-    {"name": "guarded-sibling", "desc": "ty.c:640 identical trim is protected by pkt->size > AC3_PKT_LENGTH; must remain untouched in backport"}
+    {
+      "name": "guarded-sibling",
+      "desc": "ty.c:640 identical trim is protected by pkt->size > AC3_PKT_LENGTH; must remain untouched in backport"
+    }
   ],
   "submission_materials": "D:/cve_data/submission_65704/ (对照.txt, patch.diff = upstream verbatim applies clean, form draft, attachments zip)",
-  "notes": "ffmpeg gap batch case 4 of 5 gap_likely; 52296/66038/70628 still pending manual L4"
+  "notes": "ffmpeg gap batch case 4 of 5 gap_likely; 52296/66038/70628 still pending manual L4",
+  "submission": {
+    "platform": "OpenHarmony 漏洞奖励计划 (https://bugbounty.openharmony.cn)",
+    "ticket": "OHSA26-092855121",
+    "submitted_at": "2026-09-28",
+    "account": "北辰522",
+    "status": "已提交",
+    "form": {
+      "type": "内存破坏与执行类 / 越界读写",
+      "repo": "third_party_ffmpeg",
+      "oh_version": "OpenHarmony-v7.0-Release（2026-08-21）",
+      "attachments": "附件包_CVE-2026-65704.zip, patch.diff, upstream_fix_de771b.diff, 上游修复对照.txt"
+    }
+  }
 }

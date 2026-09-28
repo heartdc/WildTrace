@@ -25,5 +25,18 @@
   },
   "controls": [],
   "submission_materials": "D:/cve_data/submission_65706/",
-  "notes": "size-family member; closes the last of the 21-gap ffmpeg batch — all 21 now have case records or batch-triage evidence"
+  "notes": "size-family member; closes the last of the 21-gap ffmpeg batch — all 21 now have case records or batch-triage evidence",
+  "submission": {
+    "platform": "OpenHarmony 漏洞奖励计划 (https://bugbounty.openharmony.cn)",
+    "ticket": "OHSA26-092853125",
+    "submitted_at": "2026-09-28",
+    "account": "北辰522",
+    "status": "已提交",
+    "form": {
+      "type": "内存破坏与执行类 / 越界读写",
+      "repo": "third_party_ffmpeg",
+      "oh_version": "OpenHarmony-v7.0-Release（2026-08-21）",
+      "attachments": "附件包_CVE-2026-65706.zip, patch.diff, upstream_fix_a7e38b6.diff, 上游修复对照.txt"
+    }
+  }
 }

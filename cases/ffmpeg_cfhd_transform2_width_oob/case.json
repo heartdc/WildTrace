@@ -26,5 +26,18 @@
   },
   "controls": [],
   "submission_materials": "D:/cve_data/submission_70632/",
-  "notes": "ffmpeg gap batch; second already_fixed false-positive root cause (stale ref ordering) fixed in l4_batch_ffmpeg.py"
+  "notes": "ffmpeg gap batch; second already_fixed false-positive root cause (stale ref ordering) fixed in l4_batch_ffmpeg.py",
+  "submission": {
+    "platform": "OpenHarmony 漏洞奖励计划 (https://bugbounty.openharmony.cn)",
+    "ticket": "OHSA26-092843135",
+    "submitted_at": "2026-09-28",
+    "account": "北辰522",
+    "status": "已提交",
+    "form": {
+      "type": "内存破坏与执行类 / 越界读写",
+      "repo": "third_party_ffmpeg",
+      "oh_version": "OpenHarmony-v7.0-Release（2026-08-21）",
+      "attachments": "附件包_CVE-2026-70632.zip, patch.diff, upstream_fix2_16b2049.diff, upstream_fix_db05df9.diff, 上游修复对照.txt"
+    }
+  }
 }

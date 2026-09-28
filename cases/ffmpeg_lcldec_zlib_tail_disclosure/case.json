@@ -26,5 +26,18 @@
   },
   "controls": [],
   "submission_materials": "D:/cve_data/submission_66038/ (对照.txt, patch.diff = upstream verbatim applies clean, upstream_fix_e7cbfd1.diff, form draft)",
-  "notes": "closes the ffmpeg gap batch: 66038 was one of the two pending manual-L4 candidates noted in ffmpeg_wmaenc/ffmpeg_ty cases (2026-09-22)"
+  "notes": "closes the ffmpeg gap batch: 66038 was one of the two pending manual-L4 candidates noted in ffmpeg_wmaenc/ffmpeg_ty cases (2026-09-22)",
+  "submission": {
+    "platform": "OpenHarmony 漏洞奖励计划 (https://bugbounty.openharmony.cn)",
+    "ticket": "OHSA26-092831132",
+    "submitted_at": "2026-09-28",
+    "account": "北辰522",
+    "status": "已提交",
+    "form": {
+      "type": "信息与隐私泄露类 / 敏感信息泄露",
+      "repo": "third_party_ffmpeg",
+      "oh_version": "OpenHarmony-v7.0-Release（2026-08-21）",
+      "attachments": "附件包_CVE-66038.zip, patch.diff, upstream_fix_e7cbfd1.diff, 上游修复对照.txt"
+    }
+  }
 }

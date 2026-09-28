@@ -25,5 +25,18 @@
   },
   "controls": [],
   "submission_materials": "D:/cve_data/submission_70629/",
-  "notes": "ffmpeg gap batch; same CWE-908 family as CVE-2026-66038 (lcldec) — the uninit-tail pattern is now a confirmed recurring family in this component"
+  "notes": "ffmpeg gap batch; same CWE-908 family as CVE-2026-66038 (lcldec) — the uninit-tail pattern is now a confirmed recurring family in this component",
+  "submission": {
+    "platform": "OpenHarmony 漏洞奖励计划 (https://bugbounty.openharmony.cn)",
+    "ticket": "OHSA26-092850129",
+    "submitted_at": "2026-09-28",
+    "account": "北辰522",
+    "status": "已提交",
+    "form": {
+      "type": "信息与隐私泄露类 / 敏感信息泄露",
+      "repo": "third_party_ffmpeg",
+      "oh_version": "OpenHarmony-v7.0-Release（2026-08-21）",
+      "attachments": "附件包_CVE-2026-70629.zip, patch.diff, upstream_fix2_a5fe21a.diff, upstream_fix_cd1f545.diff, 上游修复对照.txt"
+    }
+  }
 }
