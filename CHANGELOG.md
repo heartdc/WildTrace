@@ -1,3 +1,8 @@
+# 2026-09-28（追加：提交队列单与台账 18 例）
+
+- `docs/status/SUBMISSION_QUEUE_20260928.md`：待提交 12 例（表单+补丁+对照+附件 zip 全部齐装）、已提交 3 例跟进清单、不提交项口径（cjson 演示用途、49795 残包、IPC/KV 待平台验证）。
+- 案例台账更新至 18 例（并入 #51 的 gap-batch-2 三案）；quirc 案 case.json 回填 submission_materials。
+
 # 2026-09-28（追加：工具链预检 + 比赛报告组装器）
 
 - `ohvul/toolchain.py`：LLVM/semgrep 路径集中解析（`OHVUL_LLVM_BIN`/`OHVUL_LLVM_ROOT`/`OHVUL_SEMGREP_BIN` env 覆盖 → 内置默认，未设时行为不变），`python -m ohvul.toolchain_preflight` 以真实传输通道跑 `--version` 探针（required=clang/clang-tidy，optional=semgrep；WSL 桥条件化，修复审计 §89 的 `/home/airgap` 硬编码与 WSL 绑定）。compiler_analysis/engine_adapter/engine_shards/engine_cli 全部接线（None 哨兵解析）。测试 10 项。
