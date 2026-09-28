@@ -1,3 +1,9 @@
+## 当前验收状态（2026-09-28 追加，工具链预检与报告组装器）
+
+- 审计 §89 落地：工具链路径 env 化 + `ohvul.toolchain_preflight`（真实通道探针，required/optional 分级）；engine 传输桥按平台条件化。
+- 审计 P1.7 落地：`ohvul.competition_report` 组装器（异构 case.json 防御性投影、完整度矩阵、confirmed 零推断纪律）+ `docs/deliverables/VIDEO_SCRIPT.md` 演示脚本。
+- 全量回归 864 项通过。交付缺口现状：视频未录、干净环境独立复跑未做、平台级案例闭环（IPC/KV next_gate）待原构建机执行。
+
 ## 当前验收状态（2026-09-28，auth fuzz 双靶收割 + PR 收敛）
 
 - **auth fuzz 双靶收割完毕**：T3 约 1.77 亿执行（cov 3024/ft 14474）、T4 约 2.71 亿执行（cov 2676/ft 12359），累计约 4.5 亿次执行**零崩溃零泄漏**；覆盖判读发现 -O1 内联假象（外部链接单调用点函数 per-symbol 计数误报未覆盖，已插针证伪），方法学规范与 stage-2 暂缓决策见 `docs/analysis/AUTH_FUZZ_HARVEST_20260928.md`（优先级让位于审计 P1.6：IPC/KV 平台级隔离构建验证）。语料与一键重建保留于 ~/fa。
