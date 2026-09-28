@@ -1,3 +1,10 @@
+## 当前验收状态（2026-09-28，auth fuzz 双靶收割 + PR 收敛）
+
+- **auth fuzz 双靶收割完毕**：T3 约 1.77 亿执行（cov 3024/ft 14474）、T4 约 2.71 亿执行（cov 2676/ft 12359），累计约 4.5 亿次执行**零崩溃零泄漏**；覆盖判读发现 -O1 内联假象（外部链接单调用点函数 per-symbol 计数误报未覆盖，已插针证伪），方法学规范与 stage-2 暂缓决策见 `docs/analysis/AUTH_FUZZ_HARVEST_20260928.md`（优先级让位于审计 P1.6：IPC/KV 平台级隔离构建验证）。语料与一键重建保留于 ~/fa。
+- **PR 收敛**：#54（施工图）、#55（审计机全线工作，本机评审 APPROVED：五项审计问题逐项核验）、#56（台账 15 案 + 本机文档面，Git Data API 构造）、#53（case batch）已合并；master 由 ed32631 推进至 22179b1。遗留 #51/#52 待重叠核对。
+- cjson 案 runtime_status 回填 library_level_reproduced（附 09-16 运行矩阵证据指针）；案例台账漂移仅剩 nvdec 提交口径一条待所有者确认。
+- 漏洞结论口径不变：确认产品漏洞数 0。
+
 ## 当前验收状态（2026-09-24，auth fuzz 双靶挂机 + 审计 P1-1/P0.2 落地）
 
 - **第四靶建成**：`UnpackDeviceInfoMessage`（auth_session_json.c:3388）全链 harness——`fuzz_authdeinfo`。约 25 函数逐字原样 + 全量 NodeInfo（三头链）+ 设备类型转换族；base64 为声明式重实现（mbedtls 契约对齐，偏差已声明）；6 枚种子零崩溃（基线 cov 1422/ft 2496），120s 快测 2,076,080 runs 零崩溃（约 17k exec/s），8h 长跑与 T3 并行挂机。头号嫌疑族（BtV1 `OptInt64` 8 字节写 32 位 netCapacity）种子已构造。

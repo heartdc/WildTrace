@@ -1,5 +1,10 @@
 # Changelog
 
+# 2026-09-28（auth fuzz 双靶收割 + PR 收敛）
+
+- 双靶收割：T3 约 1.77 亿 / T4 约 2.71 亿执行零崩溃零泄漏（cov 3024/2676，语料 21800+16366 保留）。覆盖判读方法学发现：-O1 内联使外部链接单调用点函数在 `-print_coverage` 中假性 UNCOVERED（插针证伪尾段可达）；收割规范已写入 `docs/analysis/AUTH_FUZZ_HARVEST_20260928.md`，stage-2 暂缓、优先级转入 P1.6 案例闭环。
+- PR #54/#55/#56/#53 合并（#55 经五项审计问题逐项核验评审；#56 经 Git Data API 构造——本机 github.com:443 仍不可达）；cjson 案 runtime_status 回填 library_level_reproduced。
+
 # 2026-09-24（第四靶建成 + 案例台账）
 
 ## CVE 挖掘 P0-2 第四靶施工完成（dsoftbus auth DeviceInfo 链）
