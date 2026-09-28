@@ -1,3 +1,9 @@
+# 2026-09-28（追加四：CJ FFI 数组转换族清扫——第一线）
+
+- 新发现线开工：manifest 496 仓枚举 → 63 仓有 CJ 源面 → `tools/cjffi_scan.py`（类型自举 26 种 + 函数级模式匹配）扫 491 文件 → 37 条 lead（32 条 NULL+长度双缺）；扫描器独立复现已知 KV 候选作为内置验证。
+- 分层：Tier A = kv_store 同文件 3 个同族转换；Tier A- = av_session 9 个 Inner* 转换（导出链 FfiMultimediaAVSessionController* 已闭合，含负 size 向量迭代器下溢 UB 形态）；Tier B = account_os_account/udmf/av_session 三仓同名克隆族；详见 `docs/analysis/CJFFI_SWEEP_20260928.md`。
+- 下一步：Tier A/A- 人工 L4 补完 → 对侧真库验证 → 新发现工单。
+
 # 2026-09-28（追加三：IPC/KV 真库验证调用器与任务书）
 
 - `tools/validation_cases/` 新增 `ipc_null_bytearray.c` / `kv_null_entry.c`（ABI 取自 IPC edc6f3ab 头与 kv_store master FFI 头；调用器不含目标实现拷贝）与 `run_malformed.sh`（沿用 run_ipc_normal.sh 环境发现；运行退出码非零记录为观察而非失败）。
