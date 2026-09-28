@@ -12,7 +12,7 @@
   "public_cve_reference": "CVE-2026-87933",
   "discovery_method": "manual source review informed by public upstream report",
   "new_discovery": false,
-  "runtime_status": "not_run",
+  "runtime_status": "library_level_reproduced",
   "product_reachability": "not_established",
   "cvss_for_openharmony": null,
   "evidence_locations": {
@@ -28,5 +28,16 @@
     "https://vuldb.com/cve/CVE-2026-87933"
   ],
   "scope": "Non-object patch aliases a target-owned subtree or the target itself. Patch only fixes that branch; object-alias cases and product callers need separate review.",
-  "important_control": "Independent target and patch must work on original source. A caller deleting the consumed target twice is a harness defect, not accepted as library proof."
+  "important_control": "Independent target and patch must work on original source. A caller deleting the consumed target twice is a harness defect, not accepted as library proof.",
+  "runtime_evidence": {
+    "what": "bubblewrap 执行矩阵 26/26（原版/独立副本观察到预期库级 UAF，补丁与控制组通过）+ 第二复现人独立复现 26/26",
+    "when": "2026-09-16",
+    "records": [
+      "CHANGELOG.md 2026-09-16 节",
+      "docs/analysis/CJSON_RUNTIME_CASE_20260915.md",
+      "docs/analysis/COLLABORATIVE_DELIVERY_AUDIT_20260915.md"
+    ],
+    "scope": "库级（cJSON 源码副本 + bubblewrap），非 OpenHarmony 产品二进制",
+    "product_binary_linked": false
+  }
 }
