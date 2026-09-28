@@ -4,8 +4,8 @@
 harness、真实库复现、产品影响、已提交、官方接受；分别记录，允许未知。把人工发现、
 已知漏洞回验和自动检出分开"）。
 
-数据源：`cases/*/case.json` 为准（15 例：本机 13 例 @ `12ba819` + PR #55 并入的
-IPC/KV 两例 @ master `c49fa31`）；文档/CHANGELOG 与 case.json 冲突处逐条标注
+数据源：`cases/*/case.json` 为准（18 例：13 例 @ `12ba819` + PR #55 的 IPC/KV 两例 +
+PR #51 的 gap-batch-2 三例 66037/70629/70632；2026-09-28 更新）；文档/CHANGELOG 与 case.json 冲突处逐条标注
 （见 §3 漂移记录）。产品可达性全部未建立，确认产品漏洞数 0。
 更新（2026-09-28）：IPC/KV 两案经 PR #55 落库，双机工作集分叉经 #54/#55 合并收敛。
 
@@ -21,7 +21,7 @@ IPC/KV 两例 @ master `c49fa31`）；文档/CHANGELOG 与 case.json 冲突处�
 | curl-psl-supercookie-tailmatch | CVE-2026-82209 | CWE-201 | curl | ✅ 同上 | not_run | not_established | — | OHSA26-092226014（09-21） | 未知 |
 | ffmpeg-nvdec-sep-ref-doublefree | CVE-2026-64832 | CWE-415 | ffmpeg | ✅ 四信号+L4 | not_run（需 NVDEC GPU） | 未记录 | ✅ | OHSA26-092224773（09-21，见漂移#1） | 未知 |
 | ffmpeg-hqdn3d-dynamic-size-oob | CVE-2026-66036 | CWE-122 | ffmpeg | ✅ 批量+人工 L4 | ✅ WSL 运行时对照通过（P0_EXECUTION 09-22；case.json 无 runtime 字段，漂移#3 同类） | 未记录 | ✅ | 未提交 | — |
-| ffmpeg-quirc-resize-oob | CVE-2026-66041 | CWE-787 | ffmpeg | ✅ 四信号+L4 | ✅ WSL 运行时对照通过（同上） | 未记录 | ❌（审计机已有嵌套提交记录，见漂移#3） | 未提交（本机记录） | — |
+| ffmpeg-quirc-resize-oob | CVE-2026-66041 | CWE-787 | ffmpeg | ✅ 四信号+L4 | ✅ WSL 运行时对照通过（同上） | 未记录 | ✅ `submission_66041`（材料齐装；提交前核对平台无重复工单，见漂移#3） | 未提交 | — |
 | ffmpeg-lcldec-zlib-tail-disclosure | CVE-2026-66038 | CWE-908 | ffmpeg | ✅ 批量+人工 L4 | not_run | 未记录 | ✅ | 未提交 | — |
 | ffmpeg-dvbsub-parser-capacity-overflow | CVE-2026-70628 | CWE-190→787 | ffmpeg | ✅（含参考提交勘误） | not_run | 未记录 | ✅ | 未提交 | — |
 | ffmpeg-ty-ac3-trim-underflow | CVE-2026-65704 | CWE-191→787 | ffmpeg | ✅ | not_run | 未记录 | ✅ | 未提交 | — |
@@ -31,6 +31,9 @@ IPC/KV 两例 @ master `c49fa31`）；文档/CHANGELOG 与 case.json 冲突处�
 | openssl-ocb-oneshot-iv-discard | CVE-2026-45445 | CWE-325 | openssl | ✅ | not_run | 未记录 | ✅ | 未提交 | — |
 | ipc-cj-array-null-validation | —（无 CVE，new candidate） | CWE-476 | OH IPC（cj 侧） | ✅ 源级定位 | ✅ 等价复现（ASan 零页 SEGV；len=0/正常字节对照组通过） | 平台二进制未链接（next_gate=隔离构建验证导出 API） | — | 未提交 | — |
 | kv-ffi-array-validation | —（无 CVE，new candidate） | CWE-476/125 | OH kv_store（cj 侧） | ✅ 源级定位 | ✅ 等价复现（WSL ASan；对照组通过） | 平台二进制未链接（next_gate=完整 FFI 库隔离进程复跑） | — | 未提交 | — |
+| ffmpeg-iamf-count-label-dos | CVE-2026-66037 | CWE-400 | ffmpeg | ✅（含参考提交勘误：初判 already_fixed 后纠正） | not_run | 未记录 | ✅ `submission_66037` | 未提交 | — |
+| ffmpeg-rscc-short-deflate-uninit-leak | CVE-2026-70629 | CWE-908 | ffmpeg | ✅（newest-ref 勘误：2015 引入提交） | not_run | 未记录 | ✅ `submission_70629` | 未提交 | — |
+| ffmpeg-cfhd-transform2-width-oob | CVE-2026-70632 | CWE-787 | ffmpeg | ✅ | not_run | 未记录 | ✅ `submission_70632` | 未提交 | — |
 
 材料位置：提交工单材料在 `D:/cve_data/submission_*`（审计 P0.5 已指出绝对路径依赖
 需整理为可迁移交付包，未做）。
@@ -66,7 +69,7 @@ IPC/KV 两例 @ master `c49fa31`）；文档/CHANGELOG 与 case.json 冲突处�
 2. **已提交待审 3 例**（curl×2 / nvdec）——跟踪工单回执，官方接受状态保持"未知"。
 3. **材料就绪待提交 8 例**——按审计建议由所有者逐例提交（其中 lcldec/dvbsub 为
    P0_EXECUTION 已人工 L4 核验的新成案）。
-4. **产品可达性**：15 例全部未建立——审计 P1.6 纵向闭环的首要补齐项（IPC/KV 两例
+4. **产品可达性**：18 例全部未建立——审计 P1.6 纵向闭环的首要补齐项（IPC/KV 两例
    的 next_gate 已明确指向隔离构建验证，是离"平台级确认"最近的两例）。
 
 ## 5. 口径声明
@@ -74,3 +77,7 @@ IPC/KV 两例 @ master `c49fa31`）；文档/CHANGELOG 与 case.json 冲突处�
 - 确认产品漏洞数：0（产品可达性未建立，不因提交动作改变）。
 - 官方接受：3 张工单均处"已提交-未知"状态，无接受证据，不宣称。
 - 本台账不改变任何 case.json；漂移修正应回填对应 case.json 与 PROJECT_STATE。
+
+---
+
+**2026-09-28 追记**：提交队列单见 `docs/status/SUBMISSION_QUEUE_20260928.md`（待提交 12 例材料齐装；quirc 的 submission_materials 已回填；`submission_49795/` 为残包不列队）。

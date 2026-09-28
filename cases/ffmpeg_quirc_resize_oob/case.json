@@ -2,6 +2,7 @@
   "schema": "case-specific-validation-0.2",
   "id": "ffmpeg-quirc-resize-oob",
   "component": "third_party/ffmpeg",
+  "submission_materials": "D:/cve_data/submission_66041/ (poc_quirc.c, 奖励计划表单v1_66041.md, 运行验证记录.md, 附件包_CVE-2026-66041.zip)",
   "cve_reference": "CVE-2026-66041",
   "cwe_candidate": "CWE-787",
   "discovery_method": "kb_gap_audit.py four-signal pipeline (L1 cve-grep negative + L2 disclosure 2026-07-04 > snapshot 2026-06-01 + L3 baseline 7.1.1 in [7.0, 8.1.2) + L4 source signature confirmed)",
@@ -41,7 +42,10 @@
     }
   },
   "controls": [
-    {"name": "same-size-subtitle", "desc": "frames matching config_input dimensions: filter works unchanged on both original and patched"}
+    {
+      "name": "same-size-subtitle",
+      "desc": "frames matching config_input dimensions: filter works unchanged on both original and patched"
+    }
   ],
   "notes": "part of the ffmpeg gap batch (audit 2026-09-21); candidate for platform submission after optional runtime matrix"
 }
