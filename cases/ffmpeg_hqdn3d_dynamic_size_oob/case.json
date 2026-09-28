@@ -26,8 +26,24 @@
     "runtime_status": "verified"
   },
   "controls": [
-    {"name": "constant-size", "desc": "same-size frames: filter output identical on original and patched (no regression)"}
+    {
+      "name": "constant-size",
+      "desc": "same-size frames: filter output identical on original and patched (no regression)"
+    }
   ],
   "submission_materials": "D:/cve_data/submission_66036/ (poc_hqdn3d.c, patch.diff narrow guard, runtime record, form draft, attachments zip)",
-  "notes": "ffmpeg gap batch case 3 of 5 gap_likely; 65704/52296/66038/70628 still pending manual L4"
+  "notes": "ffmpeg gap batch case 3 of 5 gap_likely; 65704/52296/66038/70628 still pending manual L4",
+  "submission": {
+    "platform": "OpenHarmony 漏洞奖励计划 (https://bugbounty.openharmony.cn)",
+    "ticket": "OHSA26-092848127",
+    "submitted_at": "2026-09-28",
+    "account": "北辰522",
+    "status": "已提交",
+    "form": {
+      "type": "内存破坏与执行类 / 缓冲区溢出",
+      "repo": "third_party_ffmpeg",
+      "oh_version": "OpenHarmony-v7.0-Release（2026-08-21）",
+      "attachments": "附件包_CVE-2026-66036.zip, patch.diff, poc_hqdn3d.c, 运行验证记录.md"
+    }
+  }
 }

@@ -20,20 +20,20 @@ PR #51 的 gap-batch-2 三例 66037/70629/70632；2026-09-28 更新）；文档/
 | curl-native-ca-reuse-mismatch | CVE-2026-80231 | CWE-488 | curl | ✅ 中间形态探针+源级 | not_run | not_established（字段缺省） | — | OHSA26-092209031（09-21） | 未知 |
 | curl-psl-supercookie-tailmatch | CVE-2026-82209 | CWE-201 | curl | ✅ 同上 | not_run | not_established | — | OHSA26-092226014（09-21） | 未知 |
 | ffmpeg-nvdec-sep-ref-doublefree | CVE-2026-64832 | CWE-415 | ffmpeg | ✅ 四信号+L4 | not_run（需 NVDEC GPU） | 未记录 | ✅ | OHSA26-092224773（09-21，见漂移#1） | 未知 |
-| ffmpeg-hqdn3d-dynamic-size-oob | CVE-2026-66036 | CWE-122 | ffmpeg | ✅ 批量+人工 L4 | ✅ WSL 运行时对照通过（P0_EXECUTION 09-22；case.json 无 runtime 字段，漂移#3 同类） | 未记录 | ✅ | 未提交 | — |
+| ffmpeg-hqdn3d-dynamic-size-oob | CVE-2026-66036 | CWE-122 | ffmpeg | ✅ 批量+人工 L4 | ✅ WSL 运行时对照通过（P0_EXECUTION 09-22；case.json 无 runtime 字段，漂移#3 同类） | 未记录 | ✅ | OHSA26-092848127（09-28） | — |
 | ffmpeg-quirc-resize-oob | CVE-2026-66041 | CWE-787 | ffmpeg | ✅ 四信号+L4 | ✅ WSL 运行时对照通过（同上） | 未记录 | ✅ `submission_66041`（材料齐装；提交前核对平台无重复工单，见漂移#3） | 未提交 | — |
-| ffmpeg-lcldec-zlib-tail-disclosure | CVE-2026-66038 | CWE-908 | ffmpeg | ✅ 批量+人工 L4 | not_run | 未记录 | ✅ | 未提交 | — |
-| ffmpeg-dvbsub-parser-capacity-overflow | CVE-2026-70628 | CWE-190→787 | ffmpeg | ✅（含参考提交勘误） | not_run | 未记录 | ✅ | 未提交 | — |
-| ffmpeg-ty-ac3-trim-underflow | CVE-2026-65704 | CWE-191→787 | ffmpeg | ✅ | not_run | 未记录 | ✅ | 未提交 | — |
-| ffmpeg-wmaenc-extradata-padding | CVE-2026-52296 | CWE-125 | ffmpeg | ✅ | not_run | 未记录 | ✅ | 未提交 | — |
-| ffmpeg-floodfill-point-stack-oob | CVE-2026-65705 | CWE-787 | ffmpeg | ✅（含参考提交勘误） | not_run | 未记录 | ✅ | 未提交 | — |
-| ffmpeg-swaprect-temp-row-oob | CVE-2026-65706 | CWE-787 | ffmpeg | ✅ | not_run | 未记录 | ✅ | 未提交 | — |
-| openssl-ocb-oneshot-iv-discard | CVE-2026-45445 | CWE-325 | openssl | ✅ | not_run | 未记录 | ✅ | 未提交 | — |
+| ffmpeg-lcldec-zlib-tail-disclosure | CVE-2026-66038 | CWE-908 | ffmpeg | ✅ 批量+人工 L4 | not_run | 未记录 | ✅ | OHSA26-092831132（09-28） | — |
+| ffmpeg-dvbsub-parser-capacity-overflow | CVE-2026-70628 | CWE-190→787 | ffmpeg | ✅（含参考提交勘误） | not_run | 未记录 | ✅ | OHSA26-092858135（09-28） | — |
+| ffmpeg-ty-ac3-trim-underflow | CVE-2026-65704 | CWE-191→787 | ffmpeg | ✅ | not_run | 未记录 | ✅ | OHSA26-092855121（09-28） | — |
+| ffmpeg-wmaenc-extradata-padding | CVE-2026-52296 | CWE-125 | ffmpeg | ✅ | not_run | 未记录 | ✅ | OHSA26-092819230（09-28） | — |
+| ffmpeg-floodfill-point-stack-oob | CVE-2026-65705 | CWE-787 | ffmpeg | ✅（含参考提交勘误） | not_run | 未记录 | ✅ | OHSA26-092800126（09-28） | — |
+| ffmpeg-swaprect-temp-row-oob | CVE-2026-65706 | CWE-787 | ffmpeg | ✅ | not_run | 未记录 | ✅ | OHSA26-092853125（09-28） | — |
+| openssl-ocb-oneshot-iv-discard | CVE-2026-45445 | CWE-325 | openssl | ✅ | not_run | 未记录 | ✅ | OHSA26-092837123（09-28） | — |
 | ipc-cj-array-null-validation | —（无 CVE，new candidate） | CWE-476 | OH IPC（cj 侧） | ✅ 源级定位 | ✅ 等价复现（ASan 零页 SEGV；len=0/正常字节对照组通过） | 平台二进制未链接（next_gate=隔离构建验证导出 API） | — | 未提交 | — |
 | kv-ffi-array-validation | —（无 CVE，new candidate） | CWE-476/125 | OH kv_store（cj 侧） | ✅ 源级定位 | ✅ 等价复现（WSL ASan；对照组通过） | 平台二进制未链接（next_gate=完整 FFI 库隔离进程复跑） | — | 未提交 | — |
-| ffmpeg-iamf-count-label-dos | CVE-2026-66037 | CWE-400 | ffmpeg | ✅（含参考提交勘误：初判 already_fixed 后纠正） | not_run | 未记录 | ✅ `submission_66037` | 未提交 | — |
-| ffmpeg-rscc-short-deflate-uninit-leak | CVE-2026-70629 | CWE-908 | ffmpeg | ✅（newest-ref 勘误：2015 引入提交） | not_run | 未记录 | ✅ `submission_70629` | 未提交 | — |
-| ffmpeg-cfhd-transform2-width-oob | CVE-2026-70632 | CWE-787 | ffmpeg | ✅ | not_run | 未记录 | ✅ `submission_70632` | 未提交 | — |
+| ffmpeg-iamf-count-label-dos | CVE-2026-66037 | CWE-400 | ffmpeg | ✅（含参考提交勘误：初判 already_fixed 后纠正） | not_run | 未记录 | ✅ `submission_66037` | OHSA26-092835171（09-28） | — |
+| ffmpeg-rscc-short-deflate-uninit-leak | CVE-2026-70629 | CWE-908 | ffmpeg | ✅（newest-ref 勘误：2015 引入提交） | not_run | 未记录 | ✅ `submission_70629` | OHSA26-092850129（09-28） | — |
+| ffmpeg-cfhd-transform2-width-oob | CVE-2026-70632 | CWE-787 | ffmpeg | ✅ | not_run | 未记录 | ✅ `submission_70632` | OHSA26-092843135（09-28） | — |
 
 材料位置：提交工单材料在 `D:/cve_data/submission_*`（审计 P0.5 已指出绝对路径依赖
 需整理为可迁移交付包，未做）。

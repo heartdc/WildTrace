@@ -25,8 +25,25 @@
     "crypto_note": "first cryptographic-class case in the series; verified by ciphertext/tag semantic equivalence, no memory observation needed"
   },
   "controls": [
-    {"name": "aad-streaming-first", "desc": "S2 shape: one-shot body after streaming AAD behaves correctly on both builds (IV flushed by the streaming call)"}
+    {
+      "name": "aad-streaming-first",
+      "desc": "S2 shape: one-shot body after streaming AAD behaves correctly on both builds (IV flushed by the streaming call)"
+    }
   ],
   "submission_materials": "D:/cve_data/submission_45445/ (runtime record, poc_ocb_iv.c, narrow patch, 对照.txt, form draft, attachments zip)",
-  "notes": "openssl component first case; PoC iteration note — an early draft omitted EncryptFinal on the one-shot pass and misread the tag mismatch; the final PoC finalizes both passes symmetrically and the S1/S2 split isolates the IV-discard precisely"
+  "notes": "openssl component first case; PoC iteration note — an early draft omitted EncryptFinal on the one-shot pass and misread the tag mismatch; the final PoC finalizes both passes symmetrically and the S1/S2 split isolates the IV-discard precisely",
+  "submission": {
+    "platform": "OpenHarmony 漏洞奖励计划 (https://bugbounty.openharmony.cn)",
+    "ticket": "OHSA26-092837123",
+    "submitted_at": "2026-09-28",
+    "account": "北辰522",
+    "status": "已提交",
+    "form": {
+      "type": "信息与隐私泄露类 /（子类型未设；CWE-325 密码学保密性，分类说明评论已附）",
+      "repo": "third_party_openssl",
+      "oh_version": "OpenHarmony-v7.0-Release（2026-08-21）",
+      "attachments": "附件包_CVE-2026-45445.zip, patch.diff, poc_ocb_iv.c, upstream_fix_843c9b9.diff, 上游修复对照.txt"
+    },
+    "note": "类型按信息与隐私泄露类提交（nonce 重用破坏保密性），CWE-325 分类说明评论已附（OHSA26-092837123）"
+  }
 }

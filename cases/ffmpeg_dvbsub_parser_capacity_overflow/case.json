@@ -26,5 +26,18 @@
   },
   "controls": [],
   "submission_materials": "D:/cve_data/submission_70628/ (对照.txt with ref errata, patch.diff = upstream verbatim applies clean, upstream_fix_93f2a52.diff, form draft)",
-  "notes": "closes the ffmpeg gap batch: 70628 was the second of the two pending manual-L4 candidates (2026-09-22)"
+  "notes": "closes the ffmpeg gap batch: 70628 was the second of the two pending manual-L4 candidates (2026-09-22)",
+  "submission": {
+    "platform": "OpenHarmony 漏洞奖励计划 (https://bugbounty.openharmony.cn)",
+    "ticket": "OHSA26-092858135",
+    "submitted_at": "2026-09-28",
+    "account": "北辰522",
+    "status": "已提交",
+    "form": {
+      "type": "内存破坏与执行类 / 越界读写",
+      "repo": "third_party_ffmpeg",
+      "oh_version": "OpenHarmony-v7.0-Release（2026-08-21）",
+      "attachments": "附件包_CVE-2026-70628.zip, 附件包_CVE-70628.zip, patch.diff, upstream_fix_93f2a52.diff, 上游修复对照.txt"
+    }
+  }
 }
