@@ -1,5 +1,38 @@
 # Changelog
 
+# 2026-09-24（第四靶建成 + 案例台账）
+
+## CVE 挖掘 P0-2 第四靶施工完成（dsoftbus auth DeviceInfo 链）
+
+- `UnpackDeviceInfoMessage`（auth_session_json.c:3388）全链 harness `fuzz_authdeinfo`：约 25 函数逐字原样提取；D 级升级为全量 NodeInfo（lnn_node_info/device_info/connect_info 三头链）；设备类型转换族（lnn_device_info.c 表+ConvertStringToInt）与 StrCmpIgnoreCase 随链提取；base64 为 RFC4648 声明式重实现（mbedtls 3.x 依赖 constant-time 内部头链未引入，契约对齐点在 base64_ref.c 头注记）。
+- 验证：6 枚结构化种子零崩溃（基线 cov 1422/ft 2496）；120s 快测 2,076,080 runs 零崩溃（约 17k exec/s）；8h 长跑与第三靶并行挂机。T3 隔夜被宿主机休眠中断（有效 3.3h/1.223 亿执行零崩溃），白班重启后继续。
+- build.sh 双目标化 + rsync 运行时状态排除（挂机中重建安全）；T3/T4 共享 A 层与 stub 生态。
+
+## 单一案例台账（审计 P0.2）
+
+- `docs/status/CASE_LEDGER_20260924.md`：13 例逐案区分源码核验/真实库复现/产品影响/提交材料/工单/官方接受；发现并记录三处漂移（nvdec OHSA26-092224773 已提交 vs PROJECT_STATE"待提交"口径、cjson runtime_status=not_run vs CHANGELOG 09-16 运行矩阵通过、审计机另有 quirc 嵌套提交与 FFI/triage 未提交工作集）。
+
+# 2026-09-23（追加：整树快照修复——审计 P1-1）
+
+## source_snapshot / engine_shards 有界化（审计 2026-09-23 P1-1）
+
+- `ohvul/source_snapshot.py`：新增 `files=` 限范围模式（先验清单——缺失输入在校验阶段即报错，不触发树遍历）与文件数/字节/时间三重预算；legacy 全树模式保留（checkpoint 绑定口径不变），哈希改流式分块，payload 格式与历史摘要逐字节兼容。
+- `ohvul/engine_shards.py`：分片级快照改为仅声明输入（每分片 2 次限范围枚举）；清单/Profile 级保留树级摘要作为出版契约（能检出清单外文件变更，如契约测试 test_source_change_during_engine_scan_is_rejected 所要求），但整批只走 2 次全树（原 2S+2 次）且受预算限界；清单校验仍先于任何快照。
+- `tests/test_engine_shards.py`：缺失文件测试改隔离临时目录（原用仓库根目录触发全树遍历）；新增回归——单文件请求不触碰无关缓存、清单快照访问次数精确为"2 次全树 + 每分片 2 次限范围"（canary 计数断言）、预算越限显式报错、payload 格式兼容、大文件流式哈希正确性。
+- 验证：全量离线回归 853 项运行、849 通过、4 项环境跳过（303s，退出码 0）；CI 性能冒烟通过。审计文件 FFI 三条 P1（P1-2/3/4）的代码在另一机器的未提交工作集内，本轮不可修，待其落 PR 后处理。
+
+# 2026-09-23（auth fuzz 第一 harness 建成挂机）
+
+## CVE 挖掘 P0-2 第三靶施工完成（dsoftbus auth DeviceId 链）
+
+- `UnpackDeviceIdJson`（auth_session_json.c:2107）全链 harness 建成：`D:/cve_data/fuzz_authdev/`（WSL 镜像 ~/fa，build.sh 一键重建）。30 函数逐字原样提取（file:line 标注），C 级 stub 约 20 处取向注明，D 级三处结构裁剪逐条声明差异。
+- 方案级偏差（已回写施工图 §7）：DSoftBus 4.0.2 的 `JSON_*`/JsonObj API 底层为 nlohmann::json（C++）而非 cJSON——引入 OH 原 `softbus_adapter_json.cpp` + nlohmann v3.11.3（jsDelivr）与 C 主体混编；cJSON 保留真实现承载凭证协商子链，生产双解析器形态完整落地。cJSON_Utils 未编译，CVE-2026-87933 噪音面被结构性排除。
+- 验证：6 枚结构化种子回归通过；120s 快测 1,494,196 runs 零崩溃（cov 2602/ft 9879，约 12k exec/s）；12h 长跑（-max_total_time=43200）挂机中。确认产品漏洞数口径不变（0），崩溃待分诊。
+
+## 第四靶施工图落盘（DeviceInfo 消息链）
+
+- `docs/design/deviceinfo_fuzz_extraction_plan.md`：靶 `UnpackDeviceInfoMessage`（auth_session_json.c:3388），A/C/D 资产全复用第三靶，D 级升级为全量 NodeInfo（三头整拷约 370 行）；头号嫌疑族已标记（BtV1 的 `OptInt64` 8 字节写 32 位 netCapacity——struct 内越界形态）。
+
 # 2026-09-22（补录 2026-09-16 → 09-22 断档）
 
 ## 缺口案例批量落库与奖励计划提交
