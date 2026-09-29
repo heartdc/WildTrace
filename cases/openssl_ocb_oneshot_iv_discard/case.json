@@ -32,18 +32,12 @@
   ],
   "submission_materials": "D:/cve_data/submission_45445/ (runtime record, poc_ocb_iv.c, narrow patch, 对照.txt, form draft, attachments zip)",
   "notes": "openssl component first case; PoC iteration note — an early draft omitted EncryptFinal on the one-shot pass and misread the tag mismatch; the final PoC finalizes both passes symmetrically and the S1/S2 split isolates the IV-discard precisely",
-  "submission": {
-    "platform": "OpenHarmony 漏洞奖励计划 (https://bugbounty.openharmony.cn)",
-    "ticket": "OHSA26-092837123",
-    "submitted_at": "2026-09-28",
-    "account": "北辰522",
-    "status": "已提交",
-    "form": {
-      "type": "信息与隐私泄露类 /（子类型未设；CWE-325 密码学保密性，分类说明评论已附）",
-      "repo": "third_party_openssl",
-      "oh_version": "OpenHarmony-v7.0-Release（2026-08-21）",
-      "attachments": "附件包_CVE-2026-45445.zip, patch.diff, poc_ocb_iv.c, upstream_fix_843c9b9.diff, 上游修复对照.txt"
-    },
-    "note": "类型按信息与隐私泄露类提交（nonce 重用破坏保密性），CWE-325 分类说明评论已附（OHSA26-092837123）"
-  }
+  "evidence_locations": {
+    "source_file": "providers/implementations/ciphers/cipher_aes_ocb.c",
+    "lines": [
+      497
+    ]
+  },
+  "attack_path": "前提条件：产品/应用使用 AES-OCB 且经 EVP_Cipher() 一次性接口\n加密（高吞吐批量加密的常见写法），且加密前未对该上下文做过\nstreaming 调用。攻击者无需直接权限：只要能观测/收集同密钥下\n多条此形态的密文（网络流量、存储的加密记录），即可利用 OCB\nnonce 重用攻破机密性；IV 由调用方正常轮换也无法缓解（被静默\n丢弃）。是否需要用户交互取决于业务形态。\n\n四、PoC & Exploit：\n\n见附件 poc_ocb_iv.c 与运行验证记录.md（2×2 结果矩阵；密码学\n等价对比法，环境 WSL2 Ubuntu 24.04、clang 18.1.3、OH 检出静态\n构建）。本报告未构造针对真实业务密文的利用，nonce 重用的危害\n为 OCB 模式公开密码学性质。\n\n五、修复及缓解措施建议：\n\n回移上游修复 843c9b94（附件 patch.diff 为窄化版，对 OH 检出\ngit apply --check 直接通过）：aes_ocb_cipher() 处理数据前检查\nkey_set 并调用 update_iv() 刷入缓冲 IV。建议同步引",
+  "fix_recommendation": "回移上游修复 843c9b94（附件 patch.diff 为窄化版，对 OH 检出\ngit apply --check 直接通过）：aes_ocb_cipher() 处理数据前检查\nkey_set 并调用 update_iv() 刷入缓冲 IV。建议同步引入上游配套\n测试（one-shot 与 streaming 交叉往返矩阵）。临时缓解：应用侧\n避免对 AES-OCB 使用 EVP_Cipher() 一次性接口，改用\nEVP_EncryptUpdate/EVP_EncryptFinal_ex 序列（streaming 槽位不受\n影响）；或升级至上游公告列出的修复版本。"
 }
