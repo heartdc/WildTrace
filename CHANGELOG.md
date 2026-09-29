@@ -1,3 +1,8 @@
+# 2026-09-29（追加三：Tier B 畸形调用器 + 任务书 F 节）
+
+- `account_null_params.c`（VerifyCredential 路径，4 case 含 null head/负 size 变体）和 `udmf_null_extras.c`（SetProperties 路径，3 case 含 env_probe），clang 语法通过。
+- 任务书追加 F 节：构建目标、验证命令、结果判读、提交策略。**Tier A- + B 合计 15 条批量候选**。
+
 # 2026-09-29（追加二：Tier B 克隆族 L4——三仓批量候选 15 条）
 
 - account_os_account（5 lead）和 udmf（4 lead）的 `SetDataParameters` **连顶层 `head` 都不查空**（比 av_session 浅一层的同型缺陷，更直接也更危险）；三仓函数为同一模板拷贝。
