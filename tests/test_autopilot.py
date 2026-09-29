@@ -78,7 +78,8 @@ class AutopilotV2Tests(unittest.TestCase):
         finding = Finding(
             finding_id="test_42", pattern="P4_unbounded_copy", severity="high",
             file="test.c", line=10, function="TestFunc", struct_type="memcpy",
-            cwe="CWE-120", description="test", trigger_hint="oversized len")
+            cwe="CWE-120", description="test", trigger_hint="oversized len",
+            confidence=75)
         with tempfile.TemporaryDirectory() as tmp:
             out = Path(tmp)
             name = generate_poc(finding, out)

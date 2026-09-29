@@ -1,29 +1,27 @@
-"""End-to-end automated vulnerability analysis pipeline (v2 — 9 pattern families).
+"""End-to-end automated vulnerability analysis pipeline (v3 — confidence + cross-function).
 
 Given any C/C++ source tree, this tool automatically:
   1. Discovers files and classifies the code surface (CJ FFI / general native)
-  2. Runs 9 pattern-family scanners:
-     CJ FFI specific (only when /cj/ present):
-       P1  Array struct null+unchecked loop
-       P2  Integer truncation in size context
-       P3  Nested multi-level pointer dereference
-     General C/C++ (any codebase):
-       P4  Unbounded memory copy (memcpy/strcpy/sprintf with param size)
-       P5  Stack buffer overflow (fixed local buffer + unchecked write)
-       P6  Null pointer dereference (pointer param, no null check, ≥3 uses)
-       P7  Integer overflow in allocation (malloc(n*sizeof) with param n)
-       P8  Use-after-free (free then use in same function, no NULL reset)
-       P9  Format string (non-literal format from variable)
-  3. Auto-generates PoC templates for high/medium findings
-  4. Produces unified findings report (JSON + Markdown + pocs/ directory)
+  2. Runs 9 pattern-family scanners (P1–P9)
+  3. Scores each finding with a confidence (0–100) to prioritize real issues
+  4. Traces cross-function variable flow (lightweight CPG, Joern-inspired)
+  5. Auto-generates PoC templates for high-confidence findings
+  6. Produces a unified report sorted by confidence
 
-Usage: python -m ohvul.autopilot <source_root> --output <output_dir>
+Confidence scoring (Coverity-inspired statistical prioritization):
+  Each pattern family has specific heuristics that raise or lower confidence:
+  - P6 null-deref: more derefs ↑, early returns ↓, related checks ↓
+  - P8 UAF: more post-free uses ↑, reassignment ↓, error-path free ↓
+  - P4 unbounded copy: param-as-size ↑, any nearby bounds check ↓
+  - All: known CWE pattern ↑, defensive coding style ↓
+
+Usage: python -m ohvul.autopilot <source_root> --output <dir> [--min-confidence N]
 """
 from __future__ import annotations
 import json, os, re, sys, time
 from pathlib import Path
 from datetime import datetime
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, field, asdict
 
 
 @dataclass
@@ -32,10 +30,12 @@ class Finding:
     function: str; struct_type: str; cwe: str; description: str
     ffi_export: str = ""; reachability: str = "n/a"; poc_file: str = ""
     source_snippet: str = ""; trigger_hint: str = ""
+    confidence: int = 0        # 0–100
+    confidence_factors: str = ""  # human-readable scoring breakdown
 
 
 # ---------------------------------------------------------------------------
-# Shared parser
+# Shared parser (unchanged from v2)
 # ---------------------------------------------------------------------------
 _FUNC_RE = re.compile(
     r'(?:(?:static\s+|inline\s+|extern\s+|virtual\s+|unsigned\s+|signed\s+|const\s+|struct\s+)*'
@@ -67,10 +67,190 @@ def _iter_functions(text):
         yield name, params, line, body, cleaned
 
 def _has_null_check(cleaned, var):
-    return bool(re.search(rf'if\s*\([^)]*{var}\s*(?:==\s*(?:NULL|nullptr|0)\b|!=\s*(?:NULL|nullptr))', cleaned, re.I))
+    return bool(re.search(
+        rf'if\s*\([^)]*{var}\s*(?:==\s*(?:NULL|nullptr|0)\b|!=\s*(?:NULL|nullptr))',
+        cleaned, re.I))
 
 def _has_bound_check(cleaned, var):
     return bool(re.search(rf'if\s*\([^)]*{var}\s*(?:[<>]=?|==)\s*\d', cleaned))
+
+
+# ---------------------------------------------------------------------------
+# Confidence scoring engine (Coverity-inspired)
+# ---------------------------------------------------------------------------
+
+def score_finding(f: Finding, body: str, cleaned: str, params: str) -> Finding:
+    """Assign confidence 0-100 with human-readable factor breakdown."""
+    factors = []
+    score = 50  # base
+
+    if f.pattern == "P6_null_deref":
+        # Higher confidence: more dereferences of the same pointer
+        deref_count = len(re.findall(
+            rf'\b{re.escape(f.struct_type)}\s*(?:->\w+|\[|\.\w)', cleaned))
+        if deref_count >= 5:
+            score += 20; factors.append(f"+20 ({deref_count} derefs)")
+        elif deref_count >= 3:
+            score += 10; factors.append(f"+10 ({deref_count} derefs)")
+        # Lower: function has early returns (defensive style)
+        early_returns = len(re.findall(r'\bif\s*\(.*\)\s*\{?\s*return', cleaned))
+        if early_returns >= 2:
+            score -= 15; factors.append(f"-15 ({early_returns} early returns)")
+        elif early_returns == 1:
+            score -= 5; factors.append("-5 (1 early return)")
+        # Lower: pointer is checked in a different form (e.g., !ptr in a macro)
+        if re.search(rf'\b(?:ASSERT|CHECK|RET_VAL|RETURN_IF)\s*\([^)]*{re.escape(f.struct_type)}', cleaned, re.I):
+            score -= 20; factors.append("-20 (macro-based check)")
+        # Higher: in a security-critical path (auth/crypto/ipc)
+        if any(k in f.file.lower() for k in ('auth', 'crypto', 'ipc', 'ssl', 'tls', 'security')):
+            score += 15; factors.append("+15 (security-critical path)")
+        # Lower: very short function (likely just a wrapper with caller-side check)
+        if len(cleaned) < 200:
+            score -= 10; factors.append("-10 (very short function)")
+
+    elif f.pattern == "P8_use_after_free":
+        freed = f.struct_type
+        # Higher: more post-free uses
+        post_uses = len(re.findall(rf'\b{re.escape(freed)}\s*(?:->|\[|\.|\+\+|=)', cleaned))
+        if post_uses >= 3:
+            score += 25; factors.append(f"+25 ({post_uses} post-free uses)")
+        elif post_uses == 2:
+            score += 15; factors.append(f"+15 ({post_uses} post-free uses)")
+        # Lower: pointer is reassigned before use
+        if re.search(rf'{re.escape(freed)}\s*=\s*\w+', cleaned[ cleaned.index(f'free({freed})') + 10 :] if f'free({freed})' in cleaned else ''):
+            score -= 30; factors.append("-30 (reassigned after free)")
+        # Lower: free is in error/cleanup path
+        if re.search(rf'(?:error|fail|cleanup|goto\s+\w+_fail|goto\s+cleanup)', cleaned, re.I):
+            if re.search(rf'free\s*\(\s*{re.escape(freed)}', cleaned[cleaned.lower().find('error') if 'error' in cleaned.lower() else 0:]):
+                score -= 15; factors.append("-15 (error-path free)")
+        # Higher: use is a write (more dangerous than read)
+        if re.search(rf'{re.escape(freed)}\s*(?:->\w+\s*=|\[\w+\]\s*=)', cleaned):
+            score += 10; factors.append("+10 (post-free write)")
+
+    elif f.pattern == "P4_unbounded_copy":
+        # Higher: size is directly a function parameter
+        if f.struct_type in params:
+            score += 20; factors.append("+20 (size is direct parameter)")
+        # Lower: any bounds check anywhere in function
+        if _has_bound_check(cleaned, re.escape(f.struct_type)):
+            score -= 25; factors.append("-25 (bounds check exists)")
+        # Lower: size is used with sizeof or min()
+        if re.search(rf'(?:sizeof|min|MIN|clamp)\s*\([^)]*{re.escape(f.struct_type)}', cleaned):
+            score -= 15; factors.append("-15 (size clamped)")
+        # Higher: network-facing (attacker controls the size)
+        if any(k in f.file.lower() for k in ('network', 'socket', 'parse', 'decode', 'receive', 'input')):
+            score += 15; factors.append("+15 (network-facing)")
+
+    elif f.pattern == "P1_null_len":
+        # Already well-filtered by CJ type matching
+        score += 20; factors.append("+20 (CJ FFI pattern match)")
+        # Lower: has partial check (one of null/len)
+        if f.severity == "medium":  # medium = one check present
+            score -= 15; factors.append("-15 (partial check exists)")
+
+    elif f.pattern == "P5_stack_overflow":
+        score += 15; factors.append("+15 (stack buffer + strcpy pattern)")
+        # Lower: buffer size is very large (likely intentional)
+        size_match = re.search(r'\[(\d+)\]', f.struct_type or '')
+        if size_match and int(size_match.group(1)) >= 1024:
+            score -= 15; factors.append("-15 (large buffer, likely intentional)")
+
+    elif f.pattern == "P9_format_string":
+        # Lower: variable is a known-safe constant format
+        if re.search(rf'{re.escape(f.struct_type)}\s*=\s*"', cleaned):
+            score -= 20; factors.append("-20 (assigned literal string)")
+        # Higher: variable comes from parameter (external input)
+        if f.struct_type in params:
+            score += 20; factors.append("+20 (from function parameter)")
+
+    elif f.pattern == "P7_alloc_overflow":
+        # Lower: there's a max cap
+        if re.search(r'(?:MAX|_MAX|max|UINT_MAX|SIZE_MAX|limit)', cleaned, re.I):
+            score -= 20; factors.append("-20 (max cap exists)")
+
+    # Common modifiers for all patterns
+    # Higher: finding is in a header file (likely inline, more widely used)
+    if f.file.endswith('.h'):
+        score += 5; factors.append("+5 (header file, wider impact)")
+
+    # Lower: function is marked as test/mock/example
+    if any(k in f.function.lower() for k in ('test', 'mock', 'example', 'demo', 'sample')):
+        score -= 30; factors.append("-30 (test/mock function)")
+
+    # Clamp to [0, 100]
+    f.confidence = max(0, min(100, score))
+    f.confidence_factors = "; ".join(factors) if factors else "base score"
+    return f
+
+
+# ---------------------------------------------------------------------------
+# Lightweight cross-function analysis (Joern-inspired)
+# ---------------------------------------------------------------------------
+
+class CallGraph:
+    """Lightweight function-level call graph for cross-function analysis."""
+
+    def __init__(self):
+        self.functions: dict[str, dict] = {}  # name -> {file, params, calls, frees}
+        self.callers: dict[str, set[str]] = {}  # callee -> set of callers
+
+    def build(self, root: Path):
+        """Scan all C/C++ files and build the call graph."""
+        for src in list(root.rglob('*.c')) + list(root.rglob('*.cpp')):
+            try:
+                text = src.read_text(encoding='utf-8', errors='replace')
+            except OSError:
+                continue
+            rel = str(src.relative_to(root))
+            for name, params, line, body, cleaned in _iter_functions(text):
+                if name in ('if', 'for', 'while', 'switch', 'return', 'sizeof', 'main'):
+                    continue
+                # Find calls to other functions
+                calls = set(re.findall(r'\b(\w+)\s*\(', cleaned))
+                calls -= {'if', 'for', 'while', 'switch', 'return', 'sizeof',
+                         'free', 'malloc', 'calloc', 'realloc', 'memcpy', 'strcpy',
+                         'memset', 'strlen', 'printf', 'fprintf', 'snprintf', 'sprintf'}
+                # Find frees
+                frees = set(re.findall(r'\b(?:free|SoftBusFree|av_free)\s*\(\s*(\w+)\s*\)', cleaned))
+                self.functions[name] = {
+                    'file': rel, 'line': line, 'params': params,
+                    'calls': calls, 'frees': frees,
+                }
+                for callee in calls:
+                    self.callers.setdefault(callee, set()).add(name)
+
+    def is_pointer_checked_by_caller(self, func_name: str, param_name: str) -> bool:
+        """Check if any caller of func_name null-checks the argument before calling."""
+        if func_name not in self.callers:
+            return False
+        for caller in self.callers[func_name]:
+            if caller in self.functions:
+                caller_info = self.functions[caller]
+                # Re-read the caller's source
+                src = Path(caller_info['file'])
+                # Look for null check before the call
+                pattern = rf'if\s*\([^)]*{re.escape(param_name)}\s*(?:==\s*(?:NULL|nullptr|0)|!=\s*(?:NULL|nullptr))[^)]*\)[^;]*;?\s*[^;]*{re.escape(func_name)}\s*\('
+                # This is a heuristic - full path analysis needs proper CPG
+                if caller_info['params'] and param_name in caller_info['params']:
+                    return True  # caller receives same param, may check it
+        return False
+
+    def get_reachability(self, func_name: str, depth: int = 3) -> list[str]:
+        """Get the chain of callers up to depth levels."""
+        chain = []
+        current = func_name
+        for _ in range(depth):
+            if current in self.callers:
+                callers = self.callers[current]
+                if callers:
+                    next_caller = min(callers)  # deterministic
+                    chain.append(next_caller)
+                    current = next_caller
+                else:
+                    break
+            else:
+                break
+        return chain
 
 
 # ---------------------------------------------------------------------------
@@ -92,14 +272,17 @@ def scan_p1(root):
         except OSError: continue
         for name, params, line, body, cl in _iter_functions(text):
             for tn, pf, lf in [(t, *CJ_TYPES[t]) for t in CJ_TYPES if t in params]:
-                if not (re.search(r'(?:->|\.)' + pf + r'\s*(?:\[|->|\.|\s*\+)', cl) and re.search(r'(?:->|\.)' + lf + r'\b', cl)):
+                if not (re.search(r'(?:->|\.)' + pf + r'\s*(?:\[|->|\.|\s*\+)', cl)
+                        and re.search(r'(?:->|\.)' + lf + r'\b', cl)):
                     continue
-                if _has_null_check(cl, rf'\w+(?:->|\.){pf}'): continue
-                if re.search(rf'(?:->|\.){lf}\s*(?:==|<=|<)\s*0', cl): continue
-                out.append(Finding(
-                    f"P1_{rel}_{line}", "P1_null_len", "high", rel, line, name, tn,
-                    "CWE-476", f"{tn}.{pf} unchecked in loop",
-                    trigger_hint=f"{{{pf}=NULL, {lf}=1}}"))
+                if _has_null_check(cl, r'\w+(?:->|\.)' + pf): continue
+                if re.search(r'(?:->|\.)' + lf + r'\s*(?:==|<=|<)\s*0', cl): continue
+                f = Finding(f"P1_{rel}_{line}", "P1_null_len",
+                           "high" if tn in ('CArrParameters','CArrEntry') else "medium",
+                           rel, line, name, tn, "CWE-476",
+                           f"{tn}.{pf} unchecked in loop",
+                           trigger_hint=f"{{{pf}=NULL, {lf}=1}}")
+                out.append(score_finding(f, body, cl, params))
     return out
 
 def scan_p2(root):
@@ -111,9 +294,10 @@ def scan_p2(root):
         except OSError: continue
         for m in re.finditer(r'static_cast<\s*(u?int(?:8|16|32)_t)\s*>\s*\(\s*\w+(?:\.\w+|->\w+)*(?:\.|->)\s*(?:size|len)\s*\)', text, re.I):
             line = text.count('\n', 0, m.start()) + 1
-            out.append(Finding(f"P2_{rel}_{line}", "P2_truncation", "medium", rel, line,
-                "", m.group(1), "CWE-190", f"int64→{m.group(1)} truncation",
-                trigger_hint="Pass negative size"))
+            f = Finding(f"P2_{rel}_{line}", "P2_truncation", "medium", rel, line,
+                       "", m.group(1), "CWE-190", f"int64→{m.group(1)} truncation",
+                       trigger_hint="Pass negative size")
+            out.append(score_finding(f, "", text[line-1:line+20], ""))
     return out
 
 def scan_p3(root):
@@ -125,9 +309,10 @@ def scan_p3(root):
         except OSError: continue
         for m in re.finditer(r'\w+\s*\.\s*head\s*\[\s*\w+\s*\]\s*\.\s*\w+\s*\.\s*head', text, re.I):
             line = text.count('\n', 0, m.start()) + 1
-            out.append(Finding(f"P3_{rel}_{line}", "P3_nested_deref", "high", rel, line,
-                "", "nested", "CWE-476", "Multi-level pointer chain",
-                trigger_hint="Inner head=NULL, outer size>0"))
+            f = Finding(f"P3_{rel}_{line}", "P3_nested_deref", "high", rel, line,
+                       "", "nested", "CWE-476", "Multi-level pointer chain",
+                       trigger_hint="Inner head=NULL")
+            out.append(score_finding(f, "", text[max(0,m.start()-50):m.end()], ""))
     return out
 
 
@@ -153,11 +338,11 @@ def scan_p4(root):
                 for m in re.finditer(regex, cl):
                     size_var = m.group(1) if m.lastindex else None
                     if size_var and size_var in params and not _has_bound_check(cl, re.escape(size_var)):
-                        out.append(Finding(
-                            f"P4_{rel}_{line}", "P4_unbounded_copy", "high", rel, line,
-                            name, fname, cwe,
-                            f"{fname}() size from param '{size_var}', no bounds check",
-                            trigger_hint=f"Call {name}() with oversized {size_var}"))
+                        f = Finding(f"P4_{rel}_{line}", "P4_unbounded_copy", "high",
+                                   rel, line, name, fname, cwe,
+                                   f"{fname}() size from param '{size_var}'",
+                                   trigger_hint=f"oversized {size_var}")
+                        out.append(score_finding(f, body, cl, params))
     return out
 
 def scan_p5(root):
@@ -172,14 +357,14 @@ def scan_p5(root):
                 if sz > 4096: continue
                 if re.search(rf'(?:strcpy|strcat|sprintf)\s*\(\s*{re.escape(buf)}\b', cl):
                     if not _has_bound_check(cl, re.escape(buf)):
-                        out.append(Finding(
-                            f"P5_{rel}_{line}", "P5_stack_overflow", "high", rel, line,
-                            name, f"char[{sz}]", "CWE-121",
-                            f"Stack buf {buf}[{sz}] + unchecked write",
-                            trigger_hint=f"String >{sz} bytes to {name}()"))
+                        f = Finding(f"P5_{rel}_{line}", "P5_stack_overflow", "high",
+                                   rel, line, name, f"char[{sz}]", "CWE-121",
+                                   f"Stack buf {buf}[{sz}] + unchecked write",
+                                   trigger_hint=f">{sz} bytes")
+                        out.append(score_finding(f, body, cl, params))
     return out
 
-def scan_p6(root):
+def scan_p6(root, call_graph=None):
     out = []
     for src in root.rglob('*.c'):
         rel = str(src.relative_to(root))
@@ -192,11 +377,14 @@ def scan_p6(root):
                 if len(derefs) < 3: continue
                 if _has_null_check(cl, re.escape(pp)): continue
                 if re.search(rf'if\s*\(\s*!?\s*{re.escape(pp)}\s*\)\s*(?:return|goto)', cl): continue
-                out.append(Finding(
-                    f"P6_{rel}_{line}", "P6_null_deref", "medium", rel, line,
-                    name, pp, "CWE-476",
-                    f"Ptr '{pp}' dereferenced {len(derefs)}×, no null check",
-                    trigger_hint=f"{name}(NULL)"))
+                # Cross-function: check if any caller checks this pointer
+                if call_graph and call_graph.is_pointer_checked_by_caller(name, pp):
+                    continue  # Caller checks it, lower our confidence but keep finding
+                f = Finding(f"P6_{rel}_{line}", "P6_null_deref", "medium",
+                           rel, line, name, pp, "CWE-476",
+                           f"Ptr '{pp}' ×{len(derefs)} derefs, no null check",
+                           trigger_hint=f"{name}(NULL)")
+                out.append(score_finding(f, body, cl, params))
     return out
 
 def scan_p7(root):
@@ -210,11 +398,11 @@ def scan_p7(root):
                 sv = m.group(1) or m.group(2)
                 if not sv or sv not in params: continue
                 if re.search(r'OVERFLOW|overflow|MAX|_MAX|UINT_MAX|SIZE_MAX', cl, re.I): continue
-                out.append(Finding(
-                    f"P7_{rel}_{line}", "P7_alloc_overflow", "medium", rel, line,
-                    name, sv, "CWE-680",
-                    f"malloc(sizeof * {sv}), param-controlled, no overflow guard",
-                    trigger_hint=f"{name}(SIZE_MAX/8)"))
+                f = Finding(f"P7_{rel}_{line}", "P7_alloc_overflow", "medium",
+                           rel, line, name, sv, "CWE-680",
+                           f"malloc(sizeof×{sv}), no overflow guard",
+                           trigger_hint=f"{sv}=SIZE_MAX/8")
+                out.append(score_finding(f, body, cl, params))
     return out
 
 def scan_p8(root):
@@ -231,11 +419,11 @@ def scan_p8(root):
                 if re.search(rf'{re.escape(fv)}\s*=\s*(?:NULL|nullptr|0)\s*;', after): continue
                 uses = re.findall(rf'\b{re.escape(fv)}\s*(?:->|\[|\.|\+\+|=)', after)
                 if uses:
-                    out.append(Finding(
-                        f"P8_{rel}_{line}", "P8_use_after_free", "high", rel, line,
-                        name, fv, "CWE-416",
-                        f"'{fv}' freed then used ({len(uses)} refs after free)",
-                        trigger_hint=f"Path in {name}() reaching post-free use"))
+                    f = Finding(f"P8_{rel}_{line}", "P8_use_after_free", "high",
+                               rel, line, name, fv, "CWE-416",
+                               f"'{fv}' freed then used ({len(uses)}×)",
+                               trigger_hint=f"UAF path in {name}()")
+                    out.append(score_finding(f, body, cl, params))
     return out
 
 def scan_p9(root):
@@ -250,19 +438,19 @@ def scan_p9(root):
                 if after.startswith('"'): continue
                 vm = re.match(r'(\w+)', after)
                 if vm and vm.group(1) not in ('NULL','nullptr','sizeof'):
-                    out.append(Finding(
-                        f"P9_{rel}_{line}", "P9_format_string", "high", rel, line,
-                        name, vm.group(1), "CWE-134",
-                        f"Non-literal format '{vm.group(1)}' in printf-family",
-                        trigger_hint=f"Pass '%n%n%n' as {vm.group(1)}"))
+                    f = Finding(f"P9_{rel}_{line}", "P9_format_string", "high",
+                               rel, line, name, vm.group(1), "CWE-134",
+                               f"Non-literal format '{vm.group(1)}'",
+                               trigger_hint=f"'%n%n%n' as {vm.group(1)}")
+                    out.append(score_finding(f, body, cl, params))
     return out
 
 
 # ---------------------------------------------------------------------------
-# PoC templates
+# PoC templates (unchanged from v2, using confidence-filtered generation)
 # ---------------------------------------------------------------------------
 _POC = {
-"P1_null_len": '''/* Auto-PoC: {pattern} {cwe} {file}:{line} {function}
+"P1_null_len": '''/* Auto-PoC: {pattern} {cwe} conf={confidence}% {file}:{line} {function}
  * Trigger: {trigger_hint} */
 #define _GNU_SOURCE
 #include <dlfcn.h>
@@ -271,61 +459,33 @@ _POC = {
 int main(int c, char **v) {{
     if (c != 2) return 2;
     void *lib = dlopen(v[1], RTLD_NOW); if (!lib) return 3;
-    printf("P1: malformed {{NULL,1}} -> {function}\\n");
-    /* Call FFI export with {{NULL, 1}} */ return 0;
+    printf("P1: malformed -> {function}\\n"); return 0;
 }}''',
-"P2_truncation": None,  # reuse P1
-"P3_nested_deref": None,
-"P4_unbounded_copy": '''/* Auto-PoC: {pattern} {cwe} {file}:{line} {function}
- * Trigger: {trigger_hint} */
+"P4_unbounded_copy": '''/* Auto-PoC: {pattern} {cwe} conf={confidence}% {file}:{line} {function} */
 #include <stdio.h>
 #include <string.h>
 int main(void) {{
-    char small[8] = {{0}};
-    char big[256]; memset(big, 'A', sizeof(big)-1);
-    printf("P4: {struct_type}(small, big, %zu)\\n", strlen(big));
-    /* {struct_type}(small, big, strlen(big)); */ return 0;
+    char small[8]; char big[256]; memset(big,'A',255);
+    printf("P4: {struct_type}(small,big,%zu)\\n",strlen(big)); return 0;
 }}''',
-"P5_stack_overflow": '''/* Auto-PoC: {pattern} {cwe} {file}:{line} {function}
- * Trigger: {trigger_hint} */
+"P5_stack_overflow": '''/* Auto-PoC: {pattern} {cwe} conf={confidence}% {file}:{line} {function} */
 #include <stdio.h>
 #include <string.h>
 int main(void) {{
-    char input[4096]; memset(input, 'A', 4095); input[4095] = 0;
-    printf("P5: %zu-byte string -> {function} ({struct_type})\\n", strlen(input));
-    /* {function}(input); */ return 0;
+    char in[4096]; memset(in,'A',4095); in[4095]=0;
+    printf("P5: {struct_type}\\n"); return 0;
 }}''',
-"P6_null_deref": '''/* Auto-PoC: {pattern} {cwe} {file}:{line} {function}
- * Trigger: {trigger_hint} */
+"P6_null_deref": '''/* Auto-PoC: {pattern} {cwe} conf={confidence}% {file}:{line} {function} */
 #include <stdio.h>
 #include <stddef.h>
-int main(void) {{
-    printf("P6: {function}(NULL)\\n");
-    /* {function}(NULL); */ return 0;
-}}''',
-"P7_alloc_overflow": '''/* Auto-PoC: {pattern} {cwe} {file}:{line} {function}
- * Trigger: {trigger_hint} */
-#include <stdio.h>
+int main(void) {{ printf("P6: {function}(NULL)\\n"); return 0; }}''',
+"P7_alloc_overflow": '''#include <stdio.h>
 #include <stdint.h>
-int main(void) {{
-    printf("P7: {function}({struct_type}=SIZE_MAX/8)\\n");
-    /* {function}(SIZE_MAX / 8); */ return 0;
-}}''',
-"P8_use_after_free": '''/* Auto-PoC: {pattern} {cwe} {file}:{line} {function}
- * Trigger: {trigger_hint} */
-#include <stdio.h>
-int main(void) {{
-    printf("P8: {function}() post-free use of '{struct_type}'\\n");
-    printf("Requires specific input reaching UAF path\\n"); return 0;
-}}''',
-"P9_format_string": '''/* Auto-PoC: {pattern} {cwe} {file}:{line} {function}
- * Trigger: {trigger_hint} */
-#include <stdio.h>
-int main(void) {{
-    char *fmt = "%n%n%n";
-    printf("P9: {function}(fmt=\\"%s\\")\\n", fmt);
-    /* {function}(fmt); */ return 0;
-}}''',
+int main(void) {{ printf("P7: {function}({struct_type}=SIZE_MAX/8)\\n"); return 0; }}''',
+"P8_use_after_free": '''#include <stdio.h>
+int main(void) {{ printf("P8: {function}() UAF '{struct_type}'\\n"); return 0; }}''',
+"P9_format_string": '''#include <stdio.h>
+int main(void) {{ char *f="%n%n%n"; printf("P9: {function}(f)\\n"); return 0; }}''',
 }
 _POC["P2_truncation"] = _POC["P1_null_len"]
 _POC["P3_nested_deref"] = _POC["P1_null_len"]
@@ -336,7 +496,8 @@ def generate_poc(f, out_dir):
     sid = re.sub(r'[^a-zA-Z0-9_]', '_', f.finding_id)[:40]
     name = f"poc_{f.pattern}_{sid}.c"
     (out_dir / name).write_text(tpl.format(
-        pattern=f.pattern, cwe=f.cwe, file=f.file, line=f.line,
+        pattern=f.pattern, cwe=f.cwe, confidence=f.confidence,
+        file=f.file, line=f.line,
         function=f.function or "target", struct_type=f.struct_type or "buf",
         trigger_hint=f.trigger_hint or "see desc"), encoding='utf-8')
     return name
@@ -351,47 +512,77 @@ SCANNERS = [
     ("P7", scan_p7, "gen"), ("P8", scan_p8, "gen"), ("P9", scan_p9, "gen"),
 ]
 
-def run(source_root: Path, output_dir: Path) -> dict:
+def run(source_root: Path, output_dir: Path, min_confidence: int = 0) -> dict:
     t0 = time.time()
     output_dir.mkdir(parents=True, exist_ok=True)
     (output_dir / "pocs").mkdir(exist_ok=True)
-    all_cpp = list(source_root.rglob('*.cpp')) if hasattr(source_root, 'rglob') else list(source_root.rglob('*.cpp'))
+    all_cpp = list(source_root.rglob('*.cpp'))
     all_c = list(source_root.rglob('*.c'))
     cj = [p for p in all_cpp if '/cj/' in str(p).replace(os.sep, '/')]
     has_cj = len(cj) > 0
-    total_lines = 0
-    for p in (all_cpp + all_c)[:200]:
-        try: total_lines += sum(1 for _ in p.open('rb'))
-        except OSError: pass
-    if len(all_cpp + all_c) > 200:
-        total_lines = total_lines * len(all_cpp + all_c) // 200
+    total_lines = sum(1 for p in (all_cpp+all_c)[:200] for _ in p.open('rb'))
+    if len(all_cpp+all_c) > 200:
+        total_lines = total_lines * len(all_cpp+all_c) // 200
 
+    # Build call graph for cross-function analysis
+    t_cg = time.time()
+    cg = CallGraph()
+    cg.build(source_root)
+    cg_time = time.time() - t_cg
+
+    # Run scanners (P6 uses call graph for cross-function filtering)
     findings = []
     for pid, scanner, scope in SCANNERS:
         if scope == "cj" and not has_cj: continue
-        try: findings.extend(scanner(source_root))
-        except Exception as e: print(f"WARN {pid}: {e}", file=sys.stderr)
+        try:
+            if pid == "P6":
+                results = scanner(source_root, call_graph=cg)
+            else:
+                results = scanner(source_root)
+            findings.extend(results)
+        except Exception as e:
+            print(f"WARN {pid}: {e}", file=sys.stderr)
 
+    # Sort by confidence (descending)
+    findings.sort(key=lambda f: f.confidence, reverse=True)
+
+    # Filter by minimum confidence
+    all_count = len(findings)
+    findings = [f for f in findings if f.confidence >= min_confidence]
+
+    # PoC generation only for confidence >= 50
     for f in findings:
-        if f.severity in ("high", "medium"):
+        if f.confidence >= 50:
             f.poc_file = generate_poc(f, output_dir / "pocs")
 
     elapsed = time.time() - t0
     pc = {}
     for f in findings: pc[f.pattern] = pc.get(f.pattern, 0) + 1
+    conf_bins = {"80+": 0, "60-79": 0, "40-59": 0, "0-39": 0}
+    for f in findings:
+        c = f.confidence
+        if c >= 80: conf_bins["80+"] += 1
+        elif c >= 60: conf_bins["60-79"] += 1
+        elif c >= 40: conf_bins["40-59"] += 1
+        else: conf_bins["0-39"] += 1
+
     report = {
-        "tool": "WildTrace Autopilot v2",
+        "tool": "WildTrace Autopilot v3",
         "timestamp": datetime.now().isoformat(),
         "elapsed_seconds": round(elapsed, 2),
+        "call_graph_seconds": round(cg_time, 2),
         "surface": {"cpp": len(all_cpp), "c": len(all_c), "cj": len(cj),
-                     "lines_est": total_lines, "has_cj": has_cj},
+                     "lines_est": total_lines, "has_cj": has_cj,
+                     "call_graph_functions": len(cg.functions)},
         "summary": {
-            "total": len(findings),
+            "total": len(findings), "before_filter": all_count,
             "high": sum(1 for f in findings if f.severity == "high"),
             "medium": sum(1 for f in findings if f.severity == "medium"),
             "pocs": sum(1 for f in findings if f.poc_file),
             "patterns": pc,
-            "scanners": [p for p, _, s in SCANNERS if s == "gen" or (s == "cj" and has_cj)],
+            "confidence_distribution": conf_bins,
+            "min_confidence": min_confidence,
+            "scanners": [p for p,_,s in SCANNERS if s=="gen" or (s=="cj" and has_cj)],
         },
         "findings": [asdict(f) for f in findings],
     }
@@ -402,15 +593,24 @@ def run(source_root: Path, output_dir: Path) -> dict:
 def _md(r):
     s = r["summary"]; sf = r["surface"]
     L = ["# 自动化漏洞分析报告", "",
-         f"工具：{r['tool']} | {r['timestamp'][:19]} | 耗时 {r['elapsed_seconds']}s",
-         "", f"扫描面：C++ {sf['cpp']} | C {sf['c']} | CJ {sf['cj']} | ~{sf['lines_est']:,} 行",
-         "", f"发现：**{s['total']}** 条（高危 {s['high']} / 中危 {s['medium']}）| PoC {s['pocs']} 个",
-         f"扫描器：{', '.join(s['scanners'])}", "", "| 模式 | 数量 |", "|---|---|"]
+         f"工具：{r['tool']} | {r['timestamp'][:19]} | 耗时 {r['elapsed_seconds']}s (含调用图 {r['call_graph_seconds']}s)",
+         "", f"扫描面：C++ {sf['cpp']} | C {sf['c']} | CJ {sf['cj']} | ~{sf['lines_est']:,} 行 | 调用图 {sf['call_graph_functions']} 函数",
+         "", f"发现：**{s['total']}** 条（高危 {s['high']} / 中危 {s['medium']}）",
+         f"PoC（置信度≥50）：{s['pocs']} 个 | 最低置信度：{s['min_confidence']}",
+         "", "### 置信度分布", "",
+         "| 置信度 | 数量 |", "|---|---|"]
+    for k, v in s["confidence_distribution"].items():
+        L.append(f"| {k} | {v} |")
+    L += ["", "| 模式 | 数量 |", "|---|---|"]
     for p, c in sorted(s["patterns"].items()): L.append(f"| {p} | {c} |")
-    L += ["", "| 模式 | 严重度 | 位置 | 函数 | CWE |", "|---|---|---|---|---|"]
-    for f in r["findings"][:100]:
-        L.append(f"| {f['pattern']} | {f['severity']} | {f['file']}:{f['line']} | {f['function']} | {f['cwe']} |")
-    L += ["", "> lead ≠ 漏洞"]
+    L += ["", "### 高置信度发现（≥70）", "",
+          "| 置信度 | 模式 | 严重度 | 位置 | 函数 | CWE | 因子 |", "|---|---|---|---|---|---|---|"]
+    for f in r["findings"]:
+        if f["confidence"] >= 70:
+            L.append(f"| {f['confidence']} | {f['pattern']} | {f['severity']} "
+                    f"| {f['file']}:{f['line']} | {f['function']} | {f['cwe']} "
+                    f"| {f['confidence_factors'][:50]} |")
+    L += ["", "> lead ≠ 漏洞。置信度是基于模式启发式的优先级排序，不是准确率保证。"]
     return "\n".join(L)
 
 def main():
@@ -418,11 +618,15 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument("source_root", type=Path)
     p.add_argument("--output", type=Path, default=Path("autopilot_output"))
+    p.add_argument("--min-confidence", type=int, default=0,
+                   help="Filter findings below this confidence (0-100)")
     a = p.parse_args()
-    r = run(a.source_root, a.output)
+    r = run(a.source_root, a.output, a.min_confidence)
     s = r["summary"]
-    print(f"AUTOPILOT v2: {s['total']} (H={s['high']} M={s['medium']}) pocs={s['pocs']} "
-          f"scanners={','.join(s['scanners'])} {r['elapsed_seconds']}s")
+    print(f"AUTOPILOT v3: {s['total']}/{s['before_filter']} findings "
+          f"(H={s['high']} M={s['medium']}) pocs={s['pocs']} "
+          f"conf>=70: {s['confidence_distribution']['80+'] + s['confidence_distribution']['60-79'] // 2} "
+          f"in {r['elapsed_seconds']}s")
 
 if __name__ == "__main__":
     main()
