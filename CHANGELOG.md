@@ -1,3 +1,10 @@
+# 2026-09-29（追加七：R2 候选调用器三件 + 任务书 H 节）
+
+- `hiappevent_null_watcher.c`（AddWatcher 三重嵌套：外层 null + 内层 names.head null + eventTypes null/移位 UB）
+- `netstack_neg_size.c`（证书验证 int64→uint32 截断→大循环）
+- `bluetooth_neg_advert.c`（广播数据三重漏洞：外层 null + 内层 null + 负 size→size_t 下溢巨拷贝）
+- 任务书追加 H 节。**对侧验证工具包现在含 E/F/G/H 四节 + 九个调用器**。
+
 # 2026-09-29（追加六：第二轮模式扫描——4 模式族 73 lead，4 条新增候选）
 
 - `cjffi_scan2.py`：F1 嵌套数组解引用 / F2 malloc 算术溢出 / F3 字符串无界 / F4 整数截断——491 文件 → 73 lead。
