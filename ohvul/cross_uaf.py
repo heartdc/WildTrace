@@ -40,8 +40,19 @@ _SKIP = {
 }
 
 
+_TYPE_WORDS = {'const', 'struct', 'unsigned', 'signed', 'int',
+               'char', 'long', 'short', 'float', 'double',
+               'size_t', 'uint8_t', 'uint16_t', 'uint32_t', 'uint64_t',
+               'int8_t', 'int16_t', 'int32_t', 'int64_t', 'bool'}
+
+
 def _parse_params(params_str: str) -> list[str]:
-    """Extract ordered parameter variable names."""
+    """Extract ordered parameter variable names, positionally aligned.
+
+    Chunks without a resolvable name (function pointers, arrays, unnamed
+    params) keep an empty slot so later indices still line up with the
+    callee's real signature (audit P1: dropping them shifted every
+    following alias to the wrong parameter)."""
     names = []
     for chunk in params_str.split(','):
         chunk = chunk.strip()
@@ -54,17 +65,24 @@ def _parse_params(params_str: str) -> list[str]:
             continue
         # Match "type name" (non-pointer)
         m2 = re.search(r'\b(\w+)\s*$', chunk)
-        if m2 and m2.group(1) not in ('const', 'struct', 'unsigned', 'signed', 'int',
-                                        'char', 'long', 'short', 'float', 'double',
-                                        'size_t', 'uint8_t', 'uint16_t', 'uint32_t', 'uint64_t',
-                                        'int8_t', 'int16_t', 'int32_t', 'int64_t', 'bool'):
+        if m2 and m2.group(1) not in _TYPE_WORDS:
             names.append(m2.group(1))
+        else:
+            names.append('')  # unnamed / fn-ptr / array: keep the slot
     return names
 
 
 def build_facts(root: Path) -> dict[str, FuncFacts]:
-    """Scan all C/C++ files and build per-function facts."""
+    """Scan all C/C++ files and build per-function facts.
+
+    A function name defined in more than one file (common for static
+    helpers) cannot be resolved to a single implementation by name.
+    Definitions with identical facts are kept (attribution is then
+    irrelevant); any factual difference makes the name ambiguous and it
+    is dropped instead of silently attributing everything to the last
+    definition seen (audit P1)."""
     facts = {}
+    ambiguous = set()
     for src in list(root.rglob('*.c')) + list(root.rglob('*.cpp')):
         rel = str(src.relative_to(root))
         try:
@@ -106,8 +124,24 @@ def build_facts(root: Path) -> dict[str, FuncFacts]:
                             'call': cm.group(0)[:60],
                         })
 
-            if ff.freed or ff.deref or ff.passes:
-                facts[fname] = ff
+            if not (ff.freed or ff.deref or ff.passes):
+                continue
+            if fname in facts:
+                existing = facts[fname]
+                same = (existing.param_list == ff.param_list
+                        and existing.freed == ff.freed
+                        and existing.deref == ff.deref
+                        and {(p['callee'], p['arg_pos'], p['var'])
+                             for p in existing.passes}
+                            == {(p['callee'], p['arg_pos'], p['var'])
+                                for p in ff.passes})
+                if same:
+                    continue  # identical facts: attribution is irrelevant
+                ambiguous.add(fname)
+                continue
+            facts[fname] = ff
+    for name in ambiguous:
+        facts.pop(name, None)
     return facts
 
 
@@ -124,6 +158,10 @@ def _pos_of(body: str, pattern: str) -> int:
     return m.start() if m else -1
 
 
+def _pos_all(body: str, pattern: str) -> list[int]:
+    return [m.start() for m in re.finditer(pattern, body)]
+
+
 def scan_cross_uaf(root: Path, facts: dict | None = None) -> list[Finding]:
     """Detect cross-function UAF / double-free using positional alias resolution."""
     if facts is None:
@@ -132,6 +170,11 @@ def scan_cross_uaf(root: Path, facts: dict | None = None) -> list[Finding]:
     findings = []
 
     for caller_name, cf in facts.items():
+        # Each pattern is a property of the (callee, variable) pair: emit
+        # it once instead of once per call site (audit P1: 3000 sink()
+        # calls produced 3000 identical findings and dominated the 889
+        # count).
+        seen_a, seen_b, seen_c = set(), set(), set()
         for p in cf.passes:
             var = p['var']               # variable name in caller
             callee_name = p['callee']
@@ -144,11 +187,16 @@ def scan_cross_uaf(root: Path, facts: dict | None = None) -> list[Finding]:
                 continue
 
             # --- Pattern A: caller frees var, then passes to callee that derefs ---
-            if var in cf.freed:
+            if var in cf.freed and (callee_name, var) not in seen_a:
+                seen_a.add((callee_name, var))
                 free_pos = _pos_of(cf.body_clean,
                     rf'\b(?:free|SoftBusFree|av_free)\s*\(\s*{re.escape(var)}\s*\)')
-                pass_pos = _pos_of(cf.body_clean, rf'\b{re.escape(callee_name)}\s*\(')
-                if free_pos >= 0 and pass_pos > free_pos and callee_param and callee_param in callee_f.deref:
+                # any call site after the free counts — the first call may
+                # legitimately precede it (audit P1: first-occurrence-only
+                # missed the free-then-pass ordering)
+                pass_poss = _pos_all(cf.body_clean, rf'\b{re.escape(callee_name)}\s*\(')
+                if free_pos >= 0 and any(pp > free_pos for pp in pass_poss) \
+                        and callee_param and callee_param in callee_f.deref:
                     f = Finding(
                         finding_id=f"P8A_{cf.file}_{cf.line + p['offset']}",
                         pattern="P8_cross_uaf", severity="high",
@@ -162,27 +210,37 @@ def scan_cross_uaf(root: Path, facts: dict | None = None) -> list[Finding]:
 
             # --- Pattern B: callee frees, caller uses after the call ---
             if callee_param and callee_param in callee_f.freed:
-                call_pos = _pos_of(cf.body_clean, rf'\b{re.escape(callee_name)}\s*\(')
-                if call_pos < 0:
-                    continue
-                after = cf.body_clean[call_pos:]
-                post = re.findall(rf'\b{re.escape(var)}\s*(?:->\w+|\[)', after)
-                before = cf.body_clean[:call_pos]
-                pre = re.findall(rf'\b{re.escape(var)}\s*(?:->\w+|\[)', before)
-                if len(post) > len(pre):
-                    f = Finding(
-                        finding_id=f"P8B_{cf.file}_{cf.line + p['offset']}",
-                        pattern="P8_cross_uaf", severity="high",
-                        file=cf.file, line=cf.line + p['offset'],
-                        function=caller_name, struct_type=var, cwe="CWE-416",
-                        description=(f"'{var}' freed by {callee_name}() (param '{callee_param}'), "
-                                     f"then used {len(post)-len(pre)}× in {caller_name}()"),
-                        trigger_hint=f"{caller_name}() calls {callee_name}() → frees → uses",
-                        reachability=f"{caller_name} → {callee_name} → {caller_name}")
-                    findings.append(f)
+                key = (callee_name, var)
+                if key not in seen_b:
+                    seen_b.add(key)
+                    # calls that pass THIS variable (other arguments to the
+                    # same callee are irrelevant for this pair)
+                    call_poss = _pos_all(cf.body_clean,
+                                         rf'\b{re.escape(callee_name)}\s*\(\s*{re.escape(var)}\b')
+                    if not call_poss:
+                        continue
+                    after = cf.body_clean[call_poss[-1]:]
+                    # a NULL reset after the freeing call retires the
+                    # pointer — same rule single-function P8 applies
+                    if re.search(rf'\b{re.escape(var)}\s*=\s*(?:NULL|nullptr|0)\s*;', after):
+                        continue
+                    post = re.findall(rf'\b{re.escape(var)}\s*(?:->\w+|\[)', after)
+                    if post:
+                        f = Finding(
+                            finding_id=f"P8B_{cf.file}_{cf.line + p['offset']}",
+                            pattern="P8_cross_uaf", severity="high",
+                            file=cf.file, line=cf.line + p['offset'],
+                            function=caller_name, struct_type=var, cwe="CWE-416",
+                            description=(f"'{var}' freed by {callee_name}() (param '{callee_param}'), "
+                                         f"then used {len(post)}× after the call in {caller_name}()"),
+                            trigger_hint=f"{caller_name}() calls {callee_name}() → frees → uses",
+                            reachability=f"{caller_name} → {callee_name} → {caller_name}")
+                        findings.append(f)
 
             # --- Pattern C: double-free (both caller and callee free) ---
-            if var in cf.freed and callee_param and callee_param in callee_f.freed:
+            if var in cf.freed and callee_param and callee_param in callee_f.freed \
+                    and (callee_name, var) not in seen_c:
+                seen_c.add((callee_name, var))
                 f = Finding(
                     finding_id=f"P8C_{cf.file}_{cf.line + p['offset']}",
                     pattern="P8_double_free", severity="high",
