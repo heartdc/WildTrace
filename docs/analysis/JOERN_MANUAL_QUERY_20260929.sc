@@ -1,0 +1,10 @@
+importCpg("/tmp/joern_test")
+println("=== Methods ===")
+println(cpg.method.name.l)
+println("=== memcpy calls ===")
+println(cpg.call.name("memcpy").code.l)
+println("=== free calls ===")
+println(cpg.call.name("free").code.l)
+println("=== IDENTIFIER: data ===")
+println(cpg.identifier.name("data").lineNumber.l)
+exit
