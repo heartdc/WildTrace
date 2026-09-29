@@ -1,3 +1,17 @@
+# 2026-09-29（追加十八：影响矩阵 kb 联接 + 性能测量修复——？格 75→14）
+
+- `tools/perf_measure.py`（审计 A1）：`system_peak_rss_mb()` 修复 rss 双重除以 1024 的计算错误
+  （旧表达式 KB→MB 后再 //1024，读数几乎恒 0——PERFORMANCE 交付件的内存列因此一直会是零）；无 getrusage 平台返回 0.0。
+- 影响矩阵 kb 联接（审计 A2）：`ohvul.impact_matrix` 按 CVE 联接 `kb/third_party_targets/records.json`（源 cvelistV5，
+  全部 16 个案例 CVE 在库）。判定新增首选规则 `kb_branch_verdict`：cvelist 边界语义——起点 ≤ 基线且跨度内无修复点即 affected，
+  全部适用区间被修复点封顶即 fixed；无修复记录（semantics=none）时上界开放；commit hash 条目跳过。
+  CLI 新增 `--kb`（默认自动发现 `<cases>/../kb/third_party_targets/records.json`）；`ohvul.vuln_report` 同步穿透联接。
+- 交付件重生成：**18 案 × 6 分支 = 🔴 88 格 / — 证实不受影响 6 格 / ？待定 14 格**（此前 33🔴/75？）。
+  curl 两案全分支证实（8.1.1–8.13.0 均在 7.71.0–8.14.2 等区间）；openssl 六分支全红（3.0.12 落在 3.0.0–3.0.21）；
+  **quirc 四个旧分支证实 not_affected（cvelist 引入版本 7.0 > n4.1/n5.1.6/n6.1.1）**——手写全红矩阵的错误首次被库内数据证实；
+  64832/70632 的 v4.1 同理。剩余 ？= cJSON 6 格（各分支基线未录入）+ OH 原生 8 格（旧分支 CJ FFI 引入时间未确认）。
+- 新增 6 项 kb 联接回归测试（curl 边界语义/开放上界/commit 跳过/kb 优先级/回退/端到端联接）。994 项全量回归通过。
+
 # 2026-09-29（追加十七：LLM PoC 生成器安全加固——注入面 / 路径穿越 / 输出屏蔽 / 批量鲁棒性）
 
 - 路径包含检查（审计 P1）：`finding['file']` 先 resolve 再校验必须落在 source_root 内，`../../.ssh/id_rsa` 或绝对路径

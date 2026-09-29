@@ -15,7 +15,7 @@ import json, os, re
 from pathlib import Path
 from datetime import date
 
-from .impact_matrix import OH_BRANCHES, evaluate_case
+from .impact_matrix import OH_BRANCHES, evaluate_case, load_kb_records
 
 REPORT_TEMPLATE = """## {case_id}
 
@@ -71,7 +71,7 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 """
 
 
-def read_case(case_dir: Path) -> dict:
+def read_case(case_dir: Path, kb_records: dict | None = None) -> dict:
     record = json.loads((case_dir / "case.json").read_text(encoding="utf-8"))
 
     # Source code info
@@ -130,7 +130,7 @@ def read_case(case_dir: Path) -> dict:
     # Version impact: verdicts come from the impact-matrix engine (single
     # source of truth) — no hardcoded branch lists, no unconditional 🔴.
     component = record.get("component", "")
-    impacts = evaluate_case(record)["branches"]
+    impacts = evaluate_case(record, kb_records)["branches"]
     version_impact_lines = []
     for br in OH_BRANCHES:
         short = br.replace("OpenHarmony-", "").replace("-Release", "")
@@ -163,14 +163,19 @@ def read_case(case_dir: Path) -> dict:
     }
 
 
-def generate_report(cases_dir: Path, output: Path):
+def generate_report(cases_dir: Path, output: Path, kb_path=None):
     case_dirs = sorted(d for d in cases_dir.iterdir() if d.is_dir() and (d / "case.json").exists())
     if not case_dirs:
         raise ValueError(f"No case directories with case.json in {cases_dir}")
 
+    if kb_path is None:
+        candidate = cases_dir.parent / "kb" / "third_party_targets" / "records.json"
+        kb_path = candidate if candidate.exists() else None
+    kb_records = load_kb_records(kb_path) if kb_path else {}
+
     sections = []
     for cd in case_dirs:
-        data = read_case(cd)
+        data = read_case(cd, kb_records)
         sections.append(REPORT_TEMPLATE.format(**data))
 
     header = f"""# OpenHarmony 漏洞分析报告
@@ -203,10 +208,12 @@ def main():
     import argparse
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--cases", type=Path, default=Path("cases"))
+    parser.add_argument("--kb", type=Path, default=None,
+                        help="kb/third_party_targets/records.json to join by CVE")
     parser.add_argument("--output", type=Path, default=Path("docs/deliverables/VULN_REPORT.md"))
     args = parser.parse_args()
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    generate_report(args.cases, args.output)
+    generate_report(args.cases, args.output, kb_path=args.kb)
 
 
 if __name__ == "__main__":
