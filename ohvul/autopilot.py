@@ -543,6 +543,21 @@ def run(source_root: Path, output_dir: Path, min_confidence: int = 0) -> dict:
         except Exception as e:
             print(f"WARN {pid}: {e}", file=sys.stderr)
 
+    # Cross-function UAF detection (P8-Cross)
+    try:
+        from .cross_uaf import build_facts, scan_cross_uaf
+        t_x = time.time()
+        xfacts = build_facts(source_root)
+        cross_findings = scan_cross_uaf(source_root, xfacts)
+        cross_time = time.time() - t_x
+        findings.extend(cross_findings)
+        if cg_time == 0:
+            cg_time = cross_time
+        else:
+            cg_time = round(cg_time + cross_time, 2)
+    except Exception as e:
+        print(f"WARN cross_uaf: {e}", file=sys.stderr)
+
     # Sort by confidence (descending)
     findings.sort(key=lambda f: f.confidence, reverse=True)
 
