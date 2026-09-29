@@ -1,3 +1,9 @@
+# 2026-09-29（追加十：Autopilot v2——9 模式族覆盖任意 C/C++ 代码）
+
+- `ohvul.autopilot` v2：在 CJ FFI P1-P3 基础上新增 **P4-P9 六个通用模式族**——P4 无界内存拷贝 / P5 栈缓冲溢出 / P6 空指针解引用 / P7 分配整数溢出 / P8 释放后使用 / P9 格式化字符串。**不再限于 CJ FFI 面，可扫描任意 C/C++ 代码**。
+- 实测：dsoftbus 742K 行（无 CJ）→ **2756 lead（490 高危）+ 2756 PoC，139 秒**；CJ FFI 63 仓 → 210 lead + 210 PoC，54 秒。869 项全量回归通过。
+- 每条 lead 自动生成对应模式族的可编译 PoC 模板（含触发提示/CWE/编译命令）。
+
 # 2026-09-29（追加九：端到端自动化分析 + PoC 自动生成）
 
 - `ohvul.autopilot`：一条命令 `python -m ohvul.autopilot <source_root> --output <dir>` 自动完成：面发现（CJ FFI 检测）→ 3 模式族扫描（P1 null_len / P2 truncation / P3 nested_deref）→ FFI 导出追踪 → **PoC 自动生成**（每条 high/medium lead 一个可编译 C 调用器）→ 统一报告（JSON+MD）。
