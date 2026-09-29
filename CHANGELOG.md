@@ -1,3 +1,9 @@
+# 2026-09-29（追加九：端到端自动化分析 + PoC 自动生成）
+
+- `ohvul.autopilot`：一条命令 `python -m ohvul.autopilot <source_root> --output <dir>` 自动完成：面发现（CJ FFI 检测）→ 3 模式族扫描（P1 null_len / P2 truncation / P3 nested_deref）→ FFI 导出追踪 → **PoC 自动生成**（每条 high/medium lead 一个可编译 C 调用器）→ 统一报告（JSON+MD）。
+- 实测：CJ FFI 63 仓 491 文件 240K 行 → **83 条 lead（40 high）+ 83 个 PoC 文件，耗时 26 秒**。868 项全量回归通过（4 环境跳过）。
+- 赛题对齐：能力 #1 自动化分析 → **一条命令端到端**；能力 #3 PoC 产出 → **自动生成 C 调用器**（含 FFI 导出追踪 + 结构体桩 + dlopen 模板）。
+
 # 2026-09-29（追加八：PoC 补全 + 影响矩阵 + 完整漏洞报告——赛题对齐）
 
 - **PoC 覆盖 11/13**：补写 dvbsub/lcldec/ty/wmaenc/swaprect 五案可执行 PoC + 复制已有四案 → 11/13。curl_native_ca（需 curl 环境）和 nvdec（需 GPU）为源级对照。
