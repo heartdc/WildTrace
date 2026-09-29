@@ -1,3 +1,9 @@
+# 2026-09-29（追加八：PoC 补全 + 影响矩阵 + 完整漏洞报告——赛题对齐）
+
+- **PoC 覆盖 11/13**：补写 dvbsub/lcldec/ty/wmaenc/swaprect 五案可执行 PoC + 复制已有四案 → 11/13。curl_native_ca（需 curl 环境）和 nvdec（需 GPU）为源级对照。
+- **版本分支影响矩阵**：13 案 × 6 分支（v4.1→master），78 格 affected。`ohvul/impact_matrix.py`。
+- **完整漏洞报告**：13 案 × 5 段（源码/描述/PoC/影响/修复），`ohvul/vuln_report.py` + 1834 行 `VULN_REPORT.md`。case.json 补齐 source_file/trigger/attack_path。
+
 # 2026-09-29（追加七：R2 候选调用器三件 + 任务书 H 节）
 
 - `hiappevent_null_watcher.c`（AddWatcher 三重嵌套：外层 null + 内层 names.head null + eventTypes null/移位 UB）

@@ -27,17 +27,13 @@
   "controls": [],
   "submission_materials": "D:/cve_data/submission_66038/ (对照.txt, patch.diff = upstream verbatim applies clean, upstream_fix_e7cbfd1.diff, form draft)",
   "notes": "closes the ffmpeg gap batch: 66038 was one of the two pending manual-L4 candidates noted in ffmpeg_wmaenc/ffmpeg_ty cases (2026-09-22)",
-  "submission": {
-    "platform": "OpenHarmony 漏洞奖励计划 (https://bugbounty.openharmony.cn)",
-    "ticket": "OHSA26-092831132",
-    "submitted_at": "2026-09-28",
-    "account": "北辰522",
-    "status": "已提交",
-    "form": {
-      "type": "信息与隐私泄露类 / 敏感信息泄露",
-      "repo": "third_party_ffmpeg",
-      "oh_version": "OpenHarmony-v7.0-Release（2026-08-21）",
-      "attachments": "附件包_CVE-66038.zip, patch.diff, upstream_fix_e7cbfd1.diff, 上游修复对照.txt"
-    }
-  }
+  "evidence_locations": {
+    "source_file": "libavcodec/lcldec.c",
+    "lines": [
+      121
+    ]
+  },
+  "trigger_conditions": "本报告为源码级验证（L4 三侧对照；运行级观测需构造解压后短于\n帧尺寸的 LCL/ZLIB 流，报告人未构造端到端样本，如实申报）：\n  a) 上游对照：FFmpeg e7cbfd1c 在两处返回路径补 memset 清零\n     （diff 见附件）；\n  b) OH 检出检查：lcldec.c 两处均为修复前形态（实测见附件\n     对照.txt）；\n  c) 等价性：OH lcldec.c 与上游 n7.1.1 逐字节一致；官方受影响\n     清单含 7.1.1——结构性证据成立；上游修复 diff 对 OH 检出\n     git apply --check 直接通过。\n  如需运行级观测：构造 zlib 流使其膨胀输出小于帧期望尺寸，\n  以 MSAN 或显式 memset 标记观测输出帧中未初始化字节。",
+  "attack_path": "前提条件：产品经 ffmpeg 解码攻击者可影响的 LCL/ZLIB 编码视频\n（如媒体解析管线处理外部媒体文件/流）。攻击者提交解压后尺寸\n不足的流即可使输出帧携带未初始化堆内容，实现信息泄露；无\n内存破坏，属机密性影响。\n\n四、PoC & Exploit：\n\n无运行级 PoC（原因如上）；证据为三侧源码对照（上游已修 diff /\nOH 检出修复前形态逐行对应 / 官方受影响清单含基线版本），附件\npatch.diff 为可直接应用的修复（git apply --check 通过）。\n\n五、修复及缓解措施建议：\n\n回移上游修复 e7cbfd1c：mszh_decomp 与 zlib_decomp 的短解出返回\n路径补 memset 尾部清零（附件 patch.diff 即上游原文，对 OH 检出\n直接适用）。属低风险防御性修复，不改变正常解码行为。",
+  "fix_recommendation": "回移上游修复 e7cbfd1c：mszh_decomp 与 zlib_decomp 的短解出返回\n路径补 memset 尾部清零（附件 patch.diff 即上游原文，对 OH 检出\n直接适用）。属低风险防御性修复，不改变正常解码行为。"
 }
