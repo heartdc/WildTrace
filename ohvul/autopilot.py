@@ -43,27 +43,81 @@ _FUNC_RE = re.compile(
     r'(?:(?:static\s+|inline\s+|extern\s+|virtual\s+|unsigned\s+|signed\s+|const\s+|struct\s+)*'
     r'[\w:<>~\[\]*&\s]+?)\s+(\w+)\s*\(([^;{}()]{0,800}?)\)\s*\{', re.S)
 
+_NON_FUNC_KEYWORDS = {'if', 'for', 'while', 'switch', 'else', 'return', 'sizeof'}
+
+
+def _mask_comments_strings(text: str) -> str:
+    """Blank out comments and literal contents with spaces (newlines kept).
+
+    Length-preserving, so offsets and line numbers computed against the
+    mask match the original text. Brace/paren scanning must run on the
+    masked copy: an apostrophe inside a comment used to put the old
+    scanner into an unbalanced quote-skip and silently drop the function.
+    """
+    out = list(text)
+    i, n = 0, len(text)
+    while i < n:
+        c = text[i]
+        two = text[i:i + 2]
+        if two == '//':
+            j = text.find('\n', i)
+            j = n if j == -1 else j
+            for k in range(i, j):
+                out[k] = ' '
+            i = j
+        elif two == '/*':
+            j = text.find('*/', i + 2)
+            j = n if j == -1 else j + 2
+            for k in range(i, j):
+                if out[k] != '\n':
+                    out[k] = ' '
+            i = j
+        elif c in '"\'':
+            q = c
+            j = i + 1
+            while j < n and text[j] != q:
+                if text[j] == '\\':
+                    j += 1
+                j += 1
+            j = min(j, n - 1)
+            for k in range(i, j + 1):
+                if out[k] != '\n':
+                    out[k] = ' '
+            i = j + 1
+        else:
+            i += 1
+    return ''.join(out)
+
+
 def _iter_functions(text):
-    for m in _FUNC_RE.finditer(text):
+    masked = _mask_comments_strings(text)
+    for m in _FUNC_RE.finditer(masked):
         name, params = m.group(1), m.group(2)
+        if name in _NON_FUNC_KEYWORDS:
+            continue  # `else if (x) { ...` is not a function named "if"
+        # the header regex's type part can span newlines, so decide on the
+        # line that actually carries the function name
+        name_line_start = masked.rfind('\n', 0, m.start(1)) + 1
+        if masked[name_line_start:m.start(1)].lstrip().startswith('#'):
+            continue  # preprocessor directive (e.g. #define macro body)
         start = m.end() - 1; depth = 0; i = start
-        while i < len(text):
-            c = text[i]
+        while i < len(masked):
+            c = masked[i]
             if c == '{': depth += 1
             elif c == '}':
                 depth -= 1
                 if depth == 0: break
-            elif c in '"\'':
-                q = c; i += 1
-                while i < len(text) and text[i] != q:
-                    if text[i] == '\\': i += 1
-                    i += 1
             i += 1
         if depth != 0 or i - start > 50000: continue
         line = text.count('\n', 0, start) + 1
         body = text[start:i+1]
         cleaned = re.sub(r'//[^\n]*', '', body)
-        cleaned = re.sub(r'/\*.*?\*/', '', cleaned, flags=re.S)
+        # keep the newline count so downstream line offsets stay true to
+        # the source (block comments used to collapse lines and drift
+        # reported line numbers)
+        cleaned = re.sub(r'/\*.*?\*/',
+                         lambda mm: '\n' * mm.group(0).count('\n'),
+                         cleaned, flags=re.S)
         cleaned = re.sub(r'"(?:[^"\\]|\\.)*"', '""', cleaned)
         cleaned = re.sub(r"'(?:[^'\\]|\\.)*'", "''", cleaned)
         yield name, params, line, body, cleaned
@@ -141,14 +195,17 @@ def score_finding(f: Finding, body: str, cleaned: str, params: str) -> Finding:
             score += 10; factors.append("+10 (post-free write)")
 
     elif f.pattern == "P4_unbounded_copy":
+        # f.struct_type carries the size variable (audit P1: it used to hold
+        # the copy-function name, so these factors never tested the size).
+        size_var = f.struct_type
         # Higher: size is directly a function parameter
-        if f.struct_type in params:
+        if size_var and size_var in params:
             score += 20; factors.append("+20 (size is direct parameter)")
         # Lower: any bounds check anywhere in function
-        if _has_bound_check(cleaned, re.escape(f.struct_type)):
+        if size_var and _has_bound_check(cleaned, re.escape(size_var)):
             score -= 25; factors.append("-25 (bounds check exists)")
         # Lower: size is used with sizeof or min()
-        if re.search(rf'(?:sizeof|min|MIN|clamp)\s*\([^)]*{re.escape(f.struct_type)}', cleaned):
+        if size_var and re.search(rf'(?:sizeof|min|MIN|clamp)\s*\([^)]*{re.escape(size_var)}', cleaned):
             score -= 15; factors.append("-15 (size clamped)")
         # Higher: network-facing (attacker controls the size)
         if any(k in f.file.lower() for k in ('network', 'socket', 'parse', 'decode', 'receive', 'input')):
@@ -225,27 +282,25 @@ class CallGraph:
                          'memset', 'strlen', 'printf', 'fprintf', 'snprintf', 'sprintf'}
                 # Find frees
                 frees = set(re.findall(r'\b(?:free|SoftBusFree|av_free)\s*\(\s*(\w+)\s*\)', cleaned))
+                # Variables this function null-checks (for caller-side
+                # P6 filtering; stored compactly instead of whole bodies)
+                null_checked = set(re.findall(
+                    r'if\s*\(\s*!?\s*(\w+)\s*(?:==\s*(?:NULL|nullptr|0)\s*)?\)', cleaned))
                 self.functions[name] = {
                     'file': rel, 'line': line, 'params': params,
-                    'calls': calls, 'frees': frees,
+                    'calls': calls, 'frees': frees, 'null_checked': null_checked,
                 }
                 for callee in calls:
                     self.callers.setdefault(callee, set()).add(name)
 
-    def is_pointer_checked_by_caller(self, func_name: str, param_name: str) -> bool:
-        """Check if any caller of func_name null-checks the argument before calling."""
-        if func_name not in self.callers:
-            return False
-        for caller in self.callers[func_name]:
-            if caller in self.functions:
-                caller_info = self.functions[caller]
-                # Re-read the caller's source
-                src = Path(caller_info['file'])
-                # Look for null check before the call
-                pattern = rf'if\s*\([^)]*{re.escape(param_name)}\s*(?:==\s*(?:NULL|nullptr|0)|!=\s*(?:NULL|nullptr))[^)]*\)[^;]*;?\s*[^;]*{re.escape(func_name)}\s*\('
-                # This is a heuristic - full path analysis needs proper CPG
-                if caller_info['params'] and param_name in caller_info['params']:
-                    return True  # caller receives same param, may check it
+    def caller_null_checks_arg(self, func_name: str, arg_name: str) -> bool:
+        """True if some caller of func_name null-checks a variable it passes
+        (or an identically-named one). Heuristic — no path analysis; callers
+        are keyed by name only."""
+        for caller in self.callers.get(func_name, ()):
+            cinfo = self.functions.get(caller)
+            if cinfo and arg_name in cinfo.get('null_checked', ()):
+                return True
         return False
 
     def get_reachability(self, func_name: str, depth: int = 3) -> list[str]:
@@ -352,7 +407,7 @@ def scan_p4(root):
                     size_var = m.group(1) if m.lastindex else None
                     if size_var and size_var in params and not _has_bound_check(cl, re.escape(size_var)):
                         f = Finding(f"P4_{rel}_{line}", "P4_unbounded_copy", "high",
-                                   rel, line, name, fname, cwe,
+                                   rel, line, name, size_var, cwe,
                                    f"{fname}() size from param '{size_var}'",
                                    trigger_hint=f"oversized {size_var}")
                         out.append(score_finding(f, body, cl, params))
@@ -390,14 +445,19 @@ def scan_p6(root, call_graph=None):
                 if len(derefs) < 3: continue
                 if _has_null_check(cl, re.escape(pp)): continue
                 if re.search(rf'if\s*\(\s*!?\s*{re.escape(pp)}\s*\)\s*(?:return|goto)', cl): continue
-                # Cross-function: check if any caller checks this pointer
-                if call_graph and call_graph.is_pointer_checked_by_caller(name, pp):
-                    continue  # Caller checks it, lower our confidence but keep finding
                 f = Finding(f"P6_{rel}_{line}", "P6_null_deref", "medium",
                            rel, line, name, pp, "CWE-476",
                            f"Ptr '{pp}' ×{len(derefs)} derefs, no null check",
                            trigger_hint=f"{name}(NULL)")
-                out.append(score_finding(f, body, cl, params))
+                f = score_finding(f, body, cl, params)
+                # Cross-function: a caller that null-checks the argument
+                # lowers confidence — it must NOT silently drop the finding
+                # (audit P1: name coincidence with a caller param used to
+                # discard the report entirely).
+                if call_graph and call_graph.caller_null_checks_arg(name, pp):
+                    f.confidence = max(0, f.confidence - 20)
+                    f.confidence_factors += "; -20 (caller null-checks arg)"
+                out.append(f)
     return out
 
 def scan_p7(root):
@@ -439,6 +499,38 @@ def scan_p8(root):
                     out.append(score_finding(f, body, cl, params))
     return out
 
+_P9_FMT_ARG = {
+    # function name -> 0-based position of the format argument
+    'printf': 0, 'vprintf': 0,
+    'fprintf': 1, 'vfprintf': 1, 'syslog': 1,
+    'sprintf': 1, 'vsprintf': 1,
+    'snprintf': 2, 'vsnprintf': 2,
+}
+
+
+def _nth_argument(text: str, open_paren: int, n: int):
+    """Return the n-th (0-based) top-level argument of a call whose opening
+    '(' sits at `open_paren`; splits on commas at nesting depth 1."""
+    depth = 0
+    args = []
+    cur = open_paren + 1
+    i = open_paren
+    while i < len(text):
+        c = text[i]
+        if c in '([{':
+            depth += 1
+        elif c in ')]}':
+            depth -= 1
+            if depth == 0:
+                args.append(text[cur:i])
+                return args[n].strip() if n < len(args) else None
+        elif c == ',' and depth == 1:
+            args.append(text[cur:i])
+            cur = i + 1
+        i += 1
+    return None
+
+
 def scan_p9(root):
     out = []
     for src in list(root.rglob('*.c')) + list(root.rglob('*.cpp')):
@@ -446,14 +538,22 @@ def scan_p9(root):
         try: text = src.read_text(encoding='utf-8', errors='replace')
         except OSError: continue
         for name, params, line, body, cl in _iter_functions(text):
-            for m in re.finditer(r'\b(?:printf|fprintf|sprintf|snprintf|syslog)\s*\(', cl):
-                after = cl[m.end():m.end()+80].lstrip()
-                if after.startswith('"'): continue
-                vm = re.match(r'(\w+)', after)
+            for m in re.finditer(r'\b(vprintf|vfprintf|vsprintf|vsnprintf|'
+                                 r'printf|fprintf|sprintf|snprintf|syslog)\s*\(', cl):
+                fname = m.group(1)
+                # Only plain printf has the format as argument 1: the old
+                # code flagged fprintf's stream / snprintf's buffer as the
+                # "format string" (audit P1, systematic false positives).
+                fmt = _nth_argument(cl, m.end() - 1, _P9_FMT_ARG.get(fname, 0))
+                if not fmt:
+                    continue
+                fmt = fmt.strip()
+                if fmt.startswith('"'): continue
+                vm = re.match(r'(\w+)', fmt)
                 if vm and vm.group(1) not in ('NULL','nullptr','sizeof'):
                     f = Finding(f"P9_{rel}_{line}", "P9_format_string", "high",
                                rel, line, name, vm.group(1), "CWE-134",
-                               f"Non-literal format '{vm.group(1)}'",
+                               f"Non-literal format '{vm.group(1)}' in {fname}()",
                                trigger_hint=f"'%n%n%n' as {vm.group(1)}")
                     out.append(score_finding(f, body, cl, params))
     return out
@@ -474,12 +574,13 @@ int main(int c, char **v) {{
     void *lib = dlopen(v[1], RTLD_NOW); if (!lib) return 3;
     printf("P1: malformed -> {function}\\n"); return 0;
 }}''',
-"P4_unbounded_copy": '''/* Auto-PoC: {pattern} {cwe} conf={confidence}% {file}:{line} {function} */
+"P4_unbounded_copy": '''/* Auto-PoC: {pattern} {cwe} conf={confidence}% {file}:{line} {function}
+ * size variable: {struct_type} */
 #include <stdio.h>
 #include <string.h>
 int main(void) {{
     char small[8]; char big[256]; memset(big,'A',255);
-    printf("P4: {struct_type}(small,big,%zu)\\n",strlen(big)); return 0;
+    printf("P4: unbounded copy size={struct_type}\\n"); return 0;
 }}''',
 "P5_stack_overflow": '''/* Auto-PoC: {pattern} {cwe} conf={confidence}% {file}:{line} {function} */
 #include <stdio.h>

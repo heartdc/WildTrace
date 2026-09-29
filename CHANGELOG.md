@@ -1,3 +1,24 @@
+# 2026-09-29（追加十六：检测质量修复——P9 取参 / P4 打分 / P6 静默丢弃 / 函数切分 / cross_uaf 去重）
+
+- P9 格式串（审计 P1）：按函数名定位格式参数位（printf→第1参、fprintf/sprintf/syslog→第2参、snprintf→第3参），
+  顶层逗号分割提取嵌套括号安全的参数。旧版把 fprintf 的 `stderr`、snprintf 的 `buf` 当格式串——字面量格式代码的系统性误报。
+- P4 打分（审计 P1）：`struct_type` 改承载 size 变量（旧为函数名 "memcpy"），"+20 size 为直接参数 / -25 有边界检查 / -15 尺寸钳制"
+  三个因子首次真正测试 size 变量；PoC 模板同步。
+- P6 静默丢弃（审计 P1）：调用方对传入参数有空检查时**降 20 分保留发现**（新因子 "-20 (caller null-checks arg)"），
+  旧版 `continue` 直接丢弃且 `is_pointer_checked_by_caller` 实为"调用方恰有同名参数"即 True——零分析的全量丢弃。
+  CallGraph 构建时紧凑记录每函数 null_checked 变量集合（不存函数体）。
+- 函数切分（审计 P1）：`_iter_functions` 先做长度保真的注释/字符串掩码再做括号匹配——注释里的撇号不再吞掉整个函数
+  （742K 行级大面积 FN）、注释内 `}` 不再截断函数体、`// {` 不再吞并下一函数；`else if` / `#define` 宏不再被当成函数；
+  cleaned 的块注释按换行数替换，行号偏移保真（cross_uaf 报告行号不再漂移）。
+- cross_uaf 重复计数（审计 P1）：模式 A/B/C 均按 (callee, var) 去重——旧版每个调用点发一条，3000 次 `sink(a)` 调用产出 3000 条
+  相同发现（"889 条"的主要水分来源），同时消除 O(调用点数×函数体长) 的重复正则扫描。
+  模式 A 改为"free 之后任一调用点"（旧版只看首次出现，漏报先合法调用后 free 再传的场景）；
+  模式 B 定位**传入该变量**的调用点取最后一次（旧版 len(post)>len(pre) 计数启发式同时产生漏报和误报），并遵循 NULL 重置豁免（与单函数 P8 一致）。
+- cross_uaf facts 同名冲突（审计 P1）：同名多定义——事实完全相同则保留（归属无关），事实不同（static 同名不同实现）判歧义丢弃，
+  旧版静默 last-writer-wins 造成跨文件张冠李戴。`_parse_params` 位置对齐：函数指针/数组/未命名参数保留空槽，
+  后续参数不再错位一格（位置别名 off-by-one）。
+- 新增 `tests/test_detection_quality.py`（17 项）。972 项全量回归通过。
+
 # 2026-09-29（追加十五：审计修复——影响矩阵诚实化 + Joern 层接线 + 报告口径修正）
 
 - 影响矩阵（审计 P0）：`ohvul.impact_matrix` 移除跨组件基线兜底——旧实现缺组件基线时回退用 ffmpeg 版本号判定 curl/openssl/cjson，
