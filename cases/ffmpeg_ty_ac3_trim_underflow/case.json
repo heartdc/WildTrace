@@ -25,8 +25,20 @@
     "runtime_status": "not_run"
   },
   "controls": [
-    {"name": "guarded-sibling", "desc": "ty.c:640 identical trim is protected by pkt->size > AC3_PKT_LENGTH; must remain untouched in backport"}
+    {
+      "name": "guarded-sibling",
+      "desc": "ty.c:640 identical trim is protected by pkt->size > AC3_PKT_LENGTH; must remain untouched in backport"
+    }
   ],
   "submission_materials": "D:/cve_data/submission_65704/ (对照.txt, patch.diff = upstream verbatim applies clean, form draft, attachments zip)",
-  "notes": "ffmpeg gap batch case 4 of 5 gap_likely; 52296/66038/70628 still pending manual L4"
+  "notes": "ffmpeg gap batch case 4 of 5 gap_likely; 52296/66038/70628 still pending manual L4",
+  "evidence_locations": {
+    "source_file": "libavformat/ty.c",
+    "lines": [
+      576
+    ]
+  },
+  "trigger_conditions": "本报告为源码级验证（运行级复现需构造 Series2 AC3 的 TiVo TY 流\n输入；TY chunk 结构与触发序列见附件对照.txt 的运行级复现路径\n一节，可在具备 TY 样本的环境按同法补做）：\n  a) 上游对照：FFmpeg master commit de771bd5 修复了 libavformat/\n     ty.c demux_audio 的该下溢（diff 见附件）；\n  b) OH 检出检查：ty.c:576 仍为 \"pkt->size -= 2;\"（修复前形态，\n     实测行号见附件对照.txt）；\n  c) 等价性：OH ty.c 与上游 n7.1.1 逐字节一致；官方受影响清单\n     含 7.1.1——结构性证据成立；上游修复 diff 对 OH 检出\n     git apply --check 直接通过。\n  如需运行级复现：按上游修复 message 引用的\n  ty-s2-ac3-negative-size-single-file.ffconcat 方式构造输入\n  （ffconcat 指向 Series2 AC3 TY 文件，连续 ",
+  "attack_path": "前提条件：产品使用 ffmpeg 解复用/转码不可信 TiVo TY 流（媒体\n处理服务、文件预览等场景）。攻击者提供构造的 TY/ffconcat 输入，\n驱动 Series2 AC3 分支的累计计数与末包尺寸组合命中下溢条件；\n无需系统特权，应用自动处理不可信输入时无需用户交互。触发后\n为负尺寸参数的包操作（潜在越界读写，实际影响取决于调用方）。\n\n四、PoC & Exploit：\n\n无运行级 PoC（原因如上：需 Series2 AC3 TY 流构造，见附件复现\n路径说明）；证据为三侧源码对照（上游已修 diff / OH 检出修复前\n形态逐行对应 / 官方受影响清单含基线版本），附件 patch.diff 为\n可直接应用的修复（git apply --check 通过）。\n\n五、修复及缓解措施建议：\n\n回移上游修复 de771bd5：ty.c demux_audio 的 Series2 AC3 裁剪改为\npkt->size -= FFMIN(pkt->size, 2)（附件 patch.diff 即上游原文，\n对 OH 检出直接适用）。注意 640 行的同型代码有 pkt->s",
+  "fix_recommendation": "回移上游修复 de771bd5：ty.c demux_audio 的 Series2 AC3 裁剪改为\npkt->size -= FFMIN(pkt->size, 2)（附件 patch.diff 即上游原文，\n对 OH 检出直接适用）。注意 640 行的同型代码有 pkt->size >\nAC3_PKT_LENGTH 前置保护，保持原样不动。临时缓解：产品侧限制\n对不可信 TiVo 流的解复用；升级后可补充 Series2 AC3 边界尺寸\n的回归用例（上游 oss-fuzz 语料已含该形态）。"
 }

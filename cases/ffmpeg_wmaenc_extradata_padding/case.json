@@ -26,5 +26,14 @@
   },
   "controls": [],
   "submission_materials": "D:/cve_data/submission_52296/ (对照.txt, patch.diff = upstream verbatim applies clean, form draft, attachments zip)",
-  "notes": "ffmpeg gap batch case 5 of 5 gap_likely; 66038/70628 + 2 already_fixed re-checks still pending"
+  "notes": "ffmpeg gap batch case 5 of 5 gap_likely; 66038/70628 + 2 already_fixed re-checks still pending",
+  "evidence_locations": {
+    "source_file": "libavcodec/wmaenc.c",
+    "lines": [
+      67
+    ]
+  },
+  "trigger_conditions": "本报告为源码级验证（运行级观测需在下游按填充块读取 extradata\n的路径上触发，报告人未构造端到端样本，如实申报）：\n  a) 上游对照：FFmpeg master commit 23227a44 补齐了两处 extradata\n     分配的填充（diff 见附件）；\n  b) OH 检出检查：wmaenc.c encode_init（约 67/74 行）仍为\n     av_malloc(4) / av_mallocz(10)——修复前形态（实测见附件\n     对照.txt）；\n  c) 等价性：OH wmaenc.c 与上游 n7.1.1 逐字节一致；官方受影响\n     清单含 7.1.1——结构性证据成立；上游修复 diff 对 OH 检出\n     git apply --check 直接通过。\n  如需运行级观测：以 WMAV1/WMAV2 编码初始化后在消费侧\n  （ff_wma_init 等按填充读 extradata 的路径）以 ASan 观测\n  heap-buffer-overflow READ。",
+  "attack_path": "前提条件：产品使用 ffmpeg 的 WMA 编码器初始化路径，且下游存在\n按填充约定块读 extradata 的消费方（转码管线中编码参数回读/\n容器封装回读等场景）。该缺陷为编码器初始化路径的分配问题，\n触发不依赖攻击者直接输入内容；越界读影响为潜在信息泄露或\n崩溃（实际影响取决于消费方读取模式）。\n\n四、PoC & Exploit：\n\n无运行级 PoC（原因如上）；证据为三侧源码对照（上游已修 diff /\nOH 检出修复前形态逐行对应 / 官方受影响清单含基线版本），附件\npatch.diff 为可直接应用的修复（git apply --check 通过）。\n\n五、修复及缓解措施建议：\n\n回移上游修复 23227a44：wmaenc.c encode_init 的两处 extradata\n分配均附加 AV_INPUT_BUFFER_PADDING_SIZE（附件 patch.diff 即上游\n原文，对 OH 检出直接适用）。同时建议评估组件内其他 extradata\n手工分配点是否存在同类缺填充形态（上游在本修复同期对多处\nextradata 分配做过同类加固，可按上游提交历史",
+  "fix_recommendation": "回移上游修复 23227a44：wmaenc.c encode_init 的两处 extradata\n分配均附加 AV_INPUT_BUFFER_PADDING_SIZE（附件 patch.diff 即上游\n原文，对 OH 检出直接适用）。同时建议评估组件内其他 extradata\n手工分配点是否存在同类缺填充形态（上游在本修复同期对多处\nextradata 分配做过同类加固，可按上游提交历史对照排查）。"
 }
