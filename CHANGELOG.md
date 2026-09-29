@@ -1,3 +1,9 @@
+# 2026-09-29（追加十三：cross_uaf 集成到 autopilot——dsoftbus 889 条跨函数发现）
+
+- autopilot v3 集成 `ohvul.cross_uaf`：在 9 个正则模式族 + Joern CPG 之上新增跨函数 UAF/双重释放检测。
+- dsoftbus 实测：**889 条跨函数发现**（746 P8_cross_uaf + 143 P8_double_free），全管线 2466 条 lead，217 秒。
+- 880 项全量回归通过。已知宏误报（LIST_FOR_EACH_ENTRY_SAFE）待后续过滤。
+
 # 2026-09-29（追加十二：跨函数 UAF / 双重释放检测——位置别名解析）
 
 - `ohvul.cross_uaf`：轻量跨函数别名追踪，检测三种单函数 P8 无法看到的模式——
