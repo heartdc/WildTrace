@@ -1,3 +1,8 @@
+# 2026-09-29（追加五：Tier C 畸形调用器 + 任务书 G 节）
+
+- `hiappevent_null_params.c`（SetEventParam 路径，4 case 含 null head/size=0 控制）和 `bluetooth_null_filter.c`（StartBleScan 路径，4 case 含负 size→uint32 大循环变体），clang 语法通过。
+- 任务书追加 G 节。**全项目 Tier A- + B + C 合计 26 条批量候选**，对侧验证执行件（E/F/G 三节 + 六个调用器）全部就绪。
+
 # 2026-09-29（追加四：Tier C 逐条追链——11 条新增有效候选，全项目 26 条）
 
 - Tier C 15 条 lead 追链：**6 条新增有效**（hiappevent head=null 最易 / bluetooth 负 size→uint32 大循环最危险 / webview/graphic/relational_store 各 1 条）+ **notification 5 条克隆族**（同 Tier B）。3 条输出方向判安全。
