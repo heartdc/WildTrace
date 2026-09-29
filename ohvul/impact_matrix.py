@@ -250,6 +250,11 @@ def short_branch(branch: str) -> str:
     return branch.replace("OpenHarmony-", "").replace("-Release", "")
 
 
+def _md_cell(value) -> str:
+    """Markdown-table-safe rendering: pipes and newlines break rows."""
+    return str(value).replace("|", "\\|").replace("\n", " ")
+
+
 def render_matrix_md(matrix: dict) -> str:
     branches = list(OH_BRANCHES.keys())
     lines = [
@@ -263,8 +268,8 @@ def render_matrix_md(matrix: dict) -> str:
     total_affected = total_unknown = total_not_affected = 0
     for name, info in matrix.items():
         row = [
-            name, info["cve"] or "—", info["component_type"],
-            info["introduced_version"], info["fixed_upstream"],
+            _md_cell(name), _md_cell(info["cve"] or "—"), _md_cell(info["component_type"]),
+            _md_cell(info["introduced_version"]), _md_cell(info["fixed_upstream"]),
         ]
         for b in branches:
             row.append(SYMBOLS.get(info["branches"][b], "？"))

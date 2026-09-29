@@ -1,3 +1,19 @@
+# 2026-09-29（追加十九：残余 B/C 组清理——检测引擎 P2 六项 + 报告生成器 P2 四项）
+
+- 检测引擎（B 组）：
+  - P6 补扫 `*.cpp`（旧版只扫 `*.c`，C++ 空指针不可见）；
+  - autopilot `generate_poc` 文件名加 finding_id 哈希后缀（前 40 字符相同的长 ID 不再互相覆盖 PoC）；
+  - P8 打分用与扫描器一致的 wrapper 感知正则定位释放点（`SoftBusFree`/`av_free` 释放的指针首次能触发 "-30 reassigned after free" / "-15 error-path free"）；
+  - scan_p2 传行窗口而非 21 字符切片（潜伏雷排除）；
+  - cross_uaf 新增 `freed_any` 追踪被释放的**局部变量**——`T *loc = malloc(..); free(loc); sink(loc);` 类局部 UAF 从全漏到可检出（模式 A/C 的 caller 侧判定改用 freed_any，callee 侧仍严格限参数避免同名局部误报）；
+  - `run()` 用调用图回填 reachability（原所有正则层发现恒为 "n/a" 的死字段激活）。
+- 报告生成器（C 组）：
+  - `vuln_report.read_case` 边界防护：字符串型 evidence 列表、`component: null`、dict 型 cwe 不再崩溃；输出已存在时拒绝静默覆盖（`--force` 显式覆盖）；
+  - 源码片段从纯指针升级为内容承载：案例目录 `source_snippet.txt/.c` 存在则嵌入；否则引用已记录的源码级证据（oh_source.l4_evidence / gap_evidence / 描述性 evidence_locations 值）——重生成后 18 案中 16 案带证据引用（赛题交付件 #1 "位置与内容"要求）；
+  - `competition_report` 空 cases 目录大声失败（原产出 cases=0 的"成功"报告）；markdown 先于 JSON 发布（半程失败不再留下已发布的 JSON）；
+  - markdown 表格转义（vuln_report 概览/详情 + impact_matrix 行，字段含 `|`/换行不再破表）。
+- 新增 `tests/test_report_robustness.py`（13 项）。1007 项全量回归通过。
+
 # 2026-09-29（追加十八：影响矩阵 kb 联接 + 性能测量修复——？格 75→14）
 
 - `tools/perf_measure.py`（审计 A1）：`system_peak_rss_mb()` 修复 rss 双重除以 1024 的计算错误

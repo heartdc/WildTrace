@@ -26,6 +26,7 @@ class FuncFacts:
     params_str: str = ""          # raw parameter string
     param_list: list = field(default_factory=list)  # ordered param names
     freed: set = field(default_factory=set)     # param names freed
+    freed_any: set = field(default_factory=set)  # params AND locals freed
     deref: set = field(default_factory=set)     # param names dereferenced
     passes: list = field(default_factory=list)  # [{callee, arg_pos, var, offset}]
     body_clean: str = ""
@@ -104,6 +105,13 @@ def build_facts(root: Path) -> dict[str, FuncFacts]:
                 if re.findall(rf'\b{re.escape(pn)}\s*(?:->\w+|\[|\.\w)', cleaned):
                     ff.deref.add(pn)
 
+            # Track freed LOCAL variables too: `T *loc = malloc(..);
+            # free(loc); sink(loc);` is a real UAF shape the param-only
+            # classification used to miss entirely (audit B7)
+            for fv in re.findall(r'\b(?:free|SoftBusFree|av_free)\s*\(\s*(\w+)\s*\)', cleaned):
+                ff.freed_any.add(fv)
+            ff.freed_any |= ff.freed
+
             # Find call sites that pass local variables/params
             for cm in re.finditer(r'(\w+)\s*\(([^)]{1,300})\)', cleaned):
                 callee = cm.group(1)
@@ -124,12 +132,13 @@ def build_facts(root: Path) -> dict[str, FuncFacts]:
                             'call': cm.group(0)[:60],
                         })
 
-            if not (ff.freed or ff.deref or ff.passes):
+            if not (ff.freed or ff.freed_any or ff.deref or ff.passes):
                 continue
             if fname in facts:
                 existing = facts[fname]
                 same = (existing.param_list == ff.param_list
                         and existing.freed == ff.freed
+                        and existing.freed_any == ff.freed_any
                         and existing.deref == ff.deref
                         and {(p['callee'], p['arg_pos'], p['var'])
                              for p in existing.passes}
@@ -187,7 +196,8 @@ def scan_cross_uaf(root: Path, facts: dict | None = None) -> list[Finding]:
                 continue
 
             # --- Pattern A: caller frees var, then passes to callee that derefs ---
-            if var in cf.freed and (callee_name, var) not in seen_a:
+            # caller-side freeing counts locals too (freed_any)
+            if var in cf.freed_any and (callee_name, var) not in seen_a:
                 seen_a.add((callee_name, var))
                 free_pos = _pos_of(cf.body_clean,
                     rf'\b(?:free|SoftBusFree|av_free)\s*\(\s*{re.escape(var)}\s*\)')
@@ -238,7 +248,7 @@ def scan_cross_uaf(root: Path, facts: dict | None = None) -> list[Finding]:
                         findings.append(f)
 
             # --- Pattern C: double-free (both caller and callee free) ---
-            if var in cf.freed and callee_param and callee_param in callee_f.freed \
+            if var in cf.freed_any and callee_param and callee_param in callee_f.freed \
                     and (callee_name, var) not in seen_c:
                 seen_c.add((callee_name, var))
                 f = Finding(
