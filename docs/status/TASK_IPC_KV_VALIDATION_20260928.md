@@ -1,4 +1,4 @@
-# IPC/KV 真库验证任务书（2026-09-28，交原构建机执行）
+# IPC/KV/AVSession 真库验证任务书（2026-09-28，2026-09-29 追加 AVSession，交原构建机执行）
 
 目标：把两个新发现候选从"源码等价复现"升级到"真实库复现"层级——这是
 全库 18 案里唯二的新发现，也是最高价值提交候选。本机（lenovo）已完成
@@ -63,6 +63,46 @@ zip 清单（附 SHA-256 文件）：
 - 台账与 CHANGELOG 更新
 - **若 IPC/KV 任一真库证实崩溃：按新发现提交奖励计划工单**（带真库
   backtrace 证据，层级高于现有 15 张缺口工单）
+
+## E. AVSession 真库验证（2026-09-29 追加，Tier A- 批量新发现候选）
+
+IPC 已证实（OHSA26-092953990）。av_session 的 6 条有效 lead（见
+`docs/analysis/L4_TIER_A_20260929.md`）为**深一层同型缺陷**——嵌套
+`CParameters.value` 指针不查空即循环。**无 AbilityRuntime Context 依赖**，
+验证可行性高于 KV。
+
+### 构建
+
+同一隔离树，root-target 换 `multimedia_av_session` 的 CJ FFI 目标
+（`frameworks/cj/BUILD.gn` 查目标名；建议 `--root-target=//foundation/multimedia/av_session/frameworks/cj:cj_avsession` 或按 BUILD.gn 实际名）。
+
+### 验证
+
+```sh
+git pull   # 取回本 PR 的 avsession_null_param.c
+bash tools/validation_cases/run_malformed.sh \
+  /home/airgap/oh-real-20260925 \
+  /home/airgap/oh-real-20260925/out/ffi-direct-avsession \
+  .../evidence/avsession-malformed-20260929 \
+  avsession_null_param \
+  multimedia/av_session/libcj_avsession.z.so
+```
+
+### 结果判读
+
+- case=0（有效 int32 参数）应正常返回 rc=0
+- case=1/2/3（null value + 正 size + PTR 类型）：
+  - **SIGSEGV** → 嵌套空指针循环证实（与 IPC 同型但深一层——批量新发现）
+  - **返回错误码** → FFI 或中间层有防御，如实证伪
+- av_session 库可能需要 AVSession 服务在运行（比 IPC 稍重）；如果 dlopen 或
+  符号查找就失败，**记录为"库加载限制"，不是候选结论**
+- 每轮补 gdb backtrace（同 IPC 要求：崩溃帧归属 av_session 库内而非运行库）
+
+### 提交策略
+
+证实后**每条独立提交工单**（SendCommonCommand 的 4 个 Array* 派发路径 +
+HashMap + FD 共 6 个，各自有独立的 valueType 派发分支），全部走"新发现"
+通道。与 IPC 工单同一模板：描述含完整调用链 + 附件畸形调用器 + 验证记录。
 
 ## 口径红线（与 probe 文档一致）
 

@@ -1,3 +1,8 @@
+# 2026-09-29（追加：av_session 畸形调用器 + 任务书 E 节）
+
+- `tools/validation_cases/avsession_null_param.c`：4 case 矩阵（有效 int32 控制 / null value + STR_PTR / I32_PTR / DOUBLE_PTR 变体），CParameters ABI 取自 account_os_account 的 appaccount_defination.h（跨组件共用形态），clang 语法通过。
+- 任务书追加 E 节：av_session 构建目标、验证命令、结果判读、提交策略（6 条独立工单）。**无 AbilityRuntime 依赖**，验证可行性高于 KV。
+
 # 2026-09-29（Tier A/A- L4 追链完成）
 
 - av_session 9 条 lead 追链：**6 条有效**（SendCommonCommand→SetDataParameters→Inner*Array* 链上的嵌套 value 指针空检查缺失——比 IPC 深一层的同型缺陷）；3 条为控制器事件注册路径的扫描器误报（该路径有完整 null/valueType/size 三重防护）。FFI 入口 `SendCommonCommand` 无 Context 依赖，**验证可行性高于 KV**。
