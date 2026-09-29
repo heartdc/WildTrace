@@ -15,7 +15,7 @@ output is always decoded as UTF-8 with replacement so non-ASCII code
 cannot crash the pipeline on cp936 hosts.
 """
 from __future__ import annotations
-import json, os, shlex, subprocess, tempfile, time
+import hashlib, json, os, shlex, subprocess, tempfile, time
 from dataclasses import dataclass, asdict, fields
 from pathlib import Path
 
@@ -114,11 +114,17 @@ def parse_finding_line(line: str):
 class JoernAnalyzer:
     """Bridge to Joern CPG for deep vulnerability analysis."""
 
-    def __init__(self, source_root, verbose=False):
+    def __init__(self, source_root, verbose=False, cpg_dir=None):
         self.source_root = str(source_root)
         self.verbose = verbose
         self.cpg_path = None
         self._build_attempted = False
+        # CPG binaries run to hundreds of MB and must never be written
+        # into the audited tree: read-only source roots fail the build and
+        # the evidence tree stays polluted (audit D13). Default is a
+        # scratch dir inside the analyzer's bash environment, keyed by the
+        # source root so repeated runs reuse one build.
+        self.cpg_dir = str(cpg_dir) if cpg_dir else "/tmp/wildtrace-cpg"
 
     def _to_wsl(self, path):
         s = str(path).replace('\\', '/')
@@ -154,13 +160,19 @@ class JoernAnalyzer:
             return False
 
     def build_cpg(self):
-        """Build cpg.bin for the source root; False on any failure."""
+        """Build the CPG for the source root; False on any failure.
+
+        The binary lands in ``self.cpg_dir`` (never the audited tree),
+        under a name derived from the source root so rebuilds are reused
+        across runs; call :meth:`remove_cpg` to reclaim the space."""
         if self._build_attempted and not self.cpg_path:
             return False  # one attempt per analyzer, not one per query
         self._build_attempted = True
         wsl_src = shlex.quote(self._to_wsl(self.source_root))
-        cpg_out = f"{self._to_wsl(self.source_root)}/cpg.bin"
+        key = hashlib.sha1(self.source_root.encode('utf-8')).hexdigest()[:12]
+        cpg_out = f"{self.cpg_dir}/{key}.bin"
         cmd = self._bash(
+            f"mkdir -p {shlex.quote(self.cpg_dir)} && "
             f"timeout 600 {shlex.quote(JOERN_PARSE)} {wsl_src} "
             f"--output {shlex.quote(cpg_out)} 2>&1")
         if self.verbose:
@@ -226,3 +238,15 @@ class JoernAnalyzer:
         for qname in JOERN_QUERIES:
             all_findings.extend(self.run_query(qname))
         return all_findings
+
+    def remove_cpg(self):
+        """Delete this analyzer's CPG binary (it is kept between runs
+        otherwise, since a large-tree rebuild costs minutes)."""
+        if not self.cpg_path:
+            return
+        try:
+            subprocess.run(self._bash(f"rm -f {shlex.quote(self.cpg_path)}"),
+                           capture_output=True, timeout=30,
+                           **_SUBPROCESS_TEXT)
+        except (OSError, subprocess.TimeoutExpired, ValueError):
+            pass
