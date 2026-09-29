@@ -1,3 +1,10 @@
+# 2026-09-29（追加十四：LLM PoC 生成器——从模板升级到可编译代码）
+
+- `ohvul.llm_poc`：读 autopilot lead JSON + 源码上下文（15 行前后 + includes），喂给 LLM（glm-5.3 via z.ai），生成完整可编译 C PoC。
+  包含：prompt 构建（安全研究员角色 + 8 条代码规则）、代码块提取、4 层验证（长度/main/includes/目标函数引用）、批量生成、摘要报告。
+  CLI 入口：`python -m ohvul.llm_poc findings.json <source_root> --output llm_pocs`。
+- 15 项专项测试全过（prompt/提取/验证/上下文/mock 生成/错误处理），895 项全量回归通过。
+
 # 2026-09-29（追加十三：cross_uaf 集成到 autopilot——dsoftbus 889 条跨函数发现）
 
 - autopilot v3 集成 `ohvul.cross_uaf`：在 9 个正则模式族 + Joern CPG 之上新增跨函数 UAF/双重释放检测。
