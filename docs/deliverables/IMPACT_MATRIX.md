@@ -4,26 +4,26 @@
 
 | 案例 | CVE | 组件 | 引入版本 | 上游修复 | v4.1 | v5.0 | v5.1 | v6.0 | v7.0 | master | 证实分支数 | 待定格数 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| cjson_merge_alias | CVE-2026-87933 | cjson | 1.7.19 | pending | ？ | ？ | ？ | ？ | ？ | ？ | 0 | 6 |
-| curl_native_ca_reuse | CVE-2026-80231 | curl | unknown | pending | ？ | ？ | ？ | ？ | ？ | ？ | 0 | 6 |
-| curl_psl_supercookie | CVE-2026-82209 | curl | unknown | pending | ？ | ？ | ？ | ？ | ？ | ？ | 0 | 6 |
-| ffmpeg_cfhd_transform2_width_oob | CVE-2026-70632 | ffmpeg | 7.1.1 | pending | ？ | ？ | ？ | ？ | 🔴 | 🔴 | 2 | 4 |
-| ffmpeg_dvbsub_parser_capacity_overflow | CVE-2026-70628 | ffmpeg | 7.1.1 | pending | ？ | ？ | ？ | ？ | 🔴 | 🔴 | 2 | 4 |
-| ffmpeg_floodfill_point_stack_oob | CVE-2026-65705 | ffmpeg | 7.1.1 | pending | ？ | ？ | ？ | ？ | 🔴 | 🔴 | 2 | 4 |
-| ffmpeg_hqdn3d_dynamic_size_oob | CVE-2026-66036 | ffmpeg | 7.1.1 | pending | ？ | ？ | ？ | ？ | 🔴 | 🔴 | 2 | 4 |
-| ffmpeg_iamf_count_label_dos | CVE-2026-66037 | ffmpeg | 7.1.1 | pending | ？ | ？ | ？ | ？ | 🔴 | 🔴 | 2 | 4 |
-| ffmpeg_lcldec_zlib_tail_disclosure | CVE-2026-66038 | ffmpeg | 7.1.1 | pending | ？ | ？ | ？ | ？ | 🔴 | 🔴 | 2 | 4 |
-| ffmpeg_nvdec_sep_ref_doublefree | CVE-2026-64832 | ffmpeg | 7.1.1 | pending | ？ | ？ | ？ | ？ | 🔴 | 🔴 | 2 | 4 |
-| ffmpeg_quirc_resize_oob | CVE-2026-66041 | ffmpeg | 7.1.1 | pending | ？ | ？ | ？ | ？ | 🔴 | 🔴 | 2 | 4 |
-| ffmpeg_rscc_short_deflate_uninit_leak | CVE-2026-70629 | ffmpeg | 7.1.1 | pending | ？ | ？ | ？ | ？ | 🔴 | 🔴 | 2 | 4 |
-| ffmpeg_swaprect_temp_row_oob | CVE-2026-65706 | ffmpeg | 7.1.1 | pending | ？ | ？ | ？ | ？ | 🔴 | 🔴 | 2 | 4 |
-| ffmpeg_ty_ac3_trim_underflow | CVE-2026-65704 | ffmpeg | 7.1.1 | pending | ？ | ？ | ？ | ？ | 🔴 | 🔴 | 2 | 4 |
-| ffmpeg_wmaenc_extradata_padding | CVE-2026-52296 | ffmpeg | 7.1.1 | pending | ？ | ？ | ？ | ？ | 🔴 | 🔴 | 2 | 4 |
+| cjson_merge_alias | CVE-2026-87933 | cjson | 1.7.0 | pending | ？ | ？ | ？ | ？ | ？ | ？ | 0 | 6 |
+| curl_native_ca_reuse | CVE-2026-80231 | curl | 7.71.0 | 8.22.0 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 6 | 0 |
+| curl_psl_supercookie | CVE-2026-82209 | curl | 7.46.0 | 8.22.0 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 6 | 0 |
+| ffmpeg_cfhd_transform2_width_oob | CVE-2026-70632 | ffmpeg | 4.4 | 9.0 | — | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 5 | 0 |
+| ffmpeg_dvbsub_parser_capacity_overflow | CVE-2026-70628 | ffmpeg | 0.5 | 9.0 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 6 | 0 |
+| ffmpeg_floodfill_point_stack_oob | CVE-2026-65705 | ffmpeg | 3.4 | pending | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 6 | 0 |
+| ffmpeg_hqdn3d_dynamic_size_oob | CVE-2026-66036 | ffmpeg | 0 | pending | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 6 | 0 |
+| ffmpeg_iamf_count_label_dos | CVE-2026-66037 | ffmpeg | 0 | pending | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 6 | 0 |
+| ffmpeg_lcldec_zlib_tail_disclosure | CVE-2026-66038 | ffmpeg | 0 | pending | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 6 | 0 |
+| ffmpeg_nvdec_sep_ref_doublefree | CVE-2026-64832 | ffmpeg | 4.4 | pending | — | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 5 | 0 |
+| ffmpeg_quirc_resize_oob | CVE-2026-66041 | ffmpeg | 7.0 | pending | — | — | — | — | 🔴 | 🔴 | 2 | 0 |
+| ffmpeg_rscc_short_deflate_uninit_leak | CVE-2026-70629 | ffmpeg | 3.0 | 9.0 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 6 | 0 |
+| ffmpeg_swaprect_temp_row_oob | CVE-2026-65706 | ffmpeg | 3.0 | pending | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 6 | 0 |
+| ffmpeg_ty_ac3_trim_underflow | CVE-2026-65704 | ffmpeg | 0 | pending | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 6 | 0 |
+| ffmpeg_wmaenc_extradata_padding | CVE-2026-52296 | ffmpeg | 0 | 9.0 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 6 | 0 |
 | ipc_cj_array_null_validation | — | oh_native | unknown | pending | ？ | ？ | ？ | ？ | 🔴 | 🔴 | 2 | 4 |
 | kv_ffi_array_validation | — | oh_native | unknown | pending | ？ | ？ | ？ | ？ | 🔴 | 🔴 | 2 | 4 |
-| openssl_ocb_oneshot_iv_discard | CVE-2026-45445 | openssl | 3.0.9 | pending | 🔴 | 🔴 | 🔴 | ？ | 🔴 | 🔴 | 5 | 1 |
+| openssl_ocb_oneshot_iv_discard | CVE-2026-45445 | openssl | 3.0.0 | 4.0.1 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 6 | 0 |
 
-**总计**：18 案 × 6 分支；🔴 证实 affected 33 格；？待定 75 格。本表只声明有证据的格子，？不是安全结论。
+**总计**：18 案 × 6 分支；🔴 证实 affected 88 格；— 证实不受影响 6 格；？待定 14 格。本表只声明有证据的格子，？不是安全结论。
 
 > 🔴 affected = 分支基线落在上游受影响范围内，或与本案验证过的 OH 基线同版本  
 > ✅ fixed = 分支基线已含上游修复  
@@ -32,11 +32,12 @@
 
 ## 判定依据
 
-1. **优先用结构化受影响范围**：case.json 的 `affected_raw`（CVE 5.0 语义）与分支基线做范围比较。
-2. **版本等价传播**：分支基线与本案实测验证的 OH 基线（`observed_version`/`oh_source.baseline`）同版本 → affected（同版本同字节）。
-3. **OH 原生代码**（IPC/CJ FFI）：仅源级验证过的分支（v7.0/master）计 affected，其余 ？。
-4. **不跨组件借用基线**：某分支缺该组件基线时判 ？，绝不用其他组件的版本号代替（2026-09-29 审计 P0：旧实现以 ffmpeg 基线兜底，造成 curl/openssl/cjson 全红假象）。
-5. ？格升级路径：补 case.json 的 `affected_raw`（上游 CNA 数据）或该分支 README.OpenSource 基线后重新生成。
+1. **kb 联接（首选）**：按 CVE 联接 `kb/third_party_targets/records.json`（源 cvelistV5）的上游受影响/修复版本，按 cvelist 边界语义（起点 ≤ 基线 < 修复点；无修复记录则上界开放）逐分支判定。
+2. **结构化受影响范围**：case.json 的 `affected_raw`（CVE 5.0 语义）与分支基线做范围比较。
+3. **版本等价传播**：分支基线与本案实测验证的 OH 基线（`observed_version`/`oh_source.baseline`）同版本 → affected（同版本同字节）。
+4. **OH 原生代码**（IPC/CJ FFI）：仅源级验证过的分支（v7.0/master）计 affected，其余 ？。
+5. **不跨组件借用基线**：某分支缺该组件基线时判 ？，绝不用其他组件的版本号代替（2026-09-29 审计 P0：旧实现以 ffmpeg 基线兜底，造成 curl/openssl/cjson 全红假象）。
+6. ？格升级路径：补该分支 README.OpenSource 基线（当前缺口：cJSON）或 case.json 的 `affected_raw` 后重新生成。
 
 ## 版本基线数据
 

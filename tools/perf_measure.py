@@ -16,6 +16,21 @@ except ImportError:
 from pathlib import Path
 from datetime import datetime
 
+def system_peak_rss_mb(resource_module=resource):
+    """Peak system RSS in MB (0 where getrusage is unavailable).
+
+    ru_maxrss is KB on Linux/macOS. The old expression divided by 1024
+    twice (KB→MB→GB), so every reading collapsed to 0 (audit A1).
+    """
+    if resource_module is None:
+        return 0.0
+    try:
+        kb = resource_module.getrusage(resource_module.RUSAGE_SELF).ru_maxrss
+    except (AttributeError, OSError, ValueError):
+        return 0.0
+    return kb / 1024.0
+
+
 def measure_phase(name, fn):
     """Run a phase and collect timing + memory."""
     tracemalloc.start()
@@ -24,12 +39,12 @@ def measure_phase(name, fn):
     elapsed = time.perf_counter() - t0
     current, peak = tracemalloc.get_traced_memory()
     tracemalloc.stop()
-    rss_mb = (resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024 if resource else 0) // 1024 if resource else 0
+    rss_mb = system_peak_rss_mb()
     return {
         "phase": name,
         "elapsed_s": round(elapsed, 2),
         "python_peak_mb": round(peak / 1024 / 1024, 1),
-        "system_rss_mb": round(rss_mb if isinstance(rss_mb, float) else 0, 1),
+        "system_rss_mb": round(rss_mb, 1),
         "result": result,
     }
 

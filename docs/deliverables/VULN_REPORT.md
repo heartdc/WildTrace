@@ -219,12 +219,12 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 **影响的 OpenHarmony 版本分支**：
 
-- v4.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v5.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v5.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v6.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v7.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- master: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v4.1: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v5.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v5.1: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v6.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v7.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- master: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 
 ### 5. 修复建议
 
@@ -422,12 +422,12 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 **影响的 OpenHarmony 版本分支**：
 
-- v4.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v5.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v5.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v6.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v7.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- master: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v4.1: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v5.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v5.1: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v6.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v7.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- master: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 
 ### 5. 修复建议
 
@@ -506,10 +506,10 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 **影响的 OpenHarmony 版本分支**：
 
-- v4.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v5.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v5.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v6.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v4.1: — not_affected（基线早于缺陷引入）
+- v5.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v5.1: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v6.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 - v7.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 - master: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 
@@ -674,10 +674,10 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 **影响的 OpenHarmony 版本分支**：
 
-- v4.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v5.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v5.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v6.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v4.1: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v5.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v5.1: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v6.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 - v7.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 - master: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 
@@ -848,10 +848,10 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 **影响的 OpenHarmony 版本分支**：
 
-- v4.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v5.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v5.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v6.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v4.1: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v5.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v5.1: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v6.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 - v7.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 - master: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 
@@ -1031,10 +1031,10 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 **影响的 OpenHarmony 版本分支**：
 
-- v4.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v5.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v5.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v6.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v4.1: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v5.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v5.1: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v6.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 - v7.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 - master: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 
@@ -1094,10 +1094,10 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 **影响的 OpenHarmony 版本分支**：
 
-- v4.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v5.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v5.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v6.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v4.1: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v5.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v5.1: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v6.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 - v7.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 - master: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 
@@ -1255,10 +1255,10 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 **影响的 OpenHarmony 版本分支**：
 
-- v4.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v5.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v5.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v6.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v4.1: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v5.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v5.1: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v6.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 - v7.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 - master: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 
@@ -1314,10 +1314,10 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 **影响的 OpenHarmony 版本分支**：
 
-- v4.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v5.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v5.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v6.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v4.1: — not_affected（基线早于缺陷引入）
+- v5.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v5.1: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v6.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 - v7.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 - master: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 
@@ -1506,10 +1506,10 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 **影响的 OpenHarmony 版本分支**：
 
-- v4.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v5.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v5.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v6.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v4.1: — not_affected（基线早于缺陷引入）
+- v5.0: — not_affected（基线早于缺陷引入）
+- v5.1: — not_affected（基线早于缺陷引入）
+- v6.0: — not_affected（基线早于缺陷引入）
 - v7.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 - master: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 
@@ -1568,10 +1568,10 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 **影响的 OpenHarmony 版本分支**：
 
-- v4.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v5.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v5.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v6.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v4.1: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v5.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v5.1: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v6.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 - v7.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 - master: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 
@@ -1748,10 +1748,10 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 **影响的 OpenHarmony 版本分支**：
 
-- v4.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v5.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v5.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v6.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v4.1: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v5.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v5.1: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v6.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 - v7.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 - master: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 
@@ -1919,10 +1919,10 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 **影响的 OpenHarmony 版本分支**：
 
-- v4.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v5.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v5.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v6.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v4.1: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v5.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v5.1: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v6.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 - v7.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 - master: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 
@@ -2074,10 +2074,10 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 **影响的 OpenHarmony 版本分支**：
 
-- v4.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v5.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v5.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v6.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v4.1: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v5.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v5.1: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v6.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 - v7.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 - master: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 
@@ -2359,7 +2359,7 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 - v4.1: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 - v5.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 - v5.1: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
-- v6.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v6.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 - v7.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 - master: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 
