@@ -1,3 +1,8 @@
+# 2026-09-29（追加二：Tier B 克隆族 L4——三仓批量候选 15 条）
+
+- account_os_account（5 lead）和 udmf（4 lead）的 `SetDataParameters` **连顶层 `head` 都不查空**（比 av_session 浅一层的同型缺陷，更直接也更危险）；三仓函数为同一模板拷贝。
+- FFI 入口无 AbilityRuntime 依赖，验证可行性同 av_session（高于 KV）。三仓合计潜在新发现 **15 条**。详见 `docs/analysis/L4_TIER_B_20260929.md`。
+
 # 2026-09-29（追加：av_session 畸形调用器 + 任务书 E 节）
 
 - `tools/validation_cases/avsession_null_param.c`：4 case 矩阵（有效 int32 控制 / null value + STR_PTR / I32_PTR / DOUBLE_PTR 变体），CParameters ABI 取自 account_os_account 的 appaccount_defination.h（跨组件共用形态），clang 语法通过。
