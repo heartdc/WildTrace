@@ -251,12 +251,17 @@ def chat_completion(messages, *, base_url=DEFAULT_BASE_URL, model='grok-4.6',
                 value = line[5:].strip()
                 if value and value != '[DONE]':
                     events.append(_json(value.encode('utf-8')))
+        # _json can yield non-dict values (bare numbers, strings, arrays);
+        # every event consumer below calls .get — keep only dict events
+        events = [event for event in events if isinstance(event, dict)]
         stream_errors = [event.get('error', {}) for event in events if event.get('type') == 'error']
         if stream_errors:
             code = stream_errors[0].get('code') if isinstance(stream_errors[0], dict) else None
             raise LlmTransportError('provider_' + code if isinstance(code, str) and re.fullmatch(r'[a-z0-9_]+', code) else 'provider_stream_error')
         if not events:
             data = _json(body)
+            if not isinstance(data, dict):
+                raise ValueError('not an object response')
             if data.get('choices') and data['choices'][0].get('message', {}).get('tool_calls'):
                 raise ValueError('tool call')
             if any(isinstance(item, dict) and item.get('type') in ('function_call', 'computer_call')
@@ -285,7 +290,11 @@ def chat_completion(messages, *, base_url=DEFAULT_BASE_URL, model='grok-4.6',
         finish = data.get('status') or data.get('finish_reason')
         if finish is not None and (not isinstance(finish, str) or len(finish) > 80):
             raise ValueError('finish reason')
-    except (ValueError, KeyError, IndexError, TypeError, UnicodeError, RecursionError):
+    except (ValueError, KeyError, IndexError, TypeError, AttributeError,
+            UnicodeError, RecursionError):
+        # AttributeError included: malformed provider payloads must surface
+        # as LlmTransportError('invalid_provider_response'), never escape
+        # the adapter's own contract
         raise LlmTransportError('invalid_provider_response') from None
     return {'content': content, 'requested_model': model, 'reported_model': reported,
             'finish_reason': finish, 'usage': _usage(data.get('usage')),
