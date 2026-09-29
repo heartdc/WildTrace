@@ -1,0 +1,6 @@
+# Normalize all text files to LF in the repository (checkout per autocrlf).
+* text=auto
+
+# Scripts executed under WSL/bash must keep LF on checkout too.
+*.sh text eol=lf
+*.sc text eol=lf
