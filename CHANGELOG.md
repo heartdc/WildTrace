@@ -1,3 +1,9 @@
+# 2026-09-29（追加十一：Joern CPG 深度分析引擎集成）
+
+- `ohvul.joern_bridge`：集成 Joern v4.0.640（Yamaguchi NDSS'14 代码属性图）作为深度分析后端，与正则模式族互补。提供 J4（无界拷贝）/ J6（空指针路径敏感）/ J8（UAF 跨定义分析）三个 CPG 查询。
+- 实测 dsoftbus 742K 行：CPG 构建 158s + 查询 58s = **8153 条 lead（J6=8106 + J8=47）**。Joern 的路径敏感分析能过滤掉正则引擎无法排除的假阳性（如 `safe_check` 中有空指针检查的函数）。
+- 873 项全量回归通过。Joern 安装于 WSL `/opt/joern`（OpenJDK 17 + joern-cli v4.0.640）。
+
 # 2026-09-29（追加十：Autopilot v2——9 模式族覆盖任意 C/C++ 代码）
 
 - `ohvul.autopilot` v2：在 CJ FFI P1-P3 基础上新增 **P4-P9 六个通用模式族**——P4 无界内存拷贝 / P5 栈缓冲溢出 / P6 空指针解引用 / P7 分配整数溢出 / P8 释放后使用 / P9 格式化字符串。**不再限于 CJ FFI 面，可扫描任意 C/C++ 代码**。
