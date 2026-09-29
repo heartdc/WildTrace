@@ -1,3 +1,9 @@
+# 2026-09-29（Tier A/A- L4 追链完成）
+
+- av_session 9 条 lead 追链：**6 条有效**（SendCommonCommand→SetDataParameters→Inner*Array* 链上的嵌套 value 指针空检查缺失——比 IPC 深一层的同型缺陷）；3 条为控制器事件注册路径的扫描器误报（该路径有完整 null/valueType/size 三重防护）。FFI 入口 `SendCommonCommand` 无 Context 依赖，**验证可行性高于 KV**。
+- kv_store 同文件 3 条同族转换确认（CArrStrToVectorKey/String ×3，FFI 层直传无校验），但与 KV 主案相同的隔离限制（AbilityRuntime Context），源级归档。
+- 详见 `docs/analysis/L4_TIER_A_20260929.md`。
+
 # 2026-09-29（IPC 真库证实 → 首个新发现工单）
 
 - PR #63/64/65 合入（对侧）：IPC/KV 真库验证记录（IPC 证实：SIGSEGV 帧归属真库内；KV 隔离限制如实）、基线对比实验（OSV 版本匹配 0 条 / CPE 式 47 条过报 / 三层管线归零——方法护城河实测）、A-4 构建树授权登记。
