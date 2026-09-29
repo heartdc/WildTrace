@@ -44,6 +44,34 @@ hiappevent `cj_hiappevent_ffi`）的 gen 均推进到同一堵墙，此前共解
 3. 之后本机按既有配方收尾：`component_inject.py <out> <//root:target>` →
    `build_component.sh` 同款 gen+ninja → `run_malformed.sh`（客户端已随 #68/#70/#72 入库）。
 
+## 追加（同日晚，代理恢复后）：解锁清单第 1、2 项已由本机完成
+
+网络恢复（github/gitcode/gitee 三通）后的实际进展：
+
+- **`taihe_ffi_gen` 已入库**：真名为 GitHub `openharmony/arkcompiler_taihe_ffi_gen`
+  （gitee/gitcode 的 `taihe_ffi_gen` 不存在；codeload tarball 取回，含 BUILD.gn，
+  置于树根 `taihe_ffi_gen/`）。asmjit/zydis 确认不在任何 OH 托管仓（ohos.xml
+  496 项无此三者）——但 `runtime_core_enable_codegen=false` 已在解析层绕开，
+  链接层是否需要待构建验证。
+- **rust-openssl BUILD.gn 已生成**：树内本有生成器 `build/scripts/cargo2gn.py`；
+  `--run --skipcargo` 为 workspace 成员生成（顶层用 group 转发到 `openssl:lib`，
+  转发文件已带注释入库树）。
+- **`drawable_inner_ani` 版本漂移**：全树不存在的 innerapi（新 resource_management
+  对旧 ace_engine），以空 group 桩补入 ace_engine/BUILD.gn。
+- **hiappevent 的 gn gen 已通过**（GEN_OK）——部件/源码层全部解决。
+
+### 新的最终卡点（ninja 图级，两类）
+
+1. **skia 双源重复输出**：根 `skia/BUILD.gn` 与 `m133/` 各自生成 skcms 规则且
+   输出路径相同（`obj/.../m133/modules/skcms/...`）——已对根侧子图做安全去重
+   （两条完全相同的 cxx 规则）；正解应是部件登记只指 m133 目标，待回归验证。
+2. **跨工具链副本冲突**：`ohos_ets/build-tools/driver/build-system` 被默认与
+   clang_x64（宿主）两条不同规则写同一路径——非安全可去重，需 GN 参数关闭
+   宿主侧 ets 构建或单工具链化，超出注入工具能力范围。
+
+结论更新：E/F/G 的**源码与登记层已全部打通**（此前的"缺件墙"清除），剩余为
+ninja 图生成的两类冲突修复；候选判定仍未发生。
+
 ## 边界
 
 - 本轮无目标代码执行（gen/ninja 解析阶段即止），不涉及授权红线新增面。
