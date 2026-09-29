@@ -17,6 +17,66 @@ python -m ohvul.cli .\path\to\authorized\source --output findings.json
 
 Rules are intentionally conservative candidates. They are not vulnerability verdicts.
 
+## Automated analysis pipeline (autopilot v3)
+
+One command turns any C/C++ source tree into a confidence-ranked lead report with
+PoC templates:
+
+```powershell
+python -m ohvul.autopilot .\authorized-source --output .\autopilot-out [--min-confidence 60] [--joern]
+```
+
+Ten analysis layers by default: nine regex pattern families (P1–P3 CJ-FFI specific,
+P4–P9 general: unbounded copy, stack overflow, null deref, alloc overflow,
+use-after-free, format string) plus cross-function UAF/double-free detection with
+positional alias resolution and freed-local tracking. `--joern` adds an eleventh
+layer — Joern CPG path-sensitive queries (requires WSL with `/opt/joern`; degrades
+to a warning when unavailable). Every finding carries a 0–100 confidence with a
+human-readable factor breakdown; leads are not vulnerability verdicts.
+
+Function splitting runs on a length-preserving comment/string mask (an apostrophe
+in a comment cannot swallow a function), macro bodies are not parsed as functions,
+and each cross-function pattern is emitted once per (callee, variable) — not once
+per call site.
+
+Measured on the dsoftbus tree (742K lines): 2466 leads in 217s (historical run
+recorded before the cross-UAF dedup tightened counts; the performance deliverable
+re-measures). See [TECHNICAL_SPEC §3.8](docs/deliverables/TECHNICAL_SPEC.md).
+
+## Optional LLM PoC generation (hardened)
+
+Upgrade high-confidence leads from TODO-templates to compilable C PoCs:
+
+```powershell
+python -m ohvul.llm_poc autopilot-out\findings.json .\authorized-source --output llm_pocs
+```
+
+Requires `OSLOVELACE_API_KEY`. Scanned source and findings fields are treated as
+untrusted data: `finding['file']` is resolved under the source root only (no
+`../` or absolute-path escapes to the remote endpoint), fence sequences are
+defused and digest-bound in the prompt, and generated code using dangerous APIs
+(`system`/`popen`/`exec*`/`fork`/`curl`…) is rejected before it reaches disk.
+Truncated responses never become "validated" PoC files.
+
+## Version impact matrix and deliverable assembly
+
+```powershell
+python -m ohvul.impact_matrix --cases cases --output docs/deliverables/IMPACT_MATRIX
+python -m ohvul.vuln_report --cases cases --output docs/deliverables/VULN_REPORT.md --force
+python -m ohvul.competition_report --cases cases --output out\report.json --markdown out\report.md
+```
+
+The impact matrix joins `kb/third_party_targets` (cvelistV5) by CVE and renders
+18 cases × 6 OH branches with evidence-ordered verdicts — 88 evidence-backed
+affected cells, 6 proven not-affected (e.g. quirc predates only n7.1.1), 14
+explicit unknowns; it never borrows another component's baseline. The competition
+reporter projects `cases/*/case.json` defensively: absent evidence layers stay
+unknown and confirmed counts are never inferred.
+
+Deliverables live in `docs/deliverables/` (TECHNICAL_SPEC, VULN_REPORT,
+IMPACT_MATRIX, PERFORMANCE, VIDEO_SCRIPT, DEMO_RUNBOOK). Toolchain preflight for
+demos: `python -m ohvul.toolchain --output preflight.json`.
+
 ## Candidate triage
 
 To split a saved scan into deterministic manual-review lanes without invoking a model:
@@ -164,9 +224,13 @@ The LLM pause was lifted on 2026-09-16: a bounded online review acceptance
 passed through the z.ai Anthropic transport (`glm-5.3`), and `gpt-6-astra`
 joined `grok-4.6`/`glm-5.3` on the allowlist for dual-model cross-validation.
 The 29-group full review and the dual-model run are still pending execution.
-Current priorities are the version probe on a fixed OpenHarmony tree,
-gap-case submission follow-up, triage P0 implementation, and measured
-full-tree performance. See [2026-09-22 audit and plan](docs/status/AUDIT_REMAINING_PLAN_20260922.md).
+A full code audit on 2026-09-29 closed every P0/P1 finding it raised
+(fabricated impact-matrix verdicts, the unwired Joern layer, detection-quality
+defects, LLM PoC injection/path-traversal); each fix is pinned by regression
+tests. Remaining delivery work: unified performance re-measurement
+(`tools/perf_measure.py`), a clean-environment independent rerun, and the demo
+video. See [2026-09-22 audit and plan](docs/status/AUDIT_REMAINING_PLAN_20260922.md)
+and the CHANGELOG (追加一 to 追加二十) for the remediation record.
 
 `--semantic-files-from` now uses explicit execution records: failed reads do not
 count as coverage, and failed execution or a changed file list blocks successful
