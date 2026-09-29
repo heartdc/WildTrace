@@ -50,14 +50,32 @@ int main(int argc, char **argv)
     }
 
     puts("stage=env_probe start");
-    int32_t err = 0;
-    int64_t manager = create_manager("ohos.validation.case", &err);
-    printf("stage=env_probe create_manager id=%lld err=%d\n", (long long)manager, err);
-    if (manager <= 0) { puts("stage=env_probe failed: isolated runtime cannot create manager"); return 10; }
-    int64_t store = get_store(manager, "ohos.validation.case", "malformed_store", &err);
-    printf("stage=env_probe get_store id=%lld err=%d\n", (long long)store, err);
-    if (store <= 0) { puts("stage=env_probe failed: isolated runtime cannot create store"); return 11; }
-    puts("stage=env_probe ok");
+    /*
+     * The pinned tree's ABI (frameworks/cj/include/distributed_kv_store_ffi.h)
+     * is FfiOHOSDistributedKVStoreCreateKVManager(const char* boudleName,
+     * OHOS::AbilityRuntime::Context* context) - no error out-parameter, and a
+     * Context that a plain C client cannot construct. Calling the symbol with
+     * the historical (const char*, int32_t*) shape passes &err as a Context*,
+     * which the library dereferences and reliably crashes on (verified
+     * 2026-09-28 on the real no-CFI library: SIGSEGV inside the manager
+     * construction chain; the CFI build traps the same garbage indirect call).
+     * Per the task brief this is an isolation limitation, never a candidate
+     * verdict: record it and exit 10 without the ABI-mismatched call.
+     */
+    if (!dlsym(library, "FfiOHOSDistributedKVStoreCreateKVManager")) {
+        fputs("CreateKVManager symbol absent\n", stderr);
+        return 10;
+    }
+    puts("stage=env_probe failed: isolated C runtime cannot construct the "
+         "AbilityRuntime::Context required by the in-tree CreateKVManager ABI");
+    puts("stage=env_probe isolation_limitation=manager_creation_requires_context");
+    return 10;
+    /* Matrix below stays for tree versions whose CreateKVManager ABI takes an
+     * error out-parameter; under the pinned tree's ABI no store id can ever
+     * be obtained, so it is unreachable and intentionally never runs. */
+    int64_t manager = 0;
+    int64_t store = 0;
+    (void)manager;
 
     /* ValueType layout here is a stub; for null-head cases the conversion
      * never dereferences entries, so candidate verdicts do not depend on it.
