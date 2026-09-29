@@ -104,6 +104,46 @@ bash tools/validation_cases/run_malformed.sh \
 HashMap + FD 共 6 个，各自有独立的 valueType 派发分支），全部走"新发现"
 通道。与 IPC 工单同一模板：描述含完整调用链 + 附件畸形调用器 + 验证记录。
 
+## F. account_os_account + udmf 真库验证（2026-09-29 追加，Tier B 批量候选）
+
+Tier B 追链（`docs/analysis/L4_TIER_B_20260929.md`）确认 account 和 udmf 的
+`SetDataParameters` **连顶层 head 都不查空**（比 av_session 浅一层）。FFI 入口
+无 AbilityRuntime 依赖，可与 av_session 同批验证。
+
+### 构建
+
+同一隔离树，root-target 分别换 account 和 udmf 的 CJ FFI 目标：
+- account: `//base/account/os_account/frameworks/appaccount/cj:...`（BUILD.gn 查名）
+- udmf: `//foundation/distributeddatamgr/udmf/interfaces/cj:...`
+
+### 验证
+
+```sh
+# account（VerifyCredential 路径）
+bash tools/validation_cases/run_malformed.sh \
+  /home/airgap/oh-real-20260925 <account构建输出> \
+  .../evidence/account-malformed-20260929 \
+  account_null_params <LIBRARY_REL>
+
+# udmf（SetProperties 路径）
+bash tools/validation_cases/run_malformed.sh \
+  /home/airgap/oh-real-20260925 <udmf构建输出> \
+  .../evidence/udmf-malformed-20260929 \
+  udmf_null_extras <LIBRARY_REL>
+```
+
+### 结果判读
+
+- account case=1（head=NULL, size=5）：候选。`head + i` 空指针算术 → 第一个
+  `head->key` 解引用即崩（比 av_session 的第四层浅两层，更直接）
+- udmf case=1（head=NULL, size=3）：同型。若 `FfiUDMFUnifiedDataConstructor`
+  即失败（env_probe 退出 10），记为隔离限制
+- 每轮 gdb backtrace：崩溃帧归属 account/udmf 库内（同 IPC 要求）
+
+### 提交策略
+
+证实后 account 和 udmf 各自独立提交工单。Tier A- + B 合计 15 条批量候选。
+
 ## 口径红线（与 probe 文档一致）
 
 基础运行库打过补丁、无完整产品服务、自定义构建配置——三条必须出现在
