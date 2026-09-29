@@ -2,7 +2,7 @@
 
 生成日期：2026-09-29
 工具版本：WildTrace (master)
-分析范围：13 个案例（公开 CVE 缺口回验 + 新发现候选）
+分析范围：18 个案例（公开 CVE 缺口回验 + 新发现候选）
 
 ## 案例总览
 
@@ -11,16 +11,21 @@
 | 1 | cjson_merge_alias | CVE-2026-87933 | CWE-416 | third_party/cJSON | 缺口回验 | ✅ |
 | 2 | curl_native_ca_reuse | CVE-2026-80231 | CWE-488 | third_party/curl | 缺口回验 | 源级 |
 | 3 | curl_psl_supercookie | CVE-2026-82209 | CWE-201 | third_party/curl | 缺口回验 | ✅ |
-| 4 | ffmpeg_dvbsub_parser_capacity_overflow | CVE-2026-70628 | CWE-190 (leading to CWE-787) | third_party/ffmpeg | 缺口回验 | ✅ |
-| 5 | ffmpeg_floodfill_point_stack_oob | CVE-2026-65705 | CWE-787 | third_party/ffmpeg | 缺口回验 | ✅ |
-| 6 | ffmpeg_hqdn3d_dynamic_size_oob | CVE-2026-66036 | CWE-122 | third_party/ffmpeg | 缺口回验 | ✅ |
-| 7 | ffmpeg_lcldec_zlib_tail_disclosure | CVE-2026-66038 | CWE-908 | third_party/ffmpeg | 缺口回验 | ✅ |
-| 8 | ffmpeg_nvdec_sep_ref_doublefree | CVE-2026-64832 | CWE-415 | third_party/ffmpeg | 缺口回验 | 源级 |
-| 9 | ffmpeg_quirc_resize_oob | CVE-2026-66041 | CWE-787 | third_party/ffmpeg | 缺口回验 | ✅ |
-| 10 | ffmpeg_swaprect_temp_row_oob | CVE-2026-65706 | CWE-787 | third_party/ffmpeg | 缺口回验 | ✅ |
-| 11 | ffmpeg_ty_ac3_trim_underflow | CVE-2026-65704 | CWE-191 (underflow leading to CWE-787) | third_party/ffmpeg | 缺口回验 | ✅ |
-| 12 | ffmpeg_wmaenc_extradata_padding | CVE-2026-52296 | CWE-125 | third_party/ffmpeg | 缺口回验 | ✅ |
-| 13 | openssl_ocb_oneshot_iv_discard | CVE-2026-45445 | CWE-325 | third_party/openssl | 缺口回验 | ✅ |
+| 4 | ffmpeg_cfhd_transform2_width_oob | CVE-2026-70632 | CWE-787 | third_party/ffmpeg | 缺口回验 | 源级 |
+| 5 | ffmpeg_dvbsub_parser_capacity_overflow | CVE-2026-70628 | CWE-190 (leading to CWE-787) | third_party/ffmpeg | 缺口回验 | ✅ |
+| 6 | ffmpeg_floodfill_point_stack_oob | CVE-2026-65705 | CWE-787 | third_party/ffmpeg | 缺口回验 | ✅ |
+| 7 | ffmpeg_hqdn3d_dynamic_size_oob | CVE-2026-66036 | CWE-122 | third_party/ffmpeg | 缺口回验 | ✅ |
+| 8 | ffmpeg_iamf_count_label_dos | CVE-2026-66037 | CWE-400 (unbounded allocation DoS) | third_party/ffmpeg | 缺口回验 | 源级 |
+| 9 | ffmpeg_lcldec_zlib_tail_disclosure | CVE-2026-66038 | CWE-908 | third_party/ffmpeg | 缺口回验 | ✅ |
+| 10 | ffmpeg_nvdec_sep_ref_doublefree | CVE-2026-64832 | CWE-415 | third_party/ffmpeg | 缺口回验 | 源级 |
+| 11 | ffmpeg_quirc_resize_oob | CVE-2026-66041 | CWE-787 | third_party/ffmpeg | 缺口回验 | ✅ |
+| 12 | ffmpeg_rscc_short_deflate_uninit_leak | CVE-2026-70629 | CWE-908 | third_party/ffmpeg | 缺口回验 | 源级 |
+| 13 | ffmpeg_swaprect_temp_row_oob | CVE-2026-65706 | CWE-787 | third_party/ffmpeg | 缺口回验 | ✅ |
+| 14 | ffmpeg_ty_ac3_trim_underflow | CVE-2026-65704 | CWE-191 (underflow leading to CWE-787) | third_party/ffmpeg | 缺口回验 | ✅ |
+| 15 | ffmpeg_wmaenc_extradata_padding | CVE-2026-52296 | CWE-125 | third_party/ffmpeg | 缺口回验 | ✅ |
+| 16 | ipc_cj_array_null_validation | 新发现 | CWE-476 | foundation/communication/ipc/interfaces/innerkits/cj | 缺口回验 | 源级 |
+| 17 | kv_ffi_array_validation | 新发现 | CWE-476 | foundation/distributeddatamgr/kv_store | 缺口回验 | 源级 |
+| 18 | openssl_ocb_oneshot_iv_discard | CVE-2026-45445 | CWE-325 | third_party/openssl | 缺口回验 | ✅ |
 
 ## cjson-merge-nonobject-alias
 
@@ -141,12 +146,12 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 **影响的 OpenHarmony 版本分支**：
 
-- v4.1: 🔴 affected
-- v5.0: 🔴 affected
-- v5.1: 🔴 affected
-- v6.0: 🔴 affected
-- v7.0: 🔴 affected
-- master: 🔴 affected
+- v4.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v5.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v5.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v6.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v7.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- master: ？ unknown（缺该分支基线或上游引入范围，不推断）
 
 ### 5. 修复建议
 
@@ -214,12 +219,12 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 **影响的 OpenHarmony 版本分支**：
 
-- v4.1: 🔴 affected
-- v5.0: 🔴 affected
-- v5.1: 🔴 affected
-- v6.0: 🔴 affected
-- v7.0: 🔴 affected
-- master: 🔴 affected
+- v4.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v5.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v5.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v6.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v7.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- master: ？ unknown（缺该分支基线或上游引入范围，不推断）
 
 ### 5. 修复建议
 
@@ -417,12 +422,12 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 **影响的 OpenHarmony 版本分支**：
 
-- v4.1: 🔴 affected
-- v5.0: 🔴 affected
-- v5.1: 🔴 affected
-- v6.0: 🔴 affected
-- v7.0: 🔴 affected
-- master: 🔴 affected
+- v4.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v5.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v5.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v6.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v7.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- master: ？ unknown（缺该分支基线或上游引入范围，不推断）
 
 ### 5. 修复建议
 
@@ -456,6 +461,63 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
        else
 
 ```
+
+---
+
+## ffmpeg-cfhd-transform2-width-oob
+
+### 1. 源码位置与内容
+
+| 项目 | 值 |
+|---|---|
+| 组件 | third_party/ffmpeg |
+| 源码文件 | — |
+| 关键行号 | — |
+| CVE 编号 | CVE-2026-70632 |
+| CWE 分类 | CWE-787 |
+
+> 源码片段见 `—`（关键行号 —）
+
+### 2. 漏洞详细描述
+
+见 case.json
+
+**触发条件**：见 PoC 注释
+
+**影响路径**：见漏洞描述
+
+### 3. PoC 源代码
+
+> ⚠️ 本案 PoC 为源码级对照验证，无可执行触发器（原因见下）
+
+**PoC 使用方法**：
+```
+# 在 OH ffmpeg/curl/openssl 构建产物上编译执行
+cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=address
+./poc trigger    # 触发漏洞
+./poc control    # 正常对照组
+```
+
+### 4. 影响分析
+
+**影响的代码模块**：third_party/ffmpeg
+
+**影响的功能模块**：ffmpeg
+
+**影响的 OpenHarmony 版本分支**：
+
+- v4.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v5.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v5.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v6.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v7.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- master: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+
+### 5. 修复建议
+
+见漏洞描述
+
+
 
 ---
 
@@ -612,12 +674,12 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 **影响的 OpenHarmony 版本分支**：
 
-- v4.1: 🔴 affected
-- v5.0: 🔴 affected
-- v5.1: 🔴 affected
-- v6.0: 🔴 affected
-- v7.0: 🔴 affected
-- master: 🔴 affected
+- v4.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v5.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v5.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v6.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v7.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- master: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 
 ### 5. 修复建议
 
@@ -786,12 +848,12 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 **影响的 OpenHarmony 版本分支**：
 
-- v4.1: 🔴 affected
-- v5.0: 🔴 affected
-- v5.1: 🔴 affected
-- v6.0: 🔴 affected
-- v7.0: 🔴 affected
-- master: 🔴 affected
+- v4.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v5.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v5.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v6.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v7.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- master: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 
 ### 5. 修复建议
 
@@ -969,12 +1031,12 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 **影响的 OpenHarmony 版本分支**：
 
-- v4.1: 🔴 affected
-- v5.0: 🔴 affected
-- v5.1: 🔴 affected
-- v6.0: 🔴 affected
-- v7.0: 🔴 affected
-- master: 🔴 affected
+- v4.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v5.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v5.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v6.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v7.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- master: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 
 ### 5. 修复建议
 
@@ -985,6 +1047,63 @@ avfilter.c 动态尺寸白名单）。短期可先落附件 patch.diff 的窄化
 中间版本的安全语义，已验证无回归）。临时缓解：避免在包含 hqdn3d
 的滤镜图中处理不可信变尺寸流；对不可信输入的滤镜处理置于资源
 受限环境。
+
+
+
+---
+
+## ffmpeg-iamf-count-label-dos
+
+### 1. 源码位置与内容
+
+| 项目 | 值 |
+|---|---|
+| 组件 | third_party/ffmpeg |
+| 源码文件 | — |
+| 关键行号 | — |
+| CVE 编号 | CVE-2026-66037 |
+| CWE 分类 | CWE-400 (unbounded allocation DoS) |
+
+> 源码片段见 `—`（关键行号 —）
+
+### 2. 漏洞详细描述
+
+见 case.json
+
+**触发条件**：见 PoC 注释
+
+**影响路径**：见漏洞描述
+
+### 3. PoC 源代码
+
+> ⚠️ 本案 PoC 为源码级对照验证，无可执行触发器（原因见下）
+
+**PoC 使用方法**：
+```
+# 在 OH ffmpeg/curl/openssl 构建产物上编译执行
+cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=address
+./poc trigger    # 触发漏洞
+./poc control    # 正常对照组
+```
+
+### 4. 影响分析
+
+**影响的代码模块**：third_party/ffmpeg
+
+**影响的功能模块**：ffmpeg
+
+**影响的 OpenHarmony 版本分支**：
+
+- v4.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v5.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v5.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v6.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v7.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- master: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+
+### 5. 修复建议
+
+见漏洞描述
 
 
 
@@ -1136,12 +1255,12 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 **影响的 OpenHarmony 版本分支**：
 
-- v4.1: 🔴 affected
-- v5.0: 🔴 affected
-- v5.1: 🔴 affected
-- v6.0: 🔴 affected
-- v7.0: 🔴 affected
-- master: 🔴 affected
+- v4.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v5.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v5.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v6.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v7.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- master: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 
 ### 5. 修复建议
 
@@ -1195,12 +1314,12 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 **影响的 OpenHarmony 版本分支**：
 
-- v4.1: 🔴 affected
-- v5.0: 🔴 affected
-- v5.1: 🔴 affected
-- v6.0: 🔴 affected
-- v7.0: 🔴 affected
-- master: 🔴 affected
+- v4.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v5.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v5.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v6.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v7.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- master: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 
 ### 5. 修复建议
 
@@ -1387,12 +1506,12 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 **影响的 OpenHarmony 版本分支**：
 
-- v4.1: 🔴 affected
-- v5.0: 🔴 affected
-- v5.1: 🔴 affected
-- v6.0: 🔴 affected
-- v7.0: 🔴 affected
-- master: 🔴 affected
+- v4.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v5.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v5.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v6.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v7.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- master: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 
 ### 5. 修复建议
 
@@ -1402,6 +1521,63 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 link 尺寸不一致时先 quirc_resize 再拷贝。临时缓解：避免在包含
 quirc 的滤镜图中使用会改变链路尺寸的动态路径；对不可信输入
 的滤镜处理置于资源受限环境。
+
+
+
+---
+
+## ffmpeg-rscc-short-deflate-uninit-leak
+
+### 1. 源码位置与内容
+
+| 项目 | 值 |
+|---|---|
+| 组件 | third_party/ffmpeg |
+| 源码文件 | — |
+| 关键行号 | — |
+| CVE 编号 | CVE-2026-70629 |
+| CWE 分类 | CWE-908 |
+
+> 源码片段见 `—`（关键行号 —）
+
+### 2. 漏洞详细描述
+
+见 case.json
+
+**触发条件**：见 PoC 注释
+
+**影响路径**：见漏洞描述
+
+### 3. PoC 源代码
+
+> ⚠️ 本案 PoC 为源码级对照验证，无可执行触发器（原因见下）
+
+**PoC 使用方法**：
+```
+# 在 OH ffmpeg/curl/openssl 构建产物上编译执行
+cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=address
+./poc trigger    # 触发漏洞
+./poc control    # 正常对照组
+```
+
+### 4. 影响分析
+
+**影响的代码模块**：third_party/ffmpeg
+
+**影响的功能模块**：ffmpeg
+
+**影响的 OpenHarmony 版本分支**：
+
+- v4.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v5.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v5.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v6.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v7.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- master: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+
+### 5. 修复建议
+
+见漏洞描述
 
 
 
@@ -1572,12 +1748,12 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 **影响的 OpenHarmony 版本分支**：
 
-- v4.1: 🔴 affected
-- v5.0: 🔴 affected
-- v5.1: 🔴 affected
-- v6.0: 🔴 affected
-- v7.0: 🔴 affected
-- master: 🔴 affected
+- v4.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v5.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v5.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v6.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v7.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- master: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 
 ### 5. 修复建议
 
@@ -1743,12 +1919,12 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 **影响的 OpenHarmony 版本分支**：
 
-- v4.1: 🔴 affected
-- v5.0: 🔴 affected
-- v5.1: 🔴 affected
-- v6.0: 🔴 affected
-- v7.0: 🔴 affected
-- master: 🔴 affected
+- v4.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v5.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v5.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v6.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v7.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- master: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 
 ### 5. 修复建议
 
@@ -1898,12 +2074,12 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 **影响的 OpenHarmony 版本分支**：
 
-- v4.1: 🔴 affected
-- v5.0: 🔴 affected
-- v5.1: 🔴 affected
-- v6.0: 🔴 affected
-- v7.0: 🔴 affected
-- master: 🔴 affected
+- v4.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v5.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v5.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v6.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v7.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- master: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 
 ### 5. 修复建议
 
@@ -1912,6 +2088,120 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 原文，对 OH 检出直接适用）。同时建议评估组件内其他 extradata
 手工分配点是否存在同类缺填充形态（上游在本修复同期对多处
 extradata 分配做过同类加固，可按上游提交历史对照排查）。
+
+
+
+---
+
+## ipc-cj-array-null-validation
+
+### 1. 源码位置与内容
+
+| 项目 | 值 |
+|---|---|
+| 组件 | foundation/communication/ipc/interfaces/innerkits/cj |
+| 源码文件 | foundation/communication/ipc/interfaces/innerkits/cj/src/message_sequence_impl.cpp |
+| 关键行号 | [367, 386] |
+| CVE 编号 | （新发现） |
+| CWE 分类 | CWE-476 |
+
+> 源码片段见 `foundation/communication/ipc/interfaces/innerkits/cj/src/message_sequence_impl.cpp`（关键行号 [367, 386]）
+
+### 2. 漏洞详细描述
+
+见 case.json
+
+**触发条件**：见 PoC 注释
+
+**影响路径**：见漏洞描述
+
+### 3. PoC 源代码
+
+> ⚠️ 本案 PoC 为源码级对照验证，无可执行触发器（原因见下）
+
+**PoC 使用方法**：
+```
+# 在 OH ffmpeg/curl/openssl 构建产物上编译执行
+cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=address
+./poc trigger    # 触发漏洞
+./poc control    # 正常对照组
+```
+
+### 4. 影响分析
+
+**影响的代码模块**：foundation/communication/ipc/interfaces/innerkits/cj
+
+**影响的功能模块**：cj
+
+**影响的 OpenHarmony 版本分支**：
+
+- v4.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v5.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v5.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v6.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v7.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- master: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+
+### 5. 修复建议
+
+见漏洞描述
+
+
+
+---
+
+## kv-ffi-array-validation
+
+### 1. 源码位置与内容
+
+| 项目 | 值 |
+|---|---|
+| 组件 | foundation/distributeddatamgr/kv_store |
+| 源码文件 | foundation/distributeddatamgr/kv_store/frameworks/cj/src/distributed_kv_store_impl.cpp |
+| 关键行号 | [373, 378] |
+| CVE 编号 | （新发现） |
+| CWE 分类 | CWE-476, CWE-125 |
+
+> 源码片段见 `foundation/distributeddatamgr/kv_store/frameworks/cj/src/distributed_kv_store_impl.cpp`（关键行号 [373, 378]）
+
+### 2. 漏洞详细描述
+
+见 case.json
+
+**触发条件**：见 PoC 注释
+
+**影响路径**：见漏洞描述
+
+### 3. PoC 源代码
+
+> ⚠️ 本案 PoC 为源码级对照验证，无可执行触发器（原因见下）
+
+**PoC 使用方法**：
+```
+# 在 OH ffmpeg/curl/openssl 构建产物上编译执行
+cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=address
+./poc trigger    # 触发漏洞
+./poc control    # 正常对照组
+```
+
+### 4. 影响分析
+
+**影响的代码模块**：foundation/distributeddatamgr/kv_store
+
+**影响的功能模块**：kv_store
+
+**影响的 OpenHarmony 版本分支**：
+
+- v4.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v5.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v5.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v6.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v7.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- master: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+
+### 5. 修复建议
+
+见漏洞描述
 
 
 
@@ -2066,12 +2356,12 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 **影响的 OpenHarmony 版本分支**：
 
-- v4.1: 🔴 affected
-- v5.0: 🔴 affected
-- v5.1: 🔴 affected
-- v6.0: 🔴 affected
-- v7.0: 🔴 affected
-- master: 🔴 affected
+- v4.1: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v5.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v5.1: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v6.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v7.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- master: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 
 ### 5. 修复建议
 

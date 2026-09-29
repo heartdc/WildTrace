@@ -2,7 +2,9 @@
 
 Given any C/C++ source tree, this tool automatically:
   1. Discovers files and classifies the code surface (CJ FFI / general native)
-  2. Runs 9 pattern-family scanners (P1–P9)
+  2. Runs 9 pattern-family scanners (P1–P9) + cross-function UAF layer;
+     optionally an 11th layer, Joern CPG deep analysis (--joern, requires
+     WSL /opt/joern — skipped with a warning when unavailable)
   3. Scores each finding with a confidence (0–100) to prioritize real issues
   4. Traces cross-function variable flow (lightweight CPG, Joern-inspired)
   5. Auto-generates PoC templates for high-confidence findings
@@ -107,6 +109,17 @@ def score_finding(f: Finding, body: str, cleaned: str, params: str) -> Finding:
         # Lower: very short function (likely just a wrapper with caller-side check)
         if len(cleaned) < 200:
             score -= 10; factors.append("-10 (very short function)")
+
+    elif f.pattern in ("P8_cross_uaf", "P8_double_free"):
+        # Cross-function findings carry positional-alias evidence, but no
+        # in-function context was scored (score_finding receives no body).
+        # Keep them above the flat base so confidence sorting and
+        # --min-confidence do not silently discard the whole layer.
+        score += 5
+        factors.append("+5 (cross-function alias evidence)")
+        if f.severity == "high":
+            score += 10
+            factors.append("+10 (severity high)")
 
     elif f.pattern == "P8_use_after_free":
         freed = f.struct_type
@@ -512,7 +525,35 @@ SCANNERS = [
     ("P7", scan_p7, "gen"), ("P8", scan_p8, "gen"), ("P9", scan_p9, "gen"),
 ]
 
-def run(source_root: Path, output_dir: Path, min_confidence: int = 0) -> dict:
+# Joern CPG findings (J4/J6/J8) → pipeline Finding conversion table
+JOERN_PATTERN_MAP = {
+    "J4": ("J4_unbounded_copy", "high", "CWE-120"),
+    "J6": ("J6_null_deref", "medium", "CWE-476"),
+    "J8": ("J8_use_after_free", "high", "CWE-416"),
+}
+
+
+def _convert_joern_findings(joern_findings) -> list:
+    """JoernFinding → Finding (confidence carried over from the CPG query)."""
+    out = []
+    for j in joern_findings:
+        pname, sev, cwe = JOERN_PATTERN_MAP.get(
+            j.pattern, (f"{j.pattern}_joern", "medium", "CWE-Other"))
+        fid = re.sub(r'[^a-zA-Z0-9_]', '_', f"{pname}_{j.file}_{j.line}")[:80]
+        out.append(Finding(
+            finding_id=fid, pattern=pname, severity=sev,
+            file=j.file, line=j.line, function=j.function or "",
+            struct_type="", cwe=cwe,
+            description=f"[Joern CPG] {j.detail}",
+            trigger_hint="path-sensitive CPG query hit",
+            confidence=max(0, min(100, int(j.confidence))),
+            confidence_factors="Joern CPG query (path-sensitive)",
+        ))
+    return out
+
+
+def run(source_root: Path, output_dir: Path, min_confidence: int = 0,
+        joern: bool = False) -> dict:
     t0 = time.time()
     output_dir.mkdir(parents=True, exist_ok=True)
     (output_dir / "pocs").mkdir(exist_ok=True)
@@ -520,9 +561,19 @@ def run(source_root: Path, output_dir: Path, min_confidence: int = 0) -> dict:
     all_c = list(source_root.rglob('*.c'))
     cj = [p for p in all_cpp if '/cj/' in str(p).replace(os.sep, '/')]
     has_cj = len(cj) > 0
-    total_lines = sum(1 for p in (all_cpp+all_c)[:200] for _ in p.open('rb'))
-    if len(all_cpp+all_c) > 200:
-        total_lines = total_lines * len(all_cpp+all_c) // 200
+    # Deterministic sample, closed handles, OSError-proof (a directory
+    # named *.c must not kill the run before the report is written).
+    sample = sorted(all_cpp + all_c)[:200]
+    sampled_lines = 0
+    for p in sample:
+        try:
+            with p.open('rb') as fh:
+                sampled_lines += sum(1 for _ in fh)
+        except OSError:
+            continue
+    total_lines = sampled_lines
+    if len(all_cpp + all_c) > 200:
+        total_lines = sampled_lines * len(all_cpp + all_c) // 200
 
     # Build call graph for cross-function analysis
     t_cg = time.time()
@@ -544,6 +595,7 @@ def run(source_root: Path, output_dir: Path, min_confidence: int = 0) -> dict:
             print(f"WARN {pid}: {e}", file=sys.stderr)
 
     # Cross-function UAF detection (P8-Cross)
+    cross_ran = False
     try:
         from .cross_uaf import build_facts, scan_cross_uaf
         t_x = time.time()
@@ -551,12 +603,36 @@ def run(source_root: Path, output_dir: Path, min_confidence: int = 0) -> dict:
         cross_findings = scan_cross_uaf(source_root, xfacts)
         cross_time = time.time() - t_x
         findings.extend(cross_findings)
+        cross_ran = True
         if cg_time == 0:
             cg_time = cross_time
         else:
             cg_time = round(cg_time + cross_time, 2)
     except Exception as e:
         print(f"WARN cross_uaf: {e}", file=sys.stderr)
+
+    # Joern CPG deep analysis (opt-in layer; requires WSL /opt/joern).
+    # Degrades gracefully — never crashes the pipeline when unavailable.
+    joern_info = {"enabled": bool(joern), "available": False,
+                  "findings": 0, "seconds": 0.0, "error": ""}
+    if joern:
+        try:
+            from .joern_bridge import JoernAnalyzer
+            analyzer = JoernAnalyzer(source_root, verbose=False)
+            if not analyzer.is_available():
+                joern_info["error"] = "joern-unavailable (WSL /opt/joern not found)"
+                print("WARN joern: unavailable, continuing without CPG layer",
+                      file=sys.stderr)
+            else:
+                t_j = time.time()
+                jfindings = analyzer.run_all_queries()
+                joern_info["available"] = True
+                joern_info["seconds"] = round(time.time() - t_j, 2)
+                joern_info["findings"] = len(jfindings)
+                findings.extend(_convert_joern_findings(jfindings))
+        except Exception as e:
+            joern_info["error"] = f"{type(e).__name__}: {e}"
+            print(f"WARN joern: {e}", file=sys.stderr)
 
     # Sort by confidence (descending)
     findings.sort(key=lambda f: f.confidence, reverse=True)
@@ -581,11 +657,20 @@ def run(source_root: Path, output_dir: Path, min_confidence: int = 0) -> dict:
         elif c >= 40: conf_bins["40-59"] += 1
         else: conf_bins["0-39"] += 1
 
+    # Layers that actually executed (the report must not omit a layer that
+    # produced findings, nor list one that did not run).
+    executed = [p for p, _, s in SCANNERS if s == "gen" or (s == "cj" and has_cj)]
+    if cross_ran:
+        executed.append("P8X_cross_uaf")
+    if joern_info["available"]:
+        executed.append("J_joern_cpg")
+
     report = {
         "tool": "WildTrace Autopilot v3",
         "timestamp": datetime.now().isoformat(),
         "elapsed_seconds": round(elapsed, 2),
         "call_graph_seconds": round(cg_time, 2),
+        "joern": joern_info,
         "surface": {"cpp": len(all_cpp), "c": len(all_c), "cj": len(cj),
                      "lines_est": total_lines, "has_cj": has_cj,
                      "call_graph_functions": len(cg.functions)},
@@ -596,8 +681,9 @@ def run(source_root: Path, output_dir: Path, min_confidence: int = 0) -> dict:
             "pocs": sum(1 for f in findings if f.poc_file),
             "patterns": pc,
             "confidence_distribution": conf_bins,
+            "conf_70plus": sum(1 for f in findings if f.confidence >= 70),
             "min_confidence": min_confidence,
-            "scanners": [p for p,_,s in SCANNERS if s=="gen" or (s=="cj" and has_cj)],
+            "scanners": executed,
         },
         "findings": [asdict(f) for f in findings],
     }
@@ -607,9 +693,18 @@ def run(source_root: Path, output_dir: Path, min_confidence: int = 0) -> dict:
 
 def _md(r):
     s = r["summary"]; sf = r["surface"]
+    jn = r.get("joern") or {}
+    joern_line = ""
+    if jn.get("enabled"):
+        if jn.get("available"):
+            joern_line = (f"\nJoern CPG 层：启用，{jn['findings']} 条发现，"
+                          f"{jn['seconds']}s")
+        else:
+            joern_line = f"\nJoern CPG 层：已请求但不可用（{jn.get('error', '')}）"
     L = ["# 自动化漏洞分析报告", "",
          f"工具：{r['tool']} | {r['timestamp'][:19]} | 耗时 {r['elapsed_seconds']}s (含调用图 {r['call_graph_seconds']}s)",
          "", f"扫描面：C++ {sf['cpp']} | C {sf['c']} | CJ {sf['cj']} | ~{sf['lines_est']:,} 行 | 调用图 {sf['call_graph_functions']} 函数",
+         joern_line,
          "", f"发现：**{s['total']}** 条（高危 {s['high']} / 中危 {s['medium']}）",
          f"PoC（置信度≥50）：{s['pocs']} 个 | 最低置信度：{s['min_confidence']}",
          "", "### 置信度分布", "",
@@ -635,12 +730,16 @@ def main():
     p.add_argument("--output", type=Path, default=Path("autopilot_output"))
     p.add_argument("--min-confidence", type=int, default=0,
                    help="Filter findings below this confidence (0-100)")
+    p.add_argument("--joern", action="store_true",
+                   help="Enable the 11th layer: Joern CPG deep analysis "
+                        "(requires WSL with /opt/joern; skipped with a "
+                        "warning when unavailable)")
     a = p.parse_args()
-    r = run(a.source_root, a.output, a.min_confidence)
+    r = run(a.source_root, a.output, a.min_confidence, joern=a.joern)
     s = r["summary"]
     print(f"AUTOPILOT v3: {s['total']}/{s['before_filter']} findings "
           f"(H={s['high']} M={s['medium']}) pocs={s['pocs']} "
-          f"conf>=70: {s['confidence_distribution']['80+'] + s['confidence_distribution']['60-79'] // 2} "
+          f"conf>=70: {s['conf_70plus']} "
           f"in {r['elapsed_seconds']}s")
 
 if __name__ == "__main__":
