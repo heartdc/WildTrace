@@ -24,6 +24,18 @@ from .llm_adapter import chat_completion, LlmTransportError, runtime_key
 MAX_SOURCE_CONTEXT = 3000   # characters of source code to include
 MAX_FINDINGS_PER_BATCH = 10
 RATE_LIMIT_SLEEP_SECONDS = 10
+# Scanned trees are untrusted: a crafted multi-GB "source file" used to be
+# read fully into memory before the 3000-char slice (audit D14). Includes
+# and context lines come from the head of the file anyway.
+MAX_FILE_READ_BYTES = 256 * 1024
+
+
+def _read_head(path: Path, limit: int = MAX_FILE_READ_BYTES):
+    """Read at most `limit` bytes; returns (text, truncated)."""
+    with path.open('rb') as fh:
+        data = fh.read(limit + 1)
+    truncated = len(data) > limit
+    return data[:limit].decode('utf-8', errors='replace'), truncated
 
 # C APIs a memory-safety PoC never needs. Generated code using them is
 # rejected instead of written to disk for an analyst to compile and run
@@ -79,14 +91,19 @@ def _extract_context(source_root: Path, file: str, line: int,
     if not src.exists():
         return f"(source file {file} not found)"
     try:
-        text = src.read_text(encoding='utf-8', errors='replace')
+        text, truncated = _read_head(src)
     except OSError:
         return f"(cannot read {file})"
     lines = text.splitlines()
     line = _safe_int(line)
     start = max(0, line - context_lines - 1)
     end = min(len(lines), line + context_lines)
+    if start >= len(lines):
+        return (f"(line {line} lies beyond the first "
+                f"{MAX_FILE_READ_BYTES // 1024} KiB of {file})")
     snippet = '\n'.join(f"{i+1:4d}| {lines[i]}" for i in range(start, end))
+    if truncated:
+        snippet += f"\n(file truncated at {MAX_FILE_READ_BYTES // 1024} KiB)"
     return snippet[:MAX_SOURCE_CONTEXT]
 
 
@@ -96,7 +113,7 @@ def _extract_includes(source_root: Path, file: str) -> str:
     if src is None or not src.exists():
         return ""
     try:
-        text = src.read_text(encoding='utf-8', errors='replace')
+        text, _truncated = _read_head(src)
     except OSError:
         return ""
     includes = [l.strip() for l in text.splitlines() if l.strip().startswith('#include')]
