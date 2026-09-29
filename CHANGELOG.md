@@ -1,3 +1,20 @@
+# 2026-09-29（追加十五：审计修复——影响矩阵诚实化 + Joern 层接线 + 报告口径修正）
+
+- 影响矩阵（审计 P0）：`ohvul.impact_matrix` 移除跨组件基线兜底——旧实现缺组件基线时回退用 ffmpeg 版本号判定 curl/openssl/cjson，
+  78 格全红是数值巧合的伪造结论。补全 6 分支（v4.1–master）× ffmpeg/curl/openssl 基线；CVE 5.0 范围字段语义修正（version/lessThan 映射曾颠倒，多区间取最宽）。
+  判定规则证据化：结构化受影响范围（`affected_raw`）> 版本等价传播（分支基线与实测验证基线同版本）> ？不推断。
+  交付件重新生成：18 案 × 6 分支，🔴 证实 33 格 / ？待定 75 格；旧手写 13×6 全红版已归档 `docs/analysis/IMPACT_MATRIX_HANDAUTHORED_20260929.md`，其口径未经分支级验证。
+- `ohvul.vuln_report`（审计 P1）：分支影响段复用 impact_matrix 判定引擎（旧版硬编码 6 分支列表、所有 third_party 组件无条件全红）；VULN_REPORT.md 已重新生成，33🔴/75？ 与矩阵一致。
+- Joern 层接线（审计 P0："11 层"实为死代码）：autopilot 新增 `--joern` 显式启用第 11 层，J4/J6/J8 → Finding 转换（CWE/严重度/置信度保留）+ 报告新增 joern 统计块；默认 10 层不触碰 WSL，不可用时警告降级不崩溃。
+  `ohvul.joern_bridge` 健壮性：is_available/subprocess 全异常安全（WSL 缺失返回 False 而非抛异常）；输出 UTF-8 errors=replace（cp936 主机不再 UnicodeDecodeError）；
+  Scala 侧 esc() JSON 转义（含引号/反斜杠/换行的代码不再静默丢发现）；路径 shlex 引用（含空格路径可用）；CPG 失败只试一次（旧版每查询重试最长 33 分钟）。
+- 报告口径（审计 P0/P2）：`summary.scanners` 如实列出执行过的层（旧版漏报 cross_uaf 层）；控制台 conf>=70 从"80+ 加 60-79 的一半"估计改为精确计数；
+  cross_uaf 发现置信度不再全员 50（+5 跨函数别名证据、高危 +10——旧版 `--min-confidence 51` 会整层静默丢弃 889 条发现）。
+- autopilot 崩溃修复（审计 P1）：total_lines 行数估计改为排序采样 + with 关闭句柄 + OSError 防护——树上出现名为 `*.c` 的目录不再在写报告前杀死整跑。
+- 交付文档：VIDEO_SCRIPT 预检命令修正为 `python -m ohvul.toolchain --output`（旧 `ohvul.toolchain_preflight` 模块不存在，录制第 1 步必失败）。
+- 新增 `tests/test_impact_matrix.py`（9 项：不跨组件兜底回归/版本等价/CVE5.0 语义/多区间合并/渲染总计）与 `tests/test_autopilot_joern.py`（5 项：默认不触碰桥接/不可用降级/发现转换往返/层级如实/跨函数置信度）。
+  955 项全量回归通过。
+
 # 2026-09-29（追加十四：LLM PoC 生成器——从模板升级到可编译代码）
 
 - `ohvul.llm_poc`：读 autopilot lead JSON + 源码上下文（15 行前后 + includes），喂给 LLM（glm-5.3 via z.ai），生成完整可编译 C PoC。

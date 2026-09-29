@@ -12,7 +12,7 @@
 ## 1. 环境预检（1min）
 
 ```powershell
-python -m ohvul.toolchain_preflight --output .\demo-out\preflight.json
+python -m ohvul.toolchain --output .\demo-out\preflight.json
 ```
 
 - 画面：preflight JSON 全文（含 resolved 路径与逐项 status）

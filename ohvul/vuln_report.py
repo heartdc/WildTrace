@@ -15,7 +15,7 @@ import json, os, re
 from pathlib import Path
 from datetime import date
 
-from .impact_matrix import OH_BRANCHES
+from .impact_matrix import OH_BRANCHES, evaluate_case
 
 REPORT_TEMPLATE = """## {case_id}
 
@@ -127,16 +127,20 @@ def read_case(case_dir: Path) -> dict:
         else:
             patch_content = f"**修复补丁**：见附件 `patch.diff`（{len(patch)} 字节）"
 
-    # Version impact
+    # Version impact: verdicts come from the impact-matrix engine (single
+    # source of truth) — no hardcoded branch lists, no unconditional 🔴.
     component = record.get("component", "")
-    is_native = "foundation/" in component or "distributeddatamgr" in component
+    impacts = evaluate_case(record)["branches"]
     version_impact_lines = []
-    for br in ["v4.1", "v5.0", "v5.1", "v6.0", "v7.0", "master"]:
-        if is_native:
-            impact = "🔴 affected" if br in ("v7.0", "master") else "？ unknown"
-        else:
-            impact = "🔴 affected"
-        version_impact_lines.append(f"- {br}: {impact}")
+    for br in OH_BRANCHES:
+        short = br.replace("OpenHarmony-", "").replace("-Release", "")
+        impact = impacts.get(br, "unknown")
+        label = {
+            "affected": "🔴 affected（证据：上游受影响范围或与实测基线同版本）",
+            "fixed": "✅ fixed（基线已含上游修复）",
+            "not_affected": "— not_affected（基线早于缺陷引入）",
+        }.get(impact, "？ unknown（缺该分支基线或上游引入范围，不推断）")
+        version_impact_lines.append(f"- {short}: {label}")
 
     return {
         "case_id": record.get("case_id") or record.get("id") or case_dir.name,
