@@ -144,6 +144,47 @@ bash tools/validation_cases/run_malformed.sh \
 
 证实后 account 和 udmf 各自独立提交工单。Tier A- + B 合计 15 条批量候选。
 
+## G. hiappevent + bluetooth 真库验证（2026-09-29 追加，Tier C 最高价值两条）
+
+Tier C 追链（`docs/analysis/L4_TIER_C_20260929.md`）最高价值的两条：
+hiappevent **验证最易**（无前置对象）、bluetooth **形态最危险**（负 size→uint32 大循环）。
+
+### 构建
+
+同一隔离树，root-target 分别换：
+- hiappevent: `//base/hiviewdfx/hiappevent/frameworks/cj/ffi:...`
+- bluetooth: `//foundation/communication/bluetooth/frameworks/cj/ble:...`
+
+### 验证
+
+```sh
+# hiappevent（SetEventParam 路径）
+bash tools/validation_cases/run_malformed.sh \
+  /home/airgap/oh-real-20260925 <hiappevent构建输出> \
+  .../evidence/hiappevent-malformed-20260929 \
+  hiappevent_null_params <LIBRARY_REL>
+
+# bluetooth（StartBleScan 路径）
+bash tools/validation_cases/run_malformed.sh \
+  /home/airgap/oh-real-20260925 <bluetooth构建输出> \
+  .../evidence/bluetooth-malformed-20260929 \
+  bluetooth_null_filter <LIBRARY_REL>
+```
+
+### 结果判读
+
+- hiappevent case=1/2（head=NULL, size>0）：`head->key` 解引用 → 预期 SIGSEGV
+- bluetooth case=1（head=NULL, size=1）：`filters.head[0]` → 预期 SIGSEGV
+- bluetooth case=2（head=NULL, size=-1）：**负 size→uint32(4294967295) 大循环**——
+  如果崩在这一步，崩溃形态是**长时间越界读后 SIGSEGV**（不是立即 null 崩），
+  timeout 30s 可能先触发；gdb 看 rip 是否已在 head[极大偏移] 处
+- 对照组（case=0/3）应正常返回
+- 崩溃帧归属：gdb 确认在 hiappevent/bluetooth 库内
+
+### 提交策略
+
+证实后各自独立提交。Tier A- + B + C 合计 **26 条批量候选**。
+
 ## 口径红线（与 probe 文档一致）
 
 基础运行库打过补丁、无完整产品服务、自定义构建配置——三条必须出现在
