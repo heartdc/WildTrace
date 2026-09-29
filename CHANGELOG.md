@@ -1,3 +1,10 @@
+# 2026-09-29（追加十二：跨函数 UAF / 双重释放检测——位置别名解析）
+
+- `ohvul.cross_uaf`：轻量跨函数别名追踪，检测三种单函数 P8 无法看到的模式——
+  A（Free→Pass）：caller free 后传给 callee deref；B（Callee-Frees）：callee free 后 caller 使用；C（Double-Free）：caller 和 callee 都 free。
+- **位置别名解析**：caller 的 `ptr` 传给 callee 的 `p`（参数名不同），通过参数位置映射正确关联。
+- 7 项专项测试全过（3 种模式 + 位置解析 + 安全用例不误报 + 元数据 + 置信度）。880 项全量回归通过。
+
 # 2026-09-29（追加十一：Joern CPG 深度分析引擎集成）
 
 - `ohvul.joern_bridge`：集成 Joern v4.0.640（Yamaguchi NDSS'14 代码属性图）作为深度分析后端，与正则模式族互补。提供 J4（无界拷贝）/ J6（空指针路径敏感）/ J8（UAF 跨定义分析）三个 CPG 查询。
