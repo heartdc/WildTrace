@@ -29,7 +29,7 @@ PR #51 的 gap-batch-2 三例 66037/70629/70632；2026-09-28 更新）；文档/
 | ffmpeg-floodfill-point-stack-oob | CVE-2026-65705 | CWE-787 | ffmpeg | ✅（含参考提交勘误） | not_run | 未记录 | ✅ | OHSA26-092800126（09-28） | — |
 | ffmpeg-swaprect-temp-row-oob | CVE-2026-65706 | CWE-787 | ffmpeg | ✅ | not_run | 未记录 | ✅ | OHSA26-092853125（09-28） | — |
 | openssl-ocb-oneshot-iv-discard | CVE-2026-45445 | CWE-325 | openssl | ✅ | not_run | 未记录 | ✅ | OHSA26-092837123（09-28） | — |
-| ipc-cj-array-null-validation | —（无 CVE，new candidate） | CWE-476 | OH IPC（cj 侧） | ✅ 源级定位 | ✅ 等价复现（ASan 零页 SEGV；len=0/正常字节对照组通过） | 平台二进制未链接（next_gate=隔离构建验证导出 API） | — | 未提交 | — |
+| ipc-cj-array-null-validation | —（无 CVE，new candidate） | CWE-476 | OH IPC（cj 侧） | ✅ 源级定位 | ✅ **真库级证实**（2026-09-28：SIGSEGV run.exit=139，崩溃帧归属 libcj_ipc_ffi.z.so；隔离构建口径红线三条） | 自定义配置非官方产品构建（如实） | — | OHSA26-092953990（09-29，**新发现**） | 待受理 |
 | kv-ffi-array-validation | —（无 CVE，new candidate） | CWE-476/125 | OH kv_store（cj 侧） | ✅ 源级定位 | ✅ 等价复现（WSL ASan；对照组通过） | 平台二进制未链接（next_gate=完整 FFI 库隔离进程复跑） | — | 未提交 | — |
 | ffmpeg-iamf-count-label-dos | CVE-2026-66037 | CWE-400 | ffmpeg | ✅（含参考提交勘误：初判 already_fixed 后纠正） | not_run | 未记录 | ✅ `submission_66037` | OHSA26-092835171（09-28） | — |
 | ffmpeg-rscc-short-deflate-uninit-leak | CVE-2026-70629 | CWE-908 | ffmpeg | ✅（newest-ref 勘误：2015 引入提交） | not_run | 未记录 | ✅ `submission_70629` | OHSA26-092850129（09-28） | — |
@@ -47,7 +47,7 @@ PR #51 的 gap-batch-2 三例 66037/70629/70632；2026-09-28 更新）；文档/
   corpus 1925、**零崩溃零泄漏**；白班 8h 复跑进行中（旧语料热启动）。
 - **auth T4（DeviceInfo 链）**：施工图已论证（`docs/design/deviceinfo_fuzz_extraction_plan.md`），
   待施工。头号嫌疑族：BtV1 的 `OptInt64` 8 字节写 32 位 netCapacity（struct 内越界）。
-- 当前新发现数：**0**（无崩溃即无候选）。
+- 当前新发现数：**1**（IPC 真库级证实，OHSA26-092953990，2026-09-29 提交，待受理）。
 
 ## 3. 记录漂移（台账与既有文档不一致处，需回填修正）
 
