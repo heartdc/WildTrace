@@ -1,3 +1,9 @@
+# 2026-09-29（追加六：第二轮模式扫描——4 模式族 73 lead，4 条新增候选）
+
+- `cjffi_scan2.py`：F1 嵌套数组解引用 / F2 malloc 算术溢出 / F3 字符串无界 / F4 整数截断——491 文件 → 73 lead。
+- **新增有效候选 4 条**：hiappevent AddWatcher（三重嵌套空指针+移位 UB ★★★）、netstack 证书验证（int64→uint32 截断→大循环 ×3 ★★★）、bluetooth ParseManufactureData（三重漏洞同函数 ★★★）、web_webview HTTP 头截断（★★）。
+- bluetooth serviceData 空 vector 确认为逻辑 bug 非内存安全（降级）。**全项目累计 30 条候选**。详见 `docs/analysis/SWEEP2_20260929.md`。
+
 # 2026-09-29（追加五：Tier C 畸形调用器 + 任务书 G 节）
 
 - `hiappevent_null_params.c`（SetEventParam 路径，4 case 含 null head/size=0 控制）和 `bluetooth_null_filter.c`（StartBleScan 路径，4 case 含负 size→uint32 大循环变体），clang 语法通过。
