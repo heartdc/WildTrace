@@ -39,7 +39,7 @@
 | CVE 编号 | CVE-2026-87933 |
 | CWE 分类 | CWE-416 |
 
-> 源码片段见 `—`（关键行号 —）
+> 源码片段：见 `—`（关键行号 —）。源码级证据记录：consume_target_before_duplicate: cJSON_Utils.c:1325-1330；recursive_child_deallocation: cJSON.c:253-280
 
 ### 2. 漏洞详细描述
 
@@ -189,7 +189,7 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 | CVE 编号 | CVE-2026-80231 |
 | CWE 分类 | CWE-488 |
 
-> 源码片段见 `—`（关键行号 —）
+> 源码片段：见 `—`（关键行号 —）。源码级证据记录：native_ca_store appears only in setopt.c:2470/2485 (option assignment) and urldata.h:340 (field definition) plus legitimate backend reads (gtls.c/openssl.c/wolfssl.c/doh.c); the connection-reuse comparison match_ssl_primary_config() at lib/vtls/vtls.c:176 lists every other ssl_primary_config field but omits native_ca_store
 
 ### 2. 漏洞详细描述
 
@@ -246,7 +246,7 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 | CVE 编号 | CVE-2026-82209 |
 | CWE 分类 | CWE-201 |
 
-> 源码片段见 `—`（关键行号 —）
+> 源码片段：见 `—`（关键行号 —）。源码级证据记录：upstream fix 2026-08-28 postdates the 20260819 snapshot; no backport commit found (grep CVE id + recent log); OH's lib/cookie.c retains the pre-refactor PSL structure without the tailmatch-clearing logic at the psl_is_cookie_domain_acceptable call site (line ~1049)
 
 ### 2. 漏洞详细描述
 
@@ -476,7 +476,7 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 | CVE 编号 | CVE-2026-70632 |
 | CWE 分类 | CWE-787 |
 
-> 源码片段见 `—`（关键行号 —）
+> 源码片段：见 `—`（关键行号 —）。源码级证据记录：cfhd.c:969 and :1010 plane-size checks lack 'lowpass_width * 2 > s->plane[plane].width'; the similar check at :1049 is pre-existing code on another path. Both upstream fix diffs apply clean
 
 ### 2. 漏洞详细描述
 
@@ -533,7 +533,7 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 | CVE 编号 | CVE-2026-70628 |
 | CWE 分类 | CWE-190 (leading to CWE-787) |
 
-> 源码片段见 `libavcodec/dvbsub_parser.c`（关键行号 [106]）
+> 源码片段：见 `libavcodec/dvbsub_parser.c`（关键行号 [106]）。源码级证据记录：dvbsub_parse() capacity guard at line 106 is still the signed-overflow-prone three-term form 'buf_size - buf_pos + pc->packet_index > PARSE_BUF_SIZE'; upstream one-line rewrite applies clean to OH checkout (git apply --check pass 2026-09-22)
 
 ### 2. 漏洞详细描述
 
@@ -704,7 +704,7 @@ patch.diff 即上游原文，对 OH 检出直接适用）。单行等价改写�
 | CVE 编号 | CVE-2026-65705 |
 | CWE 分类 | CWE-787 |
 
-> 源码片段见 `libavfilter/vf_floodfill.c`（关键行号 [274]）
+> 源码片段：见 `libavfilter/vf_floodfill.c`（关键行号 [274]）。源码级证据记录：config_input allocates s->points = av_calloc(inlink->w * inlink->h, 4 * sizeof(Points)) once; filter_frame pushes points with frame->width/height bounds — OOB write when frame exceeds config size. Upstream diff applies clean
 
 ### 2. 漏洞详细描述
 
@@ -879,7 +879,7 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 | CVE 编号 | CVE-2026-66036 |
 | CWE 分类 | CWE-122 |
 
-> 源码片段见 `libavfilter/vf_hqdn3d.c`（关键行号 [98]）
+> 源码片段：见 `libavfilter/vf_hqdn3d.c`（关键行号 [98]）。源码级证据记录：7.1.1 filter_frame has no size check at all (upstream added an EINVAL guard only after 7.1.1, then full dynamic support in the fix); config_input allocates s->line[i] = av_malloc_array(inlink->w) while do_denoise uses AV_CEIL_RSHIFT(in->width/height)
 
 ### 2. 漏洞详细描述
 
@@ -1064,7 +1064,7 @@ avfilter.c 动态尺寸白名单）。短期可先落附件 patch.diff 的窄化
 | CVE 编号 | CVE-2026-66037 |
 | CWE 分类 | CWE-400 (unbounded allocation DoS) |
 
-> 源码片段见 `—`（关键行号 —）
+> 源码片段：见 `—`（关键行号 —）。源码级证据记录：iamf_parse.c:864: count_label = ffio_read_leb(pbc) then av_calloc with no remaining-bytes check; upstream diff applies clean
 
 ### 2. 漏洞详细描述
 
@@ -1121,7 +1121,7 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 | CVE 编号 | CVE-2026-66038 |
 | CWE 分类 | CWE-908 |
 
-> 源码片段见 `libavcodec/lcldec.c`（关键行号 [121]）
+> 源码片段：见 `libavcodec/lcldec.c`（关键行号 [121]）。源码级证据记录：mszh_decomp returns without zeroing destptr..destptr_end (~line 121); zlib_decomp short-inflation path returns without zeroing decomp_buf tail (~lines 155-156); upstream diff applies clean to OH checkout (git apply --check pass 2026-09-22)
 
 ### 2. 漏洞详细描述
 
@@ -1284,7 +1284,7 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 | CVE 编号 | CVE-2026-64832 |
 | CWE 分类 | CWE-415 |
 
-> 源码片段见 `—`（关键行号 —）
+> 源码片段：见 `—`（关键行号 —）。源码级证据记录：OH ff_nvdec_start_frame_sep_ref (nvdec.c:599) keeps 'ret = AVERROR(ENOMEM); goto fail;' at the decoder_pool exhaustion branch and the trailing 'fail: nvdec_fdd_priv_free(cf); return ret;' block — exactly what upstream removed. Naming-era note: OH uses ff_refstruct_pool_get, upstream patch context shows av_refstruct_pool_get (same API after the ff_->av_ rename); structure equivalent
 
 ### 2. 漏洞详细描述
 
@@ -1341,7 +1341,7 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 | CVE 编号 | CVE-2026-66041 |
 | CWE 分类 | CWE-787 |
 
-> 源码片段见 `libavfilter/vf_quirc.c`（关键行号 [102]）
+> 源码片段：见 `libavfilter/vf_quirc.c`（关键行号 [102]）。源码级证据记录：OH vf_quirc.c has quirc_resize only in config_input (initial size); filter_frame copies into the quirc buffer with no dimension-change check and QuircContext carries no width/height fields — the exact pre-fix structure upstream 4da9812 changed
 
 ### 2. 漏洞详细描述
 
@@ -1538,7 +1538,7 @@ quirc 的滤镜图中使用会改变链路尺寸的动态路径；对不可信�
 | CVE 编号 | CVE-2026-70629 |
 | CWE 分类 | CWE-908 |
 
-> 源码片段见 `—`（关键行号 —）
+> 源码片段：见 `—`（关键行号 —）。源码级证据记录：rscc.c deflate branch has no 'len < pixel_size' zero-fill (grep zero hits); both upstream fix diffs apply clean
 
 ### 2. 漏洞详细描述
 
@@ -1595,7 +1595,7 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 | CVE 编号 | CVE-2026-65706 |
 | CWE 分类 | CWE-787 |
 
-> 源码片段见 `libavfilter/vf_swaprect.c`（关键行号 [223]）
+> 源码片段：见 `libavfilter/vf_swaprect.c`（关键行号 [223]）。源码级证据记录：vf_swaprect.c:223 allocates the temp row buffer as av_malloc_array(inlink->w, pixsteps[0]) — plane 0's step only; upstream fix sizes it across all planes (width<<shift * pixstep max, with INT_MAX check). Applies clean
 
 ### 2. 漏洞详细描述
 
@@ -1778,7 +1778,7 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 | CVE 编号 | CVE-2026-65704 |
 | CWE 分类 | CWE-191 (underflow leading to CWE-787) |
 
-> 源码片段见 `libavformat/ty.c`（关键行号 [576]）
+> 源码片段：见 `libavformat/ty.c`（关键行号 [576]）。源码级证据记录：ty.c:576 is the pre-fix form; upstream diff applies clean to the OH checkout (git apply --check OK, no adaptation needed). Boundary note: the sibling 'pkt->size -= 2' at ty.c:640 is guarded by pkt->size > AC3_PKT_LENGTH and is NOT affected — upstream fix leaves it unchanged
 
 ### 2. 漏洞详细描述
 
@@ -1951,7 +1951,7 @@ AC3_PKT_LENGTH 前置保护，保持原样不动。临时缓解：产品侧限�
 | CVE 编号 | CVE-2026-52296 |
 | CWE 分类 | CWE-125 |
 
-> 源码片段见 `libavcodec/wmaenc.c`（关键行号 [67]）
+> 源码片段：见 `libavcodec/wmaenc.c`（关键行号 [67]）。源码级证据记录：encode_init allocates av_malloc(4) (WMAV1) / av_mallocz(10) (WMAV2) without AV_INPUT_BUFFER_PADDING_SIZE; upstream diff applies clean to OH checkout
 
 ### 2. 漏洞详细描述
 
@@ -2105,7 +2105,7 @@ extradata 分配做过同类加固，可按上游提交历史对照排查）。
 | CVE 编号 | （新发现） |
 | CWE 分类 | CWE-476 |
 
-> 源码片段见 `foundation/communication/ipc/interfaces/innerkits/cj/src/message_sequence_impl.cpp`（关键行号 [367, 386]）
+> 源码片段：见 `foundation/communication/ipc/interfaces/innerkits/cj/src/message_sequence_impl.cpp`（关键行号 [367, 386]）。本仓库未捆绑源码树；在案例目录放置 `source_snippet.txt` 后重新生成即可嵌入内容。
 
 ### 2. 漏洞详细描述
 
@@ -2162,7 +2162,7 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 | CVE 编号 | （新发现） |
 | CWE 分类 | CWE-476, CWE-125 |
 
-> 源码片段见 `foundation/distributeddatamgr/kv_store/frameworks/cj/src/distributed_kv_store_impl.cpp`（关键行号 [373, 378]）
+> 源码片段：见 `foundation/distributeddatamgr/kv_store/frameworks/cj/src/distributed_kv_store_impl.cpp`（关键行号 [373, 378]）。本仓库未捆绑源码树；在案例目录放置 `source_snippet.txt` 后重新生成即可嵌入内容。
 
 ### 2. 漏洞详细描述
 
@@ -2219,7 +2219,7 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 | CVE 编号 | CVE-2026-45445 |
 | CWE 分类 | CWE-325 |
 
-> 源码片段见 `providers/implementations/ciphers/cipher_aes_ocb.c`（关键行号 [497]）
+> 源码片段：见 `providers/implementations/ciphers/cipher_aes_ocb.c`（关键行号 [497]）。源码级证据记录：aes_ocb_cipher (cipher_aes_ocb.c:497) lacks the key_set/update_iv head check; narrow patch (source-file part of upstream diff) applies clean
 
 ### 2. 漏洞详细描述
 

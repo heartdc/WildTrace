@@ -20,7 +20,7 @@ Confidence scoring (Coverity-inspired statistical prioritization):
 Usage: python -m ohvul.autopilot <source_root> --output <dir> [--min-confidence N]
 """
 from __future__ import annotations
-import json, os, re, sys, time
+import json, hashlib, os, re, sys, time
 from pathlib import Path
 from datetime import datetime
 from dataclasses import dataclass, field, asdict
@@ -183,12 +183,16 @@ def score_finding(f: Finding, body: str, cleaned: str, params: str) -> Finding:
             score += 25; factors.append(f"+25 ({post_uses} post-free uses)")
         elif post_uses == 2:
             score += 15; factors.append(f"+15 ({post_uses} post-free uses)")
-        # Lower: pointer is reassigned before use
-        if re.search(rf'{re.escape(freed)}\s*=\s*\w+', cleaned[ cleaned.index(f'free({freed})') + 10 :] if f'free({freed})' in cleaned else ''):
+        # Lower: pointer is reassigned before use. Locate the free via the
+        # same wrapper-aware pattern the scanner uses — plain `free(x)`
+        # matching never fired for SoftBusFree/av_free codebases (audit B5)
+        fm = re.search(rf'\b(?:free|SoftBusFree|av_free)\s*\(\s*{re.escape(freed)}\s*\)', cleaned)
+        if fm and re.search(rf'{re.escape(freed)}\s*=\s*\w+', cleaned[fm.end():]):
             score -= 30; factors.append("-30 (reassigned after free)")
         # Lower: free is in error/cleanup path
         if re.search(rf'(?:error|fail|cleanup|goto\s+\w+_fail|goto\s+cleanup)', cleaned, re.I):
-            if re.search(rf'free\s*\(\s*{re.escape(freed)}', cleaned[cleaned.lower().find('error') if 'error' in cleaned.lower() else 0:]):
+            if fm and re.search(rf'(?:free|SoftBusFree|av_free)\s*\(\s*{re.escape(freed)}',
+                                cleaned[cleaned.lower().find('error') if 'error' in cleaned.lower() else 0:]):
                 score -= 15; factors.append("-15 (error-path free)")
         # Higher: use is a write (more dangerous than read)
         if re.search(rf'{re.escape(freed)}\s*(?:->\w+\s*=|\[\w+\]\s*=)', cleaned):
@@ -360,12 +364,16 @@ def scan_p2(root):
         if '/cj/' not in rel.replace(os.sep, '/'): continue
         try: text = src.read_text(encoding='utf-8', errors='replace')
         except OSError: continue
+        lines = text.splitlines()
         for m in re.finditer(r'static_cast<\s*(u?int(?:8|16|32)_t)\s*>\s*\(\s*\w+(?:\.\w+|->\w+)*(?:\.|->)\s*(?:size|len)\s*\)', text, re.I):
             line = text.count('\n', 0, m.start()) + 1
             f = Finding(f"P2_{rel}_{line}", "P2_truncation", "medium", rel, line,
                        "", m.group(1), "CWE-190", f"int64→{m.group(1)} truncation",
                        trigger_hint="Pass negative size")
-            out.append(score_finding(f, "", text[line-1:line+20], ""))
+            # a window of LINES around the finding, not ~21 characters
+            # (audit B6: the old slice was a character window)
+            window = "\n".join(lines[max(0, line - 1):line + 20])
+            out.append(score_finding(f, "", window, ""))
     return out
 
 def scan_p3(root):
@@ -434,7 +442,7 @@ def scan_p5(root):
 
 def scan_p6(root, call_graph=None):
     out = []
-    for src in root.rglob('*.c'):
+    for src in list(root.rglob('*.c')) + list(root.rglob('*.cpp')):
         rel = str(src.relative_to(root))
         try: text = src.read_text(encoding='utf-8', errors='replace')
         except OSError: continue
@@ -608,7 +616,10 @@ def generate_poc(f, out_dir):
     tpl = _POC.get(f.pattern)
     if not tpl: return ""
     sid = re.sub(r'[^a-zA-Z0-9_]', '_', f.finding_id)[:40]
-    name = f"poc_{f.pattern}_{sid}.c"
+    # hash suffix: long finding_ids sharing the first 40 sanitized
+    # characters used to overwrite each other's PoC files (audit B4)
+    digest = hashlib.sha256(f.finding_id.encode('utf-8')).hexdigest()[:8]
+    name = f"poc_{f.pattern}_{sid}_{digest}.c"
     (out_dir / name).write_text(tpl.format(
         pattern=f.pattern, cwe=f.cwe, confidence=f.confidence,
         file=f.file, line=f.line,
@@ -694,6 +705,14 @@ def run(source_root: Path, output_dir: Path, min_confidence: int = 0,
             findings.extend(results)
         except Exception as e:
             print(f"WARN {pid}: {e}", file=sys.stderr)
+
+    # Enrich reachability from the call graph (the field used to stay
+    # "n/a" for every regex finding — audit B8)
+    for f in findings:
+        if f.reachability in ("", "n/a") and f.function in cg.functions:
+            chain = cg.get_reachability(f.function)
+            if chain:
+                f.reachability = " ← ".join(chain)
 
     # Cross-function UAF detection (P8-Cross)
     cross_ran = False

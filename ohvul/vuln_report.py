@@ -71,6 +71,55 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 """
 
 
+def _md_cell(value) -> str:
+    """Markdown-table-safe rendering: pipes and newlines break rows."""
+    return str(value).replace("|", "\\|").replace("\n", " ")
+
+
+def _evidence_quote(record: dict) -> str:
+    """Compact source-level evidence already recorded in the case record:
+    descriptive evidence_locations values and oh_source L4/gap evidence."""
+    texts = []
+    ev = record.get("evidence_locations")
+    if isinstance(ev, dict) and "source_file" not in ev:
+        for k, v in list(ev.items())[:3]:
+            if isinstance(v, str) and v.strip():
+                texts.append(f"{k}: {v.strip()}")
+    oh = record.get("oh_source")
+    if isinstance(oh, dict):
+        for k in ("l4_evidence", "gap_evidence"):
+            v = oh.get(k)
+            if isinstance(v, str) and v.strip():
+                texts.append(v.strip())
+    if not texts:
+        return ""
+    return "；".join(t[:600] for t in texts[:2])[:1200]
+
+
+def _source_snippet(case_dir: Path, record: dict, source_file, source_lines) -> str:
+    """Deliverable #1 wants location AND content. The source tree itself is
+    not bundled in this repo: a per-case ``source_snippet.txt``/``.c`` next
+    to case.json is embedded verbatim when present, the recorded source-
+    level evidence (L4/gap, descriptive locations) is quoted otherwise, and
+    the report says so explicitly instead of shipping a bare pointer."""
+    for name in ("source_snippet.txt", "source_snippet.c"):
+        p = case_dir / name
+        if p.exists():
+            try:
+                text = p.read_text(encoding="utf-8", errors="replace")[:4000]
+            except OSError:
+                break
+            return (f"> 源码片段（`{source_file}` 关键行号 {source_lines}，"
+                    f"摘自案例目录 `{name}`）：\n\n```c\n{text}\n```")
+    quote = _evidence_quote(record)
+    if quote:
+        return (f"> 源码片段：见 `{source_file}`（关键行号 {source_lines}）。"
+                f"源码级证据记录：{quote}")
+    return (f"> 源码片段：见 `{source_file}`（关键行号 {source_lines}）。"
+            f"本仓库未捆绑源码树；在案例目录放置 `source_snippet.txt` "
+            f"后重新生成即可嵌入内容。")
+
+
 def read_case(case_dir: Path, kb_records: dict | None = None) -> dict:
     record = json.loads((case_dir / "case.json").read_text(encoding="utf-8"))
 
@@ -80,8 +129,12 @@ def read_case(case_dir: Path, kb_records: dict | None = None) -> dict:
         source_file = evidence.get("source_file", evidence.get("source", "—"))
         source_lines = evidence.get("lines", "—")
     elif isinstance(evidence, list) and evidence:
-        source_file = evidence[0].get("source_file", str(evidence[0]))
-        source_lines = evidence[0].get("lines", "—")
+        first = evidence[0]
+        if isinstance(first, dict):
+            source_file = first.get("source_file", first.get("source", "—"))
+            source_lines = first.get("lines", "—")
+        else:
+            source_file, source_lines = str(first), "—"
     else:
         source_file = record.get("oh_source", {}).get("source_file", "—") if isinstance(record.get("oh_source"), dict) else "—"
         source_lines = "—"
@@ -101,10 +154,13 @@ def read_case(case_dir: Path, kb_records: dict | None = None) -> dict:
     else:
         description = str(desc) if desc else "见 case.json"
 
-    # CWE
+    # CWE — a dict-valued cwe_candidate must not crash the join
     cwe = record.get("cwe_candidate", "unknown")
     if isinstance(cwe, list):
-        cwe = ", ".join(cwe)
+        cwe = ", ".join(str(x) for x in cwe)
+    elif isinstance(cwe, dict):
+        cwe = ", ".join(f"{k}={v}" for k, v in cwe.items())
+    cwe = _md_cell(cwe)
 
     # CVE
     cve = record.get("cve_reference") or record.get("public_cve_reference") or "（新发现）"
@@ -129,7 +185,7 @@ def read_case(case_dir: Path, kb_records: dict | None = None) -> dict:
 
     # Version impact: verdicts come from the impact-matrix engine (single
     # source of truth) — no hardcoded branch lists, no unconditional 🔴.
-    component = record.get("component", "")
+    component = record.get("component") or ""
     impacts = evaluate_case(record, kb_records)["branches"]
     version_impact_lines = []
     for br in OH_BRANCHES:
@@ -144,12 +200,12 @@ def read_case(case_dir: Path, kb_records: dict | None = None) -> dict:
 
     return {
         "case_id": record.get("case_id") or record.get("id") or case_dir.name,
-        "component": component,
+        "component": _md_cell(component),
         "source_file": source_file,
         "source_lines": str(source_lines),
-        "cve": cve,
+        "cve": _md_cell(cve),
         "cwe": cwe,
-        "source_snippet": f"> 源码片段见 `{source_file}`（关键行号 {source_lines}）",
+        "source_snippet": _source_snippet(case_dir, record, source_file, source_lines),
         "description": description,
         "trigger_conditions": record.get("trigger_conditions", "见 PoC 注释"),
         "attack_path": record.get("attack_path", record.get("entry_point", "见漏洞描述")),
@@ -163,7 +219,7 @@ def read_case(case_dir: Path, kb_records: dict | None = None) -> dict:
     }
 
 
-def generate_report(cases_dir: Path, output: Path, kb_path=None):
+def generate_report(cases_dir: Path, output: Path, kb_path=None, force: bool = False):
     case_dirs = sorted(d for d in cases_dir.iterdir() if d.is_dir() and (d / "case.json").exists())
     if not case_dirs:
         raise ValueError(f"No case directories with case.json in {cases_dir}")
@@ -193,12 +249,18 @@ def generate_report(cases_dir: Path, output: Path, kb_path=None):
         record = json.loads((cd / "case.json").read_text(encoding="utf-8"))
         cve = record.get("cve_reference") or record.get("public_cve_reference") or "新发现"
         cwe = record.get("cwe_candidate", "—")
-        if isinstance(cwe, list): cwe = cwe[0]
-        comp = record.get("component", "—")
+        if isinstance(cwe, list):
+            cwe = str(cwe[0]) if cwe else "—"
+        elif isinstance(cwe, dict):
+            cwe = "—"
+        comp = record.get("component") or "—"
         has_poc = "✅" if (cd / "poc.c").exists() else "源级"
         new_disc = "新发现" if record.get("confirmed_vulnerability") else "缺口回验"
-        header += f"| {i} | {cd.name} | {cve} | {cwe} | {comp} | {new_disc} | {has_poc} |\n"
+        header += (f"| {i} | {_md_cell(cd.name)} | {_md_cell(cve)} | {_md_cell(cwe)} "
+                   f"| {_md_cell(comp)} | {new_disc} | {has_poc} |\n")
 
+    if output.exists() and not force:
+        raise ValueError(f"output already exists: {output} (pass --force to overwrite)")
     output.write_text(header + "\n" + "\n".join(sections), encoding="utf-8")
     print(f"REPORT cases={len(case_dirs)} -> {output}")
     return len(case_dirs)
@@ -211,9 +273,11 @@ def main():
     parser.add_argument("--kb", type=Path, default=None,
                         help="kb/third_party_targets/records.json to join by CVE")
     parser.add_argument("--output", type=Path, default=Path("docs/deliverables/VULN_REPORT.md"))
+    parser.add_argument("--force", action="store_true",
+                        help="Overwrite an existing report (default: refuse)")
     args = parser.parse_args()
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    generate_report(args.cases, args.output, kb_path=args.kb)
+    generate_report(args.cases, args.output, kb_path=args.kb, force=args.force)
 
 
 if __name__ == "__main__":

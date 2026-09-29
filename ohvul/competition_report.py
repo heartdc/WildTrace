@@ -109,6 +109,9 @@ def assemble(cases_root: Path) -> dict:
     projected = []
     for path in sorted(cases_root.glob('*/case.json')):
         projected.append(project_case(_load_case(path), path.parent.name))
+    if not projected:
+        # an empty report must not look like a successful run (audit C11)
+        raise ValueError(f'no case records found under {cases_root} (*/case.json)')
     confirmed = sum(1 for case in projected if case['confirmed_vulnerability'])
     return {
         'schema': SCHEMA,
@@ -175,11 +178,13 @@ def main(argv=None) -> int:
     parser.add_argument('--markdown', type=Path)
     args = parser.parse_args(argv)
     report = assemble(args.cases)
-    exclusive_json(args.output, report)
+    # markdown first, JSON last: a failure halfway must not leave the JSON
+    # published without its markdown half (audit C11 partial-run window)
     if args.markdown:
         args.markdown.parent.mkdir(parents=True, exist_ok=True)
         with args.markdown.open('x', encoding='utf-8', newline=chr(10)) as stream:
             stream.write(render_markdown(report))
+    exclusive_json(args.output, report)
     print(f"COMPETITION_REPORT cases={report['case_count']} "
           f"confirmed={report['confirmed_vulnerabilities']} "
           f"tickets={len(report['submitted_tickets'])}")
