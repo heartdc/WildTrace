@@ -1,3 +1,8 @@
+# 2026-09-29（追加四：Tier C 逐条追链——11 条新增有效候选，全项目 26 条）
+
+- Tier C 15 条 lead 追链：**6 条新增有效**（hiappevent head=null 最易 / bluetooth 负 size→uint32 大循环最危险 / webview/graphic/relational_store 各 1 条）+ **notification 5 条克隆族**（同 Tier B）。3 条输出方向判安全。
+- **全项目批量候选累计 26 条**（Tier A- 6 + Tier B 9 + Tier C 11）。详见 `docs/analysis/L4_TIER_C_20260929.md`。
+
 # 2026-09-29（追加三：Tier B 畸形调用器 + 任务书 F 节）
 
 - `account_null_params.c`（VerifyCredential 路径，4 case 含 null head/负 size 变体）和 `udmf_null_extras.c`（SetProperties 路径，3 case 含 env_probe），clang 语法通过。
