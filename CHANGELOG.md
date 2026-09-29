@@ -1,3 +1,124 @@
+# 2026-09-29（追加十四：LLM PoC 生成器——从模板升级到可编译代码）
+
+- `ohvul.llm_poc`：读 autopilot lead JSON + 源码上下文（15 行前后 + includes），喂给 LLM（glm-5.3 via z.ai），生成完整可编译 C PoC。
+  包含：prompt 构建（安全研究员角色 + 8 条代码规则）、代码块提取、4 层验证（长度/main/includes/目标函数引用）、批量生成、摘要报告。
+  CLI 入口：`python -m ohvul.llm_poc findings.json <source_root> --output llm_pocs`。
+- 15 项专项测试全过（prompt/提取/验证/上下文/mock 生成/错误处理），895 项全量回归通过。
+
+# 2026-09-29（追加十三：cross_uaf 集成到 autopilot——dsoftbus 889 条跨函数发现）
+
+- autopilot v3 集成 `ohvul.cross_uaf`：在 9 个正则模式族 + Joern CPG 之上新增跨函数 UAF/双重释放检测。
+- dsoftbus 实测：**889 条跨函数发现**（746 P8_cross_uaf + 143 P8_double_free），全管线 2466 条 lead，217 秒。
+- 880 项全量回归通过。已知宏误报（LIST_FOR_EACH_ENTRY_SAFE）待后续过滤。
+
+# 2026-09-29（追加十二：跨函数 UAF / 双重释放检测——位置别名解析）
+
+- `ohvul.cross_uaf`：轻量跨函数别名追踪，检测三种单函数 P8 无法看到的模式——
+  A（Free→Pass）：caller free 后传给 callee deref；B（Callee-Frees）：callee free 后 caller 使用；C（Double-Free）：caller 和 callee 都 free。
+- **位置别名解析**：caller 的 `ptr` 传给 callee 的 `p`（参数名不同），通过参数位置映射正确关联。
+- 7 项专项测试全过（3 种模式 + 位置解析 + 安全用例不误报 + 元数据 + 置信度）。880 项全量回归通过。
+
+# 2026-09-29（追加十一：Joern CPG 深度分析引擎集成）
+
+- `ohvul.joern_bridge`：集成 Joern v4.0.640（Yamaguchi NDSS'14 代码属性图）作为深度分析后端，与正则模式族互补。提供 J4（无界拷贝）/ J6（空指针路径敏感）/ J8（UAF 跨定义分析）三个 CPG 查询。
+- 实测 dsoftbus 742K 行：CPG 构建 158s + 查询 58s = **8153 条 lead（J6=8106 + J8=47）**。Joern 的路径敏感分析能过滤掉正则引擎无法排除的假阳性（如 `safe_check` 中有空指针检查的函数）。
+- 873 项全量回归通过。Joern 安装于 WSL `/opt/joern`（OpenJDK 17 + joern-cli v4.0.640）。
+
+# 2026-09-29（追加十：Autopilot v2——9 模式族覆盖任意 C/C++ 代码）
+
+- `ohvul.autopilot` v2：在 CJ FFI P1-P3 基础上新增 **P4-P9 六个通用模式族**——P4 无界内存拷贝 / P5 栈缓冲溢出 / P6 空指针解引用 / P7 分配整数溢出 / P8 释放后使用 / P9 格式化字符串。**不再限于 CJ FFI 面，可扫描任意 C/C++ 代码**。
+- 实测：dsoftbus 742K 行（无 CJ）→ **2756 lead（490 高危）+ 2756 PoC，139 秒**；CJ FFI 63 仓 → 210 lead + 210 PoC，54 秒。869 项全量回归通过。
+- 每条 lead 自动生成对应模式族的可编译 PoC 模板（含触发提示/CWE/编译命令）。
+
+# 2026-09-29（追加九：端到端自动化分析 + PoC 自动生成）
+
+- `ohvul.autopilot`：一条命令 `python -m ohvul.autopilot <source_root> --output <dir>` 自动完成：面发现（CJ FFI 检测）→ 3 模式族扫描（P1 null_len / P2 truncation / P3 nested_deref）→ FFI 导出追踪 → **PoC 自动生成**（每条 high/medium lead 一个可编译 C 调用器）→ 统一报告（JSON+MD）。
+- 实测：CJ FFI 63 仓 491 文件 240K 行 → **83 条 lead（40 high）+ 83 个 PoC 文件，耗时 26 秒**。868 项全量回归通过（4 环境跳过）。
+- 赛题对齐：能力 #1 自动化分析 → **一条命令端到端**；能力 #3 PoC 产出 → **自动生成 C 调用器**（含 FFI 导出追踪 + 结构体桩 + dlopen 模板）。
+
+# 2026-09-29（追加八：PoC 补全 + 影响矩阵 + 完整漏洞报告——赛题对齐）
+
+- **PoC 覆盖 11/13**：补写 dvbsub/lcldec/ty/wmaenc/swaprect 五案可执行 PoC + 复制已有四案 → 11/13。curl_native_ca（需 curl 环境）和 nvdec（需 GPU）为源级对照。
+- **版本分支影响矩阵**：13 案 × 6 分支（v4.1→master），78 格 affected。`ohvul/impact_matrix.py`。
+- **完整漏洞报告**：13 案 × 5 段（源码/描述/PoC/影响/修复），`ohvul/vuln_report.py` + 1834 行 `VULN_REPORT.md`。case.json 补齐 source_file/trigger/attack_path。
+
+# 2026-09-29（追加七：R2 候选调用器三件 + 任务书 H 节）
+
+- `hiappevent_null_watcher.c`（AddWatcher 三重嵌套：外层 null + 内层 names.head null + eventTypes null/移位 UB）
+- `netstack_neg_size.c`（证书验证 int64→uint32 截断→大循环）
+- `bluetooth_neg_advert.c`（广播数据三重漏洞：外层 null + 内层 null + 负 size→size_t 下溢巨拷贝）
+- 任务书追加 H 节。**对侧验证工具包现在含 E/F/G/H 四节 + 九个调用器**。
+
+# 2026-09-29（追加六：第二轮模式扫描——4 模式族 73 lead，4 条新增候选）
+
+- `cjffi_scan2.py`：F1 嵌套数组解引用 / F2 malloc 算术溢出 / F3 字符串无界 / F4 整数截断——491 文件 → 73 lead。
+- **新增有效候选 4 条**：hiappevent AddWatcher（三重嵌套空指针+移位 UB ★★★）、netstack 证书验证（int64→uint32 截断→大循环 ×3 ★★★）、bluetooth ParseManufactureData（三重漏洞同函数 ★★★）、web_webview HTTP 头截断（★★）。
+- bluetooth serviceData 空 vector 确认为逻辑 bug 非内存安全（降级）。**全项目累计 30 条候选**。详见 `docs/analysis/SWEEP2_20260929.md`。
+
+# 2026-09-29（追加五：Tier C 畸形调用器 + 任务书 G 节）
+
+- `hiappevent_null_params.c`（SetEventParam 路径，4 case 含 null head/size=0 控制）和 `bluetooth_null_filter.c`（StartBleScan 路径，4 case 含负 size→uint32 大循环变体），clang 语法通过。
+- 任务书追加 G 节。**全项目 Tier A- + B + C 合计 26 条批量候选**，对侧验证执行件（E/F/G 三节 + 六个调用器）全部就绪。
+
+# 2026-09-29（追加四：Tier C 逐条追链——11 条新增有效候选，全项目 26 条）
+
+- Tier C 15 条 lead 追链：**6 条新增有效**（hiappevent head=null 最易 / bluetooth 负 size→uint32 大循环最危险 / webview/graphic/relational_store 各 1 条）+ **notification 5 条克隆族**（同 Tier B）。3 条输出方向判安全。
+- **全项目批量候选累计 26 条**（Tier A- 6 + Tier B 9 + Tier C 11）。详见 `docs/analysis/L4_TIER_C_20260929.md`。
+
+# 2026-09-29（追加三：Tier B 畸形调用器 + 任务书 F 节）
+
+- `account_null_params.c`（VerifyCredential 路径，4 case 含 null head/负 size 变体）和 `udmf_null_extras.c`（SetProperties 路径，3 case 含 env_probe），clang 语法通过。
+- 任务书追加 F 节：构建目标、验证命令、结果判读、提交策略。**Tier A- + B 合计 15 条批量候选**。
+
+# 2026-09-29（追加二：Tier B 克隆族 L4——三仓批量候选 15 条）
+
+- account_os_account（5 lead）和 udmf（4 lead）的 `SetDataParameters` **连顶层 `head` 都不查空**（比 av_session 浅一层的同型缺陷，更直接也更危险）；三仓函数为同一模板拷贝。
+- FFI 入口无 AbilityRuntime 依赖，验证可行性同 av_session（高于 KV）。三仓合计潜在新发现 **15 条**。详见 `docs/analysis/L4_TIER_B_20260929.md`。
+
+# 2026-09-29（追加：av_session 畸形调用器 + 任务书 E 节）
+
+- `tools/validation_cases/avsession_null_param.c`：4 case 矩阵（有效 int32 控制 / null value + STR_PTR / I32_PTR / DOUBLE_PTR 变体），CParameters ABI 取自 account_os_account 的 appaccount_defination.h（跨组件共用形态），clang 语法通过。
+- 任务书追加 E 节：av_session 构建目标、验证命令、结果判读、提交策略（6 条独立工单）。**无 AbilityRuntime 依赖**，验证可行性高于 KV。
+
+# 2026-09-29（Tier A/A- L4 追链完成）
+
+- av_session 9 条 lead 追链：**6 条有效**（SendCommonCommand→SetDataParameters→Inner*Array* 链上的嵌套 value 指针空检查缺失——比 IPC 深一层的同型缺陷）；3 条为控制器事件注册路径的扫描器误报（该路径有完整 null/valueType/size 三重防护）。FFI 入口 `SendCommonCommand` 无 Context 依赖，**验证可行性高于 KV**。
+- kv_store 同文件 3 条同族转换确认（CArrStrToVectorKey/String ×3，FFI 层直传无校验），但与 KV 主案相同的隔离限制（AbilityRuntime Context），源级归档。
+- 详见 `docs/analysis/L4_TIER_A_20260929.md`。
+
+# 2026-09-29（IPC 真库证实 → 首个新发现工单）
+
+- PR #63/64/65 合入（对侧）：IPC/KV 真库验证记录（IPC 证实：SIGSEGV 帧归属真库内；KV 隔离限制如实）、基线对比实验（OSV 版本匹配 0 条 / CPE 式 47 条过报 / 三层管线归零——方法护城河实测）、A-4 构建树授权登记。
+- IPC 案升级 `real_library_reproduction_confirmed` 并以**新发现**提交工单 OHSA26-092953990（附件：畸形调用器 + 验证记录；口径红线三条在描述声明）。项目首个新发现工单。
+- KV 维持源码等价级（AbilityRuntime Context 不可构造，纯 C 客户端不可达 store id——如实记录）。
+
+# 2026-09-28（追加四：CJ FFI 数组转换族清扫——第一线）
+
+- 新发现线开工：manifest 496 仓枚举 → 63 仓有 CJ 源面 → `tools/cjffi_scan.py`（类型自举 26 种 + 函数级模式匹配）扫 491 文件 → 37 条 lead（32 条 NULL+长度双缺）；扫描器独立复现已知 KV 候选作为内置验证。
+- 分层：Tier A = kv_store 同文件 3 个同族转换；Tier A- = av_session 9 个 Inner* 转换（导出链 FfiMultimediaAVSessionController* 已闭合，含负 size 向量迭代器下溢 UB 形态）；Tier B = account_os_account/udmf/av_session 三仓同名克隆族；详见 `docs/analysis/CJFFI_SWEEP_20260928.md`。
+- 下一步：Tier A/A- 人工 L4 补完 → 对侧真库验证 → 新发现工单。
+
+# 2026-09-28（追加三：IPC/KV 真库验证调用器与任务书）
+
+- `tools/validation_cases/` 新增 `ipc_null_bytearray.c` / `kv_null_entry.c`（ABI 取自 IPC edc6f3ab 头与 kv_store master FFI 头；调用器不含目标实现拷贝）与 `run_malformed.sh`（沿用 run_ipc_normal.sh 环境发现；运行退出码非零记录为观察而非失败）。
+- `docs/status/TASK_IPC_KV_VALIDATION_20260928.md`：交原构建机执行的任务书——IPC 畸形矩阵（现成环境，约 30 分钟）、KV 真库构建+验证（0.5-2 天）、证据打包回传清单、口径红线；结果无论证实/证伪均如实升级或关闭候选。
+
+# 2026-09-28（追加二：12 例缺口案例全部提交奖励计划）
+
+- 经平台 web 表单逐例提交 12 例（含此前并行工作集已提交的 quirc）：平台现有 15 条工单全部待受理。工单号：52296→OHSA26-092819230（名称评论补正）、65704→OHSA26-092855121、65705→OHSA26-092800126、65706→OHSA26-092853125、66036→OHSA26-092848127、66037→OHSA26-092835171、66038→OHSA26-092831132、70628→OHSA26-092858135、70629→OHSA26-092850129、70632→OHSA26-092843135、45445→OHSA26-092837123（分类说明评论）。
+- 全部工单号已回填 case.json submission 字段（含平台表单类型/附件清单）；提交队列单与案例台账同步更新。官方接受状态全部未知。
+
+# 2026-09-28（追加：提交队列单与台账 18 例）
+
+- `docs/status/SUBMISSION_QUEUE_20260928.md`：待提交 12 例（表单+补丁+对照+附件 zip 全部齐装）、已提交 3 例跟进清单、不提交项口径（cjson 演示用途、49795 残包、IPC/KV 待平台验证）。
+- 案例台账更新至 18 例（并入 #51 的 gap-batch-2 三案）；quirc 案 case.json 回填 submission_materials。
+
+# 2026-09-28（追加：工具链预检 + 比赛报告组装器）
+
+- `ohvul/toolchain.py`：LLVM/semgrep 路径集中解析（`OHVUL_LLVM_BIN`/`OHVUL_LLVM_ROOT`/`OHVUL_SEMGREP_BIN` env 覆盖 → 内置默认，未设时行为不变），`python -m ohvul.toolchain_preflight` 以真实传输通道跑 `--version` 探针（required=clang/clang-tidy，optional=semgrep；WSL 桥条件化，修复审计 §89 的 `/home/airgap` 硬编码与 WSL 绑定）。compiler_analysis/engine_adapter/engine_shards/engine_cli 全部接线（None 哨兵解析）。测试 10 项。
+- `ohvul/competition_report.py`（审计 P1.7）：15 案 case.json 的防御性投影 → 比赛报告 JSON+Markdown（证据完整度六维矩阵、缺失维度显式列出、confirmed 只投影不推断）。测试 6 项。`docs/deliverables/VIDEO_SCRIPT.md`：演示分镜与录制前预检清单（衔接 DEMO_RUNBOOK 与新预检命令）。
+- 全量回归 864 项通过（4 项环境跳过）。
+
 # Changelog
 
 # 2026-09-28（auth fuzz 双靶收割 + PR 收敛）

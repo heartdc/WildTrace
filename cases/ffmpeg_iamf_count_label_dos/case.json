@@ -1,0 +1,42 @@
+{
+  "schema": "case-specific-validation-0.2",
+  "id": "ffmpeg-iamf-count-label-dos",
+  "component": "third_party/ffmpeg",
+  "cve_reference": "CVE-2026-66037",
+  "cwe_candidate": "CWE-400 (unbounded allocation DoS)",
+  "discovery_method": "kb_gap_audit pipeline + batch L4 (initially misjudged already_fixed by generic-line collision; recalibrated tool re-flagged, manual L4 confirmed)",
+  "new_discovery": false,
+  "public_upstream": {
+    "fix_commit": "https://github.com/FFmpeg/FFmpeg/commit/86708357d126af84c16f80d9c57335d1e8c845c5",
+    "fix_date": "2026-06-28",
+    "fix_subject": "avformat/iamf_parse: check count_label against the available bytes (Fixes: unbounded allocation / denial of service)"
+  },
+  "oh_source": {
+    "repo": "https://gitcode.com/openharmony/third_party_ffmpeg",
+    "head_commit": "0a0c4dd33c",
+    "baseline": "FFmpeg 7.1.1, snapshot 2026-06-01",
+    "equivalence": "iamf_parse.c byte-identical to upstream n7.1.1",
+    "l4_evidence": "iamf_parse.c:864: count_label = ffio_read_leb(pbc) then av_calloc with no remaining-bytes check; upstream diff applies clean"
+  },
+  "vulnerability": {
+    "summary": "IAMF mix_presentation OBU: count_label taken from stream leb128 and used directly in av_calloc without bounding to remaining input bytes — unbounded allocation DoS.",
+    "verification_level": "source-level confirmed; runtime repro path documented (oversized leb128 count under memory limit)",
+    "runtime_status": "not_run"
+  },
+  "controls": [],
+  "submission_materials": "D:/cve_data/submission_66037/",
+  "notes": "ffmpeg gap batch; surfaced the batch tool's generic-line false-positive mode (now fixed in l4_batch_ffmpeg.py)",
+  "submission": {
+    "platform": "OpenHarmony 漏洞奖励计划 (https://bugbounty.openharmony.cn)",
+    "ticket": "OHSA26-092835171",
+    "submitted_at": "2026-09-28",
+    "account": "北辰522",
+    "status": "已提交",
+    "form": {
+      "type": "拒绝服务与配置类 / 系统拒绝服务 (DoS)",
+      "repo": "third_party_ffmpeg",
+      "oh_version": "OpenHarmony-v7.0-Release（2026-08-21）",
+      "attachments": "附件包_CVE-2026-66037.zip, patch.diff, upstream_fix_8670835.diff, 上游修复对照.txt"
+    }
+  }
+}

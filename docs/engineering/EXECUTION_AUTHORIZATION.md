@@ -76,6 +76,7 @@ sanitizer 报告（如有）、产物哈希、parent_run_id（用于独立复现
 |---|---|---|---|
 | A-1 | C:\Projects\OpenHarmony-complete | 已通过 profile 来源校验的 OpenHarmony 组件源码；仅限人工指定的只读本地树 | 2026-09-15 |
 | A-2 | C:\Projects\OpenHarmony\third_party\cJSON | 钉定提交 `388cfc96` 的 cJSON 检出（merge-alias 运行案例源码）；仅限经人工审查入库的案例 harness 所声明的文件，只读 | 2026-09-16 |
+| A-4 | /home/airgap/oh-real-20260925（WSL Ubuntu 内路径） | x86_64_virt 自定义配置的 OpenHarmony 隔离构建树（IPC/KV 真库验证目标源码）；无 git 元数据，版本钉定依据构建产物指纹（`libcj_ipc_ffi.z.so` sha256 `2bccd55c…`、BuildID `8e3e71ce…`）与 `build-run7.log`；仅限经人工审查入库的 IPC/KV 验证 harness（tools/validation_cases/，PR #61）所声明的目标，源码只读 | 2026-09-28 |
 
 ## 附录 B：执行环境登记表
 
@@ -88,3 +89,4 @@ sanitizer 报告（如有）、产物哈希、parent_run_id（用于独立复现
 - B-1 曾于 2026-09-15 在案例分支（be62bf7，#23 前身）登记，#23 合并时因冲突解析丢失；本行按原文恢复，登记日期保留首次登记日。
 - A-2 为新登记（2026-09-16），依据维护者 @AerGap 当日书面指示提交；按 §7 扩大范围需重签之约定，经仓库所有者在合并 PR 中审批后生效。
 - 如实记录：2026-09-15 的 cJSON 案例运行发生时，其源码根不在附录 A 任何登记项内（当时仅有 A-1），属该次运行授权依据中的登记缺口；本登记向前生效，不追溯补足该次运行的登记状态。
+- A-4 为新登记（2026-09-28），依据维护者 @AerGap 转达的 IPC/KV 验证任务书（docs/status/TASK_IPC_KV_VALIDATION_20260928.md，PR #61）提交；按 §7 扩大范围需重签之约定，经仓库所有者在合并 PR 中审批后生效。两点如实说明：① 该树无 git 元数据，钉定为产物指纹级而非 commit 级——任务书 C 节要求的"源码 HEAD 清单"在该树上不可得，以构建配置（build_gnargs.prop）+ 产物摘要为绑定；② 运行采用 PR #61 的脚本直跑（非 bwrap 沙箱），任务书口径红线（补丁运行库/无产品服务/自定义配置三条必须出现在所有证据里）随登记一并生效。

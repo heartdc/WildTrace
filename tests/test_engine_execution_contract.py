@@ -100,6 +100,18 @@ class EngineExecutionContractTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'snapshot'):
                 scan_engine_manifest(self.root, self.manifest(['a.c']))
 
+    def test_included_header_outside_manifest_change_is_rejected(self):
+        (self.root / 'a.c').write_text('#include "dependency.h"\n', encoding='utf-8')
+        header = self.root / 'dependency.h'
+        header.write_text('#define VALUE 1\n', encoding='utf-8')
+        def analyzer(*args, **kwargs):
+            header.write_text('#define VALUE 2\n', encoding='utf-8')
+            return self.normalized()
+
+        with patch('ohvul.engine_shards.run_wsl_clang_analyzer', side_effect=analyzer):
+            with self.assertRaisesRegex(ValueError, 'snapshot'):
+                scan_engine_manifest(self.root, self.manifest(['a.c']))
+
     def test_engine_start_failure_becomes_explicit_error(self):
         with patch('ohvul.engine_shards.run_wsl_clang_analyzer', side_effect=OSError('not installed')):
             result = scan_engine_manifest(self.root, self.manifest(['a.c']))
@@ -201,6 +213,58 @@ class EngineExecutionContractTests(unittest.TestCase):
         self.assertEqual(saved.state, 'blocked')
         self.assertIsNone(saved.result_sha256)
         self.assertEqual(AuditJournal(journal).last_status('engine-failed'), 'aborted')
+
+    def test_cli_invalid_engine_list_rejected_before_snapshot_or_publication(self):
+        files = self.home / 'invalid-files.txt'
+        output = self.home / 'invalid-result.json'
+        checkpoint = self.home / 'invalid-checkpoint.json'
+        for content in ('missing.c\n', '# empty\n', '../outside.c\n', 'a.c\n./a.c\n', 'a.c\nmissing.c\n'):
+            with self.subTest(content=content):
+                files.write_text(content, encoding='utf-8')
+                argv = ['cli', str(self.root), '--engine-files-from', str(files),
+                        '--output', str(output), '--checkpoint', str(checkpoint)]
+                with patch.object(sys, 'argv', argv), redirect_stderr(io.StringIO()), \
+                     patch('ohvul.cli.source_snapshot') as snapshot, \
+                     patch('ohvul.cli.scan_path') as scanner:
+                    with self.assertRaises(SystemExit) as stopped:
+                        cli.main()
+                self.assertNotEqual(stopped.exception.code, 0)
+                snapshot.assert_not_called()
+                scanner.assert_not_called()
+                self.assertFalse(output.exists())
+                self.assertFalse(checkpoint.exists())
+
+    def test_cli_changed_engine_list_aborts_publication(self):
+        files = self.home / 'changing-files.txt'
+        files.write_text('a.c\n', encoding='utf-8')
+        output = self.home / 'changing-result.json'
+        checkpoint = self.home / 'changing-checkpoint.json'
+        def engine(*args, **kwargs):
+            files.write_text('b.c\n', encoding='utf-8')
+            return self.projected(status='completed', snapshot=source_snapshot(self.root))
+        argv = ['cli', str(self.root), '--engine-files-from', str(files),
+                '--output', str(output), '--checkpoint', str(checkpoint)]
+        with patch.object(sys, 'argv', argv), redirect_stderr(io.StringIO()), \
+             patch('ohvul.cli.scan_engine_manifest', side_effect=engine):
+            with self.assertRaises(SystemExit):
+                cli.main()
+        self.assertFalse(output.exists())
+        self.assertEqual(load_checkpoint(checkpoint).state, 'blocked')
+
+    def test_cli_snapshot_budget_failure_stops_before_workflow(self):
+        output = self.home / 'budget-result.json'
+        checkpoint = self.home / 'budget-checkpoint.json'
+        argv = ['cli', str(self.root), '--output', str(output), '--checkpoint', str(checkpoint)]
+        with patch.object(sys, 'argv', argv), redirect_stderr(io.StringIO()) as errors, \
+             patch('ohvul.cli.source_snapshot', side_effect=ValueError('source snapshot byte budget exceeded')), \
+             patch('ohvul.cli.scan_path') as scanner:
+            with self.assertRaises(SystemExit) as stopped:
+                cli.main()
+        self.assertNotEqual(stopped.exception.code, 0)
+        self.assertIn('source snapshot preflight failed', errors.getvalue())
+        scanner.assert_not_called()
+        self.assertFalse(output.exists())
+        self.assertFalse(checkpoint.exists())
 
 
 if __name__ == '__main__':

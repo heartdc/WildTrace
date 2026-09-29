@@ -7,6 +7,7 @@ from pathlib import Path
 from unittest.mock import patch
 from contextlib import contextmanager
 from ohvul.engine_shards import scan_engine_profile
+from ohvul.source_snapshot import source_snapshot
 
 
 @contextmanager
@@ -39,6 +40,19 @@ def local_profile(engines, files=('a.c',)):
 
 
 class EngineProfileScanTests(unittest.TestCase):
+    def test_multi_engine_session_reuses_whole_tree_binding(self):
+        with local_profile(['clang-static-analyzer', 'clang-tidy', 'semgrep']) as (root, profile), \
+             patch('ohvul.engine_shards.run_wsl_clang_analyzer', return_value={'status': 'completed', 'findings': []}), \
+             patch('ohvul.engine_shards.run_wsl_clang_tidy', return_value={'status': 'completed', 'findings': []}), \
+             patch('ohvul.engine_shards.run_wsl_semgrep', return_value={'engine': 'semgrep', 'status': 'completed', 'findings': []}), \
+             patch('ohvul.engine_shards.source_snapshot', wraps=source_snapshot) as snapshot:
+            result = scan_engine_profile(root, profile)
+            self.assertEqual(snapshot.call_count, 2)
+            self.assertEqual(result['scan']['source_snapshot_sha256'], source_snapshot(root))
+            self.assertEqual({item['engine'] for item in result['engine_observations']},
+                             {'clang', 'clang-tidy', 'semgrep'})
+            self.assertEqual(result['status'], 'completed')
+
     def test_profile_scan_passes_declared_files_and_args(self):
         calls = []
         def fake(source, root, **kwargs):

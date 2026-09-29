@@ -1,0 +1,42 @@
+{
+  "schema": "case-specific-validation-0.2",
+  "id": "ffmpeg-rscc-short-deflate-uninit-leak",
+  "component": "third_party/ffmpeg",
+  "cve_reference": "CVE-2026-70629",
+  "cwe_candidate": "CWE-908",
+  "discovery_method": "kb_gap_audit pipeline + batch L4 (newest-ref picked the 2015 introducing commit 533a6198; manual triage identified cd1f545c/a5fe21a1 as the real fixes) + L4 confirmed",
+  "new_discovery": false,
+  "public_upstream": {
+    "fix_commit": "https://github.com/FFmpeg/FFmpeg/commit/cd1f545cf27ba08f6f5b31b1e92665d7874d4fd7 and a5fe21a1a410a680fe93c33b0dd696b7e1c3aea4",
+    "fix_date": "2026-07-29 / 2026-08-02",
+    "fix_subject": "avcodec/rscc: do not leave uninitialized data when the input is too short (Fixes: use of uninitialized memory; repro rscc_short_deflate_heap_disclosure)"
+  },
+  "oh_source": {
+    "repo": "https://gitcode.com/openharmony/third_party_ffmpeg",
+    "head_commit": "0a0c4dd33c",
+    "baseline": "FFmpeg 7.1.1, snapshot 2026-06-01",
+    "equivalence": "rscc.c byte-identical to upstream n7.1.1",
+    "l4_evidence": "rscc.c deflate branch has no 'len < pixel_size' zero-fill (grep zero hits); both upstream fix diffs apply clean"
+  },
+  "vulnerability": {
+    "summary": "RSCC screen-capture decoder: when the deflate output is shorter than the frame needs, the un-filled tail of inflated_buf is emitted as frame data — uninitialized heap disclosure.",
+    "verification_level": "source-level confirmed; runtime repro path documented (short-but-valid deflate stream; MSan or frame diff)",
+    "runtime_status": "not_run"
+  },
+  "controls": [],
+  "submission_materials": "D:/cve_data/submission_70629/",
+  "notes": "ffmpeg gap batch; same CWE-908 family as CVE-2026-66038 (lcldec) — the uninit-tail pattern is now a confirmed recurring family in this component",
+  "submission": {
+    "platform": "OpenHarmony 漏洞奖励计划 (https://bugbounty.openharmony.cn)",
+    "ticket": "OHSA26-092850129",
+    "submitted_at": "2026-09-28",
+    "account": "北辰522",
+    "status": "已提交",
+    "form": {
+      "type": "信息与隐私泄露类 / 敏感信息泄露",
+      "repo": "third_party_ffmpeg",
+      "oh_version": "OpenHarmony-v7.0-Release（2026-08-21）",
+      "attachments": "附件包_CVE-2026-70629.zip, patch.diff, upstream_fix2_a5fe21a.diff, upstream_fix_cd1f545.diff, 上游修复对照.txt"
+    }
+  }
+}

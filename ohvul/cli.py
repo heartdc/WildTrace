@@ -11,6 +11,7 @@ from .semantic_rules import scan_semantic_files
 from .semantic_syntax import read_file_list
 from .compiler_analysis import run_compiler_profile
 from .review_queue import read_bounded
+from .source_scope import local_input_path
 
 
 def main():
@@ -50,7 +51,20 @@ def main():
         parser.error("result/checkpoint must not overwrite the vulnerability database")
     if args.output and args.checkpoint and args.output.resolve() == args.checkpoint.resolve():
         parser.error("result and checkpoint must have different paths")
-    current_snapshot=source_snapshot(args.path)
+    engine_list_raw = None
+    engine_entries = None
+    if args.engine_files_from:
+        try:
+            engine_list_raw, engine_entries = read_file_list(args.engine_files_from)
+            for name in engine_entries:
+                if not local_input_path(args.path, name).is_file():
+                    raise ValueError('engine input file missing: ' + name)
+        except (OSError, ValueError) as exc:
+            parser.error(f'invalid engine input list: {exc}')
+    try:
+        current_snapshot=source_snapshot(args.path)
+    except (OSError, ValueError) as exc:
+        parser.error(f'source snapshot preflight failed: {exc}')
     if args.checkpoint and args.checkpoint.exists() and args.force:
         try: checkpoint=load_checkpoint(args.checkpoint)
         except (OSError,ValueError,TypeError) as exc: parser.error(f"invalid checkpoint: {exc}")
@@ -82,8 +96,7 @@ def main():
             if engine_result.get("status") != "completed":
                 raise ValueError("requested engine scan did not complete: " + str(engine_result.get("status")))
         elif args.engine_files_from:
-            entries=[x.strip() for x in args.engine_files_from.read_text(encoding="utf-8-sig").splitlines() if x.strip() and not x.lstrip().startswith("#")]
-            engine_manifest={"root":str(args.path.resolve()),"shards":[{"files":entries}]}
+            engine_manifest={"root":str(args.path.resolve()),"shards":[{"files":engine_entries}]}
             engine_result=scan_engine_manifest(args.path,engine_manifest)
             result=merge_engine_result(result,engine_result,source_root=args.path)
             result["engine_scan"]={"status":engine_result.get("status"),"engine_runs":engine_result.get("engine_runs"),"input_errors":engine_result.get("input_errors",[])}
@@ -129,6 +142,8 @@ def main():
         # before publishing either output. This is not a filesystem transaction.
         if source_snapshot(args.path) != current_snapshot:
             raise ValueError("source snapshot changed during audit")
+        if engine_list_raw is not None and read_file_list(args.engine_files_from)[0] != engine_list_raw:
+            raise ValueError('engine file list changed during audit')
         if semantic_list_raw is not None and read_file_list(args.semantic_files_from)[0] != semantic_list_raw:
             raise ValueError('semantic file list changed during audit')
         if compiler_profile_raw is not None and read_bounded(args.compiler_profile,1024*1024) != compiler_profile_raw:
@@ -175,4 +190,3 @@ def main():
         parser.error(f"audit stopped: {exc}")
 
 if __name__=="__main__": main()
-
