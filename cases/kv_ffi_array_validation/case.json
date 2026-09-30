@@ -35,5 +35,8 @@
   "validation_evidence": {
     "asan": "WSL Clang 21.1.8; zero-page SEGV for null head in both conversion paths; controls normal",
     "platform_binary_linked": false
+  },
+  "oh_source": {
+    "l4_evidence": "L4 源级定位（L4_TIER_C + kv_null_entry 执行件）：FFI 侧以 CArray/CJByteArray 形态传入键值数据，C++ 侧 distributed_kv_store 接口在 entry/data 为空数组时未做空校验即遍历。 pinned 树的 FfiOHOSDistributedKVStoreCreateKVManager ABI 为 (const char*, Context*)——无错误出参且 Context 无法在纯 C 侧构造（2026-09-28 真库实测：历史 ABI 形态调用即 SIGSEGV），记录为隔离限制并以 tools/validation_cases/kv_null_entry.c 执行件保留 malformed 入口矩阵（run_malformed.sh）。"
   }
 }

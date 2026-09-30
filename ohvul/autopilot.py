@@ -41,7 +41,7 @@ class Finding:
 # ---------------------------------------------------------------------------
 _FUNC_RE = re.compile(
     r'(?:(?:static\s+|inline\s+|extern\s+|virtual\s+|unsigned\s+|signed\s+|const\s+|struct\s+)*'
-    r'[\w:<>~\[\]*&\s]+?)\s+(\w+)\s*\(([^;{}()]{0,800}?)\)\s*\{', re.S)
+    r'[\w:<>~\[\]*&\s]{0,80}?)\s+(\w+)\s*\(([^;{}()]{0,800}?)\)\s*\{', re.S)
 
 _NON_FUNC_KEYWORDS = {'if', 'for', 'while', 'switch', 'else', 'return', 'sizeof'}
 
@@ -89,8 +89,22 @@ def _mask_comments_strings(text: str) -> str:
     return ''.join(out)
 
 
-def _iter_functions(text):
+_BRACE_RE = re.compile(r'[{}]')
+
+# Per-process parse cache: P1–P9, CallGraph and cross_uaf each walk the
+# same files — without this the tree is re-masked and re-split 8×, which
+# made large-tree runs hours long (found while measuring PERFORMANCE).
+# Bounded by cumulative source size (not entry count) so trees with more
+# files than a fixed cap still get cross-scanner reuse.
+_PARSE_CACHE: dict = {}
+_PARSE_CACHE_CHARS = 0
+_PARSE_CACHE_BUDGET_CHARS = 220 * 1024 * 1024
+
+
+def _parse_functions(text):
+    """Split source text into functions (mask → headers → brace match)."""
     masked = _mask_comments_strings(text)
+    out = []
     for m in _FUNC_RE.finditer(masked):
         name, params = m.group(1), m.group(2)
         if name in _NON_FUNC_KEYWORDS:
@@ -100,17 +114,23 @@ def _iter_functions(text):
         name_line_start = masked.rfind('\n', 0, m.start(1)) + 1
         if masked[name_line_start:m.start(1)].lstrip().startswith('#'):
             continue  # preprocessor directive (e.g. #define macro body)
-        start = m.end() - 1; depth = 0; i = start
-        while i < len(masked):
-            c = masked[i]
-            if c == '{': depth += 1
-            elif c == '}':
+        start = m.end() - 1
+        depth = 0
+        end = -1
+        # iterate brace POSITIONS only — a per-character walk over large
+        # bodies dominated whole-tree runtime before this
+        for bm in _BRACE_RE.finditer(masked, start):
+            if bm.group(0) == '{':
+                depth += 1
+            else:
                 depth -= 1
-                if depth == 0: break
-            i += 1
-        if depth != 0 or i - start > 50000: continue
+                if depth == 0:
+                    end = bm.start()
+                    break
+        if end < 0 or end - start > 50000:
+            continue
         line = text.count('\n', 0, start) + 1
-        body = text[start:i+1]
+        body = text[start:end + 1]
         cleaned = re.sub(r'//[^\n]*', '', body)
         # keep the newline count so downstream line offsets stay true to
         # the source (block comments used to collapse lines and drift
@@ -120,7 +140,23 @@ def _iter_functions(text):
                          cleaned, flags=re.S)
         cleaned = re.sub(r'"(?:[^"\\]|\\.)*"', '""', cleaned)
         cleaned = re.sub(r"'(?:[^'\\]|\\.)*'", "''", cleaned)
-        yield name, params, line, body, cleaned
+        out.append((name, params, line, body, cleaned))
+    return out
+
+
+def _iter_functions(text):
+    global _PARSE_CACHE_CHARS
+    key = hashlib.sha1(text.encode('utf-8', errors='replace')).hexdigest()
+    cached = _PARSE_CACHE.get(key)
+    if cached is not None:
+        return iter(cached[1])
+    funcs = _parse_functions(text)
+    _PARSE_CACHE[key] = (text, funcs)
+    _PARSE_CACHE_CHARS += len(text)
+    while _PARSE_CACHE and _PARSE_CACHE_CHARS > _PARSE_CACHE_BUDGET_CHARS:
+        _, (old_text, _) = _PARSE_CACHE.pop(next(iter(_PARSE_CACHE)))
+        _PARSE_CACHE_CHARS -= len(old_text)
+    return iter(funcs)
 
 def _has_null_check(cleaned, var):
     return bool(re.search(

@@ -56,5 +56,8 @@
       "attachments": "ipc_null_bytearray.c, IPC_KV_REAL_LIBRARY_VALIDATION_20260928.md"
     },
     "discovery_class": "new_discovery（非公开 CVE 回验）"
+  },
+  "oh_source": {
+    "l4_evidence": "L4 链路（L4_TIER_A/B + REAL_BUILD_PROBE_20260925）：FFI 导出入口 FfiOHOSIPCWriteByteArray(const CJByteArray* array) 直传 CArray 指针，无 head/size 校验；调用链进入 IPC 序列化前对 array->head 解引用遍历（head==NULL 即空指针解引用）。真库级证实（2026-09-28）：隔离构建 libcj_ipc_ffi.z.so 正常导出符号路径下，len=0/空数组输入触发 SIGSEGV（run.exit=139，崩溃帧归属 libcj_ipc_ffi.z.so）；正常字节对照组通过。基础运行库带补丁、非完整产品服务环境（隔离构建口径红线三条如实声明）。"
   }
 }

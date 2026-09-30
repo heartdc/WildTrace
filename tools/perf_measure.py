@@ -17,12 +17,43 @@ from pathlib import Path
 from datetime import datetime
 
 def system_peak_rss_mb(resource_module=resource):
-    """Peak system RSS in MB (0 where getrusage is unavailable).
+    """Peak system RSS in MB.
 
     ru_maxrss is KB on Linux/macOS. The old expression divided by 1024
     twice (KB→MB→GB), so every reading collapsed to 0 (audit A1).
+    On Windows (no resource module) the process peak working set is
+    read via GetProcessMemoryInfo — zero-dependency, so the memory
+    column is measurable natively on the primary dev machine too.
     """
     if resource_module is None:
+        try:
+            import ctypes
+            from ctypes import wintypes
+
+            class _PMC(ctypes.Structure):
+                _fields_ = [("cb", wintypes.DWORD), ("PageFaultCount", wintypes.DWORD),
+                            ("PeakWorkingSetSize", ctypes.c_size_t),
+                            ("WorkingSetSize", ctypes.c_size_t),
+                            ("QuotaPeakPagedPoolUsage", ctypes.c_size_t),
+                            ("QuotaPagedPoolUsage", ctypes.c_size_t),
+                            ("QuotaPeakNonPagedPoolUsage", ctypes.c_size_t),
+                            ("QuotaNonPagedPoolUsage", ctypes.c_size_t),
+                            ("PagefileUsage", ctypes.c_size_t),
+                            ("PeakPagefileUsage", ctypes.c_size_t)]
+
+            k32 = ctypes.WinDLL("kernel32", use_last_error=True)
+            try:
+                fn = ctypes.WinDLL("psapi").GetProcessMemoryInfo
+            except OSError:
+                fn = k32.K32GetProcessMemoryInfo
+            fn.argtypes = [wintypes.HANDLE, ctypes.POINTER(_PMC), wintypes.DWORD]
+            fn.restype = wintypes.BOOL
+            pmc = _PMC()
+            pmc.cb = ctypes.sizeof(_PMC)
+            if fn(k32.GetCurrentProcess(), ctypes.byref(pmc), pmc.cb):
+                return pmc.PeakWorkingSetSize / (1024.0 * 1024.0)
+        except Exception:
+            pass
         return 0.0
     try:
         kb = resource_module.getrusage(resource_module.RUSAGE_SELF).ru_maxrss
@@ -90,14 +121,81 @@ def run_cjffi_scan(root):
     # Parse "files=N leads=M" from output
     info = {"note": r.stdout.strip()[:200]}
     for part in r.stdout.split():
-        if part.startswith("files="): info["files"] = part.split("=")[1]
-        if part.startswith("leads="): info["leads"] = part.split("=")[1]
+        if part.startswith("files="): info["files"] = int(part.split("=")[1] or 0)
+        if part.startswith("leads="): info["leads"] = int(part.split("=")[1] or 0)
     return info
 
 def run_kb_gap_audit():
     """Phase 3: KB gap audit (L1-L3)."""
     from tools import kb_gap_audit
     return {"note": "kb_gap_audit requires component git repos, run separately"}
+
+_CHILD_RUNNER = r'''
+import sys, json
+from pathlib import Path
+repo, root, out = sys.argv[1], sys.argv[2], sys.argv[3]
+sys.path.insert(0, repo)
+from ohvul.autopilot import run
+run(Path(root), Path(out))
+try:
+    import resource
+    peak_kb = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+except ImportError:
+    import ctypes
+    from ctypes import wintypes
+    class _PMC(ctypes.Structure):
+        _fields_ = [("cb", wintypes.DWORD), ("PageFaultCount", wintypes.DWORD),
+                    ("PeakWorkingSetSize", ctypes.c_size_t),
+                    ("WorkingSetSize", ctypes.c_size_t),
+                    ("QuotaPeakPagedPoolUsage", ctypes.c_size_t),
+                    ("QuotaPagedPoolUsage", ctypes.c_size_t),
+                    ("QuotaPeakNonPagedPoolUsage", ctypes.c_size_t),
+                    ("QuotaNonPagedPoolUsage", ctypes.c_size_t),
+                    ("PagefileUsage", ctypes.c_size_t),
+                    ("PeakPagefileUsage", ctypes.c_size_t)]
+    k32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    try:
+        fn = ctypes.WinDLL("psapi").GetProcessMemoryInfo
+    except OSError:
+        fn = k32.K32GetProcessMemoryInfo
+    fn.argtypes = [wintypes.HANDLE, ctypes.POINTER(_PMC), wintypes.DWORD]
+    fn.restype = wintypes.BOOL
+    pmc = _PMC(); pmc.cb = ctypes.sizeof(_PMC)
+    ok = fn(k32.GetCurrentProcess(), ctypes.byref(pmc), pmc.cb)
+    peak_kb = (pmc.PeakWorkingSetSize // 1024) if ok else 0
+print("PEAK_RSS_KB=%d" % peak_kb)
+'''
+
+
+def run_autopilot(root):
+    """Phase 0: the flagship pipeline (autopilot v3, 10 layers by default).
+
+    Runs in a child process that self-reports its peak RSS (POSIX
+    getrusage / Windows GetProcessMemoryInfo), so the memory number is
+    the pipeline's own, not this harness's."""
+    import subprocess as sp
+    import tempfile
+    repo = str(Path(__file__).parent.parent)
+    out = Path("D:/cve_data") / f"perf_autopilot_{Path(root).name}"
+    runner = Path(tempfile.gettempdir()) / "wt_perf_child.py"
+    runner.write_text(_CHILD_RUNNER, encoding="utf-8")
+    r = sp.run([sys.executable, str(runner), repo, str(root), str(out)],
+               capture_output=True, text=True, timeout=7200)
+    peak_kb = 0
+    for token in (r.stdout or "").split():
+        if token.startswith("PEAK_RSS_KB="):
+            peak_kb = int(token.split("=")[1])
+    try:
+        rep = json.loads((out / "findings.json").read_text(encoding="utf-8"))
+        return {"elapsed_s(管线自报)": rep["elapsed_seconds"],
+                "files_cpp": rep["surface"]["cpp"], "files_c": rep["surface"]["c"],
+                "lines_est": rep["surface"]["lines_est"],
+                "leads": rep["summary"]["total"], "high": rep["summary"]["high"],
+                "patterns": rep["summary"]["patterns"],
+                "child_peak_rss_mb": round(peak_kb / 1024.0, 1)}
+    except (OSError, ValueError, KeyError):
+        return {"note": ((r.stdout or "") + (r.stderr or "")).strip()[:200]}
+
 
 def run_source_snapshot(root):
     """Phase 4: source snapshot (integrity check)."""
@@ -129,17 +227,29 @@ def main():
             "lines": lines,
             "size_mb": round(sum(f.stat().st_size for f in Path(root).rglob("*") if f.is_file()) / 1024 / 1024, 1),
         })
+        report["phases"].append(measure_phase(f"{name}_autopilot", lambda: run_autopilot(root)))
         report["phases"].append(measure_phase(f"{name}_lexical", lambda: run_lexical_scan(root)))
         report["phases"].append(measure_phase(f"{name}_cjffi", lambda: run_cjffi_scan(root)))
         report["phases"].append(measure_phase(f"{name}_snapshot", lambda: run_source_snapshot(root)))
 
     # Summary
     total_elapsed = sum(p.get("elapsed_s", 0) for p in report["phases"])
-    total_files = sum(p.get("result", {}).get("files", 0) or p.get("files", 0) for p in report["phases"])
+    def _phase_files(p):
+        v = p.get("result", {}).get("files", p.get("files", 0))
+        try:
+            return int(v)
+        except (TypeError, ValueError):
+            return 0
+    total_files = sum(_phase_files(p) for p in report["phases"])
+    # peak RSS: the autopilot children self-report their own peak; the
+    # harness's own number only covers the light-weight phases
+    peak_rss = max(
+        [p.get("system_rss_mb", 0) for p in report["phases"]] +
+        [p.get("result", {}).get("child_peak_rss_mb", 0) for p in report["phases"]] or [0])
     report["summary"] = {
         "total_elapsed_s": round(total_elapsed, 1),
         "total_source_files": total_files,
-        "peak_rss_mb": max(p.get("system_rss_mb", 0) for p in report["phases"]) if report["phases"] else 0,
+        "peak_rss_mb": peak_rss,
     }
 
     output = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("PERFORMANCE.md")
@@ -160,7 +270,17 @@ def main():
         rss = p.get("system_rss_mb", "—")
         result = p.get("result", p.get("files", ""))
         if isinstance(result, dict):
-            result = ", ".join(f"{k}={v}" for k, v in result.items() if k != "digest")
+            # single-line cell: patterns dicts and multi-line notes must
+            # not break the markdown table row
+            parts = []
+            for k, v in result.items():
+                if k == "digest":
+                    continue
+                if isinstance(v, dict):
+                    v = ";".join(f"{a}x{b}" for a, b in v.items())
+                v = str(v).replace("\n", " ")
+                parts.append(f"{k}={v}")
+            result = ", ".join(parts)
         lines.append(f"| {p['phase']} | {elapsed} | {py_mem} | {rss} | {result} |")
 
     s = report["summary"]
