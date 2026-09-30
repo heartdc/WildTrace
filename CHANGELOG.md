@@ -1,3 +1,13 @@
+# 2026-09-30（合并 function-scope-rules：函数作用域规则引擎入册）
+
+- 合入 2026-09-14 完成并经一轮 review 修复的 `glm/function-scope-rules` 分支（此前遗留在远端未合）：
+  `ohvul/detect/function_rules.py`（整数溢出 / 空指针解引用 / 固定缓冲拷贝三条函数作用域规则）+ 34 项配对真假测试。
+- 定位：内置正则粗筛之上的精度层——削减两类已知误报（every-deref CWE-476 泛报、sizeof-only CWE-190 泛报）；
+  守卫精度（if 守卫抑制、解引用后检查仍报、分支内检查标注为已知漏报）；产出 schema 0.3 + EvidenceBundle，入证据链管线。
+- `ohvul/benchmark.py` SCANNERS 注册 `function_rules`：配对基准可对比 builtin vs function_rules 的误报削减（评价维度"准确性"的可度量证据）。
+- 兼容性验证：与当前 master 零冲突；合并树全量回归 1050 项 OK（5 skipped + 1 expected failure，即如实标注的已知漏报）。
+- 分支清理：删除远端/本地纯残留分支（allow-gpt6-astra、execution-sandbox-design 等 12 个，均核实为 master 已有新版或逐字节一致）。
+
 # 2026-09-29（追加二十：D 组基础设施清理——CPG 落盘位置 / 有界读取 / 宏误报钉死）
 
 - `joern_bridge`（审计 D13）：CPG 二进制不再写入被审计树根（数百 MB 落在被审计目录：只读源根构建失败、污染证据树）——
