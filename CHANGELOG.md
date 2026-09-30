@@ -1,3 +1,14 @@
+# 2026-09-30（已知答案反向评估：communication_bluetooth 回放实验）
+
+- 首个 ground truth 回放实验（师兄意见的方向二验证策略）：以该仓 4 个已合并安全修复（2024-06/09/12、2025-08，全为空指针类）
+  为已知答案，在修复前基线 `59cac79b` 回放 autopilot（173 cpp / 47.9K 行 / 1472s）。
+- **正向 0/4**：四个盲点全部为非裸指针形态（局部 sptr / 成员 pimpl / shared_ptr 参数 / 宏展开取指针）——指针建模差距的定量证据；
+- **反向**：13 条 P6 发现经严格函数体对比裁定——2 确认误报（真值宏检查不可见、过程间语义防护不可见，根因均已定位且可修）、
+  0 社区直接证实（宽松窗口初判 4 被纠正，教训=必须函数体粒度）、11 至今开放（c_adapter 的 nativeScanFilter ×19 解引用系列，
+  与 30 条候选的 bluetooth 验证执行件合流）；
+- 产出六项 ground truth 支撑的 roadmap（shared_ptr 参数建模与真值宏抑制为 P0）。
+  详见 `docs/analysis/RETROSPECTIVE_EVAL_BLUETOOTH_20260930.md`。
+
 # 2026-09-30（合并 function-scope-rules：函数作用域规则引擎入册）
 
 - 合入 2026-09-14 完成并经一轮 review 修复的 `glm/function-scope-rules` 分支（此前遗留在远端未合）：
