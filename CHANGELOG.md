@@ -1,3 +1,15 @@
+# 2026-09-30（P0 落地 + 闭环复评：真值宏抑制与智能指针参数建模）
+
+- 回放实验的两项 P0 修复落地（`scan_p6`）：
+  - **真值宏抑制**（`_TRUTHY_MACRO_GUARD`）：识别 OH 的 `CHECK_AND_RETURN*(var, ...)` 真值形态守卫——
+    消除回放实验中确认的 SocketUpdateCocConnectionParams 误报类；
+  - **智能指针参数建模**（`_SMART_PTR_PARAM`）：`shared_ptr/unique_ptr` 参数（含 const&）进入 P6 可空指针模型——
+    GT4（observer 修复×7）的形态缺口在机制层闭合。
+- **闭环复评**（同一修复前 worktree）：13→12 条——消失的恰好是目标误报，其余 12 条全部保留、置信度无漂移（零误伤）；
+  GT4 站点因解引用数 <3 未达发射阈值，阈值加权成为有 ground truth 的下一项（不盲调）。
+- 新增 `tests/test_p6_smartptr_macros.py`（8 项：智能指针三形态发射/检查抑制/真值宏抑制/他变量宏不误抑制/比较形态不误抑制）。
+  1058 项全量回归通过。
+
 # 2026-09-30（已知答案反向评估：communication_bluetooth 回放实验）
 
 - 首个 ground truth 回放实验（师兄意见的方向二验证策略）：以该仓 4 个已合并安全修复（2024-06/09/12、2025-08，全为空指针类）

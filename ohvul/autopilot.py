@@ -440,6 +440,18 @@ def scan_p5(root):
                         out.append(score_finding(f, body, cl, params))
     return out
 
+# Smart-pointer parameter shapes: std::shared_ptr<T> name / const& —
+# null-deref risk identical to bare pointers but invisible to the raw
+# pointer param regex (retro eval 2026-09-30: GT4's observer fixes)
+_SMART_PTR_PARAM = re.compile(
+    r'(?:const\s+)?(?:std::)?(?:shared|unique)_ptr\s*<[^>;()]*>\s*(?:&\s*)?(\w+)')
+
+# OH truthiness guard macros: CHECK_AND_RETURN*(param, ...) returns when
+# the first argument is falsy — a null guard the plain if-form matcher
+# cannot see (retro eval 2026-09-30: SocketUpdateCocConnectionParams FP)
+_TRUTHY_MACRO_GUARD = r'\bCHECK_[A-Z_]*\s*\(\s*{var}\s*[,)]'
+
+
 def scan_p6(root, call_graph=None):
     out = []
     for src in list(root.rglob('*.c')) + list(root.rglob('*.cpp')):
@@ -447,12 +459,15 @@ def scan_p6(root, call_graph=None):
         try: text = src.read_text(encoding='utf-8', errors='replace')
         except OSError: continue
         for name, params, line, body, cl in _iter_functions(text):
-            for pp in re.findall(r'(?:const\s+)?\w+\s*\*+\s*(\w+)', params):
+            ptr_params = set(re.findall(r'(?:const\s+)?\w+\s*\*+\s*(\w+)', params))
+            ptr_params |= set(_SMART_PTR_PARAM.findall(params))
+            for pp in ptr_params:
                 if len(pp) < 2 or pp in ('if','for','while','return','sizeof','NULL','void'): continue
                 derefs = re.findall(rf'\b{re.escape(pp)}\s*(?:->\w+|\[|\.\w)', cl)
                 if len(derefs) < 3: continue
                 if _has_null_check(cl, re.escape(pp)): continue
                 if re.search(rf'if\s*\(\s*!?\s*{re.escape(pp)}\s*\)\s*(?:return|goto)', cl): continue
+                if re.search(_TRUTHY_MACRO_GUARD.format(var=re.escape(pp)), cl): continue
                 f = Finding(f"P6_{rel}_{line}", "P6_null_deref", "medium",
                            rel, line, name, pp, "CWE-476",
                            f"Ptr '{pp}' ×{len(derefs)} derefs, no null check",
