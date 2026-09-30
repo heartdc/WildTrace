@@ -1,0 +1,524 @@
+"""Compiler-derived main-file facts and narrow, object-size memory checks.
+
+This is NOT a control-flow, reachability, alias, lifetime or exploitability proof.
+Only compiler-recognized memory builtins with explicit array objects and known
+constant or bounded local scalar lengths receive a numeric check.
+Raw Clang process-local declaration IDs are never used as persistent identities.
+"""
+from __future__ import annotations
+
+from bisect import bisect_right
+import hashlib
+import json
+from pathlib import PurePosixPath
+import re
+
+# Main-file C++ analysis includes standard/dependency declarations needed to
+# resolve calls. Camera translation units exceed 32 MiB after indentation
+# removal; retain a finite 64 MiB serialized budget and the independent node cap.
+MAX_AST_BYTES = 64 * 1024 * 1024
+MAX_NODES = 400000
+MAX_DEPTH = 300
+MEMORY_APIS = {'memcpy', 'memmove', 'memset', '__builtin_memcpy',
+              '__builtin_memmove', '__builtin_memset'}
+# Handle deleters for the narrow lifetime-sequence rule. cJSON_Delete is the
+# reviewed public-case deleter; free is the generic one. User definitions in
+# the same redeclaration chain disable the assumption.
+DELETERS = {'free', 'cJSON_Delete'}
+FRESH_ALLOCATORS = {'malloc', 'calloc'}
+FUNCTIONS = {'FunctionDecl', 'CXXMethodDecl', 'CXXConstructorDecl', 'CXXDestructorDecl'}
+WRAPPERS = {'ParenExpr', 'ImplicitCastExpr', 'CStyleCastExpr', 'CXXStaticCastExpr',
+            'CXXReinterpretCastExpr', 'ExprWithCleanups', 'ConstantExpr'}
+
+
+def digest(value):
+    return hashlib.sha256(json.dumps(value, sort_keys=True, ensure_ascii=False,
+                                    separators=(',', ':'), allow_nan=False).encode()).hexdigest()
+
+
+def children(node):
+    return node.get('inner', [])
+
+
+def typed(node):
+    t = node.get('type', {})
+    return t.get('desugaredQualType', t.get('qualType', 'unknown'))
+
+
+def nodes(tree):
+    stack, count = [(tree, 0)], 0
+    while stack:
+        node, depth = stack.pop()
+        count += 1
+        if not isinstance(node, dict) or depth > MAX_DEPTH or count > MAX_NODES:
+            raise ValueError('AST node/depth budget or schema violation')
+        inner = children(node)
+        if not isinstance(inner, list):
+            raise ValueError('invalid AST children')
+        yield node
+        stack.extend((item, depth + 1) for item in reversed(inner))
+
+
+def layout_from_macros(raw):
+    """Read the selected compiler's observed default target layout, not host Python."""
+    names = {'char': '__CHAR_BIT__', 'short': '__SIZEOF_SHORT__', 'int': '__SIZEOF_INT__',
+             'long': '__SIZEOF_LONG__', 'long long': '__SIZEOF_LONG_LONG__',
+             'pointer': '__SIZEOF_POINTER__', 'float': '__SIZEOF_FLOAT__',
+             'double': '__SIZEOF_DOUBLE__'}
+    found = dict(re.findall(r'^#define (\w+) ([0-9]+)$', raw, re.M))
+    if found.get('__CHAR_BIT__') != '8' or any(n not in found for n in names.values()):
+        raise ValueError('unsupported or missing target layout')
+    value = {k: int(found[v]) for k, v in names.items()}
+    value['char'] = 1
+    value['bool'] = 1
+    value['char_unsigned'] = '__CHAR_UNSIGNED__' in found
+    if any(type(v) is int and not 1 <= v <= 32 for v in value.values()):
+        raise ValueError('invalid target type sizes')
+    return value
+
+
+def _plain(t):
+    return ' '.join(re.sub(r'\b(const|volatile|restrict|__restrict|__restrict__)\b', '', t).split())
+
+
+def _handle_pointee(t):
+    """Struct-like pointee name of an object handle, or None.
+
+    Only handles whose pointee is a named (struct) type participate in the
+    lifetime-sequence rule; void*, character and scalar pointers are excluded
+    because same-type spelling there does not imply related objects.
+    """
+    t = _plain(t)
+    if not t.endswith('*') or t.endswith('**') or '(' in t or '[' in t:
+        return None
+    base = t[:-1].strip()
+    words = base.split()
+    basics = {'void', 'char', 'short', 'int', 'long', 'float', 'double',
+              'bool', '_Bool', 'unsigned', 'signed'}
+    if (not words or len(words) > 2 or words[-1] in basics
+            or not re.fullmatch(r'(?:struct\s+)?[A-Za-z_]\w*', base)):
+        return None
+    return base
+
+
+_POINTER_DECL = re.compile(r'\(\s*\*+\s*\)')
+
+
+def _array_parts(t):
+    """Split trailing constant dimensions of a fixed-array type spelling.
+
+    A parenthesized pointer declarator ('char (*)[4]', 'void (*)(int)') makes
+    the outermost object a pointer, so any dimensions belong to the pointee.
+    Every other parenthesized declarator (arrays of pointers to arrays,
+    references, function types) is outside the supported subset and must stay
+    unknown rather than receive a precise but wrong size.
+    """
+    t = _plain(t)
+    if _POINTER_DECL.search(t) or '(' in t:
+        return None
+    dims = []
+    while True:
+        matched = re.search(r'\[([0-9]+)\]$', t)
+        if not matched:
+            break
+        dims.append(int(matched.group(1)))
+        t = t[:matched.start()].rstrip()
+    if not dims or '[' in t or not t:
+        return None
+    return t, dims
+
+
+def size_of(t, layout):
+    t = _plain(t)
+    if _POINTER_DECL.search(t):
+        return layout.get('pointer')
+    parts = _array_parts(t)
+    if parts is not None:
+        base, dims = parts
+        size = size_of(base, layout)
+        for count in dims:
+            if size is None or count > 2**40:
+                return None
+            size *= count
+        return size if size is not None and size <= 2**63 else None
+    if '(' in t or '[' in t:
+        return None
+    if '*' in t or t.endswith('&'):
+        return layout.get('pointer')
+    t = re.sub(r'\b(unsigned|signed)\b', '', t).strip() or 'int'
+    t = {'short int': 'short', 'long int': 'long', 'long long int': 'long long', '_Bool': 'bool'}.get(t, t)
+    return layout.get(t)
+
+
+def _integer_type(t, layout):
+    t = _plain(t)
+    if not re.fullmatch(r'(?:(?:unsigned|signed) )?(?:char|short(?: int)?|int|long(?: long)?(?: int)?|bool|_Bool)|unsigned|signed', t):
+        return None
+    size = size_of(t, layout)
+    if size is None:
+        return None
+    unsigned = t.startswith('unsigned') or (t == 'char' and layout.get('char_unsigned', False))
+    return size * 8, unsigned, t in ('bool', '_Bool')
+
+
+def _coerce(value, t, layout):
+    info = _integer_type(t, layout)
+    if value is None or info is None:
+        return None
+    bits, unsigned, boolean = info
+    if boolean:
+        return int(value != 0)
+    if unsigned:
+        return value % (1 << bits)
+    return value if -(1 << (bits-1)) <= value < (1 << (bits-1)) else None
+
+
+def integer(node, layout, depth=0, *, values=None):
+    """Pure integer evaluation; optional values come only from explicit local flow."""
+    if depth > 64:
+        return None
+    kind, inner = node.get('kind'), children(node)
+    value = None
+    if kind == 'DeclRefExpr' and values is not None:
+        value = values.get(node.get('referencedDecl', {}).get('id'))
+    elif kind in ('IntegerLiteral', 'CharacterLiteral', 'ConstantExpr') and 'value' in node:
+        try:
+            value = int(node['value'])
+        except (TypeError, ValueError):
+            return None
+    elif kind == 'CXXBoolLiteralExpr':
+        value = int(node.get('value') is True)
+    elif kind == 'UnaryExprOrTypeTraitExpr' and node.get('name') == 'sizeof':
+        arg = node.get('argType')
+        t = (arg.get('desugaredQualType', arg.get('qualType', '')) if arg
+             else typed(inner[0]) if len(inner) == 1 else '')
+        value = size_of(t, layout)
+    elif kind in WRAPPERS and len(inner) == 1:
+        value = integer(inner[0], layout, depth+1, values=values)
+    elif kind == 'UnaryOperator' and len(inner) == 1:
+        a = integer(inner[0], layout, depth+1, values=values)
+        if a is not None:
+            value = {'+': lambda: a, '-': lambda: -a, '~': lambda: ~a, '!': lambda: int(not a)}.get(node.get('opcode'), lambda: None)()
+    elif kind == 'BinaryOperator' and len(inner) == 2:
+        a, b = (integer(x, layout, depth+1, values=values) for x in inner)
+        if a is not None and b is not None:
+            op = node.get('opcode')
+            if op in ('+', '-', '*', '&', '|', '^', '==', '!=', '<', '<=', '>', '>='):
+                value = {'+': lambda: a+b, '-': lambda: a-b, '*': lambda: a*b,
+                         '&': lambda: a&b, '|': lambda: a|b, '^': lambda: a^b,
+                         '==': lambda: int(a==b), '!=': lambda: int(a!=b),
+                         '<': lambda: int(a<b), '<=': lambda: int(a<=b),
+                         '>': lambda: int(a>b), '>=': lambda: int(a>=b)}[op]()
+    return _coerce(value, typed(node), layout)
+
+
+def _unwrap(node):
+    while node.get('kind') in WRAPPERS and len(children(node)) == 1:
+        node = children(node)[0]
+    return node
+
+
+def _object(node, declarations, layout, depth=0, *, values=None):
+    if depth > 64:
+        return None
+    kind, inner = node.get('kind'), children(node)
+    if kind in WRAPPERS and len(inner) == 1:
+        # Only representation-preserving pointer casts are eligible. Integer-to-
+        # pointer conversions, pointer aliases and scalar variables are unknown.
+        if 'Cast' in kind and node.get('castKind') not in ('NoOp', 'BitCast', 'ArrayToPointerDecay'):
+            return None
+        return _object(inner[0], declarations, layout, depth+1, values=values)
+    if kind == 'DeclRefExpr':
+        decl = declarations.get(node.get('referencedDecl', {}).get('id'))
+        if not decl or decl.get('kind') != 'VarDecl' or _array_parts(typed(decl)) is None:
+            # Only fixed arrays are capacity-bearing objects; pointers (even
+            # pointers to arrays) and unsupported declarators stay unknown.
+            return None
+        size = size_of(typed(decl), layout)
+        if size is None:
+            return None
+        return {'name': decl.get('name'), 'type': typed(decl), 'capacity_bytes': size,
+                'offset_bytes': 0, 'basis': 'compiler_fixed_array_type'}
+    if kind == 'StringLiteral':
+        size = size_of(typed(node), layout)
+        return None if size is None else {'name': '<string-literal>', 'type': typed(node),
+                    'capacity_bytes': size, 'offset_bytes': 0, 'basis': 'compiler_string_array_type'}
+    if kind == 'UnaryOperator' and node.get('opcode') == '&' and len(inner) == 1:
+        sub = _unwrap(inner[0])
+        if sub.get('kind') == 'ArraySubscriptExpr' and len(children(sub)) == 2:
+            base, index = children(sub)
+            result = _object(base, declarations, layout, depth+1, values=values)
+            amount, step = integer(index, layout, values=values), size_of(typed(sub), layout)
+            if result is not None and amount is not None and step is not None:
+                return {**result, 'offset_bytes': result['offset_bytes'] + amount*step}
+            return None
+        return _object(sub, declarations, layout, depth+1, values=values)
+    if kind == 'BinaryOperator' and node.get('opcode') in ('+', '-') and len(inner) == 2:
+        base, number = inner
+        if '*' not in typed(base) and node.get('opcode') == '+':
+            base, number = number, base
+        t = _plain(typed(base))
+        if not t.endswith('*'):
+            return None
+        step, amount = size_of(t[:-1].strip(), layout), integer(number, layout, values=values)
+        result = _object(base, declarations, layout, depth+1, values=values)
+        if result is not None and amount is not None and step is not None:
+            sign = -1 if node.get('opcode') == '-' else 1
+            return {**result, 'offset_bytes': result['offset_bytes'] + sign*amount*step}
+    return None
+
+
+def extract_compiler_facts(ast, source_bytes, *, source_file, compiler_file, layout):
+    if not isinstance(ast, dict) or ast.get('kind') != 'TranslationUnitDecl':
+        raise ValueError('a complete Clang translation unit is required')
+    if not isinstance(source_bytes, bytes) or len(source_bytes) > 2*1024*1024:
+        raise ValueError('source byte budget exceeded')
+    source_bytes.decode('utf-8-sig')
+    if not isinstance(source_file, str) or PurePosixPath(source_file).is_absolute() or '..' in PurePosixPath(source_file).parts:
+        raise ValueError('canonical relative source file required')
+    all_nodes = list(nodes(ast))
+    declarations = {n['id']: n for n in all_nodes if 'id' in n and n.get('kind', '').endswith('Decl')}
+    # A namesake in another namespace must not suppress the standard function.
+    # Conversely, a user definition in the SAME redeclaration chain must disable
+    # builtin assumptions even if a prior declaration carried BuiltinAttr.
+    parent = {key: key for key in declarations}
+    def canonical(key):
+        trail = []
+        while key in parent and parent[key] != key:
+            trail.append(key)
+            key = parent[key]
+            if len(trail) > len(parent):
+                raise ValueError('cyclic declaration identity')
+        for old in trail: parent[old] = key
+        return key
+    for n in all_nodes:
+        if n.get('kind') in FUNCTIONS and n.get('previousDecl') and n.get('id'):
+            parent[canonical(n['id'])] = canonical(n['previousDecl'])
+    defined = {canonical(n.get('id')) for n in all_nodes if n.get('kind') in FUNCTIONS
+               and any(c.get('kind') == 'CompoundStmt' for c in children(n))}
+    starts = [0] + [m.end() for m in re.finditer(b'\n', source_bytes)]
+    def location(node):
+        raw = node.get('range', {}).get('begin', node.get('loc', {}))
+        macro = 'expansionLoc' in raw
+        pos = raw.get('expansionLoc', raw)
+        off = pos.get('offset')
+        if ('includedFrom' in pos or pos.get('file', compiler_file) != compiler_file
+                or type(off) is not int or not 0 <= off < len(source_bytes)):
+            return None
+        line = bisect_right(starts, off)
+        return {'file': source_file, 'line': line, 'column': off-starts[line-1]+1,
+                'byte_offset': off, 'macro_expansion': macro}
+    functions, calls, findings, issues = [], [], [], []
+    seen = set()
+    for function in all_nodes:
+        if function.get('kind') not in FUNCTIONS:
+            continue
+        bodies = [c for c in children(function) if c.get('kind') == 'CompoundStmt']
+        loc = function.get('loc', {})
+        offset, name = loc.get('offset'), function.get('name', '')
+        if (not bodies or 'includedFrom' in loc or 'spellingLoc' in loc
+                or loc.get('file', compiler_file) != compiler_file):
+            continue
+        if (type(offset) is not int or not name or not 0 <= offset < len(source_bytes)
+                or source_bytes[offset:offset+len(name.encode())] != name.encode()):
+            issues.append({'kind': 'main_file_definition_location_unresolved'})
+            continue
+        where = location(function)
+        if where is None:
+            issues.append({'kind': 'main_file_definition_range_unresolved'})
+            continue
+        identity = (offset, typed(function))
+        if identity in seen:
+            continue
+        seen.add(identity)
+        info = {'name': name, 'type': typed(function), 'location': where,
+                'parameters': [{'name': p.get('name'), 'type': typed(p)}
+                               for p in children(function) if p.get('kind') == 'ParmVarDecl']}
+        functions.append(info)
+        local_decls = {n['id']: n for n in nodes(bodies[0]) if n.get('kind') == 'VarDecl' and 'id' in n}
+        # Handle writes and fresh local allocations for the lifetime rule.
+        # A write with unknown position (offset None) is treated as "may lie
+        # between", so the conservative outcome is suppression, never a flag.
+        writes, fresh = {}, set()
+        for node in nodes(bodies[0]):
+            if node.get('kind') == 'BinaryOperator' and node.get('opcode') == '=' and children(node):
+                assigned = _unwrap(children(node)[0])
+                if isinstance(assigned, dict) and assigned.get('kind') == 'DeclRefExpr':
+                    ident = assigned.get('referencedDecl', {}).get('id')
+                    if ident is not None:
+                        writes.setdefault(ident, []).append(
+                            node.get('range', {}).get('begin', {}).get('offset'))
+            elif node.get('kind') == 'VarDecl' and node.get('id'):
+                if any(c.get('kind') == 'CallExpr' and children(c) and
+                       isinstance(_unwrap(children(c)[0]), dict) and
+                       _unwrap(children(c)[0]).get('referencedDecl', {}).get('name') in FRESH_ALLOCATORS
+                       for c in nodes(node) if c is not node):
+                    fresh.add(node['id'])
+        from .clang_flow import scalar_events
+        from .clang_ranges import interval
+        parameters = [p for p in children(function) if p.get('kind') == 'ParmVarDecl']
+        events, flow_issues = scalar_events(bodies[0], layout, location,
+                                            parameters=parameters, include_ranges=True)
+        issues.extend({'kind': code, 'function': name} for code in flow_issues)
+        deleted = {}
+        for n, values, flow_evidence, range_bindings in events:
+            kind, inner = n.get('kind'), children(n)
+            where = location(n)
+            if where is None or not inner:
+                issues.append({'kind': 'call_location_unresolved', 'function': name})
+                continue
+            ref = _unwrap(inner[0]).get('referencedDecl', {})
+            decl = declarations.get(ref.get('id'), {})
+            direct = kind == 'CallExpr' and ref.get('kind') == 'FunctionDecl'
+            target = ref.get('name') if direct else None
+            args = []
+            for argument in inner[1:]:
+                bounds = interval(argument, layout, range_bindings)
+                refs = []
+                for child in nodes(argument):
+                    binding = range_bindings.get(child.get('referencedDecl', {}).get('id'))
+                    for evidence in binding['evidence'] if binding else []:
+                        if evidence not in refs:
+                            refs.append(evidence)
+                args.append({'type': typed(argument), 'constant_integer': integer(argument, layout, values=values),
+                    'object': _object(argument, local_decls, layout, values=values),
+                    'integer_range': {'lower': bounds[0], 'upper': bounds[1]} if bounds is not None else None,
+                    'range_evidence': refs if len(refs) <= 64 else []})
+            flow = {'mode': ('constant_only_fallback' if 'local_scalar_flow_disabled_unstructured_control' in flow_issues
+                             else 'bounded_exact_local_values'), 'evidence': flow_evidence,
+                    'interval_extension': 'bounded_scalar_constraints',
+                    'general_ranges_proven': False, 'callee_effects_summarized': False}
+            call = {'function': name, 'function_type': typed(function), 'location': where,
+                    'callee': {'name': target, 'type': ref.get('type', {}).get('qualType'),
+                               'mangled_name': decl.get('mangledName'),
+                               'resolution': 'compiler_direct_declaration' if direct else 'unresolved_or_indirect'},
+                    'arguments': args, 'memory_checks': [], 'scalar_flow': flow, 'reachability': 'not_proven'}
+            builtin = target in MEMORY_APIS and canonical(ref.get('id')) not in defined and any(
+                a.get('kind') == 'BuiltinAttr' for a in children(decl))
+            if builtin and len(args) == 3:
+                count = args[2]['constant_integer']
+                for side, index, cwe in [('write', 0, 'CWE-787')] + ([] if target.endswith('memset') else [('read', 1, 'CWE-125')]):
+                    obj = args[index]['object']
+                    check = {'side': side, 'requested_bytes': count, 'object': obj, 'status': 'unknown'}
+                    bounds = args[2]['integer_range']
+                    ranged = count is None and bounds is not None and bool(args[2]['range_evidence'])
+                    if obj is not None and (count is not None or ranged):
+                        low, high = (count, count) if count is not None else (bounds['lower'], bounds['upper'])
+                        remaining = max(0, obj['capacity_bytes'] - obj['offset_bytes'])
+                        exceeds = low > 0 and (obj['offset_bytes'] < 0 or low > remaining)
+                        possible = high > 0 and (obj['offset_bytes'] < 0 or high > remaining)
+                        check.update(available_bytes=remaining,
+                                     status='exceeds_known_object' if exceeds else
+                                            'may_exceed_known_object' if possible else 'within_known_object')
+                        if ranged:
+                            check.update(requested_bytes_range=dict(bounds), range_evidence=args[2]['range_evidence'],
+                                         path_feasibility='not_proven')
+                        if exceeds:
+                            length = str(count) if count is not None else str((low, high))
+                            findings.append({'source': 'wildtrace-clang-ast',
+                                'rule': ('compiler.range-buffer-' if ranged else 'compiler.constant-buffer-') + side,
+                                'cwe_candidate': cwe, 'cwe_mapping_source': 'typed_object_size_rule',
+                                'cwe_mapping_version': '1', 'location': {'file': source_file, 'line': where['line']},
+                                'description': f'{target}: {length} bytes {side} exceeds the known array region if this call executes',
+                                'evidence': {'file_sha256': hashlib.sha256(source_bytes).hexdigest(),
+                                             'function': info, 'call_location': where, 'callee_type': call['callee'],
+                                             'memory_check': dict(check), 'rule_version': '3', 'scalar_flow': flow,
+                                             'reachability': 'not_proven', 'platform_impact': 'not_verified'},
+                                'status': 'candidate'})
+                    call['memory_checks'].append(check)
+            elif target in MEMORY_APIS:
+                call['memory_semantics'] = 'unrecognized_or_overridden_builtin'
+            call['lifetime_checks'] = []
+            if target is not None:
+                handles, seen_handles = [], set()
+                for argument in inner[1:]:
+                    aref = _unwrap(argument)
+                    if not isinstance(aref, dict) or aref.get('kind') != 'DeclRefExpr':
+                        continue
+                    adecl = declarations.get(aref.get('referencedDecl', {}).get('id'))
+                    if not isinstance(adecl, dict) or adecl.get('kind') not in ('VarDecl', 'ParmVarDecl'):
+                        continue
+                    base = _handle_pointee(typed(adecl))
+                    ident = aref.get('referencedDecl', {}).get('id')
+                    # Display names come from the declaration; process-local AST
+                    # ids never enter descriptions or evidence.
+                    handle_name = adecl.get('name') or '<unnamed>'
+                    if base and ident not in seen_handles:
+                        seen_handles.add(ident)
+                        handles.append((ident, handle_name, base))
+                if target in DELETERS and handles and canonical(ref.get('id')) not in defined:
+                    ident, handle_name, base = handles[0]
+                    deleted[ident] = {'offset': where['byte_offset'], 'base': base,
+                                      'callee': target, 'location': where,
+                                      'handle': handle_name}
+                for ident, handle_name, base in handles:
+                    if ident in fresh:
+                        # A fresh local allocation cannot alias any pre-existing
+                        # handle, so its use is never the freed object.
+                        continue
+                    for dident, record in deleted.items():
+                        if (record['base'] != base or where['byte_offset'] <= record['offset']
+                                or dident in fresh):
+                            continue
+                        between = [w for w in writes.get(ident, []) + writes.get(dident, [])
+                                   if w is None or record['offset'] < w < where['byte_offset']]
+                        if between:
+                            continue
+                        same = ident == dident
+                        rule = ('compiler.lifetime-use-after-delete' if same
+                                else 'compiler.lifetime-aliased-handle-use')
+                        check = {'rule': rule, 'used_handle': handle_name, 'handle_type': base + ' *',
+                                 'delete_callee': record['callee'], 'deleted_handle': record['handle'],
+                                 'deleted_at': record['location'], 'used_at': where,
+                                 'alias_proven': same, 'path_feasibility': 'not_proven',
+                                 'suppression_guards': ['used_or_deleted_handle_is_fresh_local_allocation',
+                                                        'handle_reassigned_between',
+                                                        'pointee_type_mismatch']}
+                        call['lifetime_checks'].append(check)
+                        description = (f'{target}: "{handle_name}" used after {record["callee"]} deleted '
+                                       + ('the same handle' if same else f'same-type handle "{record["handle"]}"')
+                                       + f' earlier in {name}'
+                                       + ('' if same else '; candidate only if the handles alias at this call site'))
+                        findings.append({'source': 'wildtrace-clang-ast',
+                            'rule': rule, 'cwe_candidate': 'CWE-416',
+                            'cwe_mapping_source': 'deleter_sequence_rule', 'cwe_mapping_version': '1',
+                            'location': {'file': source_file, 'line': where['line']},
+                            'description': description,
+                            'evidence': {'file_sha256': hashlib.sha256(source_bytes).hexdigest(),
+                                         'function': info, 'call_location': where,
+                                         'lifetime_check': dict(check), 'rule_version': '1',
+                                         'scalar_flow': flow, 'reachability': 'not_proven',
+                                         'platform_impact': 'not_verified'},
+                            'status': 'candidate'})
+            calls.append(call)
+    value = {'schema': 'clang-main-file-facts-0.1', 'analysis_version': '3', 'source_file': source_file,
+             'source_sha256': hashlib.sha256(source_bytes).hexdigest(), 'target_layout': layout,
+             'functions': functions, 'calls': calls, 'findings': findings, 'issues': issues,
+             'coverage': {'scope': 'main_file_function_bodies', 'compiler_ast': True,
+                          'control_flow_proven': False, 'interprocedural_analysis': False,
+                          'dynamic_lengths_proven': False, 'exact_local_scalar_flow': True,
+                          'bounded_integer_intervals': True, 'path_feasibility_proven': False,
+                          'macro_configuration': 'selected_compiler_configuration'},
+             'limitations': ['An in-bounds observation is not a general safety verdict.',
+                             'Only direct builtins with fixed objects and supported integer lengths are checked.',
+                             'Unknown branch values, side effects and loop-carried values are not guessed.',
+                             'Finite intervals and selected scalar comparisons are not general relational analysis.',
+                             'Overlapping ranges remain observations, not definite violations or feasible witnesses.',
+                             'Pointer variables, heap objects, members and relational dynamic ranges remain unknown.',
+                             'Call reachability, lifetime and security impact are not established.',
+                             'Header function bodies and unresolved source locations are outside main-file coverage.']}
+    value['statistics'] = {'functions': len(functions), 'calls': len(calls),
+        'resolved_direct_calls': sum(c['callee']['resolution']=='compiler_direct_declaration' for c in calls),
+        'indirect_or_unresolved_calls': sum(c['callee']['resolution']!='compiler_direct_declaration' for c in calls),
+        'numeric_memory_checks': sum(z['status']!='unknown' for c in calls for z in c['memory_checks']),
+        'unknown_memory_checks': sum(z['status']=='unknown' for c in calls for z in c['memory_checks']),
+        'calls_with_local_scalar_evidence': sum(bool(c['scalar_flow']['evidence']) for c in calls),
+        'calls_with_integer_range_evidence': sum(any(a['range_evidence'] and a['integer_range'] is not None
+                                                    for a in c['arguments']) for c in calls),
+        'range_memory_checks': sum('requested_bytes_range' in z for c in calls for z in c['memory_checks']),
+        'possible_extent_observations': sum(z['status'] == 'may_exceed_known_object'
+                                           for c in calls for z in c['memory_checks']),
+        'lifetime_sequence_candidates': sum(z['rule'].startswith('compiler.lifetime-')
+                                            for c in calls for z in c['lifetime_checks'])}
+    value['facts_sha256'] = digest(value)
+    return value

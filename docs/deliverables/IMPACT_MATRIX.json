@@ -1,0 +1,362 @@
+{
+  "cjson_merge_alias": {
+    "cve": "CVE-2026-87933",
+    "component": "third_party/cJSON",
+    "component_type": "cjson",
+    "introduced_version": "1.7.0",
+    "fixed_upstream": "pending",
+    "observed_version": "1.7.19",
+    "evidence_rule": "kb-affected-range",
+    "kb_source": "cvelistV5",
+    "branches": {
+      "OpenHarmony-v4.1-Release": "unknown",
+      "OpenHarmony-v5.0-Release": "unknown",
+      "OpenHarmony-v5.1-Release": "unknown",
+      "OpenHarmony-v6.0-Release": "unknown",
+      "OpenHarmony-v7.0-Release": "unknown",
+      "master": "unknown"
+    },
+    "affected_count": 0,
+    "unknown_count": 6
+  },
+  "curl_native_ca_reuse": {
+    "cve": "CVE-2026-80231",
+    "component": "third_party/curl",
+    "component_type": "curl",
+    "introduced_version": "7.71.0",
+    "fixed_upstream": "8.22.0",
+    "observed_version": "",
+    "evidence_rule": "kb-affected-range",
+    "kb_source": "cvelistV5",
+    "branches": {
+      "OpenHarmony-v4.1-Release": "affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
+      "master": "affected"
+    },
+    "affected_count": 6,
+    "unknown_count": 0
+  },
+  "curl_psl_supercookie": {
+    "cve": "CVE-2026-82209",
+    "component": "third_party/curl",
+    "component_type": "curl",
+    "introduced_version": "7.46.0",
+    "fixed_upstream": "8.22.0",
+    "observed_version": "",
+    "evidence_rule": "kb-affected-range",
+    "kb_source": "cvelistV5",
+    "branches": {
+      "OpenHarmony-v4.1-Release": "affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
+      "master": "affected"
+    },
+    "affected_count": 6,
+    "unknown_count": 0
+  },
+  "ffmpeg_cfhd_transform2_width_oob": {
+    "cve": "CVE-2026-70632",
+    "component": "third_party/ffmpeg",
+    "component_type": "ffmpeg",
+    "introduced_version": "4.4",
+    "fixed_upstream": "9.0",
+    "observed_version": "7.1.1",
+    "evidence_rule": "kb-affected-range",
+    "kb_source": "cvelistV5",
+    "branches": {
+      "OpenHarmony-v4.1-Release": "not_affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
+      "master": "affected"
+    },
+    "affected_count": 5,
+    "unknown_count": 0
+  },
+  "ffmpeg_dvbsub_parser_capacity_overflow": {
+    "cve": "CVE-2026-70628",
+    "component": "third_party/ffmpeg",
+    "component_type": "ffmpeg",
+    "introduced_version": "0.5",
+    "fixed_upstream": "9.0",
+    "observed_version": "7.1.1",
+    "evidence_rule": "kb-affected-range",
+    "kb_source": "cvelistV5",
+    "branches": {
+      "OpenHarmony-v4.1-Release": "affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
+      "master": "affected"
+    },
+    "affected_count": 6,
+    "unknown_count": 0
+  },
+  "ffmpeg_floodfill_point_stack_oob": {
+    "cve": "CVE-2026-65705",
+    "component": "third_party/ffmpeg",
+    "component_type": "ffmpeg",
+    "introduced_version": "3.4",
+    "fixed_upstream": "pending",
+    "observed_version": "7.1.1",
+    "evidence_rule": "kb-affected-range",
+    "kb_source": "cvelistV5",
+    "branches": {
+      "OpenHarmony-v4.1-Release": "affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
+      "master": "affected"
+    },
+    "affected_count": 6,
+    "unknown_count": 0
+  },
+  "ffmpeg_hqdn3d_dynamic_size_oob": {
+    "cve": "CVE-2026-66036",
+    "component": "third_party/ffmpeg",
+    "component_type": "ffmpeg",
+    "introduced_version": "0",
+    "fixed_upstream": "pending",
+    "observed_version": "7.1.1",
+    "evidence_rule": "kb-affected-range",
+    "kb_source": "cvelistV5",
+    "branches": {
+      "OpenHarmony-v4.1-Release": "affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
+      "master": "affected"
+    },
+    "affected_count": 6,
+    "unknown_count": 0
+  },
+  "ffmpeg_iamf_count_label_dos": {
+    "cve": "CVE-2026-66037",
+    "component": "third_party/ffmpeg",
+    "component_type": "ffmpeg",
+    "introduced_version": "0",
+    "fixed_upstream": "pending",
+    "observed_version": "7.1.1",
+    "evidence_rule": "kb-affected-range",
+    "kb_source": "cvelistV5",
+    "branches": {
+      "OpenHarmony-v4.1-Release": "affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
+      "master": "affected"
+    },
+    "affected_count": 6,
+    "unknown_count": 0
+  },
+  "ffmpeg_lcldec_zlib_tail_disclosure": {
+    "cve": "CVE-2026-66038",
+    "component": "third_party/ffmpeg",
+    "component_type": "ffmpeg",
+    "introduced_version": "0",
+    "fixed_upstream": "pending",
+    "observed_version": "7.1.1",
+    "evidence_rule": "kb-affected-range",
+    "kb_source": "cvelistV5",
+    "branches": {
+      "OpenHarmony-v4.1-Release": "affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
+      "master": "affected"
+    },
+    "affected_count": 6,
+    "unknown_count": 0
+  },
+  "ffmpeg_nvdec_sep_ref_doublefree": {
+    "cve": "CVE-2026-64832",
+    "component": "third_party/ffmpeg",
+    "component_type": "ffmpeg",
+    "introduced_version": "4.4",
+    "fixed_upstream": "pending",
+    "observed_version": "7.1.1",
+    "evidence_rule": "kb-affected-range",
+    "kb_source": "cvelistV5",
+    "branches": {
+      "OpenHarmony-v4.1-Release": "not_affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
+      "master": "affected"
+    },
+    "affected_count": 5,
+    "unknown_count": 0
+  },
+  "ffmpeg_quirc_resize_oob": {
+    "cve": "CVE-2026-66041",
+    "component": "third_party/ffmpeg",
+    "component_type": "ffmpeg",
+    "introduced_version": "7.0",
+    "fixed_upstream": "pending",
+    "observed_version": "7.1.1",
+    "evidence_rule": "kb-affected-range",
+    "kb_source": "cvelistV5",
+    "branches": {
+      "OpenHarmony-v4.1-Release": "not_affected",
+      "OpenHarmony-v5.0-Release": "not_affected",
+      "OpenHarmony-v5.1-Release": "not_affected",
+      "OpenHarmony-v6.0-Release": "not_affected",
+      "OpenHarmony-v7.0-Release": "affected",
+      "master": "affected"
+    },
+    "affected_count": 2,
+    "unknown_count": 0
+  },
+  "ffmpeg_rscc_short_deflate_uninit_leak": {
+    "cve": "CVE-2026-70629",
+    "component": "third_party/ffmpeg",
+    "component_type": "ffmpeg",
+    "introduced_version": "3.0",
+    "fixed_upstream": "9.0",
+    "observed_version": "7.1.1",
+    "evidence_rule": "kb-affected-range",
+    "kb_source": "cvelistV5",
+    "branches": {
+      "OpenHarmony-v4.1-Release": "affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
+      "master": "affected"
+    },
+    "affected_count": 6,
+    "unknown_count": 0
+  },
+  "ffmpeg_swaprect_temp_row_oob": {
+    "cve": "CVE-2026-65706",
+    "component": "third_party/ffmpeg",
+    "component_type": "ffmpeg",
+    "introduced_version": "3.0",
+    "fixed_upstream": "pending",
+    "observed_version": "7.1.1",
+    "evidence_rule": "kb-affected-range",
+    "kb_source": "cvelistV5",
+    "branches": {
+      "OpenHarmony-v4.1-Release": "affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
+      "master": "affected"
+    },
+    "affected_count": 6,
+    "unknown_count": 0
+  },
+  "ffmpeg_ty_ac3_trim_underflow": {
+    "cve": "CVE-2026-65704",
+    "component": "third_party/ffmpeg",
+    "component_type": "ffmpeg",
+    "introduced_version": "0",
+    "fixed_upstream": "pending",
+    "observed_version": "7.1.1",
+    "evidence_rule": "kb-affected-range",
+    "kb_source": "cvelistV5",
+    "branches": {
+      "OpenHarmony-v4.1-Release": "affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
+      "master": "affected"
+    },
+    "affected_count": 6,
+    "unknown_count": 0
+  },
+  "ffmpeg_wmaenc_extradata_padding": {
+    "cve": "CVE-2026-52296",
+    "component": "third_party/ffmpeg",
+    "component_type": "ffmpeg",
+    "introduced_version": "0",
+    "fixed_upstream": "9.0",
+    "observed_version": "7.1.1",
+    "evidence_rule": "kb-affected-range",
+    "kb_source": "cvelistV5",
+    "branches": {
+      "OpenHarmony-v4.1-Release": "affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
+      "master": "affected"
+    },
+    "affected_count": 6,
+    "unknown_count": 0
+  },
+  "ipc_cj_array_null_validation": {
+    "cve": "",
+    "component": "foundation/communication/ipc/interfaces/innerkits/cj",
+    "component_type": "oh_native",
+    "introduced_version": "unknown",
+    "fixed_upstream": "pending",
+    "observed_version": "",
+    "evidence_rule": "no-version-evidence",
+    "kb_source": "",
+    "branches": {
+      "OpenHarmony-v4.1-Release": "unknown",
+      "OpenHarmony-v5.0-Release": "unknown",
+      "OpenHarmony-v5.1-Release": "unknown",
+      "OpenHarmony-v6.0-Release": "unknown",
+      "OpenHarmony-v7.0-Release": "affected",
+      "master": "affected"
+    },
+    "affected_count": 2,
+    "unknown_count": 4
+  },
+  "kv_ffi_array_validation": {
+    "cve": "",
+    "component": "foundation/distributeddatamgr/kv_store",
+    "component_type": "oh_native",
+    "introduced_version": "unknown",
+    "fixed_upstream": "pending",
+    "observed_version": "",
+    "evidence_rule": "no-version-evidence",
+    "kb_source": "",
+    "branches": {
+      "OpenHarmony-v4.1-Release": "unknown",
+      "OpenHarmony-v5.0-Release": "unknown",
+      "OpenHarmony-v5.1-Release": "unknown",
+      "OpenHarmony-v6.0-Release": "unknown",
+      "OpenHarmony-v7.0-Release": "affected",
+      "master": "affected"
+    },
+    "affected_count": 2,
+    "unknown_count": 4
+  },
+  "openssl_ocb_oneshot_iv_discard": {
+    "cve": "CVE-2026-45445",
+    "component": "third_party/openssl",
+    "component_type": "openssl",
+    "introduced_version": "3.0.0",
+    "fixed_upstream": "4.0.1",
+    "observed_version": "3.0.9",
+    "evidence_rule": "kb-affected-range",
+    "kb_source": "cvelistV5",
+    "branches": {
+      "OpenHarmony-v4.1-Release": "affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
+      "master": "affected"
+    },
+    "affected_count": 6,
+    "unknown_count": 0
+  }
+}

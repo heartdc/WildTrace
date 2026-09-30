@@ -34,11 +34,26 @@ def merge_shard_results(results, root, max_shards=10000):
                 if existing != bundle: raise ValueError('conflicting shard evidence')
             else:
                 seen.add(bundle['evidence_id']); bundles.append(bundle)
-        findings.extend(result.get('findings', []))
+        findings.extend(dict(item) for item in result.get('findings', []))
     findings.sort(key=lambda f: (f['location']['file'], f['location']['line'], f['cwe_candidate']))
     for index, finding in enumerate(findings, 1):
         finding['alert_id'] = f'AL-{index:06d}'
-    return {'schema_version': '0.3', 'scan': {'root': root, 'files_scanned': sum(r['scan']['files_scanned'] for r in results)}, 'findings': findings, 'evidence_bundles': bundles, 'safety': {'local_only': True, 'no_execution': True, 'no_network': True}}
+    scan = {'root': root, 'engine': 'builtin_rule'}
+    for field in ('files_requested', 'files_discovered', 'files_attempted', 'files_scanned', 'files_failed', 'files_skipped'):
+        values = [r['scan'].get(field) for r in results]
+        scan[field] = sum(values) if all(type(value) is int and value >= 0 for value in values) else None
+    errors = [error for r in results for error in r.get('input_errors', [])]
+    records = [record for r in results for record in r.get('file_results', [])]
+    scan['scope_complete'] = all(r['scan'].get('scope_complete') is True for r in results)
+    scan['directories_skipped'] = [p for r in results for p in r['scan'].get('directories_skipped', [])]
+    if errors:
+        status = 'partial' if scan['files_scanned'] else 'input_error'
+    else:
+        status = 'completed' if all(r.get('status') == 'completed' for r in results) else 'unknown'
+    return {'schema_version': '0.3', 'status': status, 'scan': scan, 'input_errors': errors,
+            'file_results': records, 'findings': findings, 'evidence_bundles': bundles,
+            'rule_observations': [item for r in results for item in r.get('rule_observations', [])],
+            'safety': {'local_only': True, 'no_execution': True, 'no_network': True}}
 
 def build_manifest(root, shard_size=1000, max_files=1000000):
     root = Path(root).resolve()

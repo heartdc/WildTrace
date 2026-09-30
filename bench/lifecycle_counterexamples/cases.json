@@ -1,0 +1,78 @@
+[
+ {
+  "id": "lc_cjson_mergepatch_alias_uaf",
+  "source_file": "lc_cjson_mergepatch_alias_uaf.c",
+  "source_snapshot_sha256": "",
+  "component": "public-case-derived",
+  "version": "cjson-388cfc96",
+  "expected_cwe": [
+   "CWE-416"
+  ],
+  "label": "candidate",
+  "reason": "公开已知案例回验：由 cJSON_Utils.c merge_patch 非对象分支缩减而来（钉定提交 388cfc96，见 cases/cjson_merge_alias）；先 cJSON_Delete(target) 后使用同型句柄 patch，若两者在调用点别名则读已释放内存。检出记为规则回验，不是新发现。",
+  "reviewer": "glm-lifecycle-author",
+  "reviewed_at": ""
+ },
+ {
+  "id": "lc_use_after_free_same_handle",
+  "source_file": "lc_use_after_free_same_handle.c",
+  "source_snapshot_sha256": "",
+  "component": "synthetic-lifecycle",
+  "version": "1",
+  "expected_cwe": [
+   "CWE-416"
+  ],
+  "label": "candidate",
+  "reason": "合成反例：同一句柄 free 后再次传入调用；delete 后同柄使用，别名关系由同变量直接成立。",
+  "reviewer": "glm-lifecycle-author",
+  "reviewed_at": ""
+ },
+ {
+  "id": "lc_cjson_mergepatch_fixed_safe",
+  "source_file": "lc_cjson_mergepatch_fixed_safe.c",
+  "source_snapshot_sha256": "",
+  "component": "public-case-derived",
+  "version": "cjson-388cfc96-patched",
+  "expected_cwe": [],
+  "label": "safe_control",
+  "reason": "已审修复写法（cases/cjson_merge_alias/patch.diff）：先复制借用的 patch 再删除 target，使用先于删除，不得产生候选。",
+  "reviewer": "glm-lifecycle-author",
+  "reviewed_at": ""
+ },
+ {
+  "id": "lc_reassigned_between_safe",
+  "source_file": "lc_reassigned_between_safe.c",
+  "source_snapshot_sha256": "",
+  "component": "synthetic-lifecycle",
+  "version": "1",
+  "expected_cwe": [],
+  "label": "safe_control",
+  "reason": "合成安全写法：删除与使用之间句柄被重新赋值，取值已替换，不得产生候选。",
+  "reviewer": "glm-lifecycle-author",
+  "reviewed_at": ""
+ },
+ {
+  "id": "lc_independent_local_allocs_safe",
+  "source_file": "lc_independent_local_allocs_safe.c",
+  "source_snapshot_sha256": "",
+  "component": "synthetic-lifecycle",
+  "version": "1",
+  "expected_cwe": [],
+  "label": "safe_control",
+  "reason": "合成安全写法：两个句柄均为本函数内独立新分配，不可能别名，不得产生候选。",
+  "reviewer": "glm-lifecycle-author",
+  "reviewed_at": ""
+ },
+ {
+  "id": "lc_different_pointee_safe",
+  "source_file": "lc_different_pointee_safe.c",
+  "source_snapshot_sha256": "",
+  "component": "synthetic-lifecycle",
+  "version": "1",
+  "expected_cwe": [],
+  "label": "safe_control",
+  "reason": "合成安全写法：删除与使用的句柄指向不同命名类型，不可能别名，不得产生候选。",
+  "reviewer": "glm-lifecycle-author",
+  "reviewed_at": ""
+ }
+]

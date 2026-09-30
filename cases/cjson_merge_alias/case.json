@@ -1,0 +1,43 @@
+{
+  "schema": "case-specific-validation-0.1",
+  "id": "cjson-merge-nonobject-alias",
+  "component": "third_party/cJSON",
+  "observed_version": "1.7.19",
+  "expected_commit": "388cfc96925e4fb41a30735b270736626d26615d",
+  "expected_source_sha256": {
+    "cJSON.c": "caf1632845b60ca901234457008289f24eb2f6a1fc2d3ca4918e8f66cf95f11b",
+    "cJSON_Utils.c": "09c85ee09b1cb79260559e003c33e6785e842f0e51fd658a4bc72c995c8fc372"
+  },
+  "cwe_candidate": "CWE-416",
+  "public_cve_reference": "CVE-2026-87933",
+  "discovery_method": "manual source review informed by public upstream report",
+  "new_discovery": false,
+  "runtime_status": "library_level_reproduced",
+  "product_reachability": "not_established",
+  "cvss_for_openharmony": null,
+  "evidence_locations": {
+    "consume_target_before_duplicate": "cJSON_Utils.c:1325-1330",
+    "recursive_child_deallocation": "cJSON.c:253-280",
+    "dereference_of_freed_patch": "cJSON.c:2802",
+    "lite_build_includes_utils": "BUILD.gn:13-41",
+    "standard_build_omits_utils_from_named_targets": "BUILD.gn:42-70"
+  },
+  "upstream_sources": [
+    "https://github.com/DaveGamble/cJSON/issues/1060",
+    "https://github.com/DaveGamble/cJSON/pull/1065",
+    "https://vuldb.com/cve/CVE-2026-87933"
+  ],
+  "scope": "Non-object patch aliases a target-owned subtree or the target itself. Patch only fixes that branch; object-alias cases and product callers need separate review.",
+  "important_control": "Independent target and patch must work on original source. A caller deleting the consumed target twice is a harness defect, not accepted as library proof.",
+  "runtime_evidence": {
+    "what": "bubblewrap 执行矩阵 26/26（原版/独立副本观察到预期库级 UAF，补丁与控制组通过）+ 第二复现人独立复现 26/26",
+    "when": "2026-09-16",
+    "records": [
+      "CHANGELOG.md 2026-09-16 节",
+      "docs/analysis/CJSON_RUNTIME_CASE_20260915.md",
+      "docs/analysis/COLLABORATIVE_DELIVERY_AUDIT_20260915.md"
+    ],
+    "scope": "库级（cJSON 源码副本 + bubblewrap），非 OpenHarmony 产品二进制",
+    "product_binary_linked": false
+  }
+}

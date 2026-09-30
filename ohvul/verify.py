@@ -15,7 +15,15 @@ def validate_result(result: dict) -> int:
         if key in indexed and indexed[key] != bundle:
             raise ValueError("Conflicting evidence identifier")
         indexed[key] = bundle
-    for finding in result["findings"]:
+    observations = result.get('rule_observations', [])
+    if not isinstance(observations, list):
+        raise ValueError('Invalid rule observations')
+    for observation in observations:
+        if (not isinstance(observation, dict) or observation.get('status') != 'observation'
+                or not isinstance(observation.get('evidence'), dict)
+                or observation['evidence'].get('final_verdict') != 'undetermined'):
+            raise ValueError('Rule observation cannot make a vulnerability verdict')
+    for finding in result["findings"] + observations:
         bundle = indexed.get(finding.get("evidence_id"))
         if bundle is None:
             raise ValueError("Missing finding evidence")
@@ -23,6 +31,9 @@ def validate_result(result: dict) -> int:
         for name, value in finding["evidence"].items():
             if hashes.get(name) != digest(value):
                 raise ValueError("Finding evidence differs from bundle")
+        if ('cwe_candidate' in finding['evidence'] and
+                finding.get('cwe_candidate') != finding['evidence']['cwe_candidate']):
+            raise ValueError('Finding CWE differs from bound evidence')
         location = finding["location"]
         if any(location[key] != bundle["source"].get(key) for key in ("file", "line")):
             raise ValueError("Finding location differs from bundle")

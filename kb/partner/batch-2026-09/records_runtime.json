@@ -1,0 +1,1387 @@
+{
+ "schema": "0.1",
+ "records": [
+  {
+   "id": "CVE-2026-24792",
+   "cwe": [
+    "CWE-364"
+   ],
+   "summary": "in OpenHarmony v6.0 and prior versions allow a remote attacker arbitrary code execution in pre-installed apps.",
+   "component": "web_webview",
+   "affected_versions": [
+    "OpenHarmony-v6.0-Release"
+   ],
+   "fixed_versions": [
+    "6.0.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitcode.com/openharmony/security/tree/master/zh/security-disclosure/2026/2026-04.md",
+   "source_record": "| CVE-2026-24792 | web_webview条件竞争漏洞 | 远程攻击者可造成任意代码执行 | 8.1 | OpenHarmony-v6.0-Release | web_webview | [6.0.x](https://gitcode.com/openharmony-tpc/chromium_cef/pull/2170) |",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2026-28751",
+   "cwe": [
+    "CWE-20"
+   ],
+   "summary": "in OpenHarmony v6.0 and prior versions allow a local attacker cause DOS.",
+   "component": "filemanagement_storage_service",
+   "affected_versions": [
+    "OpenHarmony-v5.1.0-Release",
+    "OpenHarmony-v6.0-Release",
+    "OpenHarmony-v5.0.3-Release"
+   ],
+   "fixed_versions": [
+    "6.0.x",
+    "5.1.0.x",
+    "5.0.3.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitcode.com/openharmony/security/tree/master/zh/security-disclosure/2026/2026-04.md",
+   "source_record": "| CVE-2026-28751 | filemanagement_storage_service输入校验漏洞 | 本地攻击者可造成DOS | 3.3 | OpenHarmony-v5.1.0-Release<br/>OpenHarmony-v6.0-Release<br/>OpenHarmony-v5.0.3-Release | filemanagement_storage_service | [6.0.x](https://gitcode.com/openharmony/filemanagement_storage_service/pull/2577)<br/>[5.1.0.x](https://gitcode.com/openharmony/filemanagement_storage_service/pull/2591)<br/>[5.0.3.x](https://gitcode.com/openharmony/filemanagement_storage_service/pull/2581) |",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2026-25110",
+   "cwe": [
+    "CWE-476"
+   ],
+   "summary": "in OpenHarmony v6.0 and prior versions allow a local attacker cause DOS.",
+   "component": "sensors_medical_sensor",
+   "affected_versions": [
+    "OpenHarmony-v6.0-Release",
+    "OpenHarmony-v5.0.3-Release"
+   ],
+   "fixed_versions": [
+    "6.0.x",
+    "5.0.3.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitcode.com/openharmony/security/tree/master/zh/security-disclosure/2026/2026-04.md",
+   "source_record": "| CVE-2026-25110 | Sensors_medical_sensor空指针解引用漏洞 | 本地攻击者可造成DOS | 3.3 | OpenHarmony-v6.0-Release<br/>OpenHarmony-v5.0.3-Release | Sensors_medical_sensor | [6.0.x](https://gitcode.com/openharmony/sensors_medical_sensor/pull/57)<br/>[5.0.3.x](https://gitcode.com/openharmony/sensors_medical_sensor/pull/57) |",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2026-27648",
+   "cwe": [
+    "CWE-787"
+   ],
+   "summary": "in OpenHarmony v6.0 and prior versions allow a remote attacker arbitrary code execution in pre-installed apps.",
+   "component": "web_webview",
+   "affected_versions": [
+    "OpenHarmony-v5.1.0-Release",
+    "OpenHarmony-v6.0-Release",
+    "OpenHarmony-v5.0.3-Release"
+   ],
+   "fixed_versions": [
+    "6.0.x",
+    "5.1.0.x",
+    "5.0.3.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitcode.com/openharmony/security/tree/master/zh/security-disclosure/2026/2026-04.md",
+   "source_record": "| CVE-2026-27648 | web_webview越界写漏洞 | 远程攻击者可造成任意代码执行 | 8.8 | OpenHarmony-v5.1.0-Release<br/>OpenHarmony-v6.0-Release<br/>OpenHarmony-v5.0.3-Release | web_webview | [6.0.x](https://gitcode.com/openharmony-tpc/chromium_src/pull/7093)<br/>[5.1.0.x](https://gitcode.com/openharmony-tpc/chromium_src/pull/7110)<br/>[5.0.3.x](https://gitcode.com/openharmony-tpc/chromium_src/pull/7108) |",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2026-27781",
+   "cwe": [
+    "CWE-190"
+   ],
+   "summary": "in OpenHarmony v6.0 and prior versions allow a local attacker cause DOS.",
+   "component": "kernel_liteos_a",
+   "affected_versions": [
+    "OpenHarmony-v5.0.3-Release",
+    "OpenHarmony-v5.1.0-Release"
+   ],
+   "fixed_versions": [
+    "5.1.0.x",
+    "5.0.3.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitcode.com/openharmony/security/tree/master/zh/security-disclosure/2026/2026-04.md",
+   "source_record": "| CVE-2026-27781 | kernel_liteos_a整数溢出漏洞 | 本地攻击者可造成DOS |3.3 | OpenHarmony-v5.0.3-Release<br/>OpenHarmony-v5.1.0-Release | kernel_liteos_a | [5.1.0.x](https://gitcode.com/openharmony/kernel_liteos_a/pull/1326)<br/>[5.0.3.x](https://gitcode.com/openharmony/kernel_liteos_a/pull/1328) |",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2026-27766",
+   "cwe": [
+    "CWE-364"
+   ],
+   "summary": "in OpenHarmony v6.0 and prior versions allow a local attacker cause information leak.",
+   "component": "multimedia_audio_framework",
+   "affected_versions": [
+    "OpenHarmony-v6.0-Release"
+   ],
+   "fixed_versions": [
+    "6.0.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitcode.com/openharmony/security/tree/master/zh/security-disclosure/2026/2026-05.md",
+   "source_record": "| CVE-2026-27766 | multimedia_audio_framework 条件竞争漏洞 | 本地攻击者可造成敏感信息泄露 | 5.5 | OpenHarmony-v6.0-Release | multimedia_audio_framework | [6.0.x](https://gitcode.com/openharmony/multimedia_audio_framework/pull/13779) |",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2026-25781",
+   "cwe": [
+    "CWE-787"
+   ],
+   "summary": "in OpenHarmony v6.0 and prior versions allow a local attacker cause DOS and it cannot be recovered.",
+   "component": "kernel_liteos_a",
+   "affected_versions": [
+    "OpenHarmony-v5.1.0-Release",
+    "OpenHarmony-v6.0-Release"
+   ],
+   "fixed_versions": [
+    "6.0.x",
+    "5.1.0.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitcode.com/openharmony/security/tree/master/zh/security-disclosure/2026/2026-05.md",
+   "source_record": "| CVE-2026-25781 | kernel_liteos_a 越界写漏洞 | 本地攻击者可造成DOS，并无法恢复 | 8.4 | OpenHarmony-v5.1.0-Release<br/>OpenHarmony-v6.0-Release | kernel_liteos_a | [6.0.x](https://gitcode.com/openharmony/kernel_liteos_a/pull/1335)<br/>[5.1.0.x](https://gitcode.com/openharmony/kernel_liteos_a/pull/1336) |",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2026-25850",
+   "cwe": [
+    "CWE-281"
+   ],
+   "summary": "in OpenHarmony v6.0 and prior versions allow a local attacker cause information leak",
+   "component": "filemanagement_storage_service",
+   "affected_versions": [
+    "OpenHarmony-v5.1.0-Release",
+    "OpenHarmony-v6.0-Release"
+   ],
+   "fixed_versions": [
+    "6.0.x",
+    "5.1.0.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitcode.com/openharmony/security/tree/master/zh/security-disclosure/2026/2026-05.md",
+   "source_record": "| CVE-2026-25850 | filemanagement_storage_service 不正确的权限管控漏洞 | 本地攻击者可造成敏感信息泄露 | 5.5 | OpenHarmony-v5.1.0-Release<br/>OpenHarmony-v6.0-Release | filemanagement_storage_service | [6.0.x](https://gitcode.com/openharmony/filemanagement_storage_service/pull/2666)<br/>[5.1.0.x](https://gitcode.com/openharmony/filemanagement_storage_service/pull/2674) |",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2026-28733",
+   "cwe": [
+    "CWE-416"
+   ],
+   "summary": "in OpenHarmony v6.0 and prior versions allow a local attacker arbitrary code execution.",
+   "component": "filemanagement_storage_service",
+   "affected_versions": [
+    "OpenHarmony-v5.1.0-Release"
+   ],
+   "fixed_versions": [
+    "5.1.0.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitcode.com/openharmony/security/tree/master/zh/security-disclosure/2026/2026-05.md",
+   "source_record": "| CVE-2026-28733 | filemanagement_storage_service UAF漏洞 | 本地攻击者可造成任意代码执行 | 6.5 | OpenHarmony-v5.1.0-Release | filemanagement_storage_service | [5.1.0.x](https://gitcode.com/openharmony/filemanagement_storage_service/pull/2114) |",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2026-33565",
+   "cwe": [
+    "CWE-364"
+   ],
+   "summary": "in OpenHarmony v6.0 and prior versions allow a local attacker cause DOS.",
+   "component": "kernel_linux_common_modules",
+   "affected_versions": [
+    "OpenHarmony-v5.1.0-Release",
+    "OpenHarmony-v6.0-Release"
+   ],
+   "fixed_versions": [
+    "6.0.x",
+    "5.1.0.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitcode.com/openharmony/security/tree/master/zh/security-disclosure/2026/2026-05.md",
+   "source_record": "| CVE-2026-33565 | kernel_linux_common_modules 条件竞争漏洞 | 本地攻击者可造成DOS | 3.3 | OpenHarmony-v5.1.0-Release<br/>OpenHarmony-v6.0-Release | kernel_linux_common_modules | [6.0.x](https://gitcode.com/openharmony/kernel_linux_common_modules/pull/200)<br/>[5.1.0.x](https://gitcode.com/openharmony/kernel_linux_common_modules/pull/199) |",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2026-0639",
+   "cwe": [
+    "CWE-401"
+   ],
+   "summary": "in OpenHarmony v6.0 and prior versions allow a local attacker case DOS through missing release of memory.",
+   "component": "kernel_liteos_a",
+   "affected_versions": [
+    "OpenHarmony-5.1.0-Release",
+    "OpenHarmony-6.0-Release",
+    "OpenHarmony-5.0.3-Release"
+   ],
+   "fixed_versions": [
+    "6.0.x",
+    "5.1.0.x",
+    "5.0.3.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitcode.com/openharmony/security/tree/master/zh/security-disclosure/2026/2026-02.md",
+   "source_record": "| CVE-2026-0639 | LiteOS_a内存泄露漏洞 | 本地攻击者可造成DOS | 3.3 | OpenHarmony-5.1.0-Release<br/>OpenHarmony-6.0-Release<br/>OpenHarmony-5.0.3-Release | kernel_liteos_a | [6.0.x](https://gitcode.com/openharmony/kernel_liteos_a/pull/1313)<br/>[5.1.0.x](https://gitcode.com/openharmony/kernel_liteos_a/pull/1316)<br/>[5.0.3.x](https://gitcode.com/openharmony/kernel_liteos_a/pull/1315) |",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2025-12736",
+   "cwe": [
+    "CWE-908"
+   ],
+   "summary": "in OpenHarmony v5.0.3 and prior versions allow a local attacker case sensitive information leak through use of uninitialized resource.",
+   "component": "multimedia_audio_standard",
+   "affected_versions": [
+    "OpenHarmony-v5.0.3-Release"
+   ],
+   "fixed_versions": [
+    "5.0.3.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitcode.com/openharmony/security/tree/master/zh/security-disclosure/2025/2025-12.md",
+   "source_record": "| CVE-2025-12736 | multimedia_audio_standard 信息泄露漏洞 | 特定场景下, 本地攻击者可造成信息泄露 | 中危 | 6.5 | OpenHarmony-v5.0.3-Release | multimedia_audio_standard | [5.0.3.x](https://gitcode.com/openharmony/multimedia_audio_framework/pull/8667) |",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2025-25277",
+   "cwe": [
+    "CWE-843"
+   ],
+   "summary": "in OpenHarmony v5.1.0 and prior versions allow a local attacker arbitrary code execution in pre-installed apps through using incompatible type. This vulnerability can be exploited only in restricted scenarios.",
+   "component": "arkcompiler_ets_runtime",
+   "affected_versions": [
+    "OpenHarmony-v5.0.3-Release",
+    "OpenHarmony-v5.1.0-Release"
+   ],
+   "fixed_versions": [
+    "5.1.0",
+    "5.0.3"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitcode.com/openharmony/security/tree/master/zh/security-disclosure/2025/2025-11.md",
+   "source_record": "| CVE-2025-25277 | arkcompiler_ets_runtime类型混淆漏洞 | 特定场景下, 本地攻击者可造成任意代码执行 | 中危 | 6.3 | OpenHarmony-v5.0.3-Release<br/>OpenHarmony-v5.1.0-Release | arkcompiler_ets_runtime | [5.1.0](https://gitcode.com/openharmony/arkcompiler_ets_runtime/pull/13128)<br/>[5.0.3](https://gitcode.com/openharmony/arkcompiler_ets_runtime/pull/13127) |",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2025-41432",
+   "cwe": [
+    "CWE-787"
+   ],
+   "summary": "in OpenHarmony v5.1.0 and prior versions allow a local attacker arbitrary code execution in pre-installed apps through out-of-bounds write. This vulnerability can be exploited only in restricted scenarios.",
+   "component": "arkcompiler_ets_runtime",
+   "affected_versions": [
+    "OpenHarmony-v5.0.3-Release",
+    "OpenHarmony-v5.1.0-Release"
+   ],
+   "fixed_versions": [
+    "5.1.0.x",
+    "5.0.3.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitcode.com/openharmony/security/tree/master/zh/security-disclosure/2025/2025-10.md",
+   "source_record": "| CVE-2025-41432 | arkcompiler_ets_runtime越界访问漏洞 | 特定场景下, 本地攻击者可造成任意代码执行 | 中危 | 5.5 | OpenHarmony-v5.0.3-Release<br/>OpenHarmony-v5.1.0-Release | arkcompiler_ets_runtime | [5.1.0.x](https://gitcode.com/openharmony/arkcompiler_ets_runtime/pull/13128)<br/>[5.0.3.x](https://gitcode.com/openharmony/arkcompiler_ets_runtime/pull/13124) |",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2025-52458",
+   "cwe": [
+    "CWE-787"
+   ],
+   "summary": "in OpenHarmony v5.1.0 and prior versions allow a local attacker arbitrary code execution in pre-installed apps through out-of-bounds write. This vulnerability can be exploited only in restricted scenarios.",
+   "component": "arkcompiler_ets_runtime",
+   "affected_versions": [
+    "OpenHarmony-v5.0.3-Release",
+    "OpenHarmony-v5.1.0-Release"
+   ],
+   "fixed_versions": [
+    "5.1.0.x",
+    "5.0.3.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitcode.com/openharmony/security/tree/master/zh/security-disclosure/2025/2025-10.md",
+   "source_record": "| CVE-2025-52458 | arkcompiler_ets_runtime越界访问漏洞 | 特定场景下, 本地攻击者可造成任意代码执行 | 中危 | 5.5 | OpenHarmony-v5.0.3-Release<br/>OpenHarmony-v5.1.0-Release | arkcompiler_ets_runtime | [5.1.0.x](https://gitcode.com/openharmony/arkcompiler_ets_runtime/pull/13170)<br/>[5.0.3.x](https://gitcode.com/openharmony/arkcompiler_ets_runtime/pull/13172) |",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2025-26474",
+   "cwe": [
+    "CWE-20"
+   ],
+   "summary": "in OpenHarmony v5.0.3 and prior versions allow a local attacker cause information improper input. This vulnerability can be exploited only in restricted scenarios.",
+   "component": "communication_ipc",
+   "affected_versions": [
+    "OpenHarmony-v5.0.3-Release"
+   ],
+   "fixed_versions": [
+    "5.0.3.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitcode.com/openharmony/security/tree/master/zh/security-disclosure/2025/2025-09.md",
+   "source_record": "| CVE-2025-26474 | communication_ipc 不当输入验证漏洞   | 特定场景下, 本地攻击者可造成信息泄露 | 低危 | 3.3 | OpenHarmony-v5.0.3-Release | communication_ipc         | [5.0.3.x](https://gitee.com/openharmony/communication_ipc/pulls/1870)",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2025-6969",
+   "cwe": [
+    "CWE-20"
+   ],
+   "summary": "in OpenHarmony v5.1.0 and prior versions allow a local attacker cause DOS through improper input.",
+   "component": "ability_ability_runtime",
+   "affected_versions": [
+    "OpenHarmony-v5.0.3-Release)",
+    "OpenHarmony-v5.1.0-Release"
+   ],
+   "fixed_versions": [
+    "5.0.3.x",
+    "5.1.0.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitcode.com/openharmony/security/tree/master/zh/security-disclosure/2025/2025-09.md",
+   "source_record": "| CVE-2025-6969  | ability_ability_runtime 权限绕过漏洞 | 本地攻击者可造成DOS                  | 中危 | 5.0 | OpenHarmony-v5.0.3-Release)<br/>OpenHarmony-v5.1.0-Release | ability_ability_runtime   | [5.0.3.x](https://gitee.com/openharmony/ability_ability_runtime/pulls/15369)<br/>[5.1.0.x](https://gitee.com/openharmony/ability_ability_runtime/pulls/15367)",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2024-54030",
+   "cwe": [
+    "CWE-416"
+   ],
+   "summary": "in OpenHarmony v4.1.2 and prior versions allow a local attacker cause DOS through use after free.",
+   "component": "communication_dsoftbus",
+   "affected_versions": [
+    "OpenHarmony-v4.1-Release"
+   ],
+   "fixed_versions": [
+    "4.1.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/zh/security-disclosure/2025/2025-01.md",
+   "source_record": "| CVE-2024-54030 | 软总线释放后使用漏洞   | 本地攻击者可通过本漏洞造成DOS | 4.4 | OpenHarmony-v4.1-Release | communication_dsoftbus | [4.1.x](https://gitee.com/openharmony/communication_dsoftbus/pulls/8361) |",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2024-47398",
+   "cwe": [
+    "CWE-787"
+   ],
+   "summary": "in OpenHarmony v4.1.2 and prior versions allow a local attacker cause the device is unable to boot up through out-of-bounds write.",
+   "component": "kernel_liteos_a",
+   "affected_versions": [
+    "OpenHarmony-v4.1-Release"
+   ],
+   "fixed_versions": [
+    "4.1.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/zh/security-disclosure/2025/2025-01.md",
+   "source_record": "| CVE-2024-47398 | liteos_a内核越界写漏洞 | 本地攻击者可通过本漏洞造成设备无法启动 | 8.8 | OpenHarmony-v4.1-Release | kernel_liteos_a | [4.1.x](https://gitee.com/openharmony/kernel_liteos_a/pulls/1247) |",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2024-45070",
+   "cwe": [
+    "CWE-125"
+   ],
+   "summary": "in OpenHarmony v4.1.2 and prior versions allow a local attacker cause information leak through out-of-bounds Read.",
+   "component": "kernel_liteos_a",
+   "affected_versions": [
+    "OpenHarmony-v4.1-Release"
+   ],
+   "fixed_versions": [
+    "4.1.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/zh/security-disclosure/2025/2025-01.md",
+   "source_record": "| CVE-2024-45070 | liteos_a内核越界读漏洞 | 本地攻击者可通过本漏洞造成信息泄露 |5.5 | OpenHarmony-v4.1-Release | kernel_liteos_a | [4.1.x](https://gitee.com/openharmony/kernel_liteos_a/pulls/1251) |",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2025-24304",
+   "cwe": [
+    "CWE-787"
+   ],
+   "summary": "in OpenHarmony v5.0.2 and prior versions allow a local attacker cause DOS through  out-of-bounds write.",
+   "component": "arkcompiler_ets_runtime",
+   "affected_versions": [
+    "OpenHarmony-v4.1-Release",
+    "OpenHarmony-v5.0.2-Release"
+   ],
+   "fixed_versions": [
+    "5.0.2.x",
+    "4.1.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/zh/security-disclosure/2025/2025-04.md",
+   "source_record": "| CVE-2025-24304 | arkcompiler_ets_runtime越界写 | 本地攻击者可造成DOS | 低危 | 3.3 | OpenHarmony-v4.1-Release<br/>OpenHarmony-v5.0.2-Release | arkcompiler_ets_runtime | [5.0.2.x](https://gitee.com/openharmony/arkcompiler_ets_runtime/pulls/10949)<br/>[4.1.x](https://gitee.com/openharmony/arkcompiler_ets_runtime/pulls/10951) |",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2025-27534",
+   "cwe": [
+    "CWE-125"
+   ],
+   "summary": "in OpenHarmony v5.0.2 and prior versions allow a local attacker case DOS through missing release of memory.",
+   "component": "arkcompiler_ets_runtime",
+   "affected_versions": [
+    "OpenHarmony-v4.1-Release",
+    "OpenHarmony-v5.0.2-Release"
+   ],
+   "fixed_versions": [
+    "5.0.2.x",
+    "4.1.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/zh/security-disclosure/2025/2025-04.md",
+   "source_record": "| CVE-2025-27534 | arkcompiler_ets_runtime越界读 | 本地攻击者可造成DOS | 低危 | 3.3 | OpenHarmony-v4.1-Release<br/>OpenHarmony-v5.0.2-Release | arkcompiler_ets_runtime | [5.0.2.x](https://gitee.com/openharmony/arkcompiler_ets_runtime/pulls/10937)<br/>[4.1.x](https://gitee.com/openharmony/arkcompiler_ets_runtime/pulls/10936) |",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2025-22851",
+   "cwe": [
+    "CWE-190"
+   ],
+   "summary": "in OpenHarmony v5.0.2 and prior versions allow a local attacker arbitrary code execution in pre-installed apps through integer overflow.",
+   "component": "kernel_liteos_a",
+   "affected_versions": [
+    "OpenHarmony-v4.1-Release",
+    "OpenHarmony-v5.0.2-Release"
+   ],
+   "fixed_versions": [
+    "5.0.2.x",
+    "4.1.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/zh/security-disclosure/2025/2025-04.md",
+   "source_record": "| CVE-2025-22851 | kernel_liteos_a 整数溢出 | 本地攻击者可在受限场景造成任意代码执行 | 中危 | 6.5 | OpenHarmony-v4.1-Release<br/>OpenHarmony-v5.0.2-Release | kernel_liteos_a | [5.0.2.x](https://gitee.com/openharmony/kernel_liteos_a/pulls/1270)<br/>[4.1.x](https://gitee.com/openharmony/kernel_liteos_a/pulls/1271) |",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2025-22842",
+   "cwe": [
+    "CWE-125"
+   ],
+   "summary": "in OpenHarmony v5.0.2 and prior versions allow a local attacker cause DOS through  out-of-bounds read.",
+   "component": "arkcompiler_ets_runtime",
+   "affected_versions": [
+    "OpenHarmony-v4.1-Release",
+    "OpenHarmony-v5.0.2-Release"
+   ],
+   "fixed_versions": [
+    "5.0.2.x",
+    "4.1.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/zh/security-disclosure/2025/2025-04.md",
+   "source_record": "| CVE-2025-22842 | arkcompiler_ets_runtime越界读 | 本地攻击者可造成DOS | 低危 | 3.3 | OpenHarmony-v4.1-Release<br/>OpenHarmony-v5.0.2-Release | arkcompiler_ets_runtime | [5.0.2.x](https://gitee.com/openharmony/arkcompiler_ets_runtime/pulls/10949)<br/>[4.1.x](https://gitee.com/openharmony/arkcompiler_ets_runtime/pulls/10951) |",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2025-20102",
+   "cwe": [
+    "CWE-125"
+   ],
+   "summary": "in OpenHarmony v5.0.2 and prior versions allow a local attacker cause DOS through  out-of-bounds read.",
+   "component": "arkcompiler_ets_runtime",
+   "affected_versions": [
+    "OpenHarmony-v5.0.2-Release"
+   ],
+   "fixed_versions": [
+    "5.0.2.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/zh/security-disclosure/2025/2025-04.md",
+   "source_record": "| CVE-2025-20102 | arkcompiler_ets_runtime越界读 | 本地攻击者可造成DOS | 低危 | 3.3 | OpenHarmony-v5.0.2-Release | arkcompiler_ets_runtime | [5.0.2.x](https://gitee.com/openharmony/arkcompiler_ets_runtime/pulls/10937) |",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2025-22452",
+   "cwe": [
+    "CWE-125"
+   ],
+   "summary": "in OpenHarmony v5.0.2 and prior versions allow a local attacker cause DOS through  out-of-bounds read.",
+   "component": "arkcompiler_ets_runtime",
+   "affected_versions": [
+    "OpenHarmony-v5.0.2-Release"
+   ],
+   "fixed_versions": [
+    "5.0.2.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/zh/security-disclosure/2025/2025-04.md",
+   "source_record": "| CVE-2025-22452 | arkcompiler_ets_runtime越界读 | 本地攻击者可造成DOS | 低危 | 3.3 | OpenHarmony-v5.0.2-Release | arkcompiler_ets_runtime | [5.0.2.x](https://gitee.com/openharmony/arkcompiler_ets_runtime/pulls/11026) |",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2025-24298",
+   "cwe": [
+    "CWE-416"
+   ],
+   "summary": "in OpenHarmony v5.0.3 and prior versions allow a local attacker arbitrary code execution in tcb through use after free.",
+   "component": "kernel_liteos_a",
+   "affected_versions": [
+    "OpenHarmony-v5.0.3-Release"
+   ],
+   "fixed_versions": [
+    "5.0.3.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/zh/security-disclosure/2025/2025-07.md",
+   "source_record": "| CVE-2025-24298 | kernel_liteos_a UAF漏洞                    | 本地攻击者可造成DOS            | 高危 | 8.4 | OpenHarmony-v5.0.3-Release | kernel_liteos_a               | [5.0.3.x](https://gitee.com/openharmony/kernel_liteos_a/pulls/1275)",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2025-24844",
+   "cwe": [
+    "CWE-401"
+   ],
+   "summary": "in OpenHarmony v5.0.3 and prior versions allow a local attacker case DOS through missing release of memory.",
+   "component": "communication_dsoftbus",
+   "affected_versions": [
+    "OpenHarmony-v5.0.3-Release"
+   ],
+   "fixed_versions": [
+    "5.0.3.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/zh/security-disclosure/2025/2025-07.md",
+   "source_record": "| CVE-2025-24844 | communication_dsoftbus 内存泄露漏洞            | 本地攻击者可造成DOS            | 低危 | 3.3 | OpenHarmony-v5.0.3-Release | communication_dsoftbus        | [5.0.3.x](https://gitee.com/openharmony/communication_dsoftbus/pulls/9745)",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2025-24925",
+   "cwe": [
+    "CWE-401"
+   ],
+   "summary": "in OpenHarmony v5.0.3 and prior versions allow a local attacker case DOS through missing release of memory.",
+   "component": "applications_settings",
+   "affected_versions": [
+    "OpenHarmony-v5.0.3-Release"
+   ],
+   "fixed_versions": [
+    "5.0.3.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/zh/security-disclosure/2025/2025-07.md",
+   "source_record": "| CVE-2025-24925 | applications_settings 内存泄露漏洞         | 本地攻击者可造成DOS            | 低危 | 3.3 | OpenHarmony-v5.0.3-Release | applications_settings         | [5.0.3.x](https://gitee.com/openharmony/applications_settings/pulls/852)",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2025-25212",
+   "cwe": [
+    "CWE-20"
+   ],
+   "summary": "in OpenHarmony v5.0.3 and prior versions allow a local attacker case DOS through  improper input.",
+   "component": "distributeddatamgr_pasteboard",
+   "affected_versions": [
+    "OpenHarmony-v5.0.3-Release"
+   ],
+   "fixed_versions": [
+    "5.0.3.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/zh/security-disclosure/2025/2025-07.md",
+   "source_record": "| CVE-2025-25212 | distributeddatamgr_pasteboard 不当输入验证漏洞 | 本地攻击者可造成DOS            | 低危 | 3.3 | OpenHarmony-v5.0.3-Release | distributeddatamgr_pasteboard | [5.0.3.x](https://gitee.com/openharmony/distributeddatamgr_pasteboard/pulls/1539)",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2025-25278",
+   "cwe": [
+    "CWE-362"
+   ],
+   "summary": "in OpenHarmony v5.0.3 and prior versions allow a local attacker arbitrary code execution in tcb through race condition.",
+   "component": "kernel_liteos_a",
+   "affected_versions": [
+    "OpenHarmony-v5.0.3-Release"
+   ],
+   "fixed_versions": [
+    "5.0.3.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/zh/security-disclosure/2025/2025-08.md",
+   "source_record": "| CVE-2025-25278 | kernel_liteos_a 条件竞争漏洞      | 本地攻击者可造成任意代码执行        | 高危 | 8.4 | OpenHarmony-v5.0.3-Release | kernel_liteos_a         | [5.0.3.x](https://gitee.com/openharmony/kernel_liteos_a/pulls/1295)",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2025-26690",
+   "cwe": [
+    "CWE-476"
+   ],
+   "summary": "in OpenHarmony v5.0.3 and prior versions allow a local attacker case DOS through NULL pointer dereference.",
+   "component": "communication_dsoftbus",
+   "affected_versions": [
+    "OpenHarmony-v5.0.3-Release"
+   ],
+   "fixed_versions": [
+    "5.0.3.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/zh/security-disclosure/2025/2025-07.md",
+   "source_record": "| CVE-2025-26690 | communication_dsoftbus 空指针解引用漏洞        | 本地攻击者可造成任意代码执行   | 低危 | 3.3 | OpenHarmony-v5.0.3-Release | communication_dsoftbus        | [5.0.3.x](https://gitee.com/openharmony/communication_dsoftbus/pulls/9747)",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2025-27128",
+   "cwe": [
+    "CWE-416"
+   ],
+   "summary": "in OpenHarmony v5.0.3 and prior versions allow a local attacker arbitrary code execution in tcb through use after free.",
+   "component": "kernel_liteos_a",
+   "affected_versions": [
+    "OpenHarmony-v5.0.3-Release"
+   ],
+   "fixed_versions": [
+    "5.0.3.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/zh/security-disclosure/2025/2025-07.md",
+   "source_record": "| CVE-2025-27128 | kernel_liteos_a UAF漏洞                    | 本地攻击者可造成任意代码执行   | 高危 | 8.4 | OpenHarmony-v5.0.3-Release | kernel_liteos_a               | [5.0.3.x](https://gitee.com/openharmony/kernel_liteos_a/pulls/1279)",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2025-27536",
+   "cwe": [
+    "CWE-843"
+   ],
+   "summary": "in OpenHarmony v5.0.3 and prior versions allow a local attacker cause DOS through type confusion.",
+   "component": "arkcompiler_ets_runtime",
+   "affected_versions": [
+    "OpenHarmony-v5.0.3-Release"
+   ],
+   "fixed_versions": [
+    "5.0.3.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/zh/security-disclosure/2025/2025-07.md",
+   "source_record": "| CVE-2025-27536 | arkcompiler_ets_runtime类型混淆漏洞        | 本地攻击者可造成DOS            | 低危 | 3.3 | OpenHarmony-v5.0.3-Release | arkcompiler_ets_runtime       | [5.0.3.x](https://gitee.com/openharmony/arkcompiler_ets_runtime/pulls/11423)",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2025-27562",
+   "cwe": [
+    "CWE-401"
+   ],
+   "summary": "in OpenHarmony v5.0.3 and prior versions allow a local attacker case DOS through missing release of memory.",
+   "component": "communication_dsoftbus",
+   "affected_versions": [
+    "OpenHarmony-v5.0.3-Release"
+   ],
+   "fixed_versions": [
+    "5.0.3.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/zh/security-disclosure/2025/2025-07.md",
+   "source_record": "| CVE-2025-27562 | communication_dsoftbus 内存泄露漏洞            | 本地攻击者可造成DOS            | 低危 | 3.3 | OpenHarmony-v5.0.3-Release | communication_dsoftbus        | [5.0.3.x](https://gitee.com/openharmony/communication_dsoftbus/pulls/9747)",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2025-27577",
+   "cwe": [
+    "CWE-362"
+   ],
+   "summary": "in OpenHarmony v5.0.3 and prior versions allow a local attacker arbitrary code execution in tcb through race condition.",
+   "component": "kernel_liteos_a",
+   "affected_versions": [
+    "OpenHarmony-v5.0.3-Release"
+   ],
+   "fixed_versions": [
+    "5.0.3.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/zh/security-disclosure/2025/2025-08.md",
+   "source_record": "| CVE-2025-27577 | kernel_liteos_a 条件竞争漏洞      | 本地攻击者可造成任意代码执行        | 高危 | 8.4 | OpenHarmony-v5.0.3-Release | kernel_liteos_a         | [5.0.3.x](https://gitee.com/openharmony/kernel_liteos_a/pulls/1298)",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2025-20626",
+   "cwe": [
+    "CWE-416"
+   ],
+   "summary": "in OpenHarmony v5.0.2 and prior versions allow a local attacker arbitrary code execution in pre-installed apps through use after free. This vulnerability can be exploited only in restricted scenarios.",
+   "component": "arkcompiler_ets_runtime",
+   "affected_versions": [
+    "OpenHarmony-v5.0.2-Release"
+   ],
+   "fixed_versions": [
+    "5.0.2.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/zh/security-disclosure/2025/2025-03.md",
+   "source_record": "| CVE-2025-20626 | arkcompiler_ets_runtime UAF漏洞   | 本地攻击者可在受限场景造成任意代码执行 | 3.8 | OpenHarmony-v5.0.2-Release | arkcompiler_ets_runtime | [5.0.2.x](https://gitee.com/openharmony/arkcompiler_ets_runtime/pulls/10937) |",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2025-21098",
+   "cwe": [
+    "CWE-922"
+   ],
+   "summary": "in OpenHarmony v5.0.2 and prior versions allow a local attacker cause information leak through out-of-bounds read bypass permission check.",
+   "component": "kernel_liteos_a",
+   "affected_versions": [
+    "OpenHarmony-v4.1-Release",
+    "OpenHarmony-v5.0.2-Release"
+   ],
+   "fixed_versions": [
+    "5.0.2.x",
+    "4.1.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/zh/security-disclosure/2025/2025-03.md",
+   "source_record": "| CVE-2025-21098 | liteos_a内核存在的权限绕过漏洞 | 本地攻击者可造成信息泄露 | 5.5 | OpenHarmony-v4.1-Release<br/>OpenHarmony-v5.0.2-Release | kernel_liteos_a | [5.0.2.x](https://gitee.com/openharmony/kernel_liteos_a/pulls/1267)<br/>[4.1.x](https://gitee.com/openharmony/kernel_liteos_a/pulls/1266) |",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2025-22847",
+   "cwe": [
+    "CWE-125"
+   ],
+   "summary": "in OpenHarmony v5.0.2 and prior versions allow a local attacker cause DOS through  out-of-bounds read.",
+   "component": "arkcompiler_ets_runtime",
+   "affected_versions": [
+    "OpenHarmony-v5.0.2-Release"
+   ],
+   "fixed_versions": [
+    "5.0.2.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/zh/security-disclosure/2025/2025-03.md",
+   "source_record": "| CVE-2025-22847 | arkcompiler_ets_runtime越界读漏洞 | 本地攻击者可造成DOS | 3.3 | OpenHarmony-v5.0.2-Release | arkcompiler_ets_runtime | [5.0.2.x](https://gitee.com/openharmony/arkcompiler_ets_runtime/pulls/11012) |",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2025-23234",
+   "cwe": [
+    "CWE-120"
+   ],
+   "summary": "in OpenHarmony v5.0.2 and prior versions allow a local attacker cause DOS through buffer overflow.",
+   "component": "arkcompiler_ets_runtime",
+   "affected_versions": [
+    "OpenHarmony-v4.1-Release",
+    "OpenHarmony-v5.0.2-Release"
+   ],
+   "fixed_versions": [
+    "5.0.2.x",
+    "4.1.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/zh/security-disclosure/2025/2025-03.md",
+   "source_record": "| CVE-2025-23234 | arkcompiler_ets_runtime栈溢出漏洞 | 本地攻击者可造成DOS | 3.3 | OpenHarmony-v4.1-Release<br/>OpenHarmony-v5.0.2-Release | arkcompiler_ets_runtime | [5.0.2.x](https://gitee.com/openharmony/arkcompiler_ets_runtime/pulls/10949)<br/>[4.1.x](https://gitee.com/openharmony/arkcompiler_ets_runtime/pulls/10951) |",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2025-20011",
+   "cwe": [
+    "CWE-401"
+   ],
+   "summary": "in OpenHarmony v5.0.2 and prior versions allow a local attacker case DOS through missing release of memory.",
+   "component": "communication_dsoftbus",
+   "affected_versions": [
+    "OpenHarmony-v4.1-Release",
+    "OpenHarmony-v5.0.2-Release"
+   ],
+   "fixed_versions": [
+    "5.0.2.x",
+    "4.1.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/zh/security-disclosure/2025/2025-03.md",
+   "source_record": "| CVE-2025-20011 | communication_dsoftbus内存泄露漏洞 | 本地攻击者可造成DOS | 3.3 | OpenHarmony-v4.1-Release<br/>OpenHarmony-v5.0.2-Release | communication_dsoftbus | [5.0.2.x](https://gitee.com/openharmony/communication_dsoftbus/pulls/8945)<br/>[4.1.x](https://gitee.com/openharmony/communication_dsoftbus/pulls/8942) |",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2025-20091",
+   "cwe": [
+    "CWE-416"
+   ],
+   "summary": "in OpenHarmony v5.0.2 and prior versions allow a local attacker arbitrary code execution in pre-installed apps through use after free. This vulnerability can be exploited only in restricted scenarios.",
+   "component": "communication_dsoftbus",
+   "affected_versions": [
+    "OpenHarmony-v4.1-Release",
+    "OpenHarmony-v5.0.2-Release"
+   ],
+   "fixed_versions": [
+    "5.0.2.x",
+    "4.1.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/zh/security-disclosure/2025/2025-03.md",
+   "source_record": "| CVE-2025-20091 | communication_dsoftbus UAF漏洞 | 本地攻击者可在受限场景造成任意代码执行 | 3.8 | OpenHarmony-v4.1-Release<br/>OpenHarmony-v5.0.2-Release | communication_dsoftbus | [5.0.2.x](https://gitee.com/openharmony/communication_dsoftbus/pulls/8945)<br/>[4.1.x](https://gitee.com/openharmony/communication_dsoftbus/pulls/8942) |",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2025-21089",
+   "cwe": [
+    "CWE-125"
+   ],
+   "summary": "in OpenHarmony v5.0.2 and prior versions allow a local attacker cause DOS through  out-of-bounds read.",
+   "component": "arkcompiler_ets_runtime",
+   "affected_versions": [
+    "OpenHarmony-v5.0.2-Release"
+   ],
+   "fixed_versions": [
+    "5.0.2.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/zh/security-disclosure/2025/2025-03.md",
+   "source_record": "| CVE-2025-21089 | arkcompiler_ets_runtime越界读漏洞 | 本地攻击者可造成DOS | 3.3 | OpenHarmony-v5.0.2-Release | arkcompiler_ets_runtime | [5.0.2.x](https://gitee.com/openharmony/arkcompiler_ets_runtime/pulls/11010) |",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2025-22443",
+   "cwe": [
+    "CWE-125"
+   ],
+   "summary": "in OpenHarmony v5.0.2 and prior versions allow a local attacker cause DOS through  out-of-bounds read.",
+   "component": "arkcompiler_ets_runtime",
+   "affected_versions": [
+    "OpenHarmony-v4.1-Release",
+    "OpenHarmony-v5.0.2-Release"
+   ],
+   "fixed_versions": [
+    "5.0.2.x",
+    "4.1.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/zh/security-disclosure/2025/2025-03.md",
+   "source_record": "| CVE-2025-22443 | arkcompiler_ets_runtime越界读漏洞 | 本地攻击者可造成DOS | 3.3 | OpenHarmony-v4.1-Release<br/>OpenHarmony-v5.0.2-Release | arkcompiler_ets_runtime | [5.0.2.x](https://gitee.com/openharmony/arkcompiler_ets_runtime/pulls/10937)<br/>[4.1.x](https://gitee.com/openharmony/arkcompiler_ets_runtime/pulls/10936) |",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2025-22837",
+   "cwe": [
+    "CWE-476"
+   ],
+   "summary": "in OpenHarmony v5.0.2 and prior versions allow a local attacker cause DOS through NULL pointer dereference.",
+   "component": "arkcompiler_ets_runtime",
+   "affected_versions": [
+    "OpenHarmony-v4.1-Release",
+    "OpenHarmony-v5.0.2-Release"
+   ],
+   "fixed_versions": [
+    "5.0.2.x",
+    "4.1.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/zh/security-disclosure/2025/2025-03.md",
+   "source_record": "| CVE-2025-22837 | arkcompiler_ets_runtime空指针解引用漏洞 | 本地攻击者可造成DOS | 3.3 | OpenHarmony-v4.1-Release<br/>OpenHarmony-v5.0.2-Release | arkcompiler_ets_runtime | [5.0.2.x](https://gitee.com/openharmony/arkcompiler_ets_runtime/pulls/10937)<br/>[4.1.x](https://gitee.com/openharmony/arkcompiler_ets_runtime/pulls/10936) |",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2025-22841",
+   "cwe": [
+    "CWE-125"
+   ],
+   "summary": "in OpenHarmony v5.0.2 and prior versions allow a local attacker cause DOS through out-of-bounds read.",
+   "component": "arkcompiler_ets_runtime",
+   "affected_versions": [
+    "OpenHarmony-v5.0.2-Release"
+   ],
+   "fixed_versions": [
+    "5.0.2.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/zh/security-disclosure/2025/2025-03.md",
+   "source_record": "| CVE-2025-22841 | arkcompiler_ets_runtime越界读漏洞 | 本地攻击者可造成DOS | 3.3 | OpenHarmony-v5.0.2-Release | arkcompiler_ets_runtime | [5.0.2.x](https://gitee.com/openharmony/arkcompiler_ets_runtime/pulls/10937) |",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2025-22897",
+   "cwe": [
+    "CWE-120"
+   ],
+   "summary": "in OpenHarmony v5.0.2 and prior versions allow a local attacker cause DOS through buffer overflow.",
+   "component": "arkcompiler_ets_runtime",
+   "affected_versions": [
+    "OpenHarmony-v5.0.2-Release"
+   ],
+   "fixed_versions": [
+    "5.0.2.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/zh/security-disclosure/2025/2025-03.md",
+   "source_record": "| CVE-2025-22897 | arkcompiler_ets_runtime栈溢出漏洞 | 本地攻击者可造成DOS | 3.3 | OpenHarmony-v5.0.2-Release | arkcompiler_ets_runtime | [5.0.2.x](https://gitee.com/openharmony/arkcompiler_ets_runtime/pulls/10949) |",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2025-23240",
+   "cwe": [
+    "CWE-787"
+   ],
+   "summary": "in OpenHarmony v5.0.2 and prior versions allow a local attacker arbitrary code execution in pre-installed apps through out-of-bounds write. This vulnerability can be exploited only in restricted scenarios.",
+   "component": "arkcompiler_ets_runtime",
+   "affected_versions": [
+    "OpenHarmony-v4.1-Release",
+    "OpenHarmony-v5.0.2-Release"
+   ],
+   "fixed_versions": [
+    "5.0.2.x",
+    "4.1.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/zh/security-disclosure/2025/2025-03.md",
+   "source_record": "| CVE-2025-23240 | arkcompiler_ets_runtime越界写漏洞 | 本地攻击者可在受限场景造成任意代码执行 | 3.8 | OpenHarmony-v4.1-Release<br/>OpenHarmony-v5.0.2-Release | arkcompiler_ets_runtime | [5.0.2.x](https://gitee.com/openharmony/arkcompiler_ets_runtime/pulls/10937)<br/>[4.1.x](https://gitee.com/openharmony/arkcompiler_ets_runtime/pulls/10936) |",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2025-23409",
+   "cwe": [
+    "CWE-416"
+   ],
+   "summary": "in OpenHarmony v5.0.2 and prior versions allow a local attacker arbitrary code execution in pre-installed apps through use after free. This vulnerability can be exploited only in restricted scenarios.",
+   "component": "communication_dsoftbus",
+   "affected_versions": [
+    "OpenHarmony-v4.1-Release",
+    "OpenHarmony-v5.0.2-Release"
+   ],
+   "fixed_versions": [
+    "5.0.2.x",
+    "4.1.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/zh/security-disclosure/2025/2025-03.md",
+   "source_record": "| CVE-2025-23409 | communication_dsoftbus UAF漏洞 | 本地攻击者可在受限场景造成任意代码执行 | 3.8 | OpenHarmony-v4.1-Release<br/>OpenHarmony-v5.0.2-Release | communication_dsoftbus | [5.0.2.x](https://gitee.com/openharmony/communication_dsoftbus/pulls/8945)<br/>[4.1.x](https://gitee.com/openharmony/communication_dsoftbus/pulls/8942) |",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2022-42488",
+   "cwe": [
+    "CWE-287"
+   ],
+   "summary": "OpenHarmony-v3.1.2 and prior versions have a Missing permission validation vulnerability in param service of startup subsystem. An malicious application installed on the device could elevate its privileges to the root user, disable security features, or cause DoS by disabling particular services.",
+   "component": "startup_init_lite",
+   "affected_versions": [
+    "OpenHarmony-v3.1-Release through OpenHarmony-v3.1.2-Release"
+   ],
+   "fixed_versions": [
+    "3.1.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/en/security-disclosure/2022/2022-10.md",
+   "source_record": "|OpenHarmony-SA-2022-1001 | CVE-2022-42488 | Startup subsystem missed permission validation in param service. | Local attackers can install an malicious application on the device to elevate its privileges to the root user, disable security features, or cause DoS by disabling particular services.| 8.4 |OpenHarmony-v3.1-Release through OpenHarmony-v3.1.2-Release|startup_init_lite|[3.1.x](https://gitee.com/openharmony/startup_init_lite/pulls/1104)<br/>[3.1.x](https://gitee.com/openharmony/startup_init_lite/pulls/1074) |Reported by OpenHarmony Team|",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2022-41686",
+   "cwe": [
+    "CWE-787"
+   ],
+   "summary": "OpenHarmony-v3.1.2 and prior versions, 3.0.6 and prior versions have an Out-of-bound memory read and write vulnerability in /dev/mmz_userdev device driver. The impact depends on the privileges of the attacker. The unprivileged process run on the device could read out-of-bound memory leading sensitive to information disclosure. The processes with system user UID run on the device would be able to write out-of-bound memory which could lead to unspecified memory corruption.",
+   "component": "device_board_hisilicon<br/>device_hisilicon_hispark_taurus",
+   "affected_versions": [
+    "OpenHarmony-v3.1-Release through OpenHarmony-v3.1.2-Release",
+    "OpenHarmony-v3.0-LTS through OpenHarmony-v3.0.6-LTS"
+   ],
+   "fixed_versions": [
+    "3.1.x",
+    "3.0.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/en/security-disclosure/2022/2022-10.md",
+   "source_record": "|OpenHarmony-SA-2022-1003 | CVE-2022-41686 | Out-of-bound memory read and write in /dev/mmz_userdev device driver. | If the processes with system user UID run on the device, local attackers would be able to write out-of-bound memory which could lead to unspecified memory corruption. | 5.1 |OpenHarmony-v3.1-Release through OpenHarmony-v3.1.2-Release<br/>OpenHarmony-v3.0-LTS through OpenHarmony-v3.0.6-LTS|device_board_hisilicon<br/>device_hisilicon_hispark_taurus|[3.1.x](https://gitee.com/openharmony/device_soc_hisilicon/pulls/287)<br/>[3.0.x](https://gitee.com/openharmony/device_hisilicon_hispark_taurus/pulls/127) |Reported by OpenHarmony Team|",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2022-42463",
+   "cwe": [
+    "CWE-287"
+   ],
+   "summary": "OpenHarmony-v3.1.2 and prior versions have an authenication bypass vulnerability in a callback handler function of Softbus_server in communication subsystem. Attackers can launch attacks on distributed networks by sending Bluetooth rfcomm packets to any remote device and executing arbitrary commands.",
+   "component": "communication_dsoftbus",
+   "affected_versions": [
+    "OpenHarmony-v3.1-Release through OpenHarmony-v3.1.2-Release"
+   ],
+   "fixed_versions": [
+    "3.1.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/en/security-disclosure/2022/2022-10.md",
+   "source_record": "|OpenHarmony-SA-2022-1004 | CVE-2022-42463 | Softbus_server in communication subsystem has an authentication bypass vulnerability in a callback handler function. | Attackers can launch attacks on distributed networks by sending Bluetooth rfcomm packets to any remote device and executing arbitrary commands.| 8.3 |OpenHarmony-v3.1-Release through OpenHarmony-v3.1.2-Release|communication_dsoftbus|[3.1.x](https://gitee.com/openharmony/communication_dsoftbus/pulls/2348) |Reported by OpenHarmony Team|",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2022-42464",
+   "cwe": [
+    "CWE-276"
+   ],
+   "summary": "OpenHarmony-v3.1.2 and prior versions, 3.0.6 and prior versions have a Kernel memory pool override vulnerability in /dev/mmz_userdev device driver. The impact depends on the privileges of the attacker. The unprivileged process run on the device could disclose sensitive information including kernel pointer, which could be used in further attacks. The processes with system user UID run on the device would be able to mmap memory pools used by kernel and override them which could be used to gain kernel code execution on the device, gain root privileges, or cause device reboot.",
+   "component": "device_board_hisilicon<br/>device_hisilicon_hi3516dv300",
+   "affected_versions": [
+    "OpenHarmony-v3.1-Release through OpenHarmony-v3.1.2-Release",
+    "OpenHarmony-v3.0-LTS through OpenHarmony-v3.0.6-LTS"
+   ],
+   "fixed_versions": [
+    "3.0.x",
+    "3.1.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/en/security-disclosure/2022/2022-10.md",
+   "source_record": "|OpenHarmony-SA-2022-1002 | CVE-2022-42464 | Kernel memory pool override in /dev/mmz_userdev device driver | If the processes with system UID run on the device, local attackers would be able to mmap memory pools used by kernel and override them which could be used to gain kernel code execution on the device, gain root privileges, or cause device reboot.| 6.7 |OpenHarmony-v3.1-Release through OpenHarmony-v3.1.2-Release<br/>OpenHarmony-v3.0-LTS through OpenHarmony-v3.0.6-LTS|device_board_hisilicon<br/>device_hisilicon_hi3516dv300|[3.0.x](https://gitee.com/openharmony/device_board_hisilicon/pulls/135)<br/>[3.1.x](https://gitee.com/openharmony/device_hisilicon_hi3516dv300/pulls/87) |Reported by OpenHarmony Team|",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2022-43449",
+   "cwe": [
+    "CWE-20"
+   ],
+   "summary": "OpenHarmony-v3.1.2 and prior versions had an Arbitrary file read vulnerability via download_server. Local attackers can install an malicious application on the device and reveal any file from the filesystem that is accessible to download_server service which run with UID 1000.",
+   "component": "request_request",
+   "affected_versions": [
+    "OpenHarmony-v3.1-Release through OpenHarmony-v3.1.2-Release"
+   ],
+   "fixed_versions": [
+    "3.1.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/en/security-disclosure/2022/2022-11.md",
+   "source_record": "|OpenHarmony-SA-2022-1102 | CVE-2022-43449 | Arbitrary file read via download_server. | Local attackers can install an malicious application on the device and reveal any file from the filesystem that is accessible to download_server service which run with UID 1000.| 6.2 |OpenHarmony-v3.1-Release through OpenHarmony-v3.1.2-Release|request_request|[3.1.x](https://gitee.com/openharmony/request_request/pulls/207) |Reported by OpenHarmony Team|",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2022-43495",
+   "cwe": [
+    "CWE-476"
+   ],
+   "summary": "OpenHarmony-v3.1.2 and prior versions had a DOS vulnerability in distributedhardware_device_manager when joining a network. Network attakcers can send an abonormal packet when joining a network, cause a nullptr reference and device reboot.",
+   "component": "distributedhardware_device_manager",
+   "affected_versions": [
+    "OpenHarmony-v3.1-Release through OpenHarmony-v3.1.2-Release"
+   ],
+   "fixed_versions": [
+    "3.1.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/en/security-disclosure/2022/2022-11.md",
+   "source_record": "|OpenHarmony-SA-2022-1103 | CVE-2022-43495 | An abnormal packet recieved when distributedhardware_device_manager joining a network could cause a device reboot. | Network attakcers can send an abonormal packet when joining a network, cause a nullptr reference and device reboot. | 6.5 |OpenHarmony-v3.1-Release through OpenHarmony-v3.1.2-Release|distributedhardware_device_manager|[3.1.x](https://gitee.com/openharmony/distributedhardware_device_manager/pulls/728) |Reported by OpenHarmony Team|",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2022-43662",
+   "cwe": [
+    "CWE-120"
+   ],
+   "summary": "Kernel subsystem within OpenHarmony-v3.1.4 and prior versions in kernel_liteos_a has a kernel stack overflow vulnerability when call SysTimerGettime. 4 bytes padding data from kernel stack are copied to user space incorrectly and leaked.",
+   "component": "kernel_liteos_a",
+   "affected_versions": [
+    "OpenHarmony-v3.1-Release through OpenHarmony-v3.1.4-Release",
+    "OpenHarmony-v3.0-LTS through OpenHarmony-v3.0.6-LTS",
+    "OpenHarmony-v1.1.0-LTS through OpenHarmony-v1.1.5-LTS"
+   ],
+   "fixed_versions": [
+    "3.1.x",
+    "3.0.x",
+    "1.1.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/en/security-disclosure/2022/2022-12.md",
+   "source_record": "|OpenHarmony-SA-2022-1204 | CVE-2022-43662 | Kernel subsystem in kernel_liteos_a has a kernel stack overflow vulnerability when call SysTimerGettime. | 4 bytes padding data from kernel stack are copied to user space incorrectly and leaked. | 4.0 |OpenHarmony-v3.1-Release through OpenHarmony-v3.1.4-Release<br/>OpenHarmony-v3.0-LTS through OpenHarmony-v3.0.6-LTS<br/>OpenHarmony-v1.1.0-LTS through OpenHarmony-v1.1.5-LTS|kernel_liteos_a|[3.1.x](https://gitee.com/openharmony/kernel_liteos_a/pulls/1065)<br/>[3.0.x](https://gitee.com/openharmony/kernel_liteos_a/pulls/1066)<br/>[1.1.x](https://gitee.com/openharmony/kernel_liteos_a/pulls/1075) |Reported by Researchers|",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2022-45126",
+   "cwe": [
+    "CWE-120"
+   ],
+   "summary": "Kernel subsystem within OpenHarmony-v3.1.4 and prior versions in kernel_liteos_a has a kernel stack overflow vulnerability when call SysClockGettime. 4 bytes padding data from kernel stack are copied to user space incorrectly and leaked.",
+   "component": "kernel_liteos_a",
+   "affected_versions": [
+    "OpenHarmony-v3.1-Release through OpenHarmony-v3.1.4-Release",
+    "OpenHarmony-v3.0-LTS through OpenHarmony-v3.0.6-LTS",
+    "OpenHarmony-v1.1.0-LTS through OpenHarmony-v1.1.5-LTS"
+   ],
+   "fixed_versions": [
+    "3.1.x",
+    "3.0.x",
+    "1.1.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/en/security-disclosure/2022/2022-12.md",
+   "source_record": "|OpenHarmony-SA-2022-1203 | CVE-2022-45126 | Kernel subsystem in kernel_liteos_a has a kernel stack overflow vulnerability when call SysClockGettime. | 4 bytes padding data from kernel stack are copied to user space incorrectly and leaked. | 4.0 |OpenHarmony-v3.1-Release through OpenHarmony-v3.1.4-Release<br/>OpenHarmony-v3.0-LTS through OpenHarmony-v3.0.6-LTS<br/>OpenHarmony-v1.1.0-LTS through OpenHarmony-v1.1.5-LTS|kernel_liteos_a|[3.1.x](https://gitee.com/openharmony/kernel_liteos_a/pulls/1065)<br/>[3.0.x](https://gitee.com/openharmony/kernel_liteos_a/pulls/1066)<br/>[1.1.x](https://gitee.com/openharmony/kernel_liteos_a/pulls/1075) |Reported by Researchers|",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2024-10074",
+   "cwe": [
+    "CWE-416"
+   ],
+   "summary": "in OpenHarmony v4.1.1 and prior versions allow a local attacker cause the common permission is upgraded to root through use after free.",
+   "component": "kernel_liteos_a",
+   "affected_versions": [
+    "OpenHarmony-v4.1-Release"
+   ],
+   "fixed_versions": [
+    "4.1.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/zh/security-disclosure/2024/2024-12.md",
+   "source_record": "| CVE-2024-10074 | liteos_a内核释放后使用漏洞   | 本地攻击者可通过本漏洞获取root权限 | 8.8 | OpenHarmony-v4.1-Release | kernel_liteos_a | [4.1.x](https://gitee.com/openharmony/kernel_liteos_a/pulls/1244) |",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2022-45877",
+   "cwe": [
+    "CWE-287"
+   ],
+   "summary": "OpenHarmony-v3.1.4 and prior versions had an vulnerability. PIN code is transmitted to the peer device in plain text during cross-device authentication, which reduces the difficulty of man-in-the-middle attacks.",
+   "component": "distributedhardware_device_manager<br/>applications_hap<br/>security_device_auth",
+   "affected_versions": [
+    "OpenHarmony-v3.1-Release through OpenHarmony-v3.1.4-Release"
+   ],
+   "fixed_versions": [
+    "3.1.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/en/security-disclosure/2022/2022-12.md",
+   "source_record": "|OpenHarmony-SA-2022-1201 | CVE-2022-45877 | PIN code is transmitted to the peer device in plain text during cross-device authentication, which reduces the difficulty of man-in-the-middle attacks. | Network attackers can bypass the authentication, which reduces the difficulty of man-in-the-middle attacks. | 8.3 |OpenHarmony-v3.1-Release through OpenHarmony-v3.1.4-Release|distributedhardware_device_manager<br/>applications_hap<br/>security_device_auth|[3.1.x](https://gitee.com/openharmony/distributedhardware_device_manager/pulls/915)<br/>[3.1.x](https://gitee.com/openharmony/applications_hap/pulls/1364)<br/>[3.1.x](https://gitee.com/openharmony/security_device_auth/pulls/351)|Reported by OpenHarmony Team|",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2022-45118",
+   "cwe": [
+    "CWE-287"
+   ],
+   "summary": "OpenHarmony-v3.1.2 and prior versions had a vulnerability that telephony in communication subsystem sends public events with personal data, but the permission is not set. Malicious apps could listen to public events and obtain information such as mobile numbers and SMS data without permissions.",
+   "component": "telephony_state_registry<br/>telephony_sms_mms",
+   "affected_versions": [
+    "OpenHarmony-v3.1-Release through OpenHarmony-v3.1.4-Release"
+   ],
+   "fixed_versions": [
+    "3.1.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/en/security-disclosure/2022/2022-12.md",
+   "source_record": "|OpenHarmony-SA-2022-1206 | CVE-2022-45118 | Telephony in communication subsystem sends public events with personal data, but the permission is not set. | Malicious apps could listen to public events and obtain information such as mobile numbers and SMS data without permissions.| 6.2 |OpenHarmony-v3.1-Release through OpenHarmony-v3.1.4-Release|telephony_state_registry<br/>telephony_sms_mms|[3.1.x](https://gitee.com/openharmony/telephony_state_registry/pulls/224)<br/>[3.1.x](https://gitee.com/openharmony/telephony_sms_mms/pulls/615) |Reported by OpenHarmony Team|",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2022-44455",
+   "cwe": [
+    "CWE-120"
+   ],
+   "summary": "The appspawn and nwebspawn services within OpenHarmony-v3.1.2 and prior versions were found to be vulnerable to buffer overflow vulnerability due to insufficient input validation. An unprivileged malicious application would be able to gain code execution within any application installed on the device or cause application crash.",
+   "component": "startup_appspawn",
+   "affected_versions": [
+    "OpenHarmony-v3.1-Release through OpenHarmony-v3.1.2-Release",
+    "OpenHarmony-v3.0-LTS through OpenHarmony-v3.0.6-LTS"
+   ],
+   "fixed_versions": [
+    "3.1.x",
+    "3.0.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/en/security-disclosure/2022/2022-12.md",
+   "source_record": "|OpenHarmony-SA-2022-1205 | CVE-2022-44455 | The appspawn and nwebspawn services were found to be vulnerable to buffer overflow vulnerability due to insufficient input validation. | An unprivileged malicious application would be able to gain code execution within any application installed on the device or cause application crash. | 6.8 |OpenHarmony-v3.1-Release through OpenHarmony-v3.1.2-Release<br/>OpenHarmony-v3.0-LTS through OpenHarmony-v3.0.6-LTS|startup_appspawn|[3.1.x](https://gitee.com/openharmony/startup_appspawn/pulls/361)<br/>[3.0.x](https://gitee.com/openharmony/startup_appspawn/pulls/426) |Reported by OpenHarmony Team|",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2022-43451",
+   "cwe": [
+    "CWE-287"
+   ],
+   "summary": "OpenHarmony-v3.1.2 and prior versions had an Multiple path traversal vulnerability in appspawn and nwebspawn services. Local attackers can create arbitrary directories or escape application sandbox.If chained with other vulnerabilities it would allow an unprivileged process to gain full root privileges.",
+   "component": "startup_appspawn",
+   "affected_versions": [
+    "OpenHarmony-v3.1-Release through OpenHarmony-v3.1.2-Release"
+   ],
+   "fixed_versions": [
+    "3.1.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/en/security-disclosure/2022/2022-11.md",
+   "source_record": "|OpenHarmony-SA-2022-1101 | CVE-2022-43451 | Multiple path traversal in appspawn and nwebspawn services. | Local attackers can create arbitrary directories or  escape application sandbox.If chained with other vulnerabilities it would allow an unprivileged process to gain full root privileges.| 8.4 |OpenHarmony-v3.1-Release through OpenHarmony-v3.1.2-Release|startup_appspawn|[3.1.x](https://gitee.com/openharmony/startup_appspawn/pulls/361) |Reported by OpenHarmony Team|",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2022-41802",
+   "cwe": [
+    "CWE-120"
+   ],
+   "summary": "Kernel subsystem within OpenHarmony-v3.1.4 and prior versions in kernel_liteos_a has a kernel stack overflow vulnerability when call SysClockGetres. 4 bytes padding data from kernel stack are copied to user space incorrectly and leaked.",
+   "component": "kernel_liteos_a",
+   "affected_versions": [
+    "OpenHarmony-v3.1-Release through OpenHarmony-v3.1.4-Release",
+    "OpenHarmony-v3.0-LTS through OpenHarmony-v3.0.6-LTS",
+    "OpenHarmony-v1.1.0-LTS through OpenHarmony-v1.1.5-LTS"
+   ],
+   "fixed_versions": [
+    "3.1.x",
+    "3.0.x",
+    "1.1.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/en/security-disclosure/2022/2022-12.md",
+   "source_record": "|OpenHarmony-SA-2022-1202 | CVE-2022-41802 | Kernel subsystem in kernel_liteos_a has a kernel stack overflow vulnerability when call SysClockGetres. | 4 bytes padding data from kernel stack are copied to user space incorrectly and leaked. | 4.0 |OpenHarmony-v3.1-Release through OpenHarmony-v3.1.4-Release<br/>OpenHarmony-v3.0-LTS through OpenHarmony-v3.0.6-LTS<br/>OpenHarmony-v1.1.0-LTS through OpenHarmony-v1.1.5-LTS|kernel_liteos_a|[3.1.x](https://gitee.com/openharmony/kernel_liteos_a/pulls/1065)<br/>[3.0.x](https://gitee.com/openharmony/kernel_liteos_a/pulls/1066)<br/>[1.1.x](https://gitee.com/openharmony/kernel_liteos_a/pulls/1075) |Reported by Researchers|",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2022-38701",
+   "cwe": [
+    "CWE-122"
+   ],
+   "summary": "OpenHarmony-v3.1.2 and prior versions have a heap overflow vulnerability. Local attackers can trigger a heap overflow and get network sensitive information.",
+   "component": "communication_dsoftbus",
+   "affected_versions": [
+    "OpenHarmony-v3.1-Release through OpenHarmony-v3.1.2-Release",
+    "OpenHarmony-v3.0-LTS through OpenHarmony-v3.0.5-LTS"
+   ],
+   "fixed_versions": [
+    "3.1.x",
+    "3.0.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/en/security-disclosure/2022/2022-09.md",
+   "source_record": "|OpenHarmony-SA-2022-0903 | CVE-2022-38701 | IPC in communication subsystem has a heap overflow vulnerability. | Local attackers can trigger a heap overflow and get network sensitive information.| 6.2 |OpenHarmony-v3.1-Release through OpenHarmony-v3.1.2-Release<br/>OpenHarmony-v3.0-LTS through OpenHarmony-v3.0.5-LTS|communication_dsoftbus|[3.1.x](https://gitee.com/openharmony/communication_dsoftbus/pulls/2049)<br/>[3.0.x](https://gitee.com/openharmony/communication_dsoftbus/pulls/2085) |Reported by OpenHarmony Team|",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2022-38700",
+   "cwe": [
+    "CWE-305"
+   ],
+   "summary": "OpenHarmony-v3.1.1 and prior versions have a permission bypass vulnerability. LAN attackers can bypass permission control and get control of camera service.",
+   "component": "multimedia_camera_framework",
+   "affected_versions": [
+    "OpenHarmony-v3.1-Release"
+   ],
+   "fixed_versions": [
+    "3.1.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/en/security-disclosure/2022/2022-09.md",
+   "source_record": "|OpenHarmony-SA-2022-0905 | CVE-2022-38700 | multimedia subsystem has a permission bypass vulnerability. | LAN attackers can bypass permission control and get control of camera service.| 8.8 |OpenHarmony-v3.1-Release|multimedia_camera_framework|[3.1.x](https://gitee.com/openharmony/multimedia_camera_framework/pulls/247)|Reported by OpenHarmony Team|",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2022-38081",
+   "cwe": [
+    "CWE-305"
+   ],
+   "summary": "OpenHarmony-v3.1.2 and prior versions have a permission bypass vulnerability. LAN attackers can bypass the distributed permission control.To take advantage of this weakness, attackers need another vulnerability to obtain system.",
+   "component": "security_access_token",
+   "affected_versions": [
+    "OpenHarmony-v3.1-Release through OpenHarmony-v3.1.2-Release"
+   ],
+   "fixed_versions": [
+    "3.1.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/en/security-disclosure/2022/2022-09.md",
+   "source_record": "|OpenHarmony-SA-2022-0902 | CVE-2022-38081 | Tokensync in security subsystem has a permission bypass vulnerability. | LAN attackers can bypass the distributed permission control.To take advantage of this weakness, attackers need another vulnerability to obtain system.| 6.2 |OpenHarmony-v3.1-Release through OpenHarmony-v3.1.2-Release|security_access_token|[3.1.x](https://gitee.com/openharmony/security_access_token/pulls/397) |Reported by OpenHarmony Team|",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2022-38064",
+   "cwe": [
+    "CWE-305"
+   ],
+   "summary": "OpenHarmony-v3.1.2 and prior versions have a permission bypass vulnerability. Local attackers can bypass permission control and get sensitive information.",
+   "component": "windowmanager",
+   "affected_versions": [
+    "OpenHarmony-v3.1-Release through OpenHarmony-v3.1.2-Release"
+   ],
+   "fixed_versions": [
+    "3.1.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/en/security-disclosure/2022/2022-09.md",
+   "source_record": "|OpenHarmony-SA-2022-0904 | CVE-2022-38064 | windowmanager in window subsystem has a permission bypass vulnerability. | Local attackers can bypass permission control and get sensitive information.| 6.2 |OpenHarmony-v3.1-Release through OpenHarmony-v3.1.2-Release|windowmanager|[3.1.x](https://gitee.com/openharmony/window_window_manager/pulls/1480) |Reported by OpenHarmony Team|",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2022-36423",
+   "cwe": [
+    "CWE-16"
+   ],
+   "summary": "OpenHarmony-v3.1.2 and prior versions have an incorrect configuration of the cJSON library, which leads a Stack overflow vulnerability during recursive parsing. LAN attackers can lead a DoS attack to all network devices.",
+   "component": "third_party_cjson",
+   "affected_versions": [
+    "OpenHarmony-v3.1-Release through OpenHarmony-v3.1.2-Release",
+    "OpenHarmony-v3.0-LTS through OpenHarmony-v3.0.5-LTS",
+    "OpenHarmony-v1.1.0-LTS through OpenHarmony-v1.1.5-LTS"
+   ],
+   "fixed_versions": [
+    "3.1.x",
+    "3.0.x",
+    "1.1.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/en/security-disclosure/2022/2022-09.md",
+   "source_record": "|OpenHarmony-SA-2022-0901 | CVE-2022-36423| Incorrect configuration of the cJSON library lead a Stack overflow vulnerability during recursive parsing. | LAN attackers can lead a DoS attack to all network devices.| 7.4 |OpenHarmony-v3.1-Release through OpenHarmony-v3.1.2-Release<br/>OpenHarmony-v3.0-LTS through OpenHarmony-v3.0.5-LTS<br/>OpenHarmony-v1.1.0-LTS through OpenHarmony-v1.1.5-LTS|third_party_cJSON|[3.1.x](https://gitee.com/openharmony/third_party_cJSON/pulls/37)<br/>[3.1.x](https://gitee.com/openharmony/build_lite/pulls/575)<br/>[3.0.x](https://gitee.com/openharmony/third_party_cJSON/pulls/36)<br/>[3.0.x](https://gitee.com/openharmony/build_lite/pulls/574)<br/>[1.1.x](https://gitee.com/openharmony/third_party_cJSON/pulls/38)<br/>[1.1.x](https://gitee.com/openharmony/build_lite/pulls/576) |Reported by OpenHarmony Team|",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2024-41160",
+   "cwe": [
+    "CWE-416"
+   ],
+   "summary": "in OpenHarmony v4.1.0 and prior versions allow a local attacker cause the common permission is upgraded to root and sensitive information leak through use after free.",
+   "component": "kernel_liteos_a",
+   "affected_versions": [
+    "OpenHarmony-v4.0-Release",
+    "OpenHarmony-v4.1-Release"
+   ],
+   "fixed_versions": [
+    "4.0.x",
+    "4.1.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/zh/security-disclosure/2024/2024-09.md",
+   "source_record": "| CVE-2024-41160 | liteos_a内核释放后使用漏洞      | 本地攻击者可通过本漏洞获取root权限         | 8.8 | OpenHarmony-v4.0-Release<br/>OpenHarmony-v4.1-Release | kernel_liteos_a | [4.0.x](https://gitee.com/openharmony/kernel_liteos_a/pulls/1190)<br/>[4.1.x](https://gitee.com/openharmony/kernel_liteos_a/pulls/1191) |",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2024-38386",
+   "cwe": [
+    "CWE-787"
+   ],
+   "summary": "in OpenHarmony v4.1.0 and prior versions allow a local attacker arbitrary code execution in pre-installed apps through out-of-bounds write.",
+   "component": "arkcompiler_ets_runtime",
+   "affected_versions": [
+    "OpenHarmony-v4.0-Release",
+    "OpenHarmony-v4.1-Release"
+   ],
+   "fixed_versions": [
+    "4.0.x",
+    "4.1.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/zh/security-disclosure/2024/2024-09.md",
+   "source_record": "| CVE-2024-38386 | 方舟eTS运行时越界读写漏洞       | 本地攻击者通过本漏洞可在预装应用中执行代码 | 8.4 | OpenHarmony-v4.0-Release<br/>OpenHarmony-v4.1-Release | arkcompiler_ets_runtime | [4.0.x](https://gitee.com/openharmony/arkcompiler_ets_runtime/pulls/7982)<br/>[4.1.x](https://gitee.com/openharmony/arkcompiler_ets_runtime/pulls/7989) |",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2024-39816",
+   "cwe": [
+    "CWE-787"
+   ],
+   "summary": "in OpenHarmony v4.1.0 and prior versions allow a local attacker arbitrary code execution in pre-installed apps through out-of-bounds write.",
+   "component": "arkcompiler_ets_runtime",
+   "affected_versions": [
+    "OpenHarmony-v4.0-Release",
+    "OpenHarmony-v4.1-Release"
+   ],
+   "fixed_versions": [
+    "4.0.x",
+    "4.1.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/zh/security-disclosure/2024/2024-09.md",
+   "source_record": "| CVE-2024-39816 | 方舟eTS运行时越界写漏洞         | 本地攻击者通过本漏洞可在预装应用中执行代码 | 8.4 | OpenHarmony-v4.0-Release<br/>OpenHarmony-v4.1-Release | arkcompiler_ets_runtime | [4.0.x](https://gitee.com/openharmony/arkcompiler_ets_runtime/pulls/7675)<br/>[4.1.x](https://gitee.com/openharmony/arkcompiler_ets_runtime/pulls/7658) |",
+   "review_status": "unreviewed"
+  },
+  {
+   "id": "CVE-2024-41157",
+   "cwe": [
+    "CWE-416"
+   ],
+   "summary": "in OpenHarmony v4.1.0 and prior versions allow a local attacker cause the common permission is upgraded to root and sensitive information leak through use after free.",
+   "component": "kernel_liteos_a",
+   "affected_versions": [
+    "OpenHarmony-v4.0-Release",
+    "OpenHarmony-v4.1-Release"
+   ],
+   "fixed_versions": [
+    "4.0.x",
+    "4.1.x"
+   ],
+   "fixed_version_semantics": "oh_advisory_version_branches",
+   "source": "https://gitee.com/openharmony/security/blob/master/zh/security-disclosure/2024/2024-09.md",
+   "source_record": "| CVE-2024-41157 | liteos_a释放后使用漏洞          | 本地攻击者可通过本漏洞获取root权限         | 8.8 | OpenHarmony-v4.0-Release<br/>OpenHarmony-v4.1-Release | kernel_liteos_a | [4.0.x](https://gitee.com/openharmony/kernel_liteos_a/pulls/1195)<br/>[4.1.x](https://gitee.com/openharmony/kernel_liteos_a/pulls/1196) |",
+   "review_status": "unreviewed"
+  }
+ ]
+}

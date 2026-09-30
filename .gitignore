@@ -11,4 +11,10 @@ docs/references/
 *.pem
 *.secrets
 wildtrace.egg-info/
+.cache/
+
+# Local analysis outputs: Joern CPG binaries and demo artifacts
+workspace/
+demo-out/
+cpg.bin*
 

@@ -1,14 +1,168 @@
-# 当前工程检查点
+## 当前验收状态（2026-09-28 追加，工具链预检与报告组装器）
 
-## 当前有效状态（2026-09-12）
+- 审计 §89 落地：工具链路径 env 化 + `ohvul.toolchain_preflight`（真实通道探针，required/optional 分级）；engine 传输桥按平台条件化。
+- 审计 P1.7 落地：`ohvul.competition_report` 组装器（异构 case.json 防御性投影、完整度矩阵、confirmed 零推断纪律）+ `docs/deliverables/VIDEO_SCRIPT.md` 演示脚本。
+- 全量回归 864 项通过。交付缺口现状：视频未录、干净环境独立复跑未做、平台级案例闭环（IPC/KV next_gate）待原构建机执行。
 
-- 阶段：Phase 6 性能评测和交付准备；Phase 4、Phase 5 的允许范围闭环已完成，完整比赛成品仍未完成。
+## 当前验收状态（2026-09-28，auth fuzz 双靶收割 + PR 收敛）
+
+- **auth fuzz 双靶收割完毕**：T3 约 1.77 亿执行（cov 3024/ft 14474）、T4 约 2.71 亿执行（cov 2676/ft 12359），累计约 4.5 亿次执行**零崩溃零泄漏**；覆盖判读发现 -O1 内联假象（外部链接单调用点函数 per-symbol 计数误报未覆盖，已插针证伪），方法学规范与 stage-2 暂缓决策见 `docs/analysis/AUTH_FUZZ_HARVEST_20260928.md`（优先级让位于审计 P1.6：IPC/KV 平台级隔离构建验证）。语料与一键重建保留于 ~/fa。
+- **PR 收敛**：#54（施工图）、#55（审计机全线工作，本机评审 APPROVED：五项审计问题逐项核验）、#56（台账 15 案 + 本机文档面，Git Data API 构造）、#53（case batch）已合并；master 由 ed32631 推进至 22179b1。遗留 #51/#52 待重叠核对。
+- cjson 案 runtime_status 回填 library_level_reproduced（附 09-16 运行矩阵证据指针）；案例台账漂移仅剩 nvdec 提交口径一条待所有者确认。
+- 漏洞结论口径不变：确认产品漏洞数 0。
+
+## 当前验收状态（2026-09-24，auth fuzz 双靶挂机 + 审计 P1-1/P0.2 落地）
+
+- **第四靶建成**：`UnpackDeviceInfoMessage`（auth_session_json.c:3388）全链 harness——`fuzz_authdeinfo`。约 25 函数逐字原样 + 全量 NodeInfo（三头链）+ 设备类型转换族；base64 为声明式重实现（mbedtls 契约对齐，偏差已声明）；6 枚种子零崩溃（基线 cov 1422/ft 2496），120s 快测 2,076,080 runs 零崩溃（约 17k exec/s），8h 长跑与 T3 并行挂机。头号嫌疑族（BtV1 `OptInt64` 8 字节写 32 位 netCapacity）种子已构造。
+- **T3 状态**：隔夜宿主机休眠中断一次（有效 3.3h，累计 1.223 亿执行零崩溃）；白班重启后 cov 破 3000，双 worker 挂机中。
+- **比赛审计（外部文档，另一机器工作集）落地两项**：P1-1 整树快照修复（`12ba819`，全量回归 853 项通过）；P0.2 单一案例台账（`afb34cf`，含三处记录漂移：nvdec 已提交 vs PROJECT_STATE 口径、cjson runtime_status 漏回填、双机工作集分叉）。审计 P1-2/3/4（FFI）代码在对方机器，待落 PR。
+- 漏洞结论口径不变：确认产品漏洞数 0；两靶均为"运行中/待分诊"。
+
+## 当前验收状态（2026-09-23，auth fuzz 第一 harness 建成挂机）
+
+- CVE 挖掘 P0-2 第三靶（dsoftbus auth DeviceId 消息链）harness 建成并挂机：`D:/cve_data/fuzz_authdev/`（WSL 镜像 ~/fa）。`UnpackDeviceIdJson`（auth_session_json.c:2107）全链提取 30 函数逐字原样（file:line 标注），双解析器形态完整（`JSON_*` 经真 nlohmann v3.11.3 adapter + 凭证协商子链真 cJSON）；6 枚结构化种子回归通过，120s 快测 1,494,196 runs 零崩溃（cov 2602/ft 9879），12h 长跑（-max_total_time=43200）挂机中，约 12k exec/s。施工记录与方案级偏差（nlohmann 非 cJSON）见 `docs/design/auth_fuzz_extraction_plan.md` §7。
+- 第四靶（DeviceInfo 消息，`UnpackDeviceInfoMessage` auth_session_json.c:3388）施工图已论证落盘：`docs/design/deviceinfo_fuzz_extraction_plan.md`。A/C/D 资产全部复用第三靶；头号嫌疑族已标记（UnpackDeviceInfoBtV1 的 `OptInt64` 写 32 位 netCapacity 字段的 8 字节覆写形态——struct 内越界，UBSan 分诊）。
+- 漏洞结论口径不变：auth 两靶目前均为"运行中/待分诊"，确认产品漏洞数仍为 0；崩溃分诊走 fuzz_authdev README 命令 + 2×2 验证线。
+- 第三靶长跑结束（预计 09-24 凌晨）后的收割动作：取 `-print_final_stats/-print_coverage` 不可达函数清单 → 决定第四靶开工与现靶 stage-2（密钥 stub 换真 AES-GCM）取舍。
+
+## 当前验收状态（2026-09-22，审计对齐与缺口案例落库）
+
+- 全量回归 847 项运行、843 通过、4 项环境跳过；CI（offline-tests：unittest 全量 + 性能冒烟 + 凭据扫描）通过。
+- LLM 暂停已于 2026-09-16 解除：z.ai Anthropic 传输通过有界在线评审验收（glm-5.3），gpt-6-astra 加入白名单用于双模型交叉验证；29 组全量评审与双模型运行仍未执行，模型输出仍不作为漏洞结论。
+- 案例库扩展至 8 案（均为公开 CVE 缺口案例 new_discovery=false）：cJSON MergePatch（CVE-2026-87933，bubblewrap 矩阵 26/26 + 第二人独立复现 26/26）、curl PSL supercookie（CVE-2026-82209，含运行时验证记录）、curl native CA reuse（CVE-2026-80231）、ffmpeg 五案（CVE-2026-52296/64832/65704/66036/66041；66036/66041 运行时验证通过，64832 源级 L4，65704/52296 源级对照）。产品可达性未建立，确认产品漏洞数仍为 0。
+- 已向 OpenHarmony 漏洞奖励计划提交 2 案：OHSA26-092209031（CVE-2026-80231）、OHSA26-092226014（CVE-2026-82209，2026-09-21）；另 5 案 ffmpeg 提交材料已备好（`D:/cve_data/submission_*`）待所有者人工提交；候选 CVE-2026-66038、CVE-2026-70628 待人工 L4 核验成案。
+- CVE 知识库运营化：伙伴导入 72 条双审记录、OSV 引用、版本探针（README.OpenSource JSON 数组解析 + 内嵌版本清单名规范化，PR #45）；`tools/kb_gap_audit.py` 四信号 L1-L4 缺口流水线入库。
+- 交付物 2 技术说明书初稿 v0.9（`docs/deliverables/TECHNICAL_SPEC.md`）；沙箱设计稿与四信号 triage 设计稿已合并、未实现（待 S1-S5 / A1-A5 主线决策）。
+- 全面审计与剩余工作规划见 `docs/status/AUDIT_REMAINING_PLAN_20260922.md`；CHANGELOG 已补录 2026-09-16 至 09-22 断档并清理误嵌入脚本片段。
+
+## 当前验收状态（2026-09-15，恢复验收与整数范围分析）
+
+- 上一批局部值分析已完成恢复验收：专项116项通过，全量661项运行657通过4环境跳过，真实44文件、主CLI、重放通过；外部a336c65提交经字节对账保留，原拒绝记录未被覆盖。
+- 新增clang_ranges并接入clang_flow/clang_facts，分析版本3支持有限参数区间、早返回和比较约束、分支包络合并、整数转换及来源记录；未知副作用、循环和析构不沿用旧约束。
+- 区分within_known_object、exceeds_known_object、may_exceed_known_object和unknown。仅区间上界超过容量不生成确定越界候选；自然类型范围本身也不构成已检查安全性。
+- 最终专项146项通过；全量691项运行687通过4项符号链接环境跳过；真实Clang对照18正例24反例12未知/未确认对照3可能范围观察通过，不能作为真实准确率估计。
+- camera3、securec39、hilog2同批完成。camera1处和securec19处调用附带参数范围证据；securec35项内存范围检查仍未知，真实候选和确认漏洞均未增加。原始引擎诊断未改写。
+- 主CLI报告/检查点绑定、规范化事实重放、源码/配置/产物一致性和差异检查通过；LLM继续暂停，没有模型API或目标程序执行。没有由本轮宿主提交或回滚Git。
+- 统一验收`.cache/range_ef6abb/final/acceptance.json`；恢复对账`recovery-acceptance.json`；审计`docs/analysis/INTEGER_RANGE_AUDIT_20260915.md`；当前规划`docs/status/NEXT_ROADMAP_20260915.md`。
+- 下一批优先把新增核心分析纳入组件批处理与复核报告主线，再推进对象容量、关系约束、C++调用、生命周期和独立评测，避免核心算法游离于交付流程。
+
+## 当前核对结果（cJSON具体案例，run_6d4fec3c）
+
+- 已固定OpenHarmony cJSON 1.7.19提交`388cfc96925e4fb41a30735b270736626d26615d`，完成非对象子树别名MergePatch案例源审查、复现C程序、窄补丁及独立副本。公开关联CVE-2026-87933，不计新发现。
+- 原版与补丁版均通过Clang `-fsyntax-only`，案例离线契约11项通过。没有执行目标；隔离检查被工具拦截，未以其他通道重试。
+- `.cache/cjson-case-6d4f/`含固定输入、源码副本、补丁、候选结果和报告。目标运行、ASan触发、补丁有效性和产品可达性仍待验证；确认产品漏洞数0。
+- 当前检出观察为`54d798a`，与历史集成验收版本不同。全量回归762项：733通过、1失败、24错误、4跳过。组件批次实现仅接受0.1，现有集成/交付测试要求0.2，不能继续引用历史绿灯代表当前状态。
+- 未修改上述集成模块、删除测试、切换/回滚分支或覆盖协作文件。需在团队选定交付分支上对齐源码与测试。本轮主目标“真实运行漏洞闭环”未完成。
+- 具体报告：`docs/analysis/CJSON_MERGEPATCH_CASE_20260915.md`。新代码只服务本案例，不扩展静态规则；LLM继续暂停。
+
+## 历史验收状态（2026-09-14，完成主线与受限编译配置导入）
+
+- 当前策略为先形成完整可交付流程，再优化展示、调度和性能；LLM仍暂停，不要求用户现在补密钥或等待接口修复。
+- 新增`ohvul.compile_database`与26项测试，显式arguments导入为独立profile草稿，保留同文件不同配置；不执行command，不静默丢弃未知参数或失败条目。
+- 导出草稿经过临时合成Git仓库和既有prepare_profile的实际来源校验；这不是OpenHarmony产品构建，也没有调用分析器或目标程序。
+- 最终专项87项通过；全量579项运行、575项通过、4项环境跳过。测试期间Python字节稳定；初始验收因起始HEAD与后续外部整合提交不同而拒绝通过，原记录保留。
+- 已核对外部edc065b/0f68447提交范围：包含上一批语义修改及本轮初版导入器，未撤销。最终确认以相同已测试Python字节及测试起始HEAD为准，记录见`.cache/completion_7db5/final-acceptance.json`。
+- 真实产品数据库只检查八个明确位置，未发现；不据此断言全树不存在。未增加真实扫描覆盖或漏洞确认数。后续依赖与优先顺序见`NEXT_ROADMAP_20260914.md`。
+
+## 历史验收状态（2026-09-14，暂停LLM后的语义规则与路径边界）
+
+- 用户已明确暂停LLM部分，当前不安排模型接入开发、API重试或凭据操作；原有代码保留，离线回归保护继续运行。
+- 本轮修复跨函数串联、嵌套/多行参数、snprintf参数位置、同名定义歧义、虚构来源行、静默读取失败和错误覆盖统计；主CLI接入实际执行记录并复核文件清单。
+- 并行的跨平台CI提交已核对保留；额外修复Windows/WSL绝对路径父目录段及本机解析越界回归，没有回滚外部提交。
+- 最终专项126项通过；全量553项运行、549项通过、4项符号链接环境跳过。最终日志和源代码版本绑定通过，`git diff --check`通过。
+- 三个既有组件共44个文件完成两次一致的离线词法运行：camera 0个、securec 1个、hilog 0个局部候选，均0个跨函数关联；57项未解析事项显式保留，不宣称语义完整或代码安全。
+- 原有35条引擎诊断、29组和145项任务未被本轮结果替换；确认漏洞仍为0。没有运行外部分析器、模型或目标程序。
+- 最新证据为`.cache/semantic_0e7f/final_r2/acceptance.json`；审计见`docs/analysis/SEMANTIC_BOUNDARY_AUDIT_20260914.md`，契约见`docs/engineering/SEMANTIC_RULE_CONTRACT.md`。
+- 后续优先受限编译数据库导入、编译器级事实、多漏洞族对照、无模型复核和性能/交付。LLM由用户后续安排恢复，不作为当前工作的前置条件。
+
+## 历史验收状态（2026-09-14，LLM扩展证据与本地操作入口）
+
+- 新增隐藏密钥本地入口 `tools/llm_local.py`；预检不需要凭据，运行须显式授权，支持300秒socket超时；实际超时与HTTP403分别记录，不自动重试。
+- `llm_review --evidence`接入经重建验证的函数/宏/调用语法片段，扩展引用可继续进入交接；旧请求和历史失败记录保持兼容，不自动关闭任务。
+- 专项89项通过；全量498项运行、494通过、4项符号链接环境跳过。真实单组与全部29组请求预检通过，0次API调用，131次片段引用，最大22289字节，无新增预算省略。
+- 新凭据重试在工具输入阶段被拦截，未发出API请求，进程结束；没有新的403或服务超时数据。用户本机成功反馈未被旧403推翻，线上研判仍未验收。
+- 35条原始诊断、29组、145项任务及原有截断/未穷尽标记保持；确认漏洞0。本轮没有静态分析器、模型或目标程序执行，也没有提交或回滚Git。
+- 证据：`.cache/llm_operator_0e275/acceptance.json`、`real-plan/plan.json`、`all-groups-plan/plan.json`。本机操作见`docs/engineering/LLM_LOCAL_OPERATOR.md`；审计见`docs/analysis/LLM_OPERATOR_AUDIT_20260914.md`。
+- 后续：人工安排首次本机在线运行与回执；自动工程并行修复语义规则边界、规范化构建输入和多漏洞族对照。完整规划见`docs/status/NEXT_ROADMAP_20260914.md`。
+
+## 历史验收状态（2026-09-14，有界本地证据补全）
+
+- 新增 `source_structure` 与 `review_evidence`，修复基础事实的函数归属；支持有界函数、宏和同文件调用语法补证及独立校验，不宣称 AST/CFG 或完整调用图。
+- 最终专项53项通过；全量474项运行、470项通过、4项符号链接环境跳过。真实证据生成、独立复核和功能验收的源码/差异检查通过。
+- 29组、16个相关文件产生93份证据片段（函数32、宏35、调用语法26）；3份片段截断，9组定义检索未穷尽，均显式记录。
+- 44项原补证任务新增局部证据引用，全部145项任务仍待判断，task_id与原hand-off一致；35条原始诊断未改写，确认漏洞0。
+- 没有新模型/API/静态分析器调用，没有执行目标程序。基础事实层修复不等于旧跨函数传播规则、产品宏语义或漏洞分析已完整验收。
+- 本轮证据：`.cache/evidence_1ca10/acceptance.json`、`expanded.json`；使用约定见`docs/engineering/LOCAL_EVIDENCE.md`；后续规划见`docs/status/NEXT_ROADMAP_20260914.md`。
+
+## 历史验收状态（2026-09-14，离线运行检查与研判交接）
+
+- 用户已反馈服务本机可用；本次同端点单组重试的凭据输入被工具安全检查拦截，尚未发出 API 请求，等待进程已结束。没有新的 403 或成功回答，不推断服务端仍不可用。
+- 新增 `llm_review --inspect`，一致的失败记录可核对但仍为 `bound_incomplete`；`--verify` 仍拒绝失败推理。新计划显式约束失败后停止，旧计划只按历史契约解释。
+- 新增 `review_handoff`：保留所有组和五类待补证据问题，模型观点单独标为不可信建议，不能执行命令、删除候选或自动关闭任务。
+- 本轮真实交接：35 条原始诊断、29 个组、145 项待补证据任务；3 组历史调用失败，26 组历史未选中，29 组均无合格的线上草稿。确认漏洞仍为 0。
+- 工程验收：专项 68 项通过，全量 440 项运行、436 项通过、4 项符号链接环境跳过；真实历史记录检查、交接构建及独立验证、字节/HEAD/差异检查通过。
+- 证据：`.cache/llm_retry_cbad/acceptance.json` 与 `handoff.json`；说明见 `docs/engineering/REVIEW_HANDOFF.md`、`docs/analysis/LLM_HANDOFF_AUDIT_20260914.md`。线上验收和整个比赛项目仍未完成。
+- 不依赖在线调用的上下文补充、证据与研判记录继续推进；不默认缩减组件或漏洞族范围。
+
+## 历史验收状态（2026-09-14，LLM 结构化研判接入）
+
+- 新增显式 LLM plan/run/verify 链路，默认端点为 `https://oslovelace.com/v1`，请求模型标识 `grok-4.6`；运行时凭据不落盘。普通扫描和独立校验仍不请求网络。
+- 专项39项全部通过；全量411项运行、407项通过、4项符号链接环境跳过。验证伪造证据引用、错误与用量统计、模型输出拒绝、输入变更、预算和鉴权失败停止。
+- 线上实测未通过：对三组真实候选发起三次 API 请求，均收到 HTTP 403，无模型回答或用量。原始35条诊断、29组队列保持不变；所有组仍无合格的线上研判。
+- 进一步诊断的工具调用被安全检查拦截，未换路径尝试；服务端模型/凭据/API访问策略需要人工确认，不再次要求粘贴密钥。该阻塞不等于凭据已被证明无效。
+- `final_verdict` 仍为 `undetermined`，模型不能改变FSM或执行工具。代码测试通过不代表线上模型、漏洞影响或完整比赛交付通过。
+- 证据：`.cache/llm_review_5382/final-acceptance.json` 和 `live/summary.json`；说明见 `docs/engineering/LLM_REVIEW.md`、`docs/analysis/LLM_INTEGRATION_AUDIT_20260914.md`。
+- 后续继续推进证据与调用上下文、人工研判记录和离线评测；保持组件与漏洞族总体范围。产品/版本矩阵和隔离验证环境仍独立安排。
+
+## 历史验收状态（2026-09-14，正式复核队列与源码上下文）
+
+- 新增正式 `review_queue` 与 `review_context` 入口，及独立 `--verify`；专项39项通过，全量375项运行、371项通过、4项符号链接环境跳过，差异检查通过。
+- 消费上一批三个真实组件的已验收产物，35条原始诊断全部保留为29个复核组；从16个相关文件提取29组原始行号文本窗口，来源快照前后及独立校验通过。未重新运行分析器，未增加本轮扫描覆盖。
+- 复核问题、类别和文本窗口均非漏洞结论；所有最终判断仍为undetermined，确认漏洞数0。源码文本标记为不可信数据，不作为模型或工具指令。
+- 当前推进点是人工/受控LLM研判的证据输入层；实际模型调用、完整安全影响研判、真实PoC/独立复现、分支修复验证和比赛交付仍未完成。
+- 新证据：`.cache/review_33f843/acceptance.json`、`queue.json`、`context.json`；约定与实测见`docs/engineering/REVIEW_QUEUE.md`、`docs/analysis/REVIEW_PIPELINE_AUDIT_20260914.md`。
+- 保留组件和漏洞族总体范围；本轮不新增必须人工完成的前置条件。既有产品/版本矩阵与隔离验证环境安排继续独立推进。
+
+## 历史验收状态（2026-09-14，真实组件批次）
+
+- 最新工程验收：多组件批处理入口已落地；专项 90 项全部通过，全量 336 项运行、332 项通过、4 项符号链接测试因环境限制跳过；`git diff --check` 通过。
+- 源码访问更新：`C:\Projects\OpenHarmony-complete` 已能实际校验和分析。camera 的 13 个依赖仓库匹配既定提交；本轮没有修改 OpenHarmony 源码树或执行目标程序。
+- 真实批次：camera 3 个、安全 C 库 39 个、hilog 2 个源文件，两个真实静态引擎全部完成；预检 3/3 ready，正式批次 3/3 completed。结果、报告和最终摘要哈希一致。
+- 发现口径：35 条原始诊断仅归为 29 个复核位置/规则组（27 个 API 提示组、2 个代码质量信号组），原始证据保留；真实漏洞确认数仍为 0。
+- 策略更新：按用户最新要求保持组件和漏洞族范围，不把首批三个组件当成永久范围，不再用此前收缩范围的估算作当前交付承诺。
+- 最新证据：`.cache/real_components_c0d3/acceptance.json` 与 `batch/summary-0005.json`；说明见 `docs/analysis/REAL_COMPONENT_BATCH_AUDIT_20260914.md`；人工安排见 `docs/status/HUMAN_ACTIONS_20260914.md`。
+- 比赛关键缺口仍包括完整产品构建条件、安全影响研判、实际 LLM 业务流程、真实 PoC/独立复现、分支与补丁验证、大规模性能和最终材料。以下为历史记录，不能覆盖本节。
+
+## 历史验收状态（2026-09-14，候选质量批次）
+
+- 最新批次：候选质量、CWE 映射与观察证据校验已完成本地回归；专项 104 项、全量 304 项全部通过，无跳过；真实本地 Clang/clang-tidy 合成静态演示通过。
+- 内置规则在本次合成安全对照上的候选从 2 条降为 0 条；三个来源对同一处合成缺陷产生 3 条候选，不计为 3 个漏洞。验收记录中的真实漏洞确认数仍为 0。
+- 当前定位：可复跑的本地防御性审计原型，不是已完成比赛成品。真实 OpenHarmony 工作区访问先前受阻；本轮没有绕过限制或执行真实目标程序。
+- 比赛关键缺口：真实组件输入与安全影响研判、真实 PoC 和独立复现、分支/修复有效性、实际规模评测、正式手册/视频/交付包；LLM 仍未形成已验证的完整研判流程。
+- 最新证据：`.cache/quality_57a_r2_acceptance.json`；详见 `docs/analysis/CANDIDATE_QUALITY_AUDIT_20260914.md` 与 `docs/status/COMPETITION_READINESS_20260914.md`。后者给出条件化人力估算，不承诺发现数量或官方评审时限。
+- 以下为历史工程记录。历史 Phase 编号和测试数量不得覆盖本节当前验收口径。
+
+## 历史状态（2026-09-12；不代表当前完成度）
+
+- 阶段：Phase 6 性能评测和交付准备；当前新增完成成熟引擎适配层与受控 Clang 分片闭环，Phase 4、Phase 5 的允许范围闭环已完成，完整比赛成品仍未完成。
 - Phase 4：静态证据独立复核、合成 harness、FSM `local_verification`、checkpoint/result/harness 联合校验、源码快照绑定和人工审核门控已完成；真实目标代码执行仍禁止。
 - Phase 5：本地固定版本输入契约、Git revision/range 原型、分支影响比较、补丁路径与 SHA-256 校验、影响报告草稿和审核批次接入已完成原型；真实提交区间到补丁有效性的完整闭环仍未完成。
 - Phase 6：性能基准、峰值内存、吞吐退化比较、性能快照、CI smoke 和演示文档已完成原型；完整授权 OpenHarmony 子树长期评测、最终用户手册、视频和交付包仍未完成。
-- 最近验证：`python -m unittest discover -s tests -q`，143 项，139 通过、4 跳过。
+- 分析引擎适配：已接入 WSL LLVM 22.1.8 Clang Analyzer plist、clang-tidy 文本诊断、显式文件清单/分片、schema 0.3/EvidenceBundle、主 CLI static_scan 合并和本地 CVE/CWE 交叉匹配；OpenHarmony 当前裁剪快照仍不能代表完整平台构建分析。
+- 真实组件输入：原 `C:\Projects\OpenHarmony` 为裁剪快照；已在独立 `C:\Projects\OpenHarmony-complete` 工作区补齐 camera 直接依赖并用显式 GN include/define 参数成功解析 `camera_ability.cpp`（Clang completed，0 条诊断）。该工作区尚未完成产品级全量构建，不能扩展为平台级结论。
+- cameraApp 组件验证：`camera_ability.cpp`、`camera_ability_slice.cpp`、`camera_manager.cpp` 在补齐 surface/media/IPC/hilog/securec 头文件路径后 3/3 Clang completed、0 个输入错误、0 条诊断；仍属于组件级静态分析，不是全平台结论。
+- 最近验证：`python -m unittest discover -s tests -q`，180 项通过、4 项环境相关跳过。
 - 当前结论：项目是可运行的防御性 MVP 和比赛候选原型，不是已完成的比赛成品；候选发现不等于漏洞确认，主机测试不等于 OpenHarmony 平台结论。
-- 后续顺序：先把本地知识库接入扫描主流程，再完善固定版本/分支/补丁证据链，随后扩展少量高价值语义规则，最后完成真实授权子树性能评测和交付材料。
+- 后续顺序：完成适配层正确性收敛，固定组件 profile 和跨函数工具试验，随后扩展高价值漏洞族、补丁验证、人工评测、真实性能和交付材料。
+- Phase 1 适配器正确性检查点：已完成 alert_id 冲突消解、Clang/clang-tidy/Semgrep 来源保留、外部结果 schema 校验、源码根与快照一致性、显式文件/分片路径、WSL 路径归一化及越界拒绝；178 项测试通过、4 项环境相关跳过。该检查点只证明适配器契约，不证明分析器覆盖率或漏洞成立。
+- Semgrep profile 增量：profile 可声明源码根内的 `semgrep_rule_files`；仅在 engines 明确包含 `semgrep` 时执行，并通过统一结果合并链保留候选状态。规则文件不得使用绝对路径、`..` 或远程来源。
+- 本地 camera Semgrep 试验：在 `C:\Projects\OpenHarmony-complete\tools\wildtrace\camera_pilot.yml` 使用合成 `strcpy` 规则对 camera_ability.cpp 运行本地 Semgrep，规则 SHA-256 为 `CB307513B7BA9C6F00E712BE2C85D0DBBEC7ABEB3F1DF4D5FFBDFEB17B53B5EF`，扫描完成且 0 条诊断；这是组件级静态结果，不是平台漏洞结论。profile 端到端结果仍需单独记录可复现命令输出。
+- 新增 `docs/design/camera_semgrep_profile.json`，固定 camera 组件源码提交、规则相对路径和规则哈希；配置状态为 `candidate_only`，执行仍须先在源码根内人工放置并校验规则文件。
+- 分析能力增量：新增 `ohvul.semantic_facts`，对显式本地 C/C++ 文件提取函数、调用、分配、释放、复制和解引用事实，输出可序列化结构供后续长度传播/生命周期规则使用；这是保守词法事实层，不等同于编译器 AST，也不直接产生漏洞结论。全量测试 182 项通过、4 项环境相关跳过。
+- 长度传播规则增量：新增 `ohvul.semantic_rules.length_candidates`，将显式复制 sink 与附近长度源/边界证据关联，输出 `candidate` 和人工复核问题；修正 sink 行自匹配边界。全量测试 184 项通过、4 项环境相关跳过。
+- 跨函数长度传播增量：新增 `cross_function_length_candidates`，在显式文件集合内关联 caller 长度源、callee 参数和复制 sink；仅输出候选证据。专项测试 3 项通过。
+- 语义候选证据增量：新增 `candidates_to_audit_result`，将长度传播候选转换为 schema 0.3、EvidenceBundle、源码快照和人工审核可消费的 `candidate` finding；专项测试验证 `validate_result` 联合校验。
+- 主 CLI 语义阶段增量：新增显式 `--semantic-files-from`，把本地跨函数长度候选并入标准结果和快照链；默认扫描行为不变，端到端 smoke 已通过。
 - 历史记录说明：本文件以下条目为追加式历史记录；如与本节冲突，以本节为准。历史条目不得作为已完成能力的单独证据。
 
 ## 本次已完成
@@ -678,3 +832,7 @@ Git adapter 记录 observed_branch 和 changed_files，并生成 scope_sha256 �
 ## Phase 5 本地提交区间增量（2026-09-12）
 
 新增 git_scope.inspect_range，按固定日期范围读取本地提交列表和变更文件；测试通过。
+## 当前运行级案例状态（2026-09-15）
+
+- 固定 cJSON 提交 `388cfc96925e4fb41a30735b270736626d26615d` 的本地 MergePatch 案例已在已签署授权范围内完成 bubblewrap 隔离运行：原版/独立副本出现预期 `library_uaf_observed`，补丁与控制组通过功能控制。
+- 运行矩阵为 `passed`，但这是公开已知库案例；OpenHarmony 产品可达性未建立，确认产品漏洞数仍为 0。详见 `docs/analysis/CJSON_RUNTIME_CASE_20260915.md`。
