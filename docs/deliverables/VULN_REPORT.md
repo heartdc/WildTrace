@@ -1,6 +1,6 @@
 # OpenHarmony 漏洞分析报告
 
-生成日期：2026-09-29
+生成日期：2026-09-30
 工具版本：WildTrace (master)
 分析范围：18 个案例（公开 CVE 缺口回验 + 新发现候选）
 
@@ -2105,7 +2105,7 @@ extradata 分配做过同类加固，可按上游提交历史对照排查）。
 | CVE 编号 | （新发现） |
 | CWE 分类 | CWE-476 |
 
-> 源码片段：见 `foundation/communication/ipc/interfaces/innerkits/cj/src/message_sequence_impl.cpp`（关键行号 [367, 386]）。本仓库未捆绑源码树；在案例目录放置 `source_snippet.txt` 后重新生成即可嵌入内容。
+> 源码片段：见 `foundation/communication/ipc/interfaces/innerkits/cj/src/message_sequence_impl.cpp`（关键行号 [367, 386]）。源码级证据记录：L4 链路（L4_TIER_A/B + REAL_BUILD_PROBE_20260925）：FFI 导出入口 FfiOHOSIPCWriteByteArray(const CJByteArray* array) 直传 CArray 指针，无 head/size 校验；调用链进入 IPC 序列化前对 array->head 解引用遍历（head==NULL 即空指针解引用）。真库级证实（2026-09-28）：隔离构建 libcj_ipc_ffi.z.so 正常导出符号路径下，len=0/空数组输入触发 SIGSEGV（run.exit=139，崩溃帧归属 libcj_ipc_ffi.z.so）；正常字节对照组通过。基础运行库带补丁、非完整产品服务环境（隔离构建口径红线三条如实声明）。
 
 ### 2. 漏洞详细描述
 
@@ -2162,7 +2162,7 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 | CVE 编号 | （新发现） |
 | CWE 分类 | CWE-476, CWE-125 |
 
-> 源码片段：见 `foundation/distributeddatamgr/kv_store/frameworks/cj/src/distributed_kv_store_impl.cpp`（关键行号 [373, 378]）。本仓库未捆绑源码树；在案例目录放置 `source_snippet.txt` 后重新生成即可嵌入内容。
+> 源码片段：见 `foundation/distributeddatamgr/kv_store/frameworks/cj/src/distributed_kv_store_impl.cpp`（关键行号 [373, 378]）。源码级证据记录：L4 源级定位（L4_TIER_C + kv_null_entry 执行件）：FFI 侧以 CArray/CJByteArray 形态传入键值数据，C++ 侧 distributed_kv_store 接口在 entry/data 为空数组时未做空校验即遍历。 pinned 树的 FfiOHOSDistributedKVStoreCreateKVManager ABI 为 (const char*, Context*)——无错误出参且 Context 无法在纯 C 侧构造（2026-09-28 真库实测：历史 ABI 形态调用即 SIGSEGV），记录为隔离限制并以 tools/validation_cases/kv_null_entry.c 执行件保留 malformed 入口矩阵（run_malformed.sh）。
 
 ### 2. 漏洞详细描述
 

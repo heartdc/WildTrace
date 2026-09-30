@@ -1,12 +1,132 @@
 {
   "tool": "WildTrace",
-  "date": "2026-09-29T13:45:05.180841",
+  "date": "2026-09-30T17:05:42.061434",
   "platform": "x86_64",
-  "python": "3.12.3",
-  "phases": [],
+  "python": "3.12.1",
+  "phases": [
+    {
+      "phase": "oh_dsoftbus_surface",
+      "files": 2967,
+      "lines": 842956,
+      "size_mb": 118.3
+    },
+    {
+      "phase": "oh_dsoftbus_autopilot",
+      "elapsed_s": 652.08,
+      "python_peak_mb": 12.2,
+      "system_rss_mb": 28.7,
+      "result": {
+        "elapsed_s(\u7ba1\u7ebf\u81ea\u62a5)": 651.67,
+        "files_cpp": 1082,
+        "files_c": 655,
+        "lines_est": 681529,
+        "leads": 3033,
+        "high": 580,
+        "patterns": {
+          "P6_null_deref": 2453,
+          "P8_use_after_free": 511,
+          "P9_format_string": 3,
+          "P8_double_free": 6,
+          "P8_cross_uaf": 60
+        },
+        "child_peak_rss_mb": 176.4
+      }
+    },
+    {
+      "phase": "oh_dsoftbus_lexical",
+      "elapsed_s": 1.26,
+      "python_peak_mb": 2.3,
+      "system_rss_mb": 28.7,
+      "result": {
+        "files": 655,
+        "pattern_hits": 1960
+      }
+    },
+    {
+      "phase": "oh_dsoftbus_cjffi",
+      "elapsed_s": 13.72,
+      "python_peak_mb": 0.0,
+      "system_rss_mb": 28.7,
+      "result": {
+        "note": "files=1737 leads=25 -> cjffi_leads.json\nmissing-both-checks: 16",
+        "files": 1737,
+        "leads": 25
+      }
+    },
+    {
+      "phase": "oh_dsoftbus_snapshot",
+      "elapsed_s": 7.91,
+      "python_peak_mb": 8.1,
+      "system_rss_mb": 39.7,
+      "result": {
+        "digest": "5250483a99bf7c62..."
+      }
+    },
+    {
+      "phase": "cjffi_63repos_surface",
+      "files": 1178,
+      "lines": 271124,
+      "size_mb": 40.0
+    },
+    {
+      "phase": "cjffi_63repos_autopilot",
+      "elapsed_s": 272.27,
+      "python_peak_mb": 1.5,
+      "system_rss_mb": 39.7,
+      "result": {
+        "elapsed_s(\u7ba1\u7ebf\u81ea\u62a5)": 272.08,
+        "files_cpp": 712,
+        "files_c": 2,
+        "lines_est": 173901,
+        "leads": 380,
+        "high": 84,
+        "patterns": {
+          "P6_null_deref": 193,
+          "P8_use_after_free": 40,
+          "P1_null_len": 31,
+          "P8_double_free": 2,
+          "P8_cross_uaf": 26,
+          "P2_truncation": 17,
+          "P3_nested_deref": 10,
+          "P7_alloc_overflow": 61
+        },
+        "child_peak_rss_mb": 58.4
+      }
+    },
+    {
+      "phase": "cjffi_63repos_lexical",
+      "elapsed_s": 0.42,
+      "python_peak_mb": 0.1,
+      "system_rss_mb": 39.7,
+      "result": {
+        "files": 2,
+        "pattern_hits": 0
+      }
+    },
+    {
+      "phase": "cjffi_63repos_cjffi",
+      "elapsed_s": 5.48,
+      "python_peak_mb": 0.0,
+      "system_rss_mb": 39.7,
+      "result": {
+        "note": "files=714 leads=37 -> cjffi_leads.json\nmissing-both-checks: 32",
+        "files": 714,
+        "leads": 37
+      }
+    },
+    {
+      "phase": "cjffi_63repos_snapshot",
+      "elapsed_s": 10.48,
+      "python_peak_mb": 10.1,
+      "system_rss_mb": 44.2,
+      "result": {
+        "digest": "a2ec850369796218..."
+      }
+    }
+  ],
   "summary": {
-    "total_elapsed_s": 0,
-    "total_source_files": 0,
-    "peak_rss_mb": 0
+    "total_elapsed_s": 963.6,
+    "total_source_files": 7253,
+    "peak_rss_mb": 44.2
   }
 }
