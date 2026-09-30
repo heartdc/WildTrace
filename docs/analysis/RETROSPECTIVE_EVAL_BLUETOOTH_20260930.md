@@ -64,6 +64,24 @@ GT4 最接近可达：`shared_ptr<T> name` 参数只需扩展参数正则即可�
 | P2 | 宏展开取指针（GATTSERVICE(serverId, handle) 形态表） | GT3 |
 | P2 | 过程间空防护传播（被调用函数内部含 null 检查则视作守卫） | BleStartAdv 误报消除 |
 
+## 闭环复评（P0 两项落地后，同日）
+
+落地：`scan_p6` 增加 `_SMART_PTR_PARAM`（shared/unique_ptr 参数含 const&）与
+`_TRUTHY_MACRO_GUARD`（`CHECK_*(var,` 真值形态抑制）；8 项专项测试
+（tests/test_p6_smartptr_macros.py）。同一 worktree 复跑（1472→1481s）：
+
+| 指标 | 修复前 | 修复后 | 变化 |
+|---|---|---|---|
+| 发现总数 | 13 | 12 | **−1 = 恰好移除确认误报 SocketUpdateCocConnectionParams** |
+| 其余发现 | 12 | 12 | 全部保留，置信度无漂移（零误伤） |
+| 智能指针新增发现 | — | 0 | GT4 站点解引用数 <3，未达 P6 发射阈值 |
+
+**判读**：P0-2（真值宏抑制）在真实仓上精确验证——目标误报消除且无副作用。
+P0-1（智能指针参数建模）机制层面生效（单测证明该形态可标记、有检查可抑制），
+但该仓 observer 站点低于 3 次解引用阈值故未发射——**阈值调整（智能指针按
+解引用计数加权）成为有 GT4 ground truth 的下一项**，不盲调。
+评估→改进→再评估闭环成立，全程可复现。
+
 ## 复现
 
 ```bash
