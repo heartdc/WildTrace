@@ -37,5 +37,6 @@
       "oh_version": "OpenHarmony-v7.0-Release（2026-08-21）",
       "attachments": "附件包_CVE-2026-80231.zip (curl_gap_verification.json / 82209运行验证记录_姊妹案参考.md / 上游公告及修复对照.txt / 复核脚本_80231.sh)"
     }
-  }
+  },
+  "fix_recommendation": "上游修复口径：match_ssl_primary_config() 的配置字段枚举补入 native_ca_store，使 HTTPS 连接复用时校验原生 CA 存储设置差异（字段枚举遗漏定位见 case.json oh_source.gap_evidence 与工单 OHSA26-092209031 源码级证据评论）。"
 }

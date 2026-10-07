@@ -147,18 +147,18 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 **影响的 OpenHarmony 版本分支**：
 
-- v4.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v5.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v5.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v6.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- v7.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
-- master: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v4.1: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v5.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v5.1: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v6.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- v7.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- master: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
 
 ### 5. 修复建议
 
 回移上游修复（见 patch.diff）
 
-**修复补丁**：
+**修复补丁**（`patch.diff`）：
 ```diff
 --- a/cJSON_Utils.c
 +++ b/cJSON_Utils.c
@@ -229,7 +229,7 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 ### 5. 修复建议
 
-见漏洞描述
+上游修复口径：match_ssl_primary_config() 的配置字段枚举补入 native_ca_store，使 HTTPS 连接复用时校验原生 CA 存储设置差异（字段枚举遗漏定位见 case.json oh_source.gap_evidence 与工单 OHSA26-092209031 源码级证据评论）。
 
 
 
@@ -434,7 +434,7 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 回移上游修复（见 patch.diff）
 
-**修复补丁**：
+**修复补丁**（`patch.diff`）：
 ```diff
 # Narrow fix for CVE-2026-82209 adapted to OpenHarmony third_party/curl
 # (upstream 95c1e891 assumes the is_public_suffix() wrapper introduced by a
@@ -516,9 +516,56 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 ### 5. 修复建议
 
-见漏洞描述
+回移上游修复（见 patch.diff）
 
+**修复补丁**（`patch.diff`）：
+```diff
+diff --git a/libavcodec/cfhd.c b/libavcodec/cfhd.c
+index 4d430e32efd94..128362ac62dcf 100644
+--- a/libavcodec/cfhd.c
++++ b/libavcodec/cfhd.c
+@@ -1224,7 +1224,7 @@ static int cfhd_decode(AVCodecContext *avctx, AVFrame *pic,
+ 
+             if (lowpass_height > s->plane[plane].band[4][1].a_height || lowpass_width > s->plane[plane].band[4][1].a_width ||
+                 !highpass_stride || s->plane[plane].band[4][1].width > s->plane[plane].band[4][1].a_width ||
+-                lowpass_width < 3 || lowpass_height < 3) {
++                lowpass_width < 3 || lowpass_height < 3 || lowpass_width * 2 > s->plane[plane].width) {
+                 av_log(avctx, AV_LOG_ERROR, "Invalid plane dimensions\n");
+                 ret = AVERROR(EINVAL);
+                 goto end;
+@@ -1345,7 +1345,7 @@ static int cfhd_decode(AVCodecContext *avctx, AVFrame *pic,
+ 
+             if (lowpass_height > s->plane[plane].band[4][1].a_height || lowpass_width > s->plane[plane].band[4][1].a_width ||
+                 s->plane[plane].band[4][1].width > s->plane[plane].band[4][1].a_width ||
+-                lowpass_width < 3 || lowpass_height < 3) {
++                lowpass_width < 3 || lowpass_height < 3 || lowpass_width * 2 > s->plane[plane].width) {
+                 av_log(avctx, AV_LOG_ERROR, "Invalid plane dimensions\n");
+                 ret = AVERROR(EINVAL);
+                 goto end;
+diff --git a/libavcodec/cfhd.c b/libavcodec/cfhd.c
+index 4d430e32efd94..128362ac62dcf 100644
+--- a/libavcodec/cfhd.c
++++ b/libavcodec/cfhd.c
+@@ -1224,7 +1224,7 @@ static int cfhd_decode(AVCodecContext *avctx, AVFrame *pic,
+ 
+             if (lowpass_height > s->plane[plane].band[4][1].a_height || lowpass_width > s->plane[plane].band[4][1].a_width ||
+                 !highpass_stride || s->plane[plane].band[4][1].width > s->plane[plane].band[4][1].a_width ||
+-                lowpass_width < 3 || lowpass_height < 3) {
++                lowpass_width < 3 || lowpass_height < 3 || lowpass_width * 2 > s->plane[plane].width) {
+                 av_log(avctx, AV_LOG_ERROR, "Invalid plane dimensions\n");
+                 ret = AVERROR(EINVAL);
+                 goto end;
+@@ -1345,7 +1345,7 @@ static int cfhd_decode(AVCodecContext *avctx, AVFrame *pic,
+ 
+             if (lowpass_height > s->plane[plane].band[4][1].a_height || lowpass_width > s->plane[plane].band[4][1].a_width ||
+                 s->plane[plane].band[4][1].width > s->plane[plane].band[4][1].a_width ||
+-                lowpass_width < 3 || lowpass_height < 3) {
++                lowpass_width < 3 || lowpass_height < 3 || lowpass_width * 2 > s->plane[plane].width) {
+                 av_log(avctx, AV_LOG_ERROR, "Invalid plane dimensions\n");
+                 ret = AVERROR(EINVAL);
+                 goto end;
 
+```
 
 ---
 
@@ -1104,9 +1151,28 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 ### 5. 修复建议
 
-见漏洞描述
+回移上游修复（见 patch.diff）
 
+**修复补丁**（`patch.diff`）：
+```diff
+diff --git a/libavformat/iamf_parse.c b/libavformat/iamf_parse.c
+index d74a8677d68d5..4c2df2c9e686d 100644
+--- a/libavformat/iamf_parse.c
++++ b/libavformat/iamf_parse.c
+@@ -1009,6 +1009,11 @@ static int mix_presentation_obu(void *s, IAMFContext *c, AVIOContext *pb, int le
+     mix_presentation->cmix = mix;
+ 
+     mix_presentation->count_label = ffio_read_leb(pbc);
++    if (mix_presentation->count_label > len - avio_tell(pbc)) {
++        mix_presentation->count_label = 0;
++        ret = AVERROR_INVALIDDATA;
++        goto fail;
++    }
+     mix_presentation->language_label = av_calloc(mix_presentation->count_label,
+                                                  sizeof(*mix_presentation->language_label));
+     if (!mix_presentation->language_label) {
 
+```
 
 ---
 
@@ -1324,9 +1390,34 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 ### 5. 修复建议
 
-见漏洞描述
+回移上游修复（见 patch.diff）
 
+**修复补丁**（`patch.diff`）：
+```diff
+--- a/libavcodec/nvdec.c
++++ b/libavcodec/nvdec.c
+@@ -614,8 +614,7 @@
+             cf->ref_idx_ref = ff_refstruct_pool_get(ctx->decoder_pool);
+             if (!cf->ref_idx_ref) {
+                 av_log(avctx, AV_LOG_ERROR, "No decoder surfaces left\n");
+-                ret = AVERROR(ENOMEM);
+-                goto fail;
++                return AVERROR(ENOMEM);
+             }
+         }
+         cf->ref_idx = *cf->ref_idx_ref;
+@@ -625,9 +624,6 @@
+     }
+ 
+     return 0;
+-fail:
+-    nvdec_fdd_priv_free(cf);
+-    return ret;
+ }
+ 
+ int ff_nvdec_end_frame(AVCodecContext *avctx)
 
+```
 
 ---
 
@@ -1578,9 +1669,46 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 ### 5. 修复建议
 
-见漏洞描述
+回移上游修复（见 patch.diff）
 
+**修复补丁**（`patch.diff`）：
+```diff
+diff --git a/libavcodec/rscc.c b/libavcodec/rscc.c
+index 3715e1c6d42a8..5fde30ec35070 100644
+--- a/libavcodec/rscc.c
++++ b/libavcodec/rscc.c
+@@ -311,6 +311,12 @@ static int rscc_decode_frame(AVCodecContext *avctx, AVFrame *frame,
+             ret = AVERROR_UNKNOWN;
+             goto end;
+         }
++        if (len < pixel_size) {
++            av_log(avctx, AV_LOG_WARNING, "Deflated %lu bytes, but %d are needed\n",
++                   len, pixel_size);
++            memset(ctx->inflated_buf + len, 0, pixel_size - len);
++            pixel_size = len;
++        }
+         pixels = ctx->inflated_buf;
+     }
+ 
+diff --git a/libavcodec/rscc.c b/libavcodec/rscc.c
+index 3715e1c6d42a8..5fde30ec35070 100644
+--- a/libavcodec/rscc.c
++++ b/libavcodec/rscc.c
+@@ -311,6 +311,12 @@ static int rscc_decode_frame(AVCodecContext *avctx, AVFrame *frame,
+             ret = AVERROR_UNKNOWN;
+             goto end;
+         }
++        if (len < pixel_size) {
++            av_log(avctx, AV_LOG_WARNING, "Deflated %lu bytes, but %d are needed\n",
++                   len, pixel_size);
++            memset(ctx->inflated_buf + len, 0, pixel_size - len);
++            pixel_size = len;
++        }
+         pixels = ctx->inflated_buf;
+     }
+ 
 
+```
 
 ---
 
@@ -2145,7 +2273,7 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 ### 5. 修复建议
 
-见漏洞描述
+AddWatcher 入口对 appEventFilters.head 判空（head==NULL 且 size>0 时返回参数校验错误码，与对照路径现有校验口径一致）；内层 names.head / eventTypes.head 同步补判空。（与提交表单第五节修复建议一致：D:/cve_data/submission_hiappevent/奖励计划表单v1_hiappevent.md）
 
 
 
@@ -2202,7 +2330,7 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 ### 5. 修复建议
 
-见漏洞描述
+建议 WriteByteArray 的 CJ FFI 入口对（数组指针, 长度）组合校验：length>0 时数组指针判空并返回参数校验错误码，与同文件其他 FFI 转换的既有检查口径对齐（真库级 SIGSEGV 证据：工单 OHSA26-092953990）。
 
 
 
@@ -2259,7 +2387,7 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 ### 5. 修复建议
 
-见漏洞描述
+建议 CArrStrToVectorKey/String 族 FFI 转换（同文件 3 处）在 length>0 时校验数组指针非空并返回参数校验错误码；本案为源级归档口径（AbilityRuntime Context 隔离限制，如实记录，见 docs/status/TASK_IPC_KV_VALIDATION_20260928.md）。
 
 
 

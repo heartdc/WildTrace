@@ -59,5 +59,6 @@
   },
   "oh_source": {
     "l4_evidence": "L4 链路（L4_TIER_A/B + REAL_BUILD_PROBE_20260925）：FFI 导出入口 FfiOHOSIPCWriteByteArray(const CJByteArray* array) 直传 CArray 指针，无 head/size 校验；调用链进入 IPC 序列化前对 array->head 解引用遍历（head==NULL 即空指针解引用）。真库级证实（2026-09-28）：隔离构建 libcj_ipc_ffi.z.so 正常导出符号路径下，len=0/空数组输入触发 SIGSEGV（run.exit=139，崩溃帧归属 libcj_ipc_ffi.z.so）；正常字节对照组通过。基础运行库带补丁、非完整产品服务环境（隔离构建口径红线三条如实声明）。"
-  }
+  },
+  "fix_recommendation": "建议 WriteByteArray 的 CJ FFI 入口对（数组指针, 长度）组合校验：length>0 时数组指针判空并返回参数校验错误码，与同文件其他 FFI 转换的既有检查口径对齐（真库级 SIGSEGV 证据：工单 OHSA26-092953990）。"
 }

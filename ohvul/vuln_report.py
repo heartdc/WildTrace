@@ -173,15 +173,22 @@ def read_case(case_dir: Path, kb_records: dict | None = None) -> dict:
     else:
         poc_code = "> ⚠️ 本案 PoC 为源码级对照验证，无可执行触发器（原因见下）"
 
-    # Patch
+    # Patch: patch.diff is the canonical name; upstream_*.patch / *.diff
+    # in the case directory are equally valid fix evidence and are picked
+    # up by name so §5 never degrades to a bare pointer when only the
+    # upstream-named file is present.
     patch_path = case_dir / "patch.diff"
+    if not patch_path.exists():
+        alts = sorted(list(case_dir.glob("*.patch")) + list(case_dir.glob("*.diff")))
+        patch_path = alts[0] if alts else patch_path
     patch_content = ""
     if patch_path.exists():
-        patch = patch_path.read_text(encoding="utf-8")
-        if len(patch) < 3000:
-            patch_content = f"**修复补丁**：\n```diff\n{patch}\n```"
+        patch = patch_path.read_text(encoding="utf-8", errors="replace")
+        if len(patch) < 20000:
+            patch_content = (f"**修复补丁**（`{patch_path.name}`）：\n"
+                             f"```diff\n{patch}\n```")
         else:
-            patch_content = f"**修复补丁**：见附件 `patch.diff`（{len(patch)} 字节）"
+            patch_content = f"**修复补丁**：见附件 `{patch_path.name}`（{len(patch)} 字节）"
 
     # Version impact: verdicts come from the impact-matrix engine (single
     # source of truth) — no hardcoded branch lists, no unconditional 🔴.

@@ -151,6 +151,28 @@ class ReportRobustnessTests(unittest.TestCase):
             data = read_case(cd)
         self.assertIn("cJSON_Utils.c:1325-1330", data["source_snippet"])
 
+    def test_patch_falls_back_to_upstream_named_file(self):
+        # §5 must inline the fix diff when only an upstream_*.patch is
+        # present, not degrade to a bare pointer.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            cd = self._case(root, {"component": "third_party/x"})
+            (cd / "upstream_abc123.patch").write_text(
+                "--- a/f.c\n+++ b/f.c\n@@ -1,2 +1,2 @@\n-x\n+y\n", encoding="utf-8")
+            data = read_case(cd)
+        self.assertIn("upstream_abc123.patch", data["patch_content"])
+        self.assertIn("```diff", data["patch_content"])
+
+    def test_large_patch_becomes_pointer_with_name(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            cd = self._case(root, {"component": "third_party/x"})
+            (cd / "patch.diff").write_text("x" * 20000, encoding="utf-8")
+            data = read_case(cd)
+        self.assertIn("patch.diff", data["patch_content"])
+        self.assertIn("20000 字节", data["patch_content"])
+        self.assertNotIn("```diff", data["patch_content"])
+
     def test_report_refuses_to_overwrite_without_force(self):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)

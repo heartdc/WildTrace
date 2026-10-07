@@ -47,5 +47,6 @@
   "next_gate": "平台受理评审；产品级可达性（应用侧经仓颉 HiAppEvent API 传入畸形 watcher 的现实路径）为后续独立验证。",
   "oh_source": {
     "l4_evidence": "L4 Tier C 链路（L4_TIER_C_20260929.md #1）：FFI 导出 FfiOHOSHiAppEventAddWatcher 直传 CWatcher（含 CArrAppEventFilter），C++ 侧 hiappevent_ffi.cpp:372-385 嵌套循环 for(i<size){head[i]...} 无 head 判空——链路预判与真库崩溃位置逐行一致。HiAppEvent 打点 API 应用侧直接可达、无前置对象创建（Tier C 评级：验证最易）。"
-  }
+  },
+  "fix_recommendation": "AddWatcher 入口对 appEventFilters.head 判空（head==NULL 且 size>0 时返回参数校验错误码，与对照路径现有校验口径一致）；内层 names.head / eventTypes.head 同步补判空。（与提交表单第五节修复建议一致：D:/cve_data/submission_hiappevent/奖励计划表单v1_hiappevent.md）"
 }
