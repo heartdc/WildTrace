@@ -9,15 +9,15 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "unknown",
-      "OpenHarmony-v5.0-Release": "unknown",
-      "OpenHarmony-v5.1-Release": "unknown",
-      "OpenHarmony-v6.0-Release": "unknown",
-      "OpenHarmony-v7.0-Release": "unknown",
-      "master": "unknown"
+      "OpenHarmony-v4.1-Release": "affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
+      "master": "affected"
     },
-    "affected_count": 0,
-    "unknown_count": 6
+    "affected_count": 6,
+    "unknown_count": 0
   },
   "curl_native_ca_reuse": {
     "cve": "CVE-2026-80231",

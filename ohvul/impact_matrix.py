@@ -25,13 +25,19 @@ from datetime import date
 # OH release branches with snapshot dates and component baselines
 # (README.OpenSource survey recorded 2026-09-29; single source for both
 # the matrix tool and the vulnerability report's branch section).
+# cJSON baselines surveyed 2026-10-07: this repo's release branches carry
+# no "v" prefix (OpenHarmony-4.1-Release / 5.0 / 5.1.0 / 6.0-Release);
+# v7.0 exists only on the gitcode mirror (388cfc96). gitee master is a
+# stale mirror (1.7.17, last commit 2025-09); the current dev master on
+# gitcode pins 1.7.19, which is also the version the cjson case was
+# verified against (observed_version).
 OH_BRANCHES = {
-    "OpenHarmony-v4.1-Release": {"snapshot": "2023-04", "ffmpeg": "n4.1",   "curl": "8.1.1",  "openssl": "3.0.9"},
-    "OpenHarmony-v5.0-Release": {"snapshot": "2024-10", "ffmpeg": "n5.1.6", "curl": "8.6.0",  "openssl": "3.0.9"},
-    "OpenHarmony-v5.1-Release": {"snapshot": "2025-04", "ffmpeg": "n5.1.6", "curl": "8.6.0",  "openssl": "3.0.9"},
-    "OpenHarmony-v6.0-Release": {"snapshot": "2025-10", "ffmpeg": "n6.1.1", "curl": "8.11.0", "openssl": "3.0.12"},
-    "OpenHarmony-v7.0-Release": {"snapshot": "2026-08", "ffmpeg": "n7.1.1", "curl": "8.13.0", "openssl": "3.0.9"},
-    "master":                   {"snapshot": "2026-09", "ffmpeg": "n7.1.1", "curl": "8.13.0", "openssl": "3.0.9"},
+    "OpenHarmony-v4.1-Release": {"snapshot": "2023-04", "ffmpeg": "n4.1",   "curl": "8.1.1",  "openssl": "3.0.9",  "cjson": "1.7.16"},
+    "OpenHarmony-v5.0-Release": {"snapshot": "2024-10", "ffmpeg": "n5.1.6", "curl": "8.6.0",  "openssl": "3.0.9",  "cjson": "1.7.17"},
+    "OpenHarmony-v5.1-Release": {"snapshot": "2025-04", "ffmpeg": "n5.1.6", "curl": "8.6.0",  "openssl": "3.0.9",  "cjson": "1.7.17"},
+    "OpenHarmony-v6.0-Release": {"snapshot": "2025-10", "ffmpeg": "n6.1.1", "curl": "8.11.0", "openssl": "3.0.12", "cjson": "1.7.17"},
+    "OpenHarmony-v7.0-Release": {"snapshot": "2026-08", "ffmpeg": "n7.1.1", "curl": "8.13.0", "openssl": "3.0.9",  "cjson": "1.7.19"},
+    "master":                   {"snapshot": "2026-09", "ffmpeg": "n7.1.1", "curl": "8.13.0", "openssl": "3.0.9",  "cjson": "1.7.19"},
 }
 
 # Branches where the OH-native (non-vendored) cases were source-verified.
@@ -300,18 +306,21 @@ def render_matrix_md(matrix: dict) -> str:
     lines.append("4. **OH 原生代码**（IPC/CJ FFI）：仅源级验证过的分支（v7.0/master）计 affected，其余 ？。")
     lines.append("5. **不跨组件借用基线**：某分支缺该组件基线时判 ？，绝不用其他组件的版本号代替"
                  "（2026-09-29 审计 P0：旧实现以 ffmpeg 基线兜底，造成 curl/openssl/cjson 全红假象）。")
-    lines.append("6. ？格升级路径：补该分支 README.OpenSource 基线（当前缺口：cJSON）或 case.json 的 `affected_raw` 后重新生成。")
+    lines.append("6. ？格升级路径：补 case.json 的 `affected_raw` 或该分支的受影响证据后重新生成"
+                 "（2026-10-07 cJSON 各分支基线已回填，剩余 ？格均为 OH 原生案旧分支）。")
     lines.append("")
     lines.append("## 版本基线数据")
     lines.append("")
-    comps = ["ffmpeg", "curl", "openssl"]
+    comps = ["ffmpeg", "curl", "openssl", "cjson"]
     lines.append("| 分支 | " + " | ".join(comps) + " |")
     lines.append("|" + "---|" * (1 + len(comps)))
     for branch, info in OH_BRANCHES.items():
         cells = [info.get(c, "？") for c in comps]
         lines.append(f"| {short_branch(branch)} ({info['snapshot']}) | " + " | ".join(cells) + " |")
     lines.append("")
-    lines.append("> cJSON 各分支基线版本未录入，相关格全部 ？（待补各分支 README.OpenSource）。")
+    lines.append("> cJSON 基线 2026-10-07 实测回填（各分支 README.OpenSource）：该仓 release 分支无 v 前缀，"
+                 "v7.0 仅存在于 gitcode 镜像（388cfc96=1.7.19）；gitee master 为停更镜像（1.7.17，2025-09），"
+                 "现行开发 master 在 gitcode（1.7.19，与本案 observed_version 一致）。")
     lines.append("> 旧手写矩阵（13×6 全红/60 红）已归档至 `docs/analysis/IMPACT_MATRIX_HANDAUTHORED_20260929.md`，"
                  "其全红口径未经分支级验证，以本工具输出为准。")
     return "\n".join(lines)

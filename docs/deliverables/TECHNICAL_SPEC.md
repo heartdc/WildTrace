@@ -379,8 +379,8 @@ python -m ohvul.benchmark <cases.json> [--scanner ...]
   质量修复后的现役口径。
 - 干净环境独立复跑已完成（新 venv 安装 + 全量 1058 项通过，2026-09-30）；
   DEMO 视频录制待执行（VIDEO_SCRIPT.md 就绪）。
-- 影响矩阵 18 个 ？格：cJSON 各分支基线未录入（6）、OH 原生案（hiappevent/ipc/kv）
-  旧分支 CJ FFI 引入时间未确认（12）。
+- 影响矩阵 12 个 ？格：OH 原生案（hiappevent/ipc/kv）旧分支 CJ FFI
+  引入时间未确认（各 4 格；cJSON 6 格已于 2026-10-07 基线回填消 ？）。
 - LLM 29 组全量审查与双模型交叉验证待执行（通道就绪）。
 - 内置正则扫描仅作初筛；语义结论以上层引擎为准；跨函数分析为轻量别名级，
   非完整指针分析。
