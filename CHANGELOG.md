@@ -1,3 +1,15 @@
+# 2026-10-07（issue #100 闭环：hiappevent 第 17 单溯源字段到位）
+
+- AerGap 于 23:04 回复 issue #100 并关闭：两个表单必填溯源字段自官方完整树裸仓直读——
+  hiappevent 构建提交 `de94cb4d53f94afdbc75a5a7c46401f99bdcf17f`（!628，2026-09-30，
+  裸仓 HEAD 即实际构建提交）；manifest 分支 `master`（gitcode default revision）。
+  附勘误：选择性检出树（sweep HEAD 09-28）不作构建来源。
+- 提交 `7b0a9ea` 落在已合并的 PR #97 旧分支（不进 master），经本机评审（分支 = master + 单提交；
+  zip sha256 实测 `a8ae123ded48…` 与声称一致；17 条目 CRC 全过）后以 **PR #109** 合并：
+  证据包 `hiappevent-evidence-20261003.zip` 入库 `cases/hiappevent_ffi_watcher_null_filter/`，
+  溯源小节入 `docs/analysis/HIAPPEVENT_REAL_LIBRARY_CONFIRM_20261003.md`。
+- 表单草稿（`D:/cve_data/submission_hiappevent/`）两个必填字段已回填。**第 17 单材料全备，待平台提交**。
+
 # 2026-10-07（引擎债 #13/#15 收口 + #14 适配层修复）
 
 - **#13**：`run_wsl_clang_tidy` 非零退出但已解析出诊断时状态改判 `partial`（保留 findings + stderr 尾部），
