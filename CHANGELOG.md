@@ -1,3 +1,17 @@
+# 2026-10-07（平台 16 单再核验 + 催办材料 + 台账卫生）
+
+- 补录当日事件：PR #99 落库（将 10-04 批次成果入库：hiappevent 建案文件、IMPACT_MATRIX/VULN_REPORT
+  交付件重生成、impact_matrix `base/` 前缀映射与测试）；issue #100 创建（hiappevent 第 17 单提单所需
+  两项构建溯源字段——官方完整树实际构建 commit 与 manifest 分支，等对侧回复；表单草稿与 PoC 已备
+  `D:/cve_data/submission_hiappevent/`）。
+- **平台 16 单再核验（2026-10-07 21:40，已登录逐单）**：全部"待受理"、有效性/等级均 "—"，与 09-30 实测
+  零变化；09-22 批已 15 天、09-28/29 批已 9 天。催办邮件样本入库（`docs/status/URGE_MAIL_DRAFT_20261007.md`，
+  按 0930 版 §5 模板：按批次、附最强三单），交所有者发送；核验记录 `docs/status/TICKET_FOLLOWUP_20261007.md`（PR #101）。
+- 台账卫生：issue #24（clang_facts 括号声明符 size_of 误算）核实**已修复**（commit 0f4e229 落地
+  `_POINTER_DECL` 路径 + counter-example 回归测试 `tests/test_clang_facts.py`，本次关单前本地复跑 37 项 OK），
+  关闭；TECHNICAL_SPEC §7 诚实清单对齐现状（性能复测与干净环境复跑已完成、真库级证实 1→2 项、
+  ？格 14→18 口径修正）。
+
 # 2026-10-04（CJ FFI 真库验证批次收口：hiappevent 证实建案 + account 证伪入档）
 
 - 合并 AerGap 两项成果（官方完整树真库验证批次，构建阻塞已解除——根因 git-lfs 缺失）：
