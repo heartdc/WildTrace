@@ -38,5 +38,6 @@
   },
   "oh_source": {
     "l4_evidence": "L4 源级定位（L4_TIER_C + kv_null_entry 执行件）：FFI 侧以 CArray/CJByteArray 形态传入键值数据，C++ 侧 distributed_kv_store 接口在 entry/data 为空数组时未做空校验即遍历。 pinned 树的 FfiOHOSDistributedKVStoreCreateKVManager ABI 为 (const char*, Context*)——无错误出参且 Context 无法在纯 C 侧构造（2026-09-28 真库实测：历史 ABI 形态调用即 SIGSEGV），记录为隔离限制并以 tools/validation_cases/kv_null_entry.c 执行件保留 malformed 入口矩阵（run_malformed.sh）。"
-  }
+  },
+  "fix_recommendation": "建议 CArrStrToVectorKey/String 族 FFI 转换（同文件 3 处）在 length>0 时校验数组指针非空并返回参数校验错误码；本案为源级归档口径（AbilityRuntime Context 隔离限制，如实记录，见 docs/status/TASK_IPC_KV_VALIDATION_20260928.md）。"
 }

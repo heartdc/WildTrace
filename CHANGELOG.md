@@ -1,3 +1,15 @@
+# 2026-10-07（VULN_REPORT §5 修复建议做实：薄条目 18→0）
+
+- 生成器（`ohvul/vuln_report.py`）：patch 拾取扩展到案例目录内任意 `*.patch`/`*.diff`（`patch.diff` 优先，
+  `upstream_*.patch` 兜底）；内联阈值 3000 → 20000 字符，超限才退化为附件指针（带文件名与字节数）。
+- 数据做实：4 案补 `patch.diff`（nvdec/iamf/rscc/cfhd，自 D 盘提交材料复制，实测上游修复 diff）；4 案补
+  `fix_recommendation`——hiappevent=提交表单第五节原文口径；ipc/kv=FFI 参数判空校验建议（出处
+  OHSA26-092953990 与 TASK_IPC_KV_VALIDATION 文档）；curl_ca=match_ssl_primary_config() 补
+  native_ca_store 字段枚举（出处 case.json gap_evidence 与工单源码级证据评论）。全部有既有记录出处，
+  无新增推断。
+- VULN_REPORT.md 重生成：19 案 §5 均为"具体建议文本 +（如有）内联 diff"，薄条目（<120 字符）18→0；
+  内联 diff 块 6 个。回归测试 2 项（upstream 命名兜底、大 patch 指针化）。
+
 # 2026-10-07（引擎小修 #12/#16：semgrep 显式 --config + 失败保留 stderr）
 
 - **#12**：`build_local_command` / `run_local_engine` 的 generic semgrep 路径强制显式规则文件——
