@@ -1,3 +1,13 @@
+# 2026-10-04（CJ FFI 真库验证批次收口：hiappevent 证实建案 + account 证伪入档）
+
+- 合并 AerGap 两项成果（官方完整树真库验证批次，构建阻塞已解除——根因 git-lfs 缺失）：
+  - **PR #97 hiappevent 真库级证实**：官方完整树（471+ 项目、官方构建链、零 FFI 源码改动）构建的
+    `libcj_hiappevent_ffi.z.so` 上，对照不崩 / 候选（filters.head=NULL+size=1）SIGSEGV，崩溃帧归属库内 0x11c9a。
+    建 `cases/hiappevent_ffi_watcher_null_filter/`（真库级口径，CWE-476，新发现）；
+  - **PR #98 account 真库级证伪**：四组 malformed 全被 FFI 层参数检查拦截，Tier B 预测不成立，诚实关闭入档。
+- `impact_matrix` 组件映射补 `base/` 前缀（hiappevent 判 oh_native；测试钉死）。交付件重生成：19 案 × 6 分支 =
+  🔴 90 / — 6 / ？ 18。台账追记 2026-10-04 批次。真库级证实累计：IPC（已提交）+ hiappevent（待提交，第 17 张单）。
+
 # 2026-09-30（性能实测落盘 + 管线性能修复 + 使用说明书 + 干净环境复跑）
 
 - **性能交付件完成**（`docs/deliverables/PERFORMANCE.md`，现役口径实测）：dsoftbus 681,529 行 / 10 层管线

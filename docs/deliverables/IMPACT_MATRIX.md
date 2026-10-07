@@ -1,6 +1,6 @@
 # 版本分支影响矩阵
 
-生成日期：2026-09-29（工具 `ohvul.impact_matrix` 从 cases/ 自动生成）
+生成日期：2026-10-07（工具 `ohvul.impact_matrix` 从 cases/ 自动生成）
 
 | 案例 | CVE | 组件 | 引入版本 | 上游修复 | v4.1 | v5.0 | v5.1 | v6.0 | v7.0 | master | 证实分支数 | 待定格数 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -19,11 +19,12 @@
 | ffmpeg_swaprect_temp_row_oob | CVE-2026-65706 | ffmpeg | 3.0 | pending | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 6 | 0 |
 | ffmpeg_ty_ac3_trim_underflow | CVE-2026-65704 | ffmpeg | 0 | pending | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 6 | 0 |
 | ffmpeg_wmaenc_extradata_padding | CVE-2026-52296 | ffmpeg | 0 | 9.0 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 6 | 0 |
+| hiappevent_ffi_watcher_null_filter | — | oh_native | unknown | pending | ？ | ？ | ？ | ？ | 🔴 | 🔴 | 2 | 4 |
 | ipc_cj_array_null_validation | — | oh_native | unknown | pending | ？ | ？ | ？ | ？ | 🔴 | 🔴 | 2 | 4 |
 | kv_ffi_array_validation | — | oh_native | unknown | pending | ？ | ？ | ？ | ？ | 🔴 | 🔴 | 2 | 4 |
 | openssl_ocb_oneshot_iv_discard | CVE-2026-45445 | openssl | 3.0.0 | 4.0.1 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 6 | 0 |
 
-**总计**：18 案 × 6 分支；🔴 证实 affected 88 格；— 证实不受影响 6 格；？待定 14 格。本表只声明有证据的格子，？不是安全结论。
+**总计**：19 案 × 6 分支；🔴 证实 affected 90 格；— 证实不受影响 6 格；？待定 18 格。本表只声明有证据的格子，？不是安全结论。
 
 > 🔴 affected = 分支基线落在上游受影响范围内，或与本案验证过的 OH 基线同版本  
 > ✅ fixed = 分支基线已含上游修复  

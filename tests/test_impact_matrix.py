@@ -48,10 +48,11 @@ class NoCrossComponentFallbackTests(unittest.TestCase):
         self.assertEqual(verdicts["OpenHarmony-v5.0-Release"], "unknown")
 
     def test_oh_native_only_confirmed_branches(self):
-        verdicts = evaluate_case({"component": "foundation/communication/ipc"})["branches"]
-        self.assertEqual(verdicts["master"], "affected")
-        self.assertEqual(verdicts["OpenHarmony-v7.0-Release"], "affected")
-        self.assertEqual(verdicts["OpenHarmony-v4.1-Release"], "unknown")
+        for component in ("foundation/communication/ipc", "base/hiviewdfx/hiappevent"):
+            verdicts = evaluate_case({"component": component})["branches"]
+            self.assertEqual(verdicts["master"], "affected", component)
+            self.assertEqual(verdicts["OpenHarmony-v7.0-Release"], "affected", component)
+            self.assertEqual(verdicts["OpenHarmony-v4.1-Release"], "unknown", component)
 
 
 class AffectedRangeTests(unittest.TestCase):
