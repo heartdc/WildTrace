@@ -1,8 +1,8 @@
 # OpenHarmony 漏洞分析报告
 
-生成日期：2026-09-30
+生成日期：2026-10-07
 工具版本：WildTrace (master)
-分析范围：18 个案例（公开 CVE 缺口回验 + 新发现候选）
+分析范围：19 个案例（公开 CVE 缺口回验 + 新发现候选）
 
 ## 案例总览
 
@@ -23,9 +23,10 @@
 | 13 | ffmpeg_swaprect_temp_row_oob | CVE-2026-65706 | CWE-787 | third_party/ffmpeg | 缺口回验 | ✅ |
 | 14 | ffmpeg_ty_ac3_trim_underflow | CVE-2026-65704 | CWE-191 (underflow leading to CWE-787) | third_party/ffmpeg | 缺口回验 | ✅ |
 | 15 | ffmpeg_wmaenc_extradata_padding | CVE-2026-52296 | CWE-125 | third_party/ffmpeg | 缺口回验 | ✅ |
-| 16 | ipc_cj_array_null_validation | 新发现 | CWE-476 | foundation/communication/ipc/interfaces/innerkits/cj | 缺口回验 | 源级 |
-| 17 | kv_ffi_array_validation | 新发现 | CWE-476 | foundation/distributeddatamgr/kv_store | 缺口回验 | 源级 |
-| 18 | openssl_ocb_oneshot_iv_discard | CVE-2026-45445 | CWE-325 | third_party/openssl | 缺口回验 | ✅ |
+| 16 | hiappevent_ffi_watcher_null_filter | 新发现 | CWE-476 | base/hiviewdfx/hiappevent | 缺口回验 | 源级 |
+| 17 | ipc_cj_array_null_validation | 新发现 | CWE-476 | foundation/communication/ipc/interfaces/innerkits/cj | 缺口回验 | 源级 |
+| 18 | kv_ffi_array_validation | 新发现 | CWE-476 | foundation/distributeddatamgr/kv_store | 缺口回验 | 源级 |
+| 19 | openssl_ocb_oneshot_iv_discard | CVE-2026-45445 | CWE-325 | third_party/openssl | 缺口回验 | ✅ |
 
 ## cjson-merge-nonobject-alias
 
@@ -2088,6 +2089,63 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 原文，对 OH 检出直接适用）。同时建议评估组件内其他 extradata
 手工分配点是否存在同类缺填充形态（上游在本修复同期对多处
 extradata 分配做过同类加固，可按上游提交历史对照排查）。
+
+
+
+---
+
+## hiappevent-ffi-watcher-null-filter
+
+### 1. 源码位置与内容
+
+| 项目 | 值 |
+|---|---|
+| 组件 | base/hiviewdfx/hiappevent |
+| 源码文件 | base/hiviewdfx/hiappevent/frameworks/cj/ffi/src/hiappevent_ffi.cpp |
+| 关键行号 | [372, 385] |
+| CVE 编号 | （新发现） |
+| CWE 分类 | CWE-476 |
+
+> 源码片段：见 `base/hiviewdfx/hiappevent/frameworks/cj/ffi/src/hiappevent_ffi.cpp`（关键行号 [372, 385]）。源码级证据记录：L4 Tier C 链路（L4_TIER_C_20260929.md #1）：FFI 导出 FfiOHOSHiAppEventAddWatcher 直传 CWatcher（含 CArrAppEventFilter），C++ 侧 hiappevent_ffi.cpp:372-385 嵌套循环 for(i<size){head[i]...} 无 head 判空——链路预判与真库崩溃位置逐行一致。HiAppEvent 打点 API 应用侧直接可达、无前置对象创建（Tier C 评级：验证最易）。
+
+### 2. 漏洞详细描述
+
+见 case.json
+
+**触发条件**：见 PoC 注释
+
+**影响路径**：见漏洞描述
+
+### 3. PoC 源代码
+
+> ⚠️ 本案 PoC 为源码级对照验证，无可执行触发器（原因见下）
+
+**PoC 使用方法**：
+```
+# 在 OH ffmpeg/curl/openssl 构建产物上编译执行
+cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=address
+./poc trigger    # 触发漏洞
+./poc control    # 正常对照组
+```
+
+### 4. 影响分析
+
+**影响的代码模块**：base/hiviewdfx/hiappevent
+
+**影响的功能模块**：hiappevent
+
+**影响的 OpenHarmony 版本分支**：
+
+- v4.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v5.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v5.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v6.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v7.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- master: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+
+### 5. 修复建议
+
+见漏洞描述
 
 
 

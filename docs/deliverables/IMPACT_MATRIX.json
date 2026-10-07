@@ -299,6 +299,26 @@
     "affected_count": 6,
     "unknown_count": 0
   },
+  "hiappevent_ffi_watcher_null_filter": {
+    "cve": "",
+    "component": "base/hiviewdfx/hiappevent",
+    "component_type": "oh_native",
+    "introduced_version": "unknown",
+    "fixed_upstream": "pending",
+    "observed_version": "",
+    "evidence_rule": "no-version-evidence",
+    "kb_source": "",
+    "branches": {
+      "OpenHarmony-v4.1-Release": "unknown",
+      "OpenHarmony-v5.0-Release": "unknown",
+      "OpenHarmony-v5.1-Release": "unknown",
+      "OpenHarmony-v6.0-Release": "unknown",
+      "OpenHarmony-v7.0-Release": "affected",
+      "master": "affected"
+    },
+    "affected_count": 2,
+    "unknown_count": 4
+  },
   "ipc_cj_array_null_validation": {
     "cve": "",
     "component": "foundation/communication/ipc/interfaces/innerkits/cj",

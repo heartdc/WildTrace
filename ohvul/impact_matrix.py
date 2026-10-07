@@ -53,7 +53,7 @@ def component_type(component: str) -> str:
         return "openssl"
     if "cjson" in c:
         return "cjson"
-    if "foundation/" in c or "distributeddatamgr" in c:
+    if "foundation/" in c or "base/" in c or "distributeddatamgr" in c:
         return "oh_native"
     return "other"
 
