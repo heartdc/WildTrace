@@ -14,6 +14,16 @@
   POSIX 脚本修复、宿主 GCC12 头文件兼容），**不触碰任何 FFI 源码**——
   与选择性树上的 20+ 个 mock 补丁路线完全不同。
 
+### 构建溯源（工单表单字段）
+
+| 字段 | 值 | 来源 |
+|---|---|---|
+| hiappevent 仓构建提交 | `de94cb4d53f94afdbc75a5a7c46401f99bdcf17f`（2026-09-30 10:25:55 +0800，!628 merge master into master） | `.repo/projects/base/hiviewdfx/hiappevent.git` 裸仓 HEAD；工作树由该 HEAD 逐文件 `git show` 抽取（`.checkout_done` 标记），**即实际构建提交** |
+| manifest 解析分支 | `master`（gitcode 远端 default revision，tracking `refs/heads/master`） | `.repo/manifests/default.xml` `<default remote="gitcode" revision="master"/>` |
+
+注意：本地选择性检出树（`~/oh-real-20260925`，sweep HEAD 09-28）**不是**本案例的
+构建来源；官方完整树的裸仓 HEAD 才是。两个值以上表为准。
+
 ## 结果
 
 | case | 输入 | 结果 |
