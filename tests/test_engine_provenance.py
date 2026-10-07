@@ -53,6 +53,62 @@ class EngineProvenanceTests(unittest.TestCase):
             self.assertTrue(all('/opt/reviewed-llvm/bin/clang-tidy' in c.args[0] for c in calls.call_args_list))
             self.assertEqual(result['execution']['returncode'], 0)
 
+    @unittest.skipUnless(os.name == "nt", "WSL bridge requires a Windows host")
+    def test_tidy_nonzero_exit_with_diagnostics_is_partial(self):
+        # Parsed diagnostics survive a non-zero clang-tidy exit as partial
+        # evidence instead of being dropped wholesale (issue #13).
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / 'a.c'
+            source.write_text('int a;\n')
+            diagnostic = f'{source.name}:3:5: warning: dangling pointer [clang-analyzer-core.NullDereference]\n'
+
+            def run(command, **kwargs):
+                if '--version' in command:
+                    return subprocess.CompletedProcess(command, 0, 'LLVM version 99.4.5\n', '')
+                return subprocess.CompletedProcess(command, 1, diagnostic, 'error: expected expression')
+
+            with patch('ohvul.engine_adapter.subprocess.run', side_effect=run):
+                result = run_wsl_clang_tidy(source, root, llvm_root='/opt/reviewed-llvm')
+        self.assertEqual(result['status'], 'partial')
+        self.assertEqual(len(result['findings']), 1)
+        self.assertEqual(result['findings'][0]['rule'], 'clang-analyzer-core.NullDereference')
+        self.assertIn('expected expression', result['stderr'])
+
+    @unittest.skipUnless(os.name == "nt", "WSL bridge requires a Windows host")
+    def test_tidy_nonzero_exit_without_diagnostics_stays_input_error(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / 'a.c'
+            source.write_text('int a;\n')
+
+            def run(command, **kwargs):
+                if '--version' in command:
+                    return subprocess.CompletedProcess(command, 0, 'LLVM version 99.4.5\n', '')
+                return subprocess.CompletedProcess(command, 2, '', 'error: no input files')
+
+            with patch('ohvul.engine_adapter.subprocess.run', side_effect=run):
+                result = run_wsl_clang_tidy(source, root, llvm_root='/opt/reviewed-llvm')
+        self.assertEqual(result['status'], 'input_error')
+        self.assertEqual(result['findings'], [])
+
+    @unittest.skipUnless(os.name == "nt", "WSL bridge requires a Windows host")
+    def test_semgrep_rule_file_outside_source_root_is_accepted(self):
+        # The rule file is engine input, not part of the scanned tree; an
+        # out-of-root rule keeps the source snapshot clean (issue #14).
+        from ohvul.engine_adapter import windows_to_wsl_path
+        with tempfile.TemporaryDirectory() as root_dir, tempfile.TemporaryDirectory() as rule_dir:
+            root = Path(root_dir)
+            (root / 'a.c').write_text('int a;\n')
+            rule = Path(rule_dir) / 'rules.yml'
+            rule.write_text('rules: []\n')
+            completed = subprocess.CompletedProcess([], 0, '{"results": []}', '')
+            with patch('ohvul.engine_adapter.subprocess.run', return_value=completed) as calls:
+                result = run_wsl_semgrep(root, rule, ('a.c',))
+            self.assertEqual(result['status'], 'completed')
+            command = calls.call_args_list[0].args[0]
+            self.assertIn(windows_to_wsl_path(rule), command)
+
     def test_version_and_execution_are_bound_to_candidate_evidence(self):
         normalized = {'engine': 'clang', 'engine_version': '99.2.3', 'status': 'completed',
                       'source_root': str(Path('.').resolve()), 'findings': [{

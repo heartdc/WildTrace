@@ -49,8 +49,8 @@ def _scan_resolved(root, resolved, initial_records, errors, *, snapshot,
                                            timeout=timeout, compile_args=compile_args)
             if not isinstance(result, dict):
                 raise ValueError("engine result must be an object")
-            if result.get("status") == "completed" and not isinstance(result.get("findings"), list):
-                raise ValueError("completed engine result lacks findings list")
+            if result.get("status") in ("completed", "partial") and not isinstance(result.get("findings"), list):
+                raise ValueError("engine result with findings must carry a findings list")
             if result.get("status") == "completed" and result.get("input_errors"):
                 raise ValueError("completed engine result contains input errors")
             if result.get("source_root") is not None and Path(result["source_root"]).resolve() != root:
@@ -62,14 +62,16 @@ def _scan_resolved(root, resolved, initial_records, errors, *, snapshot,
         record = {**result, "engine": engine, "source_file": str(source)}
         record.pop("findings", None)
         file_results.append(record)
-        if result.get("status") == "completed":
+        if result.get("status") in ("completed", "partial"):
+            # partial keeps its parsed findings — a non-zero exit after
+            # diagnostics is degraded evidence, not absent evidence (#13).
             succeeded += 1
             version = result.get("engine_version", "unknown")
             versions.add(version)
             normalized.extend({**finding, "source": finding.get("source", engine),
                                "engine_version": finding.get("engine_version", version)}
                               for finding in result["findings"])
-        else:
+        if result.get("status") != "completed":
             errors.append(record)
     status = "completed" if not errors else ("partial" if succeeded else "input_error")
     output = engine_result_to_audit_result({
