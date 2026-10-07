@@ -32,13 +32,44 @@ class EngineAdapterTests(unittest.TestCase):
         from subprocess import CompletedProcess
         raw = '{"results": [{"check_id": "r", "path": "a.c", "start": {"line": 3}, "extra": {"message": "x"}}]}'
         with patch('ohvul.engine_adapter.subprocess.run', return_value=CompletedProcess([], 0, raw, '')):
-            result = __import__('ohvul.engine_adapter', fromlist=['run_local_engine']).run_local_engine('semgrep', 'semgrep', Path('.'))
+            result = __import__('ohvul.engine_adapter', fromlist=['run_local_engine']).run_local_engine(
+                'semgrep', 'semgrep', Path('.'), rule_file=Path(__file__))
         self.assertEqual(result['engine'], 'semgrep')
 
     def test_command_is_local_and_allowlisted(self):
-        self.assertEqual(build_local_command("semgrep", "semgrep", Path("."))[0], "semgrep")
+        # Semgrep without an explicit rule file is rejected: a config-less
+        # scan runs with no rules and looks like a clean tree (#12).
+        with self.assertRaises(ValueError):
+            build_local_command("semgrep", "semgrep", Path("."))
+        with self.assertRaises(ValueError):
+            build_local_command("semgrep", "semgrep", Path("."),
+                                rule_file=Path("no_such_rule.yml"))
+        command = build_local_command("semgrep", "semgrep", Path("."),
+                                      rule_file=Path(__file__))
+        self.assertEqual(command[0], "semgrep")
+        self.assertIn("--config", command)
+        self.assertEqual(command[command.index("--config") + 1], str(Path(__file__).resolve()))
         with self.assertRaises(ValueError):
             build_local_command("semgrep", "evil", Path("."))
+
+    def test_local_engine_failure_keeps_stderr_tail(self):
+        # A non-zero exit must surface the engine's stderr, not discard it (#16).
+        from unittest.mock import patch
+        from subprocess import CompletedProcess
+        run_local_engine = __import__('ohvul.engine_adapter',
+                                      fromlist=['run_local_engine']).run_local_engine
+        with patch('ohvul.engine_adapter.subprocess.run',
+                   return_value=CompletedProcess([], 2, '', 'rule syntax error at line 5')):
+            with self.assertRaises(RuntimeError) as ctx:
+                run_local_engine('semgrep', 'semgrep', Path('.'),
+                                 rule_file=Path(__file__))
+        self.assertIn('rule syntax error at line 5', str(ctx.exception))
+        with patch('ohvul.engine_adapter.subprocess.run',
+                   return_value=CompletedProcess([], 1, '', '')):
+            with self.assertRaises(RuntimeError) as ctx:
+                run_local_engine('semgrep', 'semgrep', Path('.'),
+                                 rule_file=Path(__file__))
+        self.assertEqual(str(ctx.exception), 'analysis engine failed')
 
     def test_clang_plist_normalization(self):
         raw = b'''<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><dict><key>diagnostics</key><array><dict><key>check_name</key><string>core.NullDereference</string><key>description</key><string>possible null dereference</string><key>location</key><dict><key>file</key><string>a.c</string><key>line</key><integer>2</integer></dict></dict></array></dict></plist>'''

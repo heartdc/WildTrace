@@ -398,7 +398,8 @@ def normalize_semgrep_json(raw: dict, *, source_root: Path,
     return result
 
 
-def build_local_command(engine: str, executable: str, source_root: Path) -> list[str]:
+def build_local_command(engine: str, executable: str, source_root: Path,
+                        rule_file: Path | None = None) -> list[str]:
     """Build an explicit local-only command; caller owns execution and review."""
     if engine not in SUPPORTED_ENGINES or not executable or Path(executable).name != engine:
         raise ValueError("engine executable is not allowlisted")
@@ -406,16 +407,24 @@ def build_local_command(engine: str, executable: str, source_root: Path) -> list
     if not root.is_dir():
         raise ValueError("source root must be an existing directory")
     if engine == "semgrep":
-        return [executable, "scan", "--json", "--no-git-ignore", str(root)]
+        if rule_file is None:
+            # A config-less `semgrep scan` runs with no rules and exits
+            # cleanly — an empty scan indistinguishable from a clean tree.
+            raise ValueError("semgrep requires an explicit rule file (--config)")
+        rule = Path(rule_file)
+        if not rule.is_file():
+            raise ValueError("semgrep rule file must be an existing file")
+        return [executable, "scan", "--json", "--no-git-ignore",
+                "--config", str(rule.resolve()), str(root)]
     return [executable, str(root)]
 
 
 def run_local_engine(engine: str, executable: str, source_root: Path,
-                     *, timeout: int = 60) -> dict:
+                     *, timeout: int = 60, rule_file: Path | None = None) -> dict:
     """Run an explicitly supplied local analyzer and parse JSON/SARIF output."""
     if not isinstance(timeout, int) or not 0 < timeout <= 300:
         raise ValueError("timeout must be between 1 and 300 seconds")
-    command = build_local_command(engine, executable, source_root)
+    command = build_local_command(engine, executable, source_root, rule_file)
     try:
         completed = subprocess.run(command, cwd=str(source_root.resolve()),
                                    shell=False, capture_output=True, text=True,
@@ -423,7 +432,8 @@ def run_local_engine(engine: str, executable: str, source_root: Path,
     except subprocess.TimeoutExpired as exc:
         raise RuntimeError("analysis engine timed out") from exc
     if completed.returncode != 0:
-        raise RuntimeError("analysis engine failed")
+        detail = (completed.stderr or "").strip()[-8192:]
+        raise RuntimeError("analysis engine failed" + (f": {detail}" if detail else ""))
     try:
         raw = json.loads(completed.stdout)
     except json.JSONDecodeError as exc:
