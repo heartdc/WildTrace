@@ -1,3 +1,14 @@
+# 2026-10-07（引擎小修 #12/#16：semgrep 显式 --config + 失败保留 stderr）
+
+- **#12**：`build_local_command` / `run_local_engine` 的 generic semgrep 路径强制显式规则文件——
+  缺省或文件不存在 → `ValueError`，命令含 `--config <rule>`。封死"无配置静默空扫"（干净退出、与
+  干净树不可区分）风险；WSL 路径原有规则文件契约不变。
+- **#16**：`run_local_engine` 非零退出时 `RuntimeError` 附 stderr 尾部（`[-8192:]`，与三个 WSL runner
+  行为对齐）；stderr 为空时保持原消息形态。
+- 回归测试：无规则文件/规则文件不存在拒绝、`--config` 参数落位、失败消息含 stderr 尾部、空 stderr
+  退化。#35（快照跨平台摘要）经复核为**语义变更决策**（修复会改变全部已记录摘要，牵动 09-15/09-17
+  证据重登记），不属机械修复——三个选项已评论至 issue，保持 OPEN 待决策。
+
 # 2026-10-07（影响矩阵 cJSON 基线回填：？ 18→12）
 
 - **cJSON 各分支基线实测回填**（每分支 README.OpenSource，2026-10-07）：v4.1=1.7.16 / v5.0=v5.1=v6.0=1.7.17 /
