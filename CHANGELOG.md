@@ -1,3 +1,13 @@
+# 2026-10-07（影响矩阵 cJSON 基线回填：？ 18→12）
+
+- **cJSON 各分支基线实测回填**（每分支 README.OpenSource，2026-10-07）：v4.1=1.7.16 / v5.0=v5.1=v6.0=1.7.17 /
+  v7.0=1.7.19 / master=1.7.19。勘误两条：① 该仓 release 分支**无 v 前缀**（OpenHarmony-4.1-Release 等，
+  gitee/gitcode 同 sha）；② **v7.0 分支仅存在于 gitcode 镜像**（388cfc96），gitee master 为停更镜像
+  （1.7.17，2025-09），现行开发 master 在 gitcode（1.7.19，与 cjson 案 observed_version 一致）。
+- `OH_BRANCHES` 补 cjson 列 + 测试钉死（基线存在性逐分支断言；kb 联接全分支判定回归）。矩阵重生成：
+  **19 案 × 6 分支 = 🔴 96 / — 6 / ？ 12**（cjson_merge_alias 经 kb 联接 CVE-2026-87933 全六分支 affected，
+  1.7.16–1.7.19 均在受影响列表内）。剩余 ？格均为 OH 原生案（hiappevent/ipc/kv）旧分支，待 affected_raw。
+
 # 2026-10-07（平台 16 单再核验 + 催办材料 + 台账卫生）
 
 - 补录当日事件：PR #99 落库（将 10-04 批次成果入库：hiappevent 建案文件、IMPACT_MATRIX/VULN_REPORT

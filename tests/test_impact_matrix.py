@@ -31,12 +31,46 @@ class NoCrossComponentFallbackTests(unittest.TestCase):
                 self.assertEqual(impact, "unknown", branch)
 
     def test_missing_component_baseline_is_unknown_not_affected(self):
+        # A component with no recorded baseline stays unknown on every
+        # branch — never judged by another component's numbers.
         verdicts = evaluate_case({
-            "component": "third_party/cJSON",
-            "observed_version": "1.7.19",
+            "component": "third_party/libxml2",
+            "observed_version": "2.12.0",
         })["branches"]
         self.assertTrue(all(v == "unknown" for v in verdicts.values()))
-        self.assertFalse(OH_BRANCHES["master"].get("cjson"))
+        self.assertTrue(all("libxml2" not in info for info in OH_BRANCHES.values()))
+
+    def test_cjson_baselines_recorded_on_every_branch(self):
+        # Surveyed 2026-10-07 from each branch's README.OpenSource
+        # (v7.0 and current master live only on the gitcode mirror).
+        expected = {
+            "OpenHarmony-v4.1-Release": "1.7.16",
+            "OpenHarmony-v5.0-Release": "1.7.17",
+            "OpenHarmony-v5.1-Release": "1.7.17",
+            "OpenHarmony-v6.0-Release": "1.7.17",
+            "OpenHarmony-v7.0-Release": "1.7.19",
+            "master": "1.7.19",
+        }
+        for branch, version in expected.items():
+            self.assertEqual(OH_BRANCHES[branch].get("cjson"), version, branch)
+
+    def test_cjson_case_resolves_via_kb_join(self):
+        # CVE-2026-87933 style kb record (affected 1.7.0–1.7.19, no
+        # upstream fix recorded): every branch baseline sits inside the
+        # affected list — no ？ cells may remain for this case.
+        kb = {"CVE-2026-87933": {
+            "affected_versions": ["1.7.%d" % i for i in range(20)],
+            "fixed_versions": [],
+            "fixed_version_semantics": "none",
+            "source": "cvelistV5",
+        }}
+        verdicts = evaluate_case({
+            "component": "third_party/cJSON",
+            "public_cve_reference": "CVE-2026-87933",
+            "observed_version": "1.7.19",
+        }, kb)["branches"]
+        for branch, impact in verdicts.items():
+            self.assertEqual(impact, "affected", branch)
 
     def test_version_equality_propagates_evidence(self):
         verdicts = evaluate_case({
