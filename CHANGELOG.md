@@ -1,3 +1,17 @@
+# 2026-10-07（引擎债 #13/#15 收口 + #14 适配层修复）
+
+- **#13**：`run_wsl_clang_tidy` 非零退出但已解析出诊断时状态改判 `partial`（保留 findings + stderr 尾部），
+  无诊断仍 `input_error`；`engine_shards._scan_resolved` 对 `partial` 结果照常收集 findings，并保留 error
+  记录使 shard 级状态诚实降级（files_scanned 计入 partial 文件，与 semgrep 路径口径一致）。
+- **#14（适配层）**：`run_wsl_semgrep` 不再要求规则文件位于源树内（仍要求是存在文件）——规则是引擎输入
+  而非被扫描树的一部分，树外规则保持 source_snapshot 纯净。profile 管线仍按相对路径把规则钉在树内，
+  升级为树外规则属 profile 语义变更（涉及 validate/sources/provenance/receipt 四处），已在 issue #14
+  留跟进说明，保持 OPEN。
+- **#15**：补 shard 调用方 ↔ runner 签名契约回归测试（inspect.signature 逐 kwarg 校验 + compile_args
+  元组断言）——签名漂移不再能静默穿过 MagicMock 测试。签名本身已于 09-28 对齐，issue 关闭。
+- 测试 +5（tidy 非零退出两态判定、树外规则、shard partial 收集、调用契约锁定）；引擎相关 66 项通过，
+  本地全量 discover exit 0。
+
 # 2026-10-07（VULN_REPORT §5 修复建议做实：薄条目 18→0）
 
 - 生成器（`ohvul/vuln_report.py`）：patch 拾取扩展到案例目录内任意 `*.patch`/`*.diff`（`patch.diff` 优先，

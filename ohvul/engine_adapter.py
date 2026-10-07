@@ -639,8 +639,13 @@ def run_wsl_clang_tidy(source_file: Path, source_root: Path, *,
     result = normalize_clang_tidy_text(completed.stdout + completed.stderr,
                                        source_root=source_root, engine_version=observation['version'])
     result['version_observation'] = observation
-    result["status"] = "completed" if completed.returncode == 0 else "input_error"
-    if completed.returncode != 0:
+    if completed.returncode == 0:
+        result["status"] = "completed"
+    else:
+        # clang-tidy exits non-zero on compile errors yet often still emits
+        # valid diagnostics for the file; parsed findings survive as partial
+        # evidence instead of being dropped (issue #13).
+        result["status"] = "partial" if result.get("findings") else "input_error"
         result["stderr"] = completed.stderr[-8192:]
     return _record_execution(result, command, completed)
 
@@ -651,8 +656,11 @@ def run_wsl_semgrep(source_root: Path, rule_file: Path, relative_files: tuple[st
     """Run Semgrep with a local rule file and explicit local file list."""
     semgrep_root = resolve_semgrep_bin() if semgrep_root is None else semgrep_root
     root, rule_file = Path(source_root).resolve(), Path(rule_file).resolve()
-    if not rule_file.is_file() or not rule_file.is_relative_to(root):
-        raise ValueError("Semgrep rule file must be inside source root")
+    if not rule_file.is_file():
+        raise ValueError("Semgrep rule file must be an existing file")
+    # The rule file deliberately may live OUTSIDE the source root: it is an
+    # input to the engine, not part of the scanned tree, and an in-root rule
+    # would be hashed into the source snapshot (issue #14).
     files = []
     for relative in relative_files:
         candidate = (root / relative).resolve()
