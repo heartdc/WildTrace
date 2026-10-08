@@ -1,3 +1,16 @@
+# 2026-10-08（第 17 单提交：hiappevent 真库证实案 OHSA26-100821855）
+
+- 平台提交流程走完（ZCode 内置浏览器，账号北辰522）：**OHSA26-100821855**（submissionId
+  233895538108403712，平台提交时间 2026-10-08 10:17），待受理。平台名下现有 **17 张工单全部待受理**。
+- 表单口径：类型 内存破坏与执行类 / **越界读写**（沿用 IPC 单 092953990 先例）；代码仓
+  hiviewdfx_hiappevent；文件路径 frameworks/cj/ffi/src/hiappevent_ffi.cpp:372-385；Commit Hash 填
+  实际构建提交 de94cb4d…（缺陷引入点未单独考证，如实）；版本下拉无 master 选项，选
+  OpenHarmony-v7.0-Release（2026-08-21），精确 manifest=master 写在描述一节。
+- 附件栏为空（内置浏览器不支持文件上传控件）：PoC 全文内嵌问题描述四节；证据包以 sha256
+  a8ae123ded48… + 仓库路径（cases/…/hiappevent-evidence-20261003.zip，PR #109 已入库）引用，
+  可按要求提供或经 bugbounty@mail.openharmony.io 补发。
+- case.json 回填 submission 块（参照 curl_psl 格式）。
+
 # 2026-10-07（issue #100 闭环：hiappevent 第 17 单溯源字段到位）
 
 - AerGap 于 23:04 回复 issue #100 并关闭：两个表单必填溯源字段自官方完整树裸仓直读——
