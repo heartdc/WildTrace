@@ -1,3 +1,20 @@
+# 2026-10-08（本地工作台 P0：扫描驱动 + 分诊 + 产出的 Web 闭环）
+
+- **后端**：`ohvul.webapp_core`（纯标准库）——ScanManager 后台任务模型（进度/日志捕获、产物再水合）、
+  TriageStore JSON 分诊存储（open/kept/false_positive/promoted + 备注）、`promote_case` 生成诚实案例骨架
+  （status=lead、next_gate=manual_review、limitations 注明"lead ≠ 漏洞"与升级路径）；`ohvul.webapp`
+  FastAPI 层（**仅绑 127.0.0.1**，CI 无 fastapi 时测试自动跳过）：扫描发起/状态/findings 筛选分页/
+  分诊 PATCH/建案/产物预览（路径限定在扫描目录内）。
+- **管线**：`autopilot.run` 新增可选 `progress(phase, detail)` 观察者回调（surface/callgraph/layer/
+  cross_uaf/joern/report 六类相位），回调异常不中断扫描——前端进度条的数据来源，也是 CI 友好钩子。
+- **前端**（`web/`，Vue3 + Vite，dist 随仓库分发）：三页——扫描（发起/进度/历史）、分诊（筛选+详情
+  抽屉：源码片段/评分因子/触发提示/可达性+备注）、产出（摘要/报告与 PoC 预览/lead→骨架）。
+  安全徽章（local_only/no_execution/no_network）与"lead ≠ 漏洞"口径常驻界面。
+- **端到端实测**：对 `tools/validation_cases`（13 个真实 .c）扫描 12.4s 出 1 条 P6 lead（conf 55，
+  含自动 PoC）→ 分诊备注（中文 roundtrip）→ 建案 `webcases/weblead_*` → findings.md 预览，全链路通过。
+- 测试 +5（核心 4 纯标准库可离线跑；API 1 项 skipUnless fastapi）；全量 suite exit 0。
+- 工作目录 `.webwork/`、`webcases/`、`web/node_modules/` 入 .gitignore。
+
 # 2026-10-08（第 17 单提交：hiappevent 真库证实案 OHSA26-100821855）
 
 - 平台提交流程走完（ZCode 内置浏览器，账号北辰522）：**OHSA26-100821855**（submissionId

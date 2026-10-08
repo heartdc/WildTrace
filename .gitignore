@@ -18,3 +18,8 @@ workspace/
 demo-out/
 cpg.bin*
 
+
+# local workbench runtime state (ohvul.webapp)
+.webwork/
+webcases/
+web/node_modules/
