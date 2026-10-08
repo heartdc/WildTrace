@@ -1,3 +1,15 @@
+# 2026-10-08（工作台接入 LLM PoC：单条 lead 一键生成，全链路留痕）
+
+- **后端**（`ohvul.webapp`）：`GET /api/llm/status`（仅探测密钥存在性，密钥值不出进程）；
+  `POST /api/scans/{id}/findings/{fid}/llm-poc`——调 `llm_poc.generate_poc_llm`（glm-5.3，密钥
+  `OSLOVELACE_API_KEY`），**只有通过验证的 PoC 落盘** `pocs/llm/`，每次尝试（含拒答/传输失败/
+  验证不过）都在 `llm_attempts/` 留 JSON 记录并盖 `model_invoked: true` 戳——"模型输出不作结论"
+  纪律落到工件层。
+- **前端**：分诊抽屉新增"LLM 生成 PoC"（模型选择、60s 占位、生成后代码预览 + 验证状态 chip +
+  sha256 + 落盘路径）；密钥未配置时按钮禁用并显示配置指引。
+- 测试 +1（mock 传输：验证通过落盘 / 失败留痕 / 404 三态，离线可跑）；API 测试共 2 项。
+- 实测：服务重启后历史扫描完整再水合；密钥探测、产物端点工作正常（真实调用待密钥配置后生效）。
+
 # 2026-10-08（本地工作台 P0：扫描驱动 + 分诊 + 产出的 Web 闭环）
 
 - **后端**：`ohvul.webapp_core`（纯标准库）——ScanManager 后台任务模型（进度/日志捕获、产物再水合）、

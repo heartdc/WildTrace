@@ -76,6 +76,31 @@
         <textarea v-model="note" rows="2" style="flex: 1"></textarea>
         <button @click="saveNote">保存备注</button>
       </div>
+      <h3>LLM PoC 生成</h3>
+      <div class="row">
+        <button :disabled="llmBusy || !store.llm.key_configured" @click="genPoc">
+          {{ llmBusy ? '生成中…（最长 60s）' : 'LLM 生成 PoC' }}
+        </button>
+        <select v-model="llmModel" :disabled="llmBusy">
+          <option>glm-5.3</option>
+        </select>
+        <span v-if="!store.llm.key_configured" class="error-text">
+          未配置 API 密钥：设置环境变量 OSLOVELACE_API_KEY 后重启服务（见 docs/engineering/LLM_LOCAL_OPERATOR.md）
+        </span>
+      </div>
+      <template v-if="llmResult">
+        <div class="row" style="margin-top: 8px">
+          <span class="chip" :class="llmResult.result.validated ? 'kept' : 'false_positive'">
+            {{ llmResult.result.validated ? '通过验证' : '未通过：' + (llmResult.result.validation_note || llmResult.result.error || '') }}
+          </span>
+          <span class="muted">模型 {{ llmResult.result.model }} · sha256 {{ (llmResult.result.sha256 || '').slice(0, 12) }}…</span>
+          <span v-if="llmResult.result.artifact" class="muted">已落盘 {{ llmResult.result.artifact }}</span>
+        </div>
+        <pre class="snippet" v-if="llmResult.code">{{ llmResult.code }}</pre>
+        <p class="muted" style="margin: 6px 0 0">
+          模型输出是 PoC 起点（model_invoked=true 已留痕 llm_attempts/），不是漏洞结论。
+        </p>
+      </template>
     </div>
   </div>
 </template>
@@ -95,6 +120,9 @@ const page = ref(1)
 const size = 50
 const selected = ref(null)
 const note = ref('')
+const llmBusy = ref(false)
+const llmModel = ref('glm-5.3')
+const llmResult = ref(null)
 const ready = computed(() => store.scan && store.scan.status === 'done')
 const pageCount = computed(() => Math.ceil(total.value / size) || 1)
 
@@ -124,6 +152,17 @@ async function saveNote() {
   const rec = await api.triage(store.scanId, selected.value.finding_id,
                                { status: selected.value.triage.status, note: note.value })
   selected.value.triage = rec
+}
+async function genPoc() {
+  if (!selected.value || llmBusy.value) return
+  llmBusy.value = true
+  llmResult.value = null
+  try {
+    llmResult.value = await api.llmPoc(store.scanId, selected.value.finding_id,
+                                       { model: llmModel.value })
+  } catch (e) {
+    llmResult.value = { result: { validated: false, error: e.message } }
+  } finally { llmBusy.value = false }
 }
 function reset() {
   Object.assign(filters, { severity: '', status: '', pattern: '', cwe: '', q: '', min_conf: 0 })
