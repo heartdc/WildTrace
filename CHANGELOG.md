@@ -1,3 +1,17 @@
+# 2026-10-08（LLM 全线切 GLM：Anthropic 协议默认 + 国内站支持）
+
+- **默认切换**：`llm_adapter`（validate_settings / chat_completion / draft_analysis）与
+  `llm_review`（run 签名 + CLI）的默认端点/模型从 oslovelace/grok-4.6 切为
+  **z.ai Anthropic 端点 + glm-5.3**（新增 `GLM_BASE_URL` / `GLM_MODEL` 常量）——所有 LLM 入口
+  （PoC 起草、评审、分析）默认即 GLM；oslovelace/grok 传输路径保留在白名单，显式指定仍可用。
+- **国内站支持**：实测 `open.bigmodel.cn/api/anthropic` 同为 Anthropic 线缆格式（401 鉴权探测），
+  加入 `ANTHROPIC_BASE_URLS`；工作台 `/api/llm/status` 返回双 provider（z.ai 国际 / bigmodel 国内），
+  分诊抽屉的 LLM PoC 生成新增 provider 下拉，`base_url` 透传到 `generate_poc_llm`。
+- 测试对齐：共享 completion 夹具改为镜像 GLM 默认计划（model/endpoint 参数化）；Responses 传输
+  三测显式钉旧端点（保住 /responses 载荷断言）；operator 夹具走 GLM 端到端；`review.DEFAULT_BASE_URL`
+  保留 re-export（模块公开面）。回归：LLM 相关 127 项 + 全量 suite exit 0。
+- 密钥仍仅走 `OSLOVELACE_API_KEY` 环境变量（国内/国际站 key 均为该变量，值不出进程）。
+
 # 2026-10-08（工作台接入 LLM PoC：单条 lead 一键生成，全链路留痕）
 
 - **后端**（`ohvul.webapp`）：`GET /api/llm/status`（仅探测密钥存在性，密钥值不出进程）；

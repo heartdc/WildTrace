@@ -26,7 +26,7 @@ class OperatorTests(unittest.TestCase):
                          summary=str(self.fx.inputs[0]), queue=str(self.fx.inputs[1]),
                          context=str(self.fx.inputs[2]), source_roots={k: str(v) for k, v in self.fx.roots.items()},
                          evidence=str(self.fx.evidence_path), groups=self.fx.ids,
-                         base_url=review.DEFAULT_BASE_URL, model='grok-4.6', timeout=300,
+                         base_url=review.GLM_BASE_URL, model=review.GLM_MODEL, timeout=300,
                          max_tokens=3072, max_calls=1)
         self.config.write_text(json.dumps(self.data), encoding='utf-8')
         self.stdout, self.stderr = io.StringIO(), io.StringIO()

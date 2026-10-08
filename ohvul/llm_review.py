@@ -13,7 +13,7 @@ import re
 import sys
 import time
 
-from .llm_adapter import (DEFAULT_BASE_URL, LlmTransportError, chat_completion,
+from .llm_adapter import (DEFAULT_BASE_URL, GLM_BASE_URL, GLM_MODEL, LlmTransportError, chat_completion,
                           reject_credentials, runtime_key, validate_settings)
 from .review_context import MAX_CONTEXT_BYTES, validate_review_context
 from .llm_evidence import extend_request, EXPANDED_PROMPT_VERSION, EXPANDED_INSTRUCTIONS
@@ -280,8 +280,8 @@ def _summary(plan, records, *, bindings_valid):
 
 
 def run_review(summary_path, queue_path, context_path, source_roots, output, group_ids, *,
-               allow_network=False, plan_only=False, api_key=None, base_url=DEFAULT_BASE_URL,
-               model='grok-4.6', timeout=60, max_tokens=2048, max_calls=3, evidence_path=None):
+               allow_network=False, plan_only=False, api_key=None, base_url=GLM_BASE_URL,
+               model=GLM_MODEL, timeout=60, max_tokens=2048, max_calls=3, evidence_path=None):
     _require(type(allow_network) is bool and type(plan_only) is bool, 'invalid execution mode')
     _require(plan_only or allow_network, 'network requires explicit --allow-network')
     output = _output(output, summary_path, queue_path, context_path, source_roots)
@@ -458,8 +458,8 @@ def main(argv=None):
     mode.add_argument('--verify', action='store_true')
     mode.add_argument('--inspect', action='store_true',
                       help='offline check of complete saved records, including failed runs; not inference acceptance')
-    parser.add_argument('--base-url', default=DEFAULT_BASE_URL)
-    parser.add_argument('--model', default='grok-4.6')
+    parser.add_argument('--base-url', default=GLM_BASE_URL)
+    parser.add_argument('--model', default=GLM_MODEL)
     parser.add_argument('--timeout', type=int, default=60)
     parser.add_argument('--max-tokens', type=int, default=2048)
     parser.add_argument('--max-calls', type=int, default=3)

@@ -1,5 +1,5 @@
 import os, unittest
-from ohvul.llm_adapter import draft_analysis
+from ohvul.llm_adapter import DEFAULT_BASE_URL, draft_analysis
 
 class LlmAdapterTests(unittest.TestCase):
  def test_missing_runtime_key_fails_without_network(self):
@@ -24,7 +24,7 @@ class LlmAdapterTests(unittest.TestCase):
   old=os.environ.get('OSLOVELACE_API_KEY'); os.environ['OSLOVELACE_API_KEY']='secret-test-key'
   try:
    with patch('ohvul.llm_adapter._open', return_value=Response()) as call:
-    result=draft_analysis({'id':'candidate'}); request=call.call_args.args[0]
+    result=draft_analysis({'id':'candidate'}, base_url=DEFAULT_BASE_URL, model='grok-4.6'); request=call.call_args.args[0]
    self.assertEqual(result['final_verdict'],'undetermined'); self.assertNotIn('secret-test-key', str(result)); self.assertIn('Bearer secret-test-key', request.headers['Authorization'])
   finally:
    if old is None: os.environ.pop('OSLOVELACE_API_KEY',None)

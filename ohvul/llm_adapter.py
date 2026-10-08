@@ -13,7 +13,16 @@ import urllib.error
 import urllib.request
 
 DEFAULT_BASE_URL = 'https://oslovelace.com/v1'
-ANTHROPIC_BASE_URLS = {'https://api.z.ai/api/anthropic'}
+# Anthropic-protocol endpoints (verified reachable, 401 without auth):
+# z.ai = international GLM platform, open.bigmodel.cn = domestic one.
+# Same wire format (x-api-key + anthropic-version), same GLM models.
+ANTHROPIC_BASE_URLS = {'https://api.z.ai/api/anthropic',
+                       'https://open.bigmodel.cn/api/anthropic'}
+# GLM over the Anthropic protocol is the project default (2026-10-08):
+# every LLM entry point — PoC drafting, review, analysis — calls GLM
+# unless a caller explicitly opts into another allowlisted endpoint.
+GLM_BASE_URL = 'https://api.z.ai/api/anthropic'
+GLM_MODEL = 'glm-5.3'
 ALLOWED_BASE_URLS = {DEFAULT_BASE_URL, 'https://www.oslovelace.com/v1'} | ANTHROPIC_BASE_URLS
 ALLOWED_MODELS = {'grok-4.6', 'glm-5.3', 'gpt-6-astra'}
 MAX_REQUEST_BYTES = 65536
@@ -64,7 +73,7 @@ def _bytes(value):
                       separators=(',', ':'), allow_nan=False).encode('utf-8')
 
 
-def validate_settings(base_url=DEFAULT_BASE_URL, model='grok-4.6', timeout=45, max_tokens=2048):
+def validate_settings(base_url=GLM_BASE_URL, model=GLM_MODEL, timeout=45, max_tokens=2048):
     if not isinstance(base_url, str) or base_url.rstrip('/') not in ALLOWED_BASE_URLS:
         raise ValueError('LLM endpoint must be an explicitly allowlisted HTTPS base URL')
     if model not in ALLOWED_MODELS:
@@ -194,7 +203,7 @@ def _anthropic_completion(messages, *, endpoint, model, timeout, max_tokens, api
             'model_identity': 'provider_reported_not_independently_verified'}
 
 
-def chat_completion(messages, *, base_url=DEFAULT_BASE_URL, model='grok-4.6',
+def chat_completion(messages, *, base_url=GLM_BASE_URL, model=GLM_MODEL,
                     timeout=45, max_tokens=2048, api_key=None, json_mode=True):
     """One paid request at most. Invalid/failed requests are never retried here."""
     endpoint = validate_settings(base_url, model, timeout, max_tokens)
@@ -305,7 +314,7 @@ def chat_completion(messages, *, base_url=DEFAULT_BASE_URL, model='grok-4.6',
             'model_identity': 'provider_reported_not_independently_verified'}
 
 
-def draft_analysis(context, *, base_url=DEFAULT_BASE_URL, model='grok-4.6', timeout=30):
+def draft_analysis(context, *, base_url=GLM_BASE_URL, model=GLM_MODEL, timeout=30):
     """Compatibility entry point; a free-text draft is never a vulnerability verdict."""
     validate_settings(base_url, model, timeout, 512)
     if not isinstance(context, dict) or len(_bytes(context)) > 65536:

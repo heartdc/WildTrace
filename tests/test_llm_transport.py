@@ -29,6 +29,10 @@ def provider(content='{}', **changes):
 
 class LlmTransportTests(unittest.TestCase):
     def call(self, **kwargs):
+        # These tests pin the oslovelace Responses transport explicitly;
+        # the project default is GLM/Anthropic since 2026-10-08.
+        kwargs.setdefault('base_url', adapter.DEFAULT_BASE_URL)
+        kwargs.setdefault('model', 'grok-4.6')
         return adapter.chat_completion([{'role': 'user', 'content': 'synthetic evidence'}],
                                        api_key='dummy-test-credential', **kwargs)
 
