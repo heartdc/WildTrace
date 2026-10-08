@@ -98,6 +98,7 @@ class WebappApiTests(unittest.TestCase):
             # key presence probe only, never leaks the value
             status = client.get("/api/llm/status").json()
             self.assertIn("key_configured", status)
+            self.assertTrue(any(p["id"] == "bigmodel" for p in status["providers"]))
 
             sid = client.post("/api/scans",
                               json={"source_root": str(root / "target")}).json()["scan_id"]
@@ -113,8 +114,12 @@ class WebappApiTests(unittest.TestCase):
             fake_ok = {"code": "#include <stdio.h>\nint main(void){return 0;}",
                        "validated": True, "validation_note": "ok",
                        "model": "test-model", "sha256": "a" * 64}
-            with patch.object(webapp, "generate_poc_llm", return_value=fake_ok):
-                r = client.post(f"/api/scans/{sid}/findings/{fid}/llm-poc", json={})
+            with patch.object(webapp, "generate_poc_llm", return_value=fake_ok) as gen:
+                r = client.post(f"/api/scans/{sid}/findings/{fid}/llm-poc",
+                                json={"base_url": "https://open.bigmodel.cn/api/anthropic"})
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(gen.call_args.kwargs["base_url"],
+                             "https://open.bigmodel.cn/api/anthropic")
             self.assertEqual(r.status_code, 200)
             body = r.json()
             self.assertTrue(body["result"]["validated"])

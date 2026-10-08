@@ -38,6 +38,7 @@ class PromoteRequest(BaseModel):
 
 class LlmPocRequest(BaseModel):
     model: str = "glm-5.3"
+    base_url: str = "https://api.z.ai/api/anthropic"
     api_key: str = ""      # optional explicit key; never persisted
 
 
@@ -151,13 +152,21 @@ def create_app(workdir: Path, cases_root: Path | None = None,
     @app.get("/api/llm/status")
     def llm_status():
         """Key presence only — the key itself never leaves the process."""
-        from .llm_adapter import runtime_key, LlmTransportError
+        from .llm_adapter import runtime_key, LlmTransportError, ANTHROPIC_BASE_URLS
         try:
             runtime_key(None)
-            return {"key_configured": True, "default_model": "glm-5.3"}
+            configured = True
         except LlmTransportError:
-            return {"key_configured": False, "default_model": "glm-5.3",
-                    "hint": "set OSLOVELACE_API_KEY (see docs/engineering/LLM_LOCAL_OPERATOR.md)"}
+            configured = False
+        return {"key_configured": configured, "default_model": "glm-5.3",
+                "providers": [
+                    {"id": "zai", "label": "z.ai（国际站）",
+                     "base_url": "https://api.z.ai/api/anthropic"},
+                    {"id": "bigmodel", "label": "open.bigmodel.cn（国内站）",
+                     "base_url": "https://open.bigmodel.cn/api/anthropic"},
+                ],
+                **({} if configured else {
+                    "hint": "set OSLOVELACE_API_KEY (see docs/engineering/LLM_LOCAL_OPERATOR.md)"})}
 
     @app.post("/api/scans/{scan_id}/findings/{finding_id}/llm-poc")
     def llm_poc(scan_id: str, finding_id: str, req: LlmPocRequest):
@@ -175,7 +184,8 @@ def create_app(workdir: Path, cases_root: Path | None = None,
         try:
             result = generate_poc_llm(finding, Path(job.source_root),
                                       api_key=req.api_key or None,
-                                      model=req.model)
+                                      model=req.model,
+                                      base_url=req.base_url)
         except Exception as exc:  # transport/user errors are item outcomes
             result = {"code": None, "error": f"{type(exc).__name__}: {exc}",
                       "model": req.model}

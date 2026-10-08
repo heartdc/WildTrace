@@ -81,6 +81,10 @@
         <button :disabled="llmBusy || !store.llm.key_configured" @click="genPoc">
           {{ llmBusy ? '生成中…（最长 60s）' : 'LLM 生成 PoC' }}
         </button>
+        <select v-model="llmProvider">
+          <option value="https://api.z.ai/api/anthropic">z.ai（国际站）</option>
+          <option value="https://open.bigmodel.cn/api/anthropic">open.bigmodel.cn（国内站）</option>
+        </select>
         <select v-model="llmModel" :disabled="llmBusy">
           <option>glm-5.3</option>
         </select>
@@ -122,6 +126,7 @@ const selected = ref(null)
 const note = ref('')
 const llmBusy = ref(false)
 const llmModel = ref('glm-5.3')
+const llmProvider = ref('https://api.z.ai/api/anthropic')
 const llmResult = ref(null)
 const ready = computed(() => store.scan && store.scan.status === 'done')
 const pageCount = computed(() => Math.ceil(total.value / size) || 1)
@@ -159,7 +164,7 @@ async function genPoc() {
   llmResult.value = null
   try {
     llmResult.value = await api.llmPoc(store.scanId, selected.value.finding_id,
-                                       { model: llmModel.value })
+                                       { model: llmModel.value, base_url: llmProvider.value })
   } catch (e) {
     llmResult.value = { result: { validated: false, error: e.message } }
   } finally { llmBusy.value = false }

@@ -26,11 +26,17 @@ def valid_draft(request):
 
 def completion(request, draft=None, **changes):
     content = json.dumps(valid_draft(request) if draft is None else draft)
-    value = {'content': content, 'requested_model': 'grok-4.6', 'reported_model': 'grok-4.6',
+    # The fixture mirrors the run plan: GLM over the Anthropic endpoint is
+    # the project default since 2026-10-08 (explicit grok runs remain
+    # allowlisted and pass their own endpoint/model through `changes`).
+    model = changes.pop('model', review.GLM_MODEL)
+    endpoint = changes.pop('endpoint', review.GLM_BASE_URL)
+    max_tokens = changes.pop('max_tokens', 2048)
+    value = {'content': content, 'requested_model': model, 'reported_model': model,
              'finish_reason': 'stop', 'usage': {'prompt_tokens': 20, 'completion_tokens': 10, 'total_tokens': 30},
-             'request_sha256': review.request_digest(request, 'grok-4.6', 2048), 'response_sha256': 'b' * 64,
+             'request_sha256': review.request_digest(request, model, max_tokens), 'response_sha256': 'b' * 64,
              'content_sha256': review.sha256(content.encode()),
-             'endpoint': review.DEFAULT_BASE_URL, 'max_tokens': 2048,
+             'endpoint': endpoint, 'max_tokens': max_tokens,
              'model_identity': 'provider_reported_not_independently_verified'}
     value.update(changes)
     return value
