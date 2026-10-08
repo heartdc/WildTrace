@@ -85,6 +85,59 @@ class WebappApiTests(unittest.TestCase):
             # unknown scan
             self.assertEqual(client.get("/api/scans/nope").status_code, 404)
 
+    def test_llm_poc_endpoint_records_attempts(self):
+        from unittest.mock import patch
+        import ohvul.webapp as webapp
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "target" / "ffi").mkdir(parents=True)
+            (root / "target" / "ffi" / "impl.c").write_text(FIXTURE, encoding="utf-8")
+            app = webapp.create_app(root / "work", cases_root=root / "cases")
+            client = TestClient(app)
+
+            # key presence probe only, never leaks the value
+            status = client.get("/api/llm/status").json()
+            self.assertIn("key_configured", status)
+
+            sid = client.post("/api/scans",
+                              json={"source_root": str(root / "target")}).json()["scan_id"]
+            for _ in range(600):
+                st = client.get(f"/api/scans/{sid}").json()
+                if st["status"] in ("done", "error"):
+                    break
+                time.sleep(0.05)
+            self.assertEqual(st["status"], "done")
+            fid = client.get(f"/api/scans/{sid}/findings?size=1").json()["items"][0]["finding_id"]
+
+            # validated generation lands in pocs/llm + attempt record
+            fake_ok = {"code": "#include <stdio.h>\nint main(void){return 0;}",
+                       "validated": True, "validation_note": "ok",
+                       "model": "test-model", "sha256": "a" * 64}
+            with patch.object(webapp, "generate_poc_llm", return_value=fake_ok):
+                r = client.post(f"/api/scans/{sid}/findings/{fid}/llm-poc", json={})
+            self.assertEqual(r.status_code, 200)
+            body = r.json()
+            self.assertTrue(body["result"]["validated"])
+            expected_name = "poc_" + "".join(
+                c if c.isalnum() else "_" for c in fid)[-60:] + ".c"
+            self.assertEqual(body["result"]["artifact"], "pocs/llm/" + expected_name)
+            out = root / "work" / "scans" / sid
+            self.assertTrue((out / "pocs" / "llm" / expected_name).is_file())
+            attempt = list((out / "llm_attempts").glob("*.json"))[0]
+            self.assertIn("model_invoked", attempt.read_text(encoding="utf-8"))
+
+            # transport failure: no poc file, attempt still recorded
+            fake_err = {"code": None, "error": "runtime_key_missing", "model": "test-model"}
+            with patch.object(webapp, "generate_poc_llm", return_value=fake_err):
+                r2 = client.post(f"/api/scans/{sid}/findings/{fid}/llm-poc", json={})
+            self.assertEqual(r2.status_code, 200)
+            self.assertIsNone(r2.json()["result"]["artifact"])
+            self.assertIn("runtime_key_missing", r2.json()["result"]["error"])
+
+            # unknown finding
+            r3 = client.post(f"/api/scans/{sid}/findings/nope/llm-poc", json={})
+            self.assertEqual(r3.status_code, 404)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -41,5 +41,6 @@ onMounted(async () => {
     meta.value = await api.meta()
     if (meta.value.safety) badges.value = Object.keys(meta.value.safety)
   } catch { /* backend not running — pages will surface errors */ }
+  try { store.llm = await api.llmStatus() } catch { /* keep default */ }
 })
 </script>

@@ -29,5 +29,10 @@ export const api = {
   promote: (id, body) =>
     req(`/scans/${id}/promote`, { method: 'POST', body: JSON.stringify(body) }),
   artifacts: (id) => req(`/scans/${id}/artifacts`),
-  artifact: (id, path) => req(`/scans/${id}/artifacts/${path}`)
+  artifact: (id, path) => req(`/scans/${id}/artifacts/${path}`),
+  llmStatus: () => req('/llm/status'),
+  llmPoc: (id, fid, body) =>
+    req(`/scans/${id}/findings/${encodeURIComponent(fid)}/llm-poc`, {
+      method: 'POST', body: JSON.stringify(body)
+    })
 }

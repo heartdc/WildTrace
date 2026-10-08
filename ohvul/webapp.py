@@ -9,6 +9,7 @@ import json
 from pathlib import Path
 
 from .webapp_core import ScanManager, TriageStore, TRIAGE_STATUSES, promote_case
+from .llm_poc import generate_poc_llm
 
 try:  # local convenience only; tests skip when absent
     from fastapi import FastAPI, HTTPException
@@ -33,6 +34,11 @@ class TriageRequest(BaseModel):
 class PromoteRequest(BaseModel):
     finding_id: str
     component: str
+
+
+class LlmPocRequest(BaseModel):
+    model: str = "glm-5.3"
+    api_key: str = ""      # optional explicit key; never persisted
 
 
 def create_app(workdir: Path, cases_root: Path | None = None,
@@ -141,6 +147,63 @@ def create_app(workdir: Path, cases_root: Path | None = None,
         triage.set(scan_id, req.finding_id, "promoted",
                    triage.get(scan_id, req.finding_id).get("note", ""))
         return {"case_dir": str(case_dir)}
+
+    @app.get("/api/llm/status")
+    def llm_status():
+        """Key presence only — the key itself never leaves the process."""
+        from .llm_adapter import runtime_key, LlmTransportError
+        try:
+            runtime_key(None)
+            return {"key_configured": True, "default_model": "glm-5.3"}
+        except LlmTransportError:
+            return {"key_configured": False, "default_model": "glm-5.3",
+                    "hint": "set OSLOVELACE_API_KEY (see docs/engineering/LLM_LOCAL_OPERATOR.md)"}
+
+    @app.post("/api/scans/{scan_id}/findings/{finding_id}/llm-poc")
+    def llm_poc(scan_id: str, finding_id: str, req: LlmPocRequest):
+        """LLM PoC for one finding. Only validated code lands in pocs/;
+        every attempt (including refusals/errors) is recorded in
+        llm_attempts/ for inspection. Model output is a starting point,
+        never a conclusion — artifacts are stamped model_invoked=true."""
+        job = manager.get(scan_id)
+        if job is None or job.status != "done":
+            raise HTTPException(status_code=404, detail="finished scan not found")
+        finding = next((f for f in job.findings()
+                        if f.get("finding_id") == finding_id), None)
+        if finding is None:
+            raise HTTPException(status_code=404, detail="finding not found")
+        try:
+            result = generate_poc_llm(finding, Path(job.source_root),
+                                      api_key=req.api_key or None,
+                                      model=req.model)
+        except Exception as exc:  # transport/user errors are item outcomes
+            result = {"code": None, "error": f"{type(exc).__name__}: {exc}",
+                      "model": req.model}
+        record = {"finding_id": finding_id, "model": result.get("model"),
+                  "validated": bool(result.get("validated")),
+                  "validation_note": result.get("validation_note", ""),
+                  "sha256": result.get("sha256", ""),
+                  "model_invoked": True,
+                  "at": __import__("datetime").datetime.now().isoformat(timespec="seconds")}
+        if result.get("error"):
+            record["error"] = result["error"]
+        attempts_dir = job.output_dir / "llm_attempts"
+        attempts_dir.mkdir(parents=True, exist_ok=True)
+        safe = "".join(c if c.isalnum() else "_" for c in finding_id)[-60:]
+        (attempts_dir / (safe + ".json")).write_text(
+            json.dumps({**record, "code": result.get("code")},
+                       ensure_ascii=False, indent=1), encoding="utf-8")
+        artifact = None
+        if result.get("code") and result.get("validated"):
+            poc_dir = job.output_dir / "pocs" / "llm"
+            poc_dir.mkdir(parents=True, exist_ok=True)
+            path = poc_dir / f"poc_{safe}.c"
+            path.write_text(result["code"], encoding="utf-8")
+            artifact = path.relative_to(job.output_dir).as_posix()
+        out = {k: v for k, v in result.items() if k != "code"}
+        out.update({"artifact": artifact, "attempt_record":
+                    (attempts_dir / (safe + ".json")).relative_to(job.output_dir).as_posix()})
+        return {"result": out, "code": result.get("code")}
 
     @app.get("/api/scans/{scan_id}/artifacts")
     def artifacts(scan_id: str):
