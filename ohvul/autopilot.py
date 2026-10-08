@@ -716,8 +716,20 @@ def _convert_joern_findings(joern_findings) -> list:
 
 
 def run(source_root: Path, output_dir: Path, min_confidence: int = 0,
-        joern: bool = False) -> dict:
+        joern: bool = False, progress=None) -> dict:
+    """Run the full pipeline. ``progress(phase, detail)`` is an optional
+    observer (webapp/CI friendly): called with coarse phases
+    (surface/callgraph/layer/cross_uaf/joern/report) and never interrupts
+    the scan when it raises."""
+    def _emit(phase, detail=""):
+        if progress is None:
+            return
+        try:
+            progress(phase, detail)
+        except Exception:
+            pass
     t0 = time.time()
+    _emit("surface")
     output_dir.mkdir(parents=True, exist_ok=True)
     (output_dir / "pocs").mkdir(exist_ok=True)
     all_cpp = list(source_root.rglob('*.cpp'))
@@ -740,6 +752,7 @@ def run(source_root: Path, output_dir: Path, min_confidence: int = 0,
 
     # Build call graph for cross-function analysis
     t_cg = time.time()
+    _emit("callgraph")
     cg = CallGraph()
     cg.build(source_root)
     cg_time = time.time() - t_cg
@@ -748,6 +761,7 @@ def run(source_root: Path, output_dir: Path, min_confidence: int = 0,
     findings = []
     for pid, scanner, scope in SCANNERS:
         if scope == "cj" and not has_cj: continue
+        _emit("layer", pid)
         try:
             if pid == "P6":
                 results = scanner(source_root, call_graph=cg)
@@ -767,6 +781,7 @@ def run(source_root: Path, output_dir: Path, min_confidence: int = 0,
 
     # Cross-function UAF detection (P8-Cross)
     cross_ran = False
+    _emit("cross_uaf")
     try:
         from .cross_uaf import build_facts, scan_cross_uaf
         t_x = time.time()
@@ -787,6 +802,7 @@ def run(source_root: Path, output_dir: Path, min_confidence: int = 0,
     joern_info = {"enabled": bool(joern), "available": False,
                   "findings": 0, "seconds": 0.0, "error": ""}
     if joern:
+        _emit("joern")
         try:
             from .joern_bridge import JoernAnalyzer
             analyzer = JoernAnalyzer(source_root, verbose=False)
@@ -858,6 +874,7 @@ def run(source_root: Path, output_dir: Path, min_confidence: int = 0,
         },
         "findings": [asdict(f) for f in findings],
     }
+    _emit("report")
     (output_dir / "findings.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding='utf-8')
     (output_dir / "findings.md").write_text(_md(report), encoding='utf-8')
     return report
