@@ -32,6 +32,7 @@ from .data import (
 from .jobs import Jobs, TERMINAL, linux_path
 from .store import Store, now
 from .casebook import Casebook
+from .triage import build as build_triage
 from .projects import DEFAULT_EXCLUDES, host_root, read_probe, validate_project
 
 
@@ -493,6 +494,17 @@ def create_app(data_dir=None):
         task = store.task(tid)
         path = Path(task["folder"]) / "result.json"
         return {**task, "result": read_json(path) if path.is_file() else None}
+
+    @app.get("/api/tasks/{tid}/triage")
+    def task_triage(tid):
+        task = store.task(tid)
+        rows = [row for row in findings() if row["task_id"] == tid]
+        reviews = {}
+        for row in rows:
+            history = store.reviews(row["id"])
+            if history:
+                reviews[row["id"]] = history[-1]
+        return build_triage(rows, reviews)
 
     @app.post("/api/tasks/{tid}/cancel")
     def cancel(tid):

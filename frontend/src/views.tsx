@@ -200,6 +200,12 @@ export function TaskDetail({ id }: { id: string }) {
     [error, setError] = useState(""),
     [tick, setTick] = useState(Date.now());
   const assets = useApi<Row[]>(`/api/tasks/${id}/files`, []);
+  const triage = useApi<Row>(`/api/tasks/${id}/triage`, {
+    candidate_count: 0,
+    group_count: 0,
+    lane_counts: {},
+    groups: [],
+  });
   useEffect(() => {
     setEvents([]);
     setTask(undefined);
@@ -303,6 +309,39 @@ export function TaskDetail({ id }: { id: string }) {
                 ))}
                 {!events.length && "等待日志"}
               </div>
+            ),
+          },
+          {
+            key: "triage",
+            label: "复核队列",
+            children: (
+              <>
+                <Alert
+                  type="info"
+                  title="分组用于减少重复审查，不会删除候选或确认漏洞"
+                  description={`候选 ${triage.value.candidate_count} 条 · 分组 ${triage.value.group_count} 组 · ${JSON.stringify(triage.value.lane_counts)}`}
+                />
+                <Table<Row>
+                  rowKey="id"
+                  size="small"
+                  dataSource={triage.value.groups || []}
+                  columns={[
+                    { title: "队列", dataIndex: "lane" },
+                    { title: "文件", dataIndex: "file" },
+                    { title: "规则", dataIndex: "rule" },
+                    { title: "函数", dataIndex: "function" },
+                    { title: "引用数", render: (_, r) => r.references.length },
+                    {
+                      title: "处理",
+                      render: (_, r) => (
+                        <Status
+                          value={r.review?.decision || "needs_verification"}
+                        />
+                      ),
+                    },
+                  ]}
+                />
+              </>
             ),
           },
           {

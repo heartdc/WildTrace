@@ -23,9 +23,46 @@ from ohvul.competition_report import project_case
 from ohvul.impact_matrix import affected_range_verdict, evaluate_case
 from ohvul.workbench.data import digest, normalize_findings, source_context
 from ohvul.workbench.store import Store
+from ohvul.workbench.triage import build as build_triage
 
 
 class EvidenceRegressionTests(unittest.TestCase):
+    def test_triage_groups_without_suppressing_candidates(self):
+        rows = [
+            {
+                "id": "a",
+                "file": "src/a.c",
+                "line": 10,
+                "rule": "P6_null_deref",
+                "cwe": "CWE-476",
+                "function": "f",
+                "source_sha256": "a" * 64,
+            },
+            {
+                "id": "b",
+                "file": "src/a.c",
+                "line": 12,
+                "rule": "P6_null_deref",
+                "cwe": "CWE-476",
+                "function": "f",
+                "source_sha256": "a" * 64,
+            },
+            {
+                "id": "c",
+                "file": "tests/a.c",
+                "line": 2,
+                "rule": "P6_null_deref",
+                "cwe": "CWE-476",
+                "function": "f",
+                "source_sha256": "a" * 64,
+            },
+        ]
+        queue = build_triage(rows)
+        self.assertEqual(queue["candidate_count"], 3)
+        self.assertEqual(queue["group_count"], 2)
+        self.assertEqual(sum(queue["lane_counts"].values()), 2)
+        self.assertEqual(queue["confirmed_vulnerabilities"], 0)
+
     def test_negative_states_never_become_positive(self):
         result = project_case(
             {
