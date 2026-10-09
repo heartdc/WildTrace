@@ -8,10 +8,19 @@ import unittest
 from pathlib import Path
 
 from ohvul.impact_matrix import (
-    OH_BRANCHES, evaluate_case, parse_affected_range, check_branch_affected,
+    OH_BRANCHES, evaluate_case as evaluate_current_case, parse_affected_range, check_branch_affected,
     render_matrix_md, short_branch, kb_branch_verdict, load_kb_records,
     generate_matrix,
 )
+
+
+def evaluate_case(record, kb_records=None):
+    """Preserve historical upstream projection tests, explicitly opting in.
+
+    Current branch-evidence behavior and range boundaries are tested by
+    test_workbench.EvidenceRegressionTests; the default is now strict.
+    """
+    return evaluate_current_case(record, kb_records, strict_evidence=False)
 
 
 class NoCrossComponentFallbackTests(unittest.TestCase):
@@ -202,8 +211,9 @@ class KbJoinTests(unittest.TestCase):
                 self.assertEqual(matrix["demo"]["evidence_rule"],
                                  "kb-affected-range")
                 self.assertEqual(matrix["demo"]["kb_source"], "cvelistV5")
-                self.assertEqual(matrix["demo"]["branches"]["master"],
+                self.assertEqual(matrix["demo"]["upstream_predictions"]["master"],
                                  "affected")
+                self.assertEqual(matrix["demo"]["branches"]["master"], "unknown")
 
 
 class RenderTests(unittest.TestCase):

@@ -2,6 +2,15 @@
 
 This repository contains a defensive, local-only source auditing MVP.
 
+## Local web workbench
+
+Run `./Start-Workbench.ps1` on Windows to install and open the local React/FastAPI
+workbench. The terminal prints the actual localhost URL (default port 8765).
+It connects real cases, offline scans, candidate review, explicit model requests,
+cJSON isolated verification, and report exports. See
+[workbench setup and demo](docs/engineering/WORKBENCH.md) for environment requirements,
+evidence boundaries, test commands, and the recording sequence.
+
 ## Phase 1 scope
 
 - Scan a user-provided local source directory.
@@ -66,12 +75,12 @@ python -m ohvul.vuln_report --cases cases --output docs/deliverables/VULN_REPORT
 python -m ohvul.competition_report --cases cases --output out\report.json --markdown out\report.md
 ```
 
-The impact matrix joins `kb/third_party_targets` (cvelistV5) by CVE and renders
-18 cases × 6 OH branches with evidence-ordered verdicts — 88 evidence-backed
-affected cells, 6 proven not-affected (e.g. quirc predates only n7.1.1), 14
-explicit unknowns; it never borrows another component's baseline. The competition
-reporter projects `cases/*/case.json` defensively: absent evidence layers stay
-unknown and confirmed counts are never inferred.
+The impact matrix joins `kb/third_party_targets` (cvelistV5) by CVE. Current
+branch verdicts require per-case `branch_evidence` with a source commit and
+evidence reference. Upstream version estimates remain separately visible in
+`upstream_predictions`; they do not establish downstream patch or product impact.
+Absent branch evidence stays unknown. The workbench reads all 19 case records
+and displays delivery gaps separately from vulnerability confirmation.
 
 Deliverables live in `docs/deliverables/` (TECHNICAL_SPEC, VULN_REPORT,
 IMPACT_MATRIX, PERFORMANCE, VIDEO_SCRIPT, DEMO_RUNBOOK). Toolchain preflight for

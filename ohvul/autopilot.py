@@ -728,6 +728,28 @@ def run(source_root: Path, output_dir: Path, min_confidence: int = 0,
             progress(phase, detail)
         except Exception:
             pass
+    if not source_root.is_dir():
+        raise ValueError('Source directory does not exist')
+    if not 0 <= min_confidence <= 100:
+        raise ValueError('Confidence must be between 0 and 100')
+    input_errors = []
+    source_hashes = {}
+    def walk_error(error):
+        input_errors.append({'phase': 'enumeration', 'error': str(error)})
+    for folder, dirs, names in os.walk(source_root, onerror=walk_error):
+        dirs[:] = [d for d in dirs if not (Path(folder) / d).is_symlink()]
+        for name in names:
+            path = Path(folder) / name
+            if path.suffix not in ('.c', '.cpp'):
+                continue
+            try:
+                if path.is_symlink():
+                    raise ValueError('Symbolic source link is not supported')
+                raw = path.read_bytes()
+                raw.decode('utf-8')
+                source_hashes[str(path.relative_to(source_root))] = hashlib.sha256(raw).hexdigest()
+            except (OSError, ValueError) as exc:
+                input_errors.append({'file': str(path), 'error': str(exc)})
     t0 = time.time()
     _emit("surface")
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -759,6 +781,7 @@ def run(source_root: Path, output_dir: Path, min_confidence: int = 0,
 
     # Run scanners (P6 uses call graph for cross-function filtering)
     findings = []
+    executed = []
     for pid, scanner, scope in SCANNERS:
         if scope == "cj" and not has_cj: continue
         _emit("layer", pid)
@@ -768,8 +791,10 @@ def run(source_root: Path, output_dir: Path, min_confidence: int = 0,
             else:
                 results = scanner(source_root)
             findings.extend(results)
+            executed.append(pid)
         except Exception as e:
             print(f"WARN {pid}: {e}", file=sys.stderr)
+            input_errors.append({'phase': pid, 'error': str(e)})
 
     # Enrich reachability from the call graph (the field used to stay
     # "n/a" for every regex finding — audit B8)
@@ -796,6 +821,7 @@ def run(source_root: Path, output_dir: Path, min_confidence: int = 0,
             cg_time = round(cg_time + cross_time, 2)
     except Exception as e:
         print(f"WARN cross_uaf: {e}", file=sys.stderr)
+        input_errors.append({'phase': 'cross_uaf', 'error': str(e)})
 
     # Joern CPG deep analysis (opt-in layer; requires WSL /opt/joern).
     # Degrades gracefully — never crashes the pipeline when unavailable.
@@ -846,13 +872,21 @@ def run(source_root: Path, output_dir: Path, min_confidence: int = 0,
 
     # Layers that actually executed (the report must not omit a layer that
     # produced findings, nor list one that did not run).
-    executed = [p for p, _, s in SCANNERS if s == "gen" or (s == "cj" and has_cj)]
+    for rel, expected_hash in source_hashes.items():
+        try:
+            if hashlib.sha256((source_root / rel).read_bytes()).hexdigest() != expected_hash:
+                input_errors.append({'file': rel, 'error': 'Source changed during scan'})
+        except OSError as exc:
+            input_errors.append({'file': rel, 'error': str(exc)})
     if cross_ran:
         executed.append("P8X_cross_uaf")
     if joern_info["available"]:
         executed.append("J_joern_cpg")
 
     report = {
+        "status": "partial" if input_errors else "completed",
+        "input_errors": input_errors,
+        "source_hashes": source_hashes,
         "tool": "WildTrace Autopilot v3",
         "timestamp": datetime.now().isoformat(),
         "elapsed_seconds": round(elapsed, 2),
@@ -929,6 +963,7 @@ def main():
           f"(H={s['high']} M={s['medium']}) pocs={s['pocs']} "
           f"conf>=70: {s['conf_70plus']} "
           f"in {r['elapsed_seconds']}s")
+    return 0 if r['status'] == 'completed' else 1
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

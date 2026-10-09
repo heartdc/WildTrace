@@ -44,12 +44,7 @@ REPORT_TEMPLATE = """## {case_id}
 {poc_code}
 
 **PoC 使用方法**：
-```
-# 在 OH ffmpeg/curl/openssl 构建产物上编译执行
-cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=address
-./poc trigger    # 触发漏洞
-./poc control    # 正常对照组
-```
+{poc_usage}
 
 ### 4. 影响分析
 
@@ -150,7 +145,7 @@ def read_case(case_dir: Path, kb_records: dict | None = None) -> dict:
     # Description
     desc = record.get("vulnerability", {})
     if isinstance(desc, dict):
-        description = desc.get("description", "见 case.json")
+        description = desc.get("description") or desc.get("summary") or candidate.get('description') or record.get('scope') or "未记录漏洞描述"
     else:
         description = str(desc) if desc else "见 case.json"
 
@@ -166,7 +161,28 @@ def read_case(case_dir: Path, kb_records: dict | None = None) -> dict:
     cve = record.get("cve_reference") or record.get("public_cve_reference") or "（新发现）"
 
     # PoC
+    if source_file == '—':
+        form_path = (record.get('submission') or {}).get('form', {}).get('file_path', '')
+        locations = record.get('evidence_locations', {})
+        if form_path:
+            source_file = form_path.split(' / ')[0]
+            source_lines = form_path.split('代码行:')[-1] if '代码行:' in form_path else source_lines
+        elif isinstance(locations, dict):
+            match = next((re.match(r'([^ :]+\.(?:c|cpp|h)):(\d+[\d-]*)', v)
+                          for v in locations.values() if isinstance(v, str) and re.match(r'([^ :]+\.(?:c|cpp|h)):(\d+)', v)), None)
+            if match:
+                source_file, source_lines = match.groups()
+        if source_file == '—':
+            evidence_text = str(record.get('oh_source', {}).get('l4_evidence', ''))
+            match = re.search(r'([\w/]+\.(?:c|cpp)):(\d+)', evidence_text)
+            if match:
+                source_file, source_lines = match.groups()
     poc_path = case_dir / "poc.c"
+    drivers = {'hiappevent_ffi_watcher_null_filter': 'hiappevent_null_watcher.c',
+               'ipc_cj_array_null_validation': 'ipc_null_bytearray.c',
+               'kv_ffi_array_validation': 'kv_null_entry.c'}
+    if not poc_path.exists() and case_dir.name in drivers:
+        poc_path = case_dir.parent.parent / 'tools' / 'validation_cases' / drivers[case_dir.name]
     poc_code = ""
     if poc_path.exists():
         poc_code = f"```c\n{poc_path.read_text(encoding='utf-8')}\n```"
@@ -214,14 +230,19 @@ def read_case(case_dir: Path, kb_records: dict | None = None) -> dict:
         "cwe": cwe,
         "source_snippet": _source_snippet(case_dir, record, source_file, source_lines),
         "description": description,
-        "trigger_conditions": record.get("trigger_conditions", "见 PoC 注释"),
-        "attack_path": record.get("attack_path", record.get("entry_point", "见漏洞描述")),
+        "trigger_conditions": record.get("trigger_conditions") or (desc.get('trigger') if isinstance(desc, dict) else None) or candidate.get('input_type') or '未记录；需补充触发条件',
+        "attack_path": record.get("attack_path") or record.get("entry_point") or candidate.get('entry_point') or '未记录；需补充产品可达性证据',
         "poc_code": poc_code,
+        "poc_usage": ('使用工作台 cJSON 隔离验证，或 tools/cjson_case.py prepare / run / verify-runtime；源码提交必须匹配 case.json。'
+                      if case_dir.name == 'cjson_merge_alias' else
+                      '依赖与运行参数以本案 PoC 文件注释、README 及验证驱动为准。' +
+                      ('\n\n' + str(record['build_requirements']) if record.get('build_requirements') else '') +
+                      '\n\n未提供经过独立复跑的完整命令时，报告保留为待补充状态。'),
         "code_module": component,
         "function_module": record.get("function_module", component.split("/")[-1] if "/" in component else component),
         "version_impact": "\n".join(version_impact_lines),
-        "fix_recommendation": record.get("fix_recommendation",
-            "回移上游修复（见 patch.diff）" if patch_content else "见漏洞描述"),
+        "fix_recommendation": record.get("fix_recommendation") or (desc.get('fix_core') if isinstance(desc, dict) else None) or (
+            "回移上游修复（见补丁附件）" if patch_content else "未记录具体修复方案"),
         "patch_content": patch_content,
     }
 
