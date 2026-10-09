@@ -62,6 +62,13 @@ class EvidenceRegressionTests(unittest.TestCase):
         self.assertEqual(queue["group_count"], 2)
         self.assertEqual(sum(queue["lane_counts"].values()), 2)
         self.assertEqual(queue["confirmed_vulnerabilities"], 0)
+        partial = build_triage(rows, {"a": {"decision": "rejected_candidate"}})
+        self.assertIsNone(partial["groups"][0]["review"])
+        self.assertEqual(partial["groups"][0]["pending_count"], 1)
+        self.assertEqual(
+            {ref["id"] for g in partial["groups"] for ref in g["references"]},
+            {"a", "b", "c"},
+        )
 
     def test_negative_states_never_become_positive(self):
         result = project_case(

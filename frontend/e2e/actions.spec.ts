@@ -1,5 +1,21 @@
 import { test, expect } from "@playwright/test";
 
+test('review queue preserves references and opens candidate details', async ({page, request}) => {
+  const tasks = await (await request.get('/api/tasks')).json();
+  const task = tasks.find((t:any) => t.kind === 'scan' && t.status === 'completed');
+  test.skip(!task, 'Requires a saved scan result');
+  const queue = await (await request.get(`/api/tasks/${task.id}/triage`)).json();
+  test.skip(!queue.group_count, 'Requires saved candidate records');
+  expect(queue.groups.flatMap((g:any)=>g.references).length).toBe(queue.candidate_count);
+  await page.goto('/#scans?task='+task.id);
+  await page.getByRole('tab',{name:'复核队列'}).click();
+  await expect(page.getByText(`候选 ${queue.candidate_count} 条`,{exact:false})).toBeVisible();
+  await page.getByRole('dialog').locator('.ant-table-row-expand-icon').first().click();
+  await page.screenshot({path:'test-results/review-queue.png',animations:'disabled'});
+  await page.getByRole('button',{name:/^第 \d+ 行/}).first().click();
+  await expect(page.getByRole('dialog')).toContainText('候选详情');
+});
+
 test("candidate detail has source, review, and exact model request preview", async ({
   page,
   request,

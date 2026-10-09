@@ -58,10 +58,17 @@ def build(rows, reviews=None):
                 "id": row["id"],
                 "line": row.get("line"),
                 "confidence": row.get("confidence"),
+                "review": reviews.get(row["id"]),
             }
         )
-        if row["id"] in reviews:
-            group["review"] = reviews[row["id"]]
+    for group in groups.values():
+        refs = group["references"]
+        reviewed = [r for r in refs if r["review"]]
+        group["reviewed_count"] = len(reviewed)
+        group["pending_count"] = len(refs) - len(reviewed)
+        decisions = {r["review"]["decision"] for r in reviewed}
+        if len(reviewed) == len(refs) and len(decisions) == 1:
+            group["review"] = reviewed[0]["review"]
     ordered = sorted(
         groups.values(),
         key=lambda g: (LANES.index(g["lane"]), g["file"], g["rule"], g["function"]),

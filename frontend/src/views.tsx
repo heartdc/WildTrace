@@ -228,6 +228,7 @@ export function TaskDetail({ id }: { id: string }) {
         .then(setTask)
         .catch((e) => setError(e.message));
       assets.reload();
+      triage.reload();
     });
     es.onerror = () => {
       if (es.readyState === EventSource.CLOSED) return;
@@ -325,12 +326,48 @@ export function TaskDetail({ id }: { id: string }) {
                   rowKey="id"
                   size="small"
                   dataSource={triage.value.groups || []}
+                  expandable={{
+                    expandedRowRender: (group) => (
+                      <>
+                        <p>{group.reason}</p>
+                        <Space wrap>
+                          {group.references.map((ref: Row) => (
+                            <Button
+                              key={ref.id}
+                              size="small"
+                              onClick={() =>
+                                route("findings", { finding: ref.id })
+                              }
+                            >
+                              第 {ref.line} 行 ·{" "}
+                              {ref.review ? "已记录复核" : "未复核"}
+                            </Button>
+                          ))}
+                        </Space>
+                      </>
+                    ),
+                  }}
                   columns={[
-                    { title: "队列", dataIndex: "lane" },
+                    {
+                      title: "队列",
+                      dataIndex: "lane",
+                      render: (x) =>
+                        ({
+                          manual_review: "人工审查",
+                          needs_context: "待补上下文",
+                          syntax_only: "待固定源码",
+                          test_support: "测试与支持代码",
+                        })[x as string] || x,
+                    },
                     { title: "文件", dataIndex: "file" },
                     { title: "规则", dataIndex: "rule" },
                     { title: "函数", dataIndex: "function" },
                     { title: "引用数", render: (_, r) => r.references.length },
+                    {
+                      title: "复核记录",
+                      render: (_, r) =>
+                        `${r.reviewed_count}/${r.references.length}`,
+                    },
                     {
                       title: "处理",
                       render: (_, r) => (
