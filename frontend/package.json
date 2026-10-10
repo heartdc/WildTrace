@@ -1,0 +1,28 @@
+{
+  "name": "wildtrace-workbench",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "test": "playwright test",
+    "preview": "vite preview",
+    "format": "prettier --write src e2e *.ts *.json index.html"
+  },
+  "dependencies": {
+    "antd": "latest",
+    "lucide-react": "latest",
+    "react": "latest",
+    "react-dom": "latest"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.0",
+    "@vitejs/plugin-react": "latest",
+    "vite": "latest",
+    "typescript": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "prettier": "^3.6.0"
+  }
+}

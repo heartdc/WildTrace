@@ -56,21 +56,22 @@ def _tier_flags(record: dict) -> dict:
     validation = validation if isinstance(validation, dict) else {}
     scope = record.get('runtime_scope')
     scope = scope if isinstance(scope, dict) else {}
-    runtime_status = record.get('runtime_status')
+    runtime_status = record.get('runtime_status') or record.get('status') or (record.get('vulnerability') or {}).get('runtime_status')
     return {
         'source_verification': bool(_first(record, 'discovery_method', 'cve_reference',
                                            'public_cve_reference', 'candidate')),
         'equivalent_or_runtime_reproduction': bool(
-            (isinstance(runtime_status, str) and runtime_status not in ('not_run', None))
-            or validation.get('asan') or record.get('source_equivalent_result')),
+            runtime_status in ('library_level_reproduced', 'real_library_reproduction_confirmed', 'reproduced', 'passed')
+            or bool(validation.get('real_library_reproduction')) or bool(validation.get('asan'))
+            or bool(validation.get('equivalent_reproduction')) or bool(record.get('source_equivalent_result'))),
         'product_impact': bool(
             (isinstance(record.get('product_reachability'), str)
-             and record['product_reachability'] != 'not_established')
-            or scope.get('open_harmony_binary_linked')),
+             and record['product_reachability'] in ('established', 'confirmed', 'verified'))),
         'fix_reference': bool(_first(record, 'expected_commit', 'upstream_sources',
                                      'public_upstream', 'patch')),
         'submission_record': bool(submission and submission.get('ticket')),
-        'official_acceptance': bool(submission and submission.get('official_status')),
+        'official_acceptance': bool(submission and submission.get('official_status') in
+                                   ('accepted', 'confirmed', '已接受', '已确认', '奖励已发放')),
     }
 
 

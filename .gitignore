@@ -17,6 +17,12 @@ wildtrace.egg-info/
 workspace/
 demo-out/
 cpg.bin*
+frontend/node_modules/
+frontend/dist/
+frontend/test-results/
+frontend/playwright-report/
+.venv/
+frontend/*.tsbuildinfo
 
 
 # local workbench runtime state (ohvul.webapp)

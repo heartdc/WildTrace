@@ -8,6 +8,12 @@ version = "0.1.0"
 description = "Defensive, local-only OpenHarmony source audit MVP"
 requires-python = ">=3.10"
 
+[project.optional-dependencies]
+workbench = ["fastapi>=0.115,<1", "uvicorn>=0.30,<1", "httpx>=0.27,<1"]
+
+[tool.setuptools.packages.find]
+include = ["ohvul*"]
+
 [project.scripts]
 wildtrace = "ohvul.cli:main"
 wildtrace-impact = "ohvul.branch_impact:main"
@@ -17,3 +23,4 @@ wildtrace-clang = 'ohvul.engine_cli:main'
 wildtrace-engine-benchmark = 'ohvul.engine_benchmark:main'
 wildtrace-triage = 'ohvul.candidate_triage:main'
 wildtrace-ffi-boundary = 'ohvul.ffi_boundary_audit:main'
+wildtrace-workbench = 'ohvul.workbench.launch:main'

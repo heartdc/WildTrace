@@ -1,5 +1,9 @@
 """Version-branch impact matrix generator for competition deliverable.
 
+Current defaults require per-case branch_evidence for downstream verdicts.
+The rules below calculate upstream_predictions only. Explicit callers using
+strict_evidence=False retain the historical projection for compatibility.
+
 For each case, determine affected/fixed/not_affected/unknown across known
 OH release branches from the vendored component's baseline version.
 
@@ -175,7 +179,34 @@ def check_branch_affected(introduced, fixed, branch_baseline) -> str:
     return "not_affected"
 
 
-def evaluate_case(record: dict, kb_records: dict | None = None) -> dict:
+def affected_range_verdict(entries, baseline):
+    """Keep disjoint ranges and inclusive ends; absence is not proof of a fix."""
+    if isinstance(entries, dict):
+        entries = [entries]
+    b = ver_tuple(baseline)
+    for entry in entries or []:
+        if not isinstance(entry, dict):
+            continue
+        for version in entry.get('versions', []):
+            if version.get('status') != 'affected':
+                continue
+            start = version.get('version', '0')
+            if not re.fullmatch(r'\d+(?:\.\d+)*', str(start)):
+                continue
+            if b < ver_tuple(start):
+                continue
+            end = version.get('lessThan') or version.get('lessThanOrEqual')
+            if end and not re.fullmatch(r'\d+(?:\.\d+)*', str(end)):
+                continue
+            if end:
+                if b < ver_tuple(end) or ('lessThanOrEqual' in version and b == ver_tuple(end)):
+                    return 'affected'
+            elif b == ver_tuple(start):
+                return 'affected'
+    return 'unknown'
+
+
+def evaluate_case(record: dict, kb_records: dict | None = None, *, strict_evidence: bool = True) -> dict:
     """Branch impact verdicts for one case.json record."""
     component = record.get("component") or ""
     comp_type = component_type(component)
@@ -186,9 +217,10 @@ def evaluate_case(record: dict, kb_records: dict | None = None) -> dict:
     observed = observed_baseline(record)
 
     branches = {}
+    upstream_predictions = {}
     for branch, info in OH_BRANCHES.items():
         if comp_type == "oh_native":
-            branches[branch] = "affected" if branch in OH_NATIVE_CONFIRMED else "unknown"
+            branches[branch] = "affected" if not strict_evidence and branch in OH_NATIVE_CONFIRMED else "unknown"
             continue
         baseline = info.get(comp_type)
         if not baseline:
@@ -198,7 +230,8 @@ def evaluate_case(record: dict, kb_records: dict | None = None) -> dict:
         if kb_rec is not None:
             branches[branch] = kb_branch_verdict(kb_rec, baseline)
         elif introduced:
-            branches[branch] = check_branch_affected(introduced, fixed, baseline)
+            branches[branch] = (affected_range_verdict(record.get('affected_raw') or record.get('affected_versions'), baseline)
+                                if strict_evidence else check_branch_affected(introduced, fixed, baseline))
         elif observed and ver_tuple(baseline) == ver_tuple(observed):
             # Same vendored version as the tree the case was verified on.
             branches[branch] = "affected"
@@ -206,6 +239,15 @@ def evaluate_case(record: dict, kb_records: dict | None = None) -> dict:
             # Introduced range unknown for this case: do not infer.
             branches[branch] = "unknown"
 
+    # Upstream versions cannot establish downstream backport or build impact.
+    upstream_predictions = dict(branches)
+    branch_evidence = record.get('branch_evidence', {})
+    for branch in branches:
+        evidence = branch_evidence.get(branch, {}) if isinstance(branch_evidence, dict) else {}
+        branches[branch] = (evidence['verdict'] if strict_evidence and isinstance(evidence, dict)
+                           and evidence.get('verdict') in ('affected', 'fixed', 'not_affected')
+                           and evidence.get('source_commit') and evidence.get('reference')
+                           else (branches[branch] if not strict_evidence else 'unknown'))
     if kb_rec is not None:
         rule = "kb-affected-range"
         kb_starts = _numeric_versions(kb_rec.get("affected_versions"))
@@ -228,6 +270,8 @@ def evaluate_case(record: dict, kb_records: dict | None = None) -> dict:
         "evidence_rule": rule,
         "kb_source": (kb_rec or {}).get("source", ""),
         "branches": branches,
+        "upstream_predictions": upstream_predictions,
+        "branch_evidence": branch_evidence,
         "affected_count": sum(1 for v in branches.values() if v == "affected"),
         "unknown_count": sum(1 for v in branches.values() if v == "unknown"),
     }
@@ -291,7 +335,7 @@ def render_matrix_md(matrix: dict) -> str:
                  f"— 证实不受影响 {total_not_affected} 格；？待定 {total_unknown} 格。"
                  f"本表只声明有证据的格子，？不是安全结论。")
     lines.append("")
-    lines.append("> 🔴 affected = 分支基线落在上游受影响范围内，或与本案验证过的 OH 基线同版本  ")
+    lines.append("> 🔴 affected = 本案例记录了具体分支提交及验证证据；上游版本推测不计为分支实证。  ")
     lines.append("> ✅ fixed = 分支基线已含上游修复  ")
     lines.append("> — not_affected = 分支基线早于缺陷引入版本  ")
     lines.append("> ？ unknown = 缺该分支基线数据或缺上游引入范围，不推断")
@@ -301,13 +345,11 @@ def render_matrix_md(matrix: dict) -> str:
     lines.append("1. **kb 联接（首选）**：按 CVE 联接 `kb/third_party_targets/records.json`（源 cvelistV5）的上游受影响/修复版本，"
                  "按 cvelist 边界语义（起点 ≤ 基线 < 修复点；无修复记录则上界开放）逐分支判定。")
     lines.append("2. **结构化受影响范围**：case.json 的 `affected_raw`（CVE 5.0 语义）与分支基线做范围比较。")
-    lines.append("3. **版本等价传播**：分支基线与本案实测验证的 OH 基线（`observed_version`/`oh_source.baseline`）"
-                 "同版本 → affected（同版本同字节）。")
-    lines.append("4. **OH 原生代码**（IPC/CJ FFI）：仅源级验证过的分支（v7.0/master）计 affected，其余 ？。")
+    lines.append("3. **上游推测**：版本范围与版本等价仅保存在 upstream_predictions，不能证明 OH 分支是否回移补丁或包含相关构建。")
+    lines.append("4. **分支实证**：原生代码与第三方组件统一要求 branch_evidence 中的 source_commit、reference、verdict；缺失时为 unknown。")
     lines.append("5. **不跨组件借用基线**：某分支缺该组件基线时判 ？，绝不用其他组件的版本号代替"
                  "（2026-09-29 审计 P0：旧实现以 ffmpeg 基线兜底，造成 curl/openssl/cjson 全红假象）。")
-    lines.append("6. ？格升级路径：补 case.json 的 `affected_raw` 或该分支的受影响证据后重新生成"
-                 "（2026-10-07 cJSON 各分支基线已回填，剩余 ？格均为 OH 原生案旧分支）。")
+    lines.append("6. ？格升级路径：补 case.json 的具体分支证据后重新生成；补上游版本信息不会自动提升为分支实证。")
     lines.append("")
     lines.append("## 版本基线数据")
     lines.append("")
