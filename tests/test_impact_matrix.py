@@ -213,7 +213,11 @@ class KbJoinTests(unittest.TestCase):
                 self.assertEqual(matrix["demo"]["kb_source"], "cvelistV5")
                 self.assertEqual(matrix["demo"]["upstream_predictions"]["master"],
                                  "affected")
-                self.assertEqual(matrix["demo"]["branches"]["master"], "unknown")
+                # Deliverable contract (2026-10-11 fix): generate_matrix feeds
+                # IMPACT_MATRIX.md / VULN_REPORT.md and must keep the
+                # historical projection — all-unknown output here is the
+                # regression PR #119 briefly introduced on these paths.
+                self.assertEqual(matrix["demo"]["branches"]["master"], "affected")
 
 
 class RenderTests(unittest.TestCase):

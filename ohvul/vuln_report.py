@@ -209,7 +209,7 @@ def read_case(case_dir: Path, kb_records: dict | None = None) -> dict:
     # Version impact: verdicts come from the impact-matrix engine (single
     # source of truth) — no hardcoded branch lists, no unconditional 🔴.
     component = record.get("component") or ""
-    impacts = evaluate_case(record, kb_records)["branches"]
+    impacts = evaluate_case(record, kb_records, strict_evidence=False)["branches"]
     version_impact_lines = []
     for br in OH_BRANCHES:
         short = br.replace("OpenHarmony-", "").replace("-Release", "")

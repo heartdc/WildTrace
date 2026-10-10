@@ -16,6 +16,15 @@
       "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
+    "upstream_predictions": {
+      "OpenHarmony-v4.1-Release": "affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
+      "master": "affected"
+    },
+    "branch_evidence": {},
     "affected_count": 6,
     "unknown_count": 0
   },
@@ -36,6 +45,15 @@
       "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
+    "upstream_predictions": {
+      "OpenHarmony-v4.1-Release": "affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
+      "master": "affected"
+    },
+    "branch_evidence": {},
     "affected_count": 6,
     "unknown_count": 0
   },
@@ -56,6 +74,15 @@
       "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
+    "upstream_predictions": {
+      "OpenHarmony-v4.1-Release": "affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
+      "master": "affected"
+    },
+    "branch_evidence": {},
     "affected_count": 6,
     "unknown_count": 0
   },
@@ -76,6 +103,15 @@
       "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
+    "upstream_predictions": {
+      "OpenHarmony-v4.1-Release": "not_affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
+      "master": "affected"
+    },
+    "branch_evidence": {},
     "affected_count": 5,
     "unknown_count": 0
   },
@@ -96,6 +132,15 @@
       "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
+    "upstream_predictions": {
+      "OpenHarmony-v4.1-Release": "affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
+      "master": "affected"
+    },
+    "branch_evidence": {},
     "affected_count": 6,
     "unknown_count": 0
   },
@@ -116,6 +161,15 @@
       "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
+    "upstream_predictions": {
+      "OpenHarmony-v4.1-Release": "affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
+      "master": "affected"
+    },
+    "branch_evidence": {},
     "affected_count": 6,
     "unknown_count": 0
   },
@@ -136,6 +190,15 @@
       "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
+    "upstream_predictions": {
+      "OpenHarmony-v4.1-Release": "affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
+      "master": "affected"
+    },
+    "branch_evidence": {},
     "affected_count": 6,
     "unknown_count": 0
   },
@@ -156,6 +219,15 @@
       "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
+    "upstream_predictions": {
+      "OpenHarmony-v4.1-Release": "affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
+      "master": "affected"
+    },
+    "branch_evidence": {},
     "affected_count": 6,
     "unknown_count": 0
   },
@@ -176,6 +248,15 @@
       "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
+    "upstream_predictions": {
+      "OpenHarmony-v4.1-Release": "affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
+      "master": "affected"
+    },
+    "branch_evidence": {},
     "affected_count": 6,
     "unknown_count": 0
   },
@@ -196,6 +277,15 @@
       "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
+    "upstream_predictions": {
+      "OpenHarmony-v4.1-Release": "not_affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
+      "master": "affected"
+    },
+    "branch_evidence": {},
     "affected_count": 5,
     "unknown_count": 0
   },
@@ -216,6 +306,15 @@
       "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
+    "upstream_predictions": {
+      "OpenHarmony-v4.1-Release": "not_affected",
+      "OpenHarmony-v5.0-Release": "not_affected",
+      "OpenHarmony-v5.1-Release": "not_affected",
+      "OpenHarmony-v6.0-Release": "not_affected",
+      "OpenHarmony-v7.0-Release": "affected",
+      "master": "affected"
+    },
+    "branch_evidence": {},
     "affected_count": 2,
     "unknown_count": 0
   },
@@ -236,6 +335,15 @@
       "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
+    "upstream_predictions": {
+      "OpenHarmony-v4.1-Release": "affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
+      "master": "affected"
+    },
+    "branch_evidence": {},
     "affected_count": 6,
     "unknown_count": 0
   },
@@ -256,6 +364,15 @@
       "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
+    "upstream_predictions": {
+      "OpenHarmony-v4.1-Release": "affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
+      "master": "affected"
+    },
+    "branch_evidence": {},
     "affected_count": 6,
     "unknown_count": 0
   },
@@ -276,6 +393,15 @@
       "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
+    "upstream_predictions": {
+      "OpenHarmony-v4.1-Release": "affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
+      "master": "affected"
+    },
+    "branch_evidence": {},
     "affected_count": 6,
     "unknown_count": 0
   },
@@ -296,6 +422,15 @@
       "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
+    "upstream_predictions": {
+      "OpenHarmony-v4.1-Release": "affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
+      "master": "affected"
+    },
+    "branch_evidence": {},
     "affected_count": 6,
     "unknown_count": 0
   },
@@ -316,6 +451,15 @@
       "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
+    "upstream_predictions": {
+      "OpenHarmony-v4.1-Release": "unknown",
+      "OpenHarmony-v5.0-Release": "unknown",
+      "OpenHarmony-v5.1-Release": "unknown",
+      "OpenHarmony-v6.0-Release": "unknown",
+      "OpenHarmony-v7.0-Release": "affected",
+      "master": "affected"
+    },
+    "branch_evidence": {},
     "affected_count": 2,
     "unknown_count": 4
   },
@@ -336,6 +480,15 @@
       "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
+    "upstream_predictions": {
+      "OpenHarmony-v4.1-Release": "unknown",
+      "OpenHarmony-v5.0-Release": "unknown",
+      "OpenHarmony-v5.1-Release": "unknown",
+      "OpenHarmony-v6.0-Release": "unknown",
+      "OpenHarmony-v7.0-Release": "affected",
+      "master": "affected"
+    },
+    "branch_evidence": {},
     "affected_count": 2,
     "unknown_count": 4
   },
@@ -356,6 +509,15 @@
       "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
+    "upstream_predictions": {
+      "OpenHarmony-v4.1-Release": "unknown",
+      "OpenHarmony-v5.0-Release": "unknown",
+      "OpenHarmony-v5.1-Release": "unknown",
+      "OpenHarmony-v6.0-Release": "unknown",
+      "OpenHarmony-v7.0-Release": "affected",
+      "master": "affected"
+    },
+    "branch_evidence": {},
     "affected_count": 2,
     "unknown_count": 4
   },
@@ -376,7 +538,45 @@
       "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
+    "upstream_predictions": {
+      "OpenHarmony-v4.1-Release": "affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
+      "master": "affected"
+    },
+    "branch_evidence": {},
     "affected_count": 6,
     "unknown_count": 0
+  },
+  "udmf_ffi_setproperties_null_tag": {
+    "cve": "",
+    "component": "foundation/distributeddatamgr/udmf",
+    "component_type": "oh_native",
+    "introduced_version": "unknown",
+    "fixed_upstream": "pending",
+    "observed_version": "",
+    "evidence_rule": "no-version-evidence",
+    "kb_source": "",
+    "branches": {
+      "OpenHarmony-v4.1-Release": "unknown",
+      "OpenHarmony-v5.0-Release": "unknown",
+      "OpenHarmony-v5.1-Release": "unknown",
+      "OpenHarmony-v6.0-Release": "unknown",
+      "OpenHarmony-v7.0-Release": "affected",
+      "master": "affected"
+    },
+    "upstream_predictions": {
+      "OpenHarmony-v4.1-Release": "unknown",
+      "OpenHarmony-v5.0-Release": "unknown",
+      "OpenHarmony-v5.1-Release": "unknown",
+      "OpenHarmony-v6.0-Release": "unknown",
+      "OpenHarmony-v7.0-Release": "affected",
+      "master": "affected"
+    },
+    "branch_evidence": {},
+    "affected_count": 2,
+    "unknown_count": 4
   }
 }
