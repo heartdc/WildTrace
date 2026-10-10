@@ -1,3 +1,25 @@
+# 2026-10-11（误报三件套：宏守卫扩展 + finding_id 带变量 + snippet 填充）
+
+dsoftbus 扫描误报审计（2026-10-08）的三项修复落地，全部带回归测试：
+
+- **宏守卫扩展**：裸变量式 `\bCHECK_*(var,` 扩展到前缀族（AUTH_/TRANS_/NASKX_CHECK_*）；
+  新增**条件式守卫**——仅当宏名含 RETURN/RET 极性（如 `AUTH_CHECK_AND_RETURN_LOGE(info != NULL)`
+  =空则返回）才抑制，`CHECK_INVOKE(param != nullptr)` 这类"非空才动"的宏**不**抑制
+  （保 PR #95 语义，新增极性回归测试）；新增 `RETURN_IF*(var)` 裸式。审计实测三类形态
+  可解释 **229 条** P6 误报（如 PrintAuthConnInfo）。
+- **finding_id 带变量**：`_fid()` 助手统一 P1-P9 九处构造，id 含触发变量——修复同位置多变量
+  共享 id 的 **501 行碰撞**（分诊状态按 id 落准）；run() 内同 id 去重（同变量多 free 点的
+  37+ 行重复保留信息量最大者）。
+- **snippet 统一填充**：run() 对无 snippet 的 finding 从被扫树按行窗口（±6/+8，1200 字符上限）
+  填充——此前 3033 条全部为空，分诊抽屉无法看代码。
+- 测试 +8（守卫四形态/极性负向/双变量同位置 id 唯一/去重/snippet 非空）；workbench 案例数
+  断言 19→20（udmf 建案）。
+- **dsoftbus 复扫实测（同树同参数）**：3033 行 → **2662 行**，与审计预测逐位吻合——
+  唯一观察 2891 − 宏守卫 229 = 2662；P6 2453 → 2224（−229）；高危 580 → 438（重复行消除后的
+  唯一高危）；finding_id 2662/2662 全唯一；source_snippet 2662/2662 全覆盖；审计实锤误报样本
+  （PrintAuthConnInfo / AuthManagerSetAuthFailed）确认消失。另注：耗时 651s → 1645s，来自
+  PR #119 新增的扫描前后全量源码哈希（I/O 翻倍），与本批修复无关，后续可议优化。
+
 # 2026-10-11（PR #117 收尾：udmf 建案（第 18 单前置）+ 交付件 strict_evidence 回归修复）
 
 - **udmf 真库证实案入库**：`cases/udmf_ffi_setproperties_null_tag/`（wildtrace-candidate-case-0.2，

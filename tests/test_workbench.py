@@ -242,7 +242,7 @@ class WebTests(unittest.TestCase):
 
     def test_case_assets_and_complete_report_flags(self):
         cases = self.client.get("/api/cases").json()
-        self.assertEqual(len(cases), 19)
+        self.assertEqual(len(cases), 20)
         self.assertTrue(all(c["description"] != "见 case.json" for c in cases))
         hi = next(c for c in cases if c["id"] == "hiappevent_ffi_watcher_null_filter")
         self.assertTrue(
