@@ -385,7 +385,7 @@ def scan_p1(root):
                     continue
                 if _has_null_check(cl, r'\w+(?:->|\.)' + pf): continue
                 if re.search(r'(?:->|\.)' + lf + r'\s*(?:==|<=|<)\s*0', cl): continue
-                f = Finding(f"P1_{rel}_{line}", "P1_null_len",
+                f = Finding(_fid("P1", rel, line, pf), "P1_null_len",
                            "high" if tn in ('CArrParameters','CArrEntry') else "medium",
                            rel, line, name, tn, "CWE-476",
                            f"{tn}.{pf} unchecked in loop",
@@ -403,7 +403,7 @@ def scan_p2(root):
         lines = text.splitlines()
         for m in re.finditer(r'static_cast<\s*(u?int(?:8|16|32)_t)\s*>\s*\(\s*\w+(?:\.\w+|->\w+)*(?:\.|->)\s*(?:size|len)\s*\)', text, re.I):
             line = text.count('\n', 0, m.start()) + 1
-            f = Finding(f"P2_{rel}_{line}", "P2_truncation", "medium", rel, line,
+            f = Finding(_fid("P2", rel, line, ""), "P2_truncation", "medium", rel, line,
                        "", m.group(1), "CWE-190", f"int64→{m.group(1)} truncation",
                        trigger_hint="Pass negative size")
             # a window of LINES around the finding, not ~21 characters
@@ -421,7 +421,7 @@ def scan_p3(root):
         except OSError: continue
         for m in re.finditer(r'\w+\s*\.\s*head\s*\[\s*\w+\s*\]\s*\.\s*\w+\s*\.\s*head', text, re.I):
             line = text.count('\n', 0, m.start()) + 1
-            f = Finding(f"P3_{rel}_{line}", "P3_nested_deref", "high", rel, line,
+            f = Finding(_fid("P3", rel, line, ""), "P3_nested_deref", "high", rel, line,
                        "", "nested", "CWE-476", "Multi-level pointer chain",
                        trigger_hint="Inner head=NULL")
             out.append(score_finding(f, "", text[max(0,m.start()-50):m.end()], ""))
@@ -450,7 +450,7 @@ def scan_p4(root):
                 for m in re.finditer(regex, cl):
                     size_var = m.group(1) if m.lastindex else None
                     if size_var and size_var in params and not _has_bound_check(cl, re.escape(size_var)):
-                        f = Finding(f"P4_{rel}_{line}", "P4_unbounded_copy", "high",
+                        f = Finding(_fid("P4", rel, line, size_var), "P4_unbounded_copy", "high",
                                    rel, line, name, size_var, cwe,
                                    f"{fname}() size from param '{size_var}'",
                                    trigger_hint=f"oversized {size_var}")
@@ -469,7 +469,7 @@ def scan_p5(root):
                 if sz > 4096: continue
                 if re.search(rf'(?:strcpy|strcat|sprintf)\s*\(\s*{re.escape(buf)}\b', cl):
                     if not _has_bound_check(cl, re.escape(buf)):
-                        f = Finding(f"P5_{rel}_{line}", "P5_stack_overflow", "high",
+                        f = Finding(_fid("P5", rel, line, buf), "P5_stack_overflow", "high",
                                    rel, line, name, f"char[{sz}]", "CWE-121",
                                    f"Stack buf {buf}[{sz}] + unchecked write",
                                    trigger_hint=f">{sz} bytes")
@@ -482,10 +482,26 @@ def scan_p5(root):
 _SMART_PTR_PARAM = re.compile(
     r'(?:const\s+)?(?:std::)?(?:shared|unique)_ptr\s*<[^>;()]*>\s*(?:&\s*)?(\w+)')
 
-# OH truthiness guard macros: CHECK_AND_RETURN*(param, ...) returns when
-# the first argument is falsy — a null guard the plain if-form matcher
-# cannot see (retro eval 2026-09-30: SocketUpdateCocConnectionParams FP)
-_TRUTHY_MACRO_GUARD = r'\bCHECK_[A-Z_]*\s*\(\s*{var}\s*[,)]'
+# OH truthiness guard macros: bare *CHECK*(param, ...) returns when the
+# first argument is falsy — a null guard the plain if-form matcher cannot
+# see (retro eval 2026-09-30: SocketUpdateCocConnectionParams FP).
+# Extended 2026-10-11 (dsoftbus FP audit, 229 explainable P6 leads):
+#   - bare form now also matches prefixed families (AUTH_/TRANS_/_CHECK*)
+#   - condition form (var ==/!= NULL) is only trusted for macros whose
+#     name carries RETURN/RET polarity — CHECK_INVOKE(param != nullptr)
+#     acts when NON-null and must NOT suppress (PR #95 semantics)
+_TRUTHY_MACRO_GUARD = r'\b[A-Z0-9_]*CHECK[A-Z0-9_]*\s*\(\s*{var}\s*[,)]'
+_CONDITION_RETURN_GUARD = r'\b[A-Z0-9_]*CHECK[A-Z0-9_]*(?:RETURN|RET)[A-Z0-9_]*\s*\(\s*!?\s*{var}\s*(?:==|!=)'
+_RETURN_MACRO_GUARD = r'\bRETURN[A-Z0-9_]*\s*\(\s*!?\s*{var}\b'
+
+
+def _fid(prefix, rel, line, var):
+    """finding_id carries the triggering variable: one location can host
+    several distinct observations (different params/fields) and triage
+    state is keyed by id — the 2026-10-11 dsoftbus audit counted 501
+    collided rows sharing a location id across different vars."""
+    v = re.sub(r'[^A-Za-z0-9_]', '_', var or '')
+    return f"{prefix}_{rel}_{line}" + (f"_{v}" if v else "")
 
 
 def scan_p6(root, call_graph=None):
@@ -504,7 +520,9 @@ def scan_p6(root, call_graph=None):
                 if _has_null_check(cl, re.escape(pp)): continue
                 if re.search(rf'if\s*\(\s*!?\s*{re.escape(pp)}\s*\)\s*(?:return|goto)', cl): continue
                 if re.search(_TRUTHY_MACRO_GUARD.format(var=re.escape(pp)), cl): continue
-                f = Finding(f"P6_{rel}_{line}", "P6_null_deref", "medium",
+                if re.search(_CONDITION_RETURN_GUARD.format(var=re.escape(pp)), cl): continue
+                if re.search(_RETURN_MACRO_GUARD.format(var=re.escape(pp)), cl): continue
+                f = Finding(_fid("P6", rel, line, pp), "P6_null_deref", "medium",
                            rel, line, name, pp, "CWE-476",
                            f"Ptr '{pp}' ×{len(derefs)} derefs, no null check",
                            trigger_hint=f"{name}(NULL)")
@@ -530,7 +548,7 @@ def scan_p7(root):
                 sv = m.group(1) or m.group(2)
                 if not sv or sv not in params: continue
                 if re.search(r'OVERFLOW|overflow|MAX|_MAX|UINT_MAX|SIZE_MAX', cl, re.I): continue
-                f = Finding(f"P7_{rel}_{line}", "P7_alloc_overflow", "medium",
+                f = Finding(_fid("P7", rel, line, sv), "P7_alloc_overflow", "medium",
                            rel, line, name, sv, "CWE-680",
                            f"malloc(sizeof×{sv}), no overflow guard",
                            trigger_hint=f"{sv}=SIZE_MAX/8")
@@ -551,7 +569,7 @@ def scan_p8(root):
                 if re.search(rf'{re.escape(fv)}\s*=\s*(?:NULL|nullptr|0)\s*;', after): continue
                 uses = re.findall(rf'\b{re.escape(fv)}\s*(?:->|\[|\.|\+\+|=)', after)
                 if uses:
-                    f = Finding(f"P8_{rel}_{line}", "P8_use_after_free", "high",
+                    f = Finding(_fid("P8", rel, line, fv), "P8_use_after_free", "high",
                                rel, line, name, fv, "CWE-416",
                                f"'{fv}' freed then used ({len(uses)}×)",
                                trigger_hint=f"UAF path in {name}()")
@@ -610,7 +628,7 @@ def scan_p9(root):
                 if fmt.startswith('"'): continue
                 vm = re.match(r'(\w+)', fmt)
                 if vm and vm.group(1) not in ('NULL','nullptr','sizeof'):
-                    f = Finding(f"P9_{rel}_{line}", "P9_format_string", "high",
+                    f = Finding(_fid("P9", rel, line, vm.group(1)), "P9_format_string", "high",
                                rel, line, name, vm.group(1), "CWE-134",
                                f"Non-literal format '{vm.group(1)}' in {fname}()",
                                trigger_hint=f"'%n%n%n' as {vm.group(1)}")
@@ -846,6 +864,33 @@ def run(source_root: Path, output_dir: Path, min_confidence: int = 0,
         except Exception as e:
             joern_info["error"] = f"{type(e).__name__}: {e}"
             print(f"WARN joern: {e}", file=sys.stderr)
+
+    # Same-id duplicates (one var, several free events) keep the most
+    # informative copy; distinct vars no longer collide since _fid.
+    _best = {}
+    for f in findings:
+        k = f.finding_id
+        if k not in _best or (f.confidence, len(f.description)) > \
+                (_best[k].confidence, len(_best[k].description)):
+            _best[k] = f
+    findings = list(_best.values())
+
+    # Fill source snippets for triage: a window around the finding line,
+    # straight from the scanned tree (P6/P8 never carried snippets).
+    _lines_cache = {}
+    for f in findings:
+        if f.source_snippet or not f.line:
+            continue
+        if f.file not in _lines_cache:
+            try:
+                _lines_cache[f.file] = (source_root / f.file).read_text(
+                    encoding='utf-8', errors='replace').splitlines()
+            except OSError:
+                _lines_cache[f.file] = None
+        lines = _lines_cache[f.file]
+        if lines:
+            lo, hi = max(0, f.line - 6), min(len(lines), f.line + 8)
+            f.source_snippet = "\n".join(lines[lo:hi])[:1200]
 
     # Sort by confidence (descending)
     findings.sort(key=lambda f: f.confidence, reverse=True)
