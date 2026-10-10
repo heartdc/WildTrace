@@ -1,6 +1,6 @@
 # 版本分支影响矩阵
 
-生成日期：2026-10-07（工具 `ohvul.impact_matrix` 从 cases/ 自动生成）
+生成日期：2026-10-11（工具 `ohvul.impact_matrix` 从 cases/ 自动生成）
 
 | 案例 | CVE | 组件 | 引入版本 | 上游修复 | v4.1 | v5.0 | v5.1 | v6.0 | v7.0 | master | 证实分支数 | 待定格数 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -23,10 +23,11 @@
 | ipc_cj_array_null_validation | — | oh_native | unknown | pending | ？ | ？ | ？ | ？ | 🔴 | 🔴 | 2 | 4 |
 | kv_ffi_array_validation | — | oh_native | unknown | pending | ？ | ？ | ？ | ？ | 🔴 | 🔴 | 2 | 4 |
 | openssl_ocb_oneshot_iv_discard | CVE-2026-45445 | openssl | 3.0.0 | 4.0.1 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 6 | 0 |
+| udmf_ffi_setproperties_null_tag | — | oh_native | unknown | pending | ？ | ？ | ？ | ？ | 🔴 | 🔴 | 2 | 4 |
 
-**总计**：19 案 × 6 分支；🔴 证实 affected 96 格；— 证实不受影响 6 格；？待定 12 格。本表只声明有证据的格子，？不是安全结论。
+**总计**：20 案 × 6 分支；🔴 证实 affected 98 格；— 证实不受影响 6 格；？待定 16 格。本表只声明有证据的格子，？不是安全结论。
 
-> 🔴 affected = 分支基线落在上游受影响范围内，或与本案验证过的 OH 基线同版本  
+> 🔴 affected = 本案例记录了具体分支提交及验证证据；上游版本推测不计为分支实证。  
 > ✅ fixed = 分支基线已含上游修复  
 > — not_affected = 分支基线早于缺陷引入版本  
 > ？ unknown = 缺该分支基线数据或缺上游引入范围，不推断
@@ -35,10 +36,10 @@
 
 1. **kb 联接（首选）**：按 CVE 联接 `kb/third_party_targets/records.json`（源 cvelistV5）的上游受影响/修复版本，按 cvelist 边界语义（起点 ≤ 基线 < 修复点；无修复记录则上界开放）逐分支判定。
 2. **结构化受影响范围**：case.json 的 `affected_raw`（CVE 5.0 语义）与分支基线做范围比较。
-3. **版本等价传播**：分支基线与本案实测验证的 OH 基线（`observed_version`/`oh_source.baseline`）同版本 → affected（同版本同字节）。
-4. **OH 原生代码**（IPC/CJ FFI）：仅源级验证过的分支（v7.0/master）计 affected，其余 ？。
+3. **上游推测**：版本范围与版本等价仅保存在 upstream_predictions，不能证明 OH 分支是否回移补丁或包含相关构建。
+4. **分支实证**：原生代码与第三方组件统一要求 branch_evidence 中的 source_commit、reference、verdict；缺失时为 unknown。
 5. **不跨组件借用基线**：某分支缺该组件基线时判 ？，绝不用其他组件的版本号代替（2026-09-29 审计 P0：旧实现以 ffmpeg 基线兜底，造成 curl/openssl/cjson 全红假象）。
-6. ？格升级路径：补 case.json 的 `affected_raw` 或该分支的受影响证据后重新生成（2026-10-07 cJSON 各分支基线已回填，剩余 ？格均为 OH 原生案旧分支）。
+6. ？格升级路径：补 case.json 的具体分支证据后重新生成；补上游版本信息不会自动提升为分支实证。
 
 ## 版本基线数据
 

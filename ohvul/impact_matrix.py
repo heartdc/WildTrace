@@ -289,7 +289,8 @@ def generate_matrix(cases_dir: Path, kb_path=None) -> dict:
     matrix = {}
     for case_file in sorted(cases_dir.glob("*/case.json")):
         record = json.loads(case_file.read_text(encoding="utf-8"))
-        matrix[case_file.parent.name] = evaluate_case(record, kb_records)
+        matrix[case_file.parent.name] = evaluate_case(
+            record, kb_records, strict_evidence=False)
     return matrix
 
 

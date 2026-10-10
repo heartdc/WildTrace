@@ -1,3 +1,21 @@
+# 2026-10-11（PR #117 收尾：udmf 建案（第 18 单前置）+ 交付件 strict_evidence 回归修复）
+
+- **udmf 真库证实案入库**：`cases/udmf_ffi_setproperties_null_tag/`（wildtrace-candidate-case-0.2，
+  status=real_library_reproduction_confirmed，CWE-476，新发现）——round-trip 自毁论据
+  （GetProperties 空 tag 输出回喂 SetProperties 必崩）与 gdb 四帧归因全量入 case；旧候选
+  （extras.head）真库证伪同批记录（当前快照已有前置 guard，候选分级如实降级）。
+  表单草稿：`D:/cve_data/submission_udmf/奖励计划表单v1_udmf.md`（第 18 单待证据 zip 入库后提交，
+  sha256 a70accc9… 已引用）。
+- **av_session 真库证伪归档**（照 account 先例不建 case.json）：分析文档已随 PR #117 入库
+  （4 case 全 rc=-1011，入口层参数检查拦截）。
+- **修复 PR #119 引入的交付件回归**：`evaluate_case` 默认 `strict_evidence=True` 使
+  `generate_matrix`/`vuln_report` 两条交付件路径输出全 ？（上游预测模式）——现两处显式
+  `strict_evidence=False`（历史投影=交付件契约），workbench 的 strict 显示不受影响；回归测试
+  断言交付件路径 branches 非 unknown。
+- 交付件重生成：**20 案 × 6 分支 = 🔴 98 / — 6 / ？ 16**（udmf oh_native：v7.0/master 🔴 +
+  旧分支 ？4）。
+- Vue 版工作台已删除（PR #120，React 版为主力）。
+
 # 2026-10-08（LLM 全线切 GLM：Anthropic 协议默认 + 国内站支持）
 
 - **默认切换**：`llm_adapter`（validate_settings / chat_completion / draft_analysis）与
