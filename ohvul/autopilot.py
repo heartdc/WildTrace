@@ -184,6 +184,10 @@ def score_finding(f: Finding, body: str, cleaned: str, params: str) -> Finding:
             score += 20; factors.append(f"+20 ({deref_count} derefs)")
         elif deref_count >= 3:
             score += 10; factors.append(f"+10 ({deref_count} derefs)")
+        elif deref_count == 1:
+            # Ranking signal only (Gap-A contract 2026-10-15): a single
+            # unprotected deref still generates — it just sorts lower.
+            score -= 10; factors.append("-10 (single deref)")
         # Lower: function has early returns (defensive style)
         early_returns = len(re.findall(r'\bif\s*\(.*\)\s*\{?\s*return', cleaned))
         if early_returns >= 2:
@@ -504,6 +508,112 @@ def _fid(prefix, rel, line, var):
     return f"{prefix}_{rel}_{line}" + (f"_{v}" if v else "")
 
 
+# ---------------------------------------------------------------------------
+# P6 protection analysis (Gap-A rework, mentor review 2026-10): a null
+# check protects an access only when it (a) occurs BEFORE the access,
+# (b) actually aborts the null path (return/goto — a log-only check does
+# not), and (c) the pointer has not been reassigned in between. The old
+# function-wide suppression treated "the function mentions a check" as
+# "the access is protected"; the access/count/name-length gates deleted
+# candidates before protection was even considered. Count is now a
+# ranking factor only (score_finding), never a generation gate.
+# ---------------------------------------------------------------------------
+
+_ABORT_KW = re.compile(r'\b(?:return|goto|break|continue)\b')
+
+
+def _p6_block_span(text: str, if_end: int):
+    """Span of the statement/block guarded by an `if` whose ')' ends at
+    if_end: braced block via brace matching, else the single statement
+    through the next ';'. Returns (start, end) or None."""
+    i = if_end
+    while i < len(text) and text[i] in ' \t\r\n':
+        i += 1
+    if i >= len(text):
+        return None
+    if text[i] == '{':
+        depth = 0
+        for j in range(i, len(text)):
+            if text[j] == '{':
+                depth += 1
+            elif text[j] == '}':
+                depth -= 1
+                if depth == 0:
+                    return (i, j + 1)
+        return None
+    semi = text.find(';', i)
+    return (i, semi + 1) if semi != -1 else None
+
+
+def _p6_guards(cleaned: str, varesc: str):
+    """Position/semantics-aware null checks of one pointer variable.
+
+    Yields dicts {kind, start, end, block}:
+      neg-abort : condition true-when-null AND guarded block aborts —
+                  protects everything after `end`
+      pos-block : condition true-when-non-null — protects only its block
+    Log-only negative checks yield nothing (they protect no path).
+    """
+    guards = []
+    for m in re.finditer(r'if\s*\(([^()]*)\)\s*[{;]?', cleaned):
+        cond = m.group(1)
+        is_neg = re.fullmatch(rf'\s*!\s*{varesc}\s*', cond) or \
+            re.fullmatch(rf'\s*{varesc}\s*==\s*(?:NULL|nullptr|0)\s*', cond)
+        is_pos = re.fullmatch(rf'\s*{varesc}\s*', cond) or \
+            re.fullmatch(rf'\s*{varesc}\s*!=\s*(?:NULL|nullptr)\s*', cond)
+        if not (is_neg or is_pos):
+            continue
+        block = _p6_block_span(cleaned, m.end() - 1) or (m.end(), m.end())
+        if is_neg:
+            if _ABORT_KW.search(cleaned[block[0]:block[1]]):
+                guards.append({"kind": "neg-abort", "start": m.start(),
+                               "end": block[1], "block": block})
+        else:
+            guards.append({"kind": "pos-block", "start": m.start(),
+                           "end": block[1], "block": block})
+    # Truthy/return macro guards are neg-abort by definition (their name
+    # carries RETURN polarity — PR #95 / 2026-10-11 dsoftbus audit).
+    for rx in (_TRUTHY_MACRO_GUARD, _CONDITION_RETURN_GUARD, _RETURN_MACRO_GUARD):
+        for m in re.finditer(rx.format(var=varesc), cleaned):
+            guards.append({"kind": "neg-abort", "start": m.start(),
+                           "end": m.end(), "block": (m.start(), m.end())})
+    return guards
+
+
+def _p6_first_unprotected(cleaned: str, varesc: str, accesses: list) -> tuple:
+    """(access_match, reason) for the first access no guard protects, or
+    (None, None) when every access is protected."""
+    guards = _p6_guards(cleaned, varesc)
+    neg_aborts = [g for g in guards if g["kind"] == "neg-abort"]
+    pos_blocks = [g for g in guards if g["kind"] == "pos-block"]
+    reassign = re.compile(rf'\b{varesc}\s*=\s*[^=]')
+    for acc in accesses:
+        p = acc.start()
+        if any(g["block"][0] <= p <= g["block"][1] for g in pos_blocks):
+            continue
+        protected = False
+        for g in neg_aborts:
+            if g["end"] <= p:
+                span = cleaned[g["end"]:p]
+                if reassign.search(span):
+                    continue  # fact invalidated: checked value was replaced
+                protected = True
+                break
+        if protected:
+            continue
+        late = [g for g in guards if g["start"] > p]
+        reassigned = any(reassign.search(cleaned[g["end"]:p]) for g in neg_aborts
+                         if g["end"] <= p)
+        if reassigned:
+            return acc, "reassigned-after-check"
+        if late:
+            return acc, "check-after-access"
+        if guards:
+            return acc, "log-only-check"
+        return acc, "no-null-check"
+    return None, None
+
+
 def scan_p6(root, call_graph=None):
     out = []
     for src in list(root.rglob('*.c')) + list(root.rglob('*.cpp')):
@@ -514,17 +624,18 @@ def scan_p6(root, call_graph=None):
             ptr_params = set(re.findall(r'(?:const\s+)?\w+\s*\*+\s*(\w+)', params))
             ptr_params |= set(_SMART_PTR_PARAM.findall(params))
             for pp in ptr_params:
-                if len(pp) < 2 or pp in ('if','for','while','return','sizeof','NULL','void'): continue
-                derefs = re.findall(rf'\b{re.escape(pp)}\s*(?:->\w+|\[|\.\w)', cl)
-                if len(derefs) < 3: continue
-                if _has_null_check(cl, re.escape(pp)): continue
-                if re.search(rf'if\s*\(\s*!?\s*{re.escape(pp)}\s*\)\s*(?:return|goto)', cl): continue
-                if re.search(_TRUTHY_MACRO_GUARD.format(var=re.escape(pp)), cl): continue
-                if re.search(_CONDITION_RETURN_GUARD.format(var=re.escape(pp)), cl): continue
-                if re.search(_RETURN_MACRO_GUARD.format(var=re.escape(pp)), cl): continue
+                if pp in ('if','for','while','return','sizeof','NULL','void'): continue
+                varesc = re.escape(pp)
+                accesses = list(re.finditer(rf'\b{varesc}\s*(?:->\w+|\[|\.\w)', cl))
+                if not accesses:
+                    continue
+                acc, reason = _p6_first_unprotected(cl, varesc, accesses)
+                if acc is None:
+                    continue
                 f = Finding(_fid("P6", rel, line, pp), "P6_null_deref", "medium",
                            rel, line, name, pp, "CWE-476",
-                           f"Ptr '{pp}' ×{len(derefs)} derefs, no null check",
+                           f"Ptr '{pp}' ×{len(accesses)} deref(s), unprotected "
+                           f"access: {reason}",
                            trigger_hint=f"{name}(NULL)")
                 f = score_finding(f, body, cl, params)
                 # Cross-function: a caller that null-checks the argument

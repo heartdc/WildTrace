@@ -47,6 +47,15 @@ class ScanRequest(BaseModel):
     project_id: str | None = None
     mode: Literal["builtin", "autopilot"] = "autopilot"
     min_confidence: int = Field(default=0, ge=0, le=100)
+    # Gap-A wiring (mentor review 2026-10): the deep-analysis capabilities
+    # exist in the CLI/autopilot but were unreachable from the workbench —
+    # every UI scan ran rules-only. joern opts into the CPG layer (skips
+    # with a warning when /opt/joern is unavailable); the profiles feed
+    # WSL Clang engine runs and Clang AST/typed-memory analysis (builtin
+    # mode only for the latter two, matching ohvul.cli semantics).
+    joern: bool = False
+    engine_profile: str = ""
+    compiler_profile: str = ""
 
 
 class ReviewRequest(BaseModel):
@@ -464,6 +473,10 @@ def create_app(data_dir=None):
 
     @app.post("/api/tasks/scan")
     def scan(body: ScanRequest):
+        from .worker import profile_argument
+
+        profile_argument(body.engine_profile, "--engine-profile")
+        profile_argument(body.compiler_profile, "--compiler-profile")
         if body.project_id:
             project = store.project(body.project_id)
             preflight = read_probe(project)

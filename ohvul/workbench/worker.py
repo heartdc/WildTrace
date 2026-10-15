@@ -17,6 +17,18 @@ def save(folder, value):
     )
 
 
+def profile_argument(value: str, flag: str) -> list:
+    """Validate an analysis-profile path once, for both the API endpoint
+    and the worker's CLI argv (kept here: the worker must not import the
+    web app — WSL project scans run without web deps)."""
+    if not value:
+        return []
+    path = Path(value)
+    if not path.is_absolute() or not path.is_file():
+        raise ValueError(f"{flag} 指向的 profile 文件不存在: {value}")
+    return [flag, str(path)]
+
+
 def cjson(folder, params):
     from tools import cjson_case
 
@@ -71,10 +83,15 @@ def run(folder, secret):
         if params["mode"] == "autopilot":
             from ohvul.autopilot import run as scan
 
+            # Gap-A wiring: joern is an opt-in autopilot layer — it skips
+            # with a warning when /opt/joern is unavailable, so passing the
+            # user's choice through is always safe (previously the workbench
+            # never set it and UI scans were rules-only).
             result = scan(
                 root,
                 folder / "scan",
                 params.get("min_confidence", 0),
+                joern=bool(params.get("joern")),
             )
             save(folder, result)
             if result["status"] != "completed":
@@ -91,6 +108,13 @@ def run(folder, secret):
                 "--report-output",
                 str(folder / "audit-report.json"),
             ]
+            # Gap-A wiring: engine/compiler profiles enable the WSL Clang
+            # engine and Clang AST/typed-memory analysis layers that the
+            # plain CLI path otherwise never runs (mentor review 2026-10).
+            sys.argv += profile_argument(params.get("engine_profile", ""),
+                                         "--engine-profile")
+            sys.argv += profile_argument(params.get("compiler_profile", ""),
+                                         "--compiler-profile")
             main()
         if manifest:
             print("STAGE 核对项目源码与扫描输入", flush=True)
