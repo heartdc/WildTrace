@@ -55,6 +55,20 @@ class SmartPtrParamTests(unittest.TestCase):
             findings = scan_p6(root)
         self.assertTrue(any(f.struct_type == "sink" for f in findings))
 
+    def test_oh_sptr_const_ref_param_flagged(self):
+        # GT4's real shape (bluetooth proxy RegisterObserver): OH's own
+        # refbase smart pointer, const& — unreachable before 2026-10-15
+        # (std::-only regex) even after the count threshold was lifted.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            _write(root, "t.cpp",
+                   "class IObs { public: void AsObject(); };\n"
+                   "void RegisterObserver(const sptr<IObs> &observer) {\n"
+                   "    observer->AsObject();\n"
+                   "}\n")
+            findings = scan_p6(root)
+        self.assertTrue(any(f.struct_type == "observer" for f in findings))
+
     def test_checked_smart_ptr_param_is_suppressed(self):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)

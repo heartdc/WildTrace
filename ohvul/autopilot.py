@@ -41,7 +41,13 @@ class Finding:
 # ---------------------------------------------------------------------------
 _FUNC_RE = re.compile(
     r'(?:(?:static\s+|inline\s+|extern\s+|virtual\s+|unsigned\s+|signed\s+|const\s+|struct\s+)*'
-    r'[\w:<>~\[\]*&\s]{0,80}?)\s+(\w+)\s*\(([^;{}()]{0,800}?)\)\s*\{', re.S)
+    r'[\w:<>~\[\]*&\s]{0,80}?)\s*(\w+)\s*\(([^;{}()]{0,800}?)\)\s*\{', re.S)
+# 2026-10-15: separator relaxed \s+ -> \s* — out-of-line C++ method
+# definitions (Class::Method(...), the standard OH frameworks style)
+# carry no whitespace after '::' and parsed to ZERO functions before;
+# bluetooth replay GT4 was triply unreachable: file-level parse, sptr
+# param shape, deref-count threshold. The keyword filter and the
+# '){'-anchored brace walk keep control flow out.
 
 _NON_FUNC_KEYWORDS = {'if', 'for', 'while', 'switch', 'else', 'return', 'sizeof'}
 
@@ -482,9 +488,12 @@ def scan_p5(root):
 
 # Smart-pointer parameter shapes: std::shared_ptr<T> name / const& —
 # null-deref risk identical to bare pointers but invisible to the raw
-# pointer param regex (retro eval 2026-09-30: GT4's observer fixes)
+# pointer param regex (retro eval 2026-09-30: GT4's observer fixes).
+# sptr/wptr added 2026-10-15: GT4's real sites use OH's own refbase
+# smart pointers (const sptr<...>& observer) — the std::-only shape was
+# the second, previously unnamed reason GT4 stayed unreachable.
 _SMART_PTR_PARAM = re.compile(
-    r'(?:const\s+)?(?:std::)?(?:shared|unique)_ptr\s*<[^>;()]*>\s*(?:&\s*)?(\w+)')
+    r'(?:const\s+)?(?:(?:std::)?(?:shared|unique)_ptr|[sw]ptr)\s*<[^>;()]*>\s*(?:&\s*)?(\w+)')
 
 # OH truthiness guard macros: bare *CHECK*(param, ...) returns when the
 # first argument is falsy — a null guard the plain if-form matcher cannot
