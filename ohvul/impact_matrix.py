@@ -281,7 +281,14 @@ def generate_matrix(cases_dir: Path, kb_path=None) -> dict:
     """Generate the full case × branch impact matrix.
 
     When kb_path is given (or the default kb/third_party_targets/records.json
-    sits next to the cases dir's parent), records are joined by CVE."""
+    sits next to the cases dir's parent), records are joined by CVE.
+
+    Branch verdicts use the strict policy (branch_evidence only); upstream
+    version projections stay in the per-case ``upstream_predictions`` field
+    and are rendered as a separate prediction section by render_matrix_md —
+    they never masquerade as branch-level proof (learn/impact-contract,
+    2026-10-15; the 2026-10-11 projection pin is superseded).
+    """
     if kb_path is None:
         candidate = cases_dir.parent / "kb" / "third_party_targets" / "records.json"
         kb_path = candidate if candidate.exists() else None
@@ -289,8 +296,7 @@ def generate_matrix(cases_dir: Path, kb_path=None) -> dict:
     matrix = {}
     for case_file in sorted(cases_dir.glob("*/case.json")):
         record = json.loads(case_file.read_text(encoding="utf-8"))
-        matrix[case_file.parent.name] = evaluate_case(
-            record, kb_records, strict_evidence=False)
+        matrix[case_file.parent.name] = evaluate_case(record, kb_records)
     return matrix
 
 
@@ -339,7 +345,21 @@ def render_matrix_md(matrix: dict) -> str:
     lines.append("> 🔴 affected = 本案例记录了具体分支提交及验证证据；上游版本推测不计为分支实证。  ")
     lines.append("> ✅ fixed = 分支基线已含上游修复  ")
     lines.append("> — not_affected = 分支基线早于缺陷引入版本  ")
-    lines.append("> ？ unknown = 缺该分支基线数据或缺上游引入范围，不推断")
+    lines.append("> ？ unknown = 现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败")
+    lines.append("")
+    lines.append("## 上游版本预测（风险线索，非分支实证）")
+    lines.append("")
+    lines.append("| 案例 | " + " | ".join(short_branch(b) for b in branches) + " |")
+    lines.append("|" + "---|" * (1 + len(branches)))
+    for name, info in matrix.items():
+        row = [_md_cell(name)]
+        for b in branches:
+            row.append(SYMBOLS.get(info["upstream_predictions"].get(b, "unknown"), "？"))
+        lines.append("| " + " | ".join(row) + " |")
+    lines.append("")
+    lines.append("> 本节按上游受影响范围与各分支基线比对得到**预测**，回答\"上游版本视角该基线是否在风险范围内\"；"
+                 "它不证明对应 OH 分支包含缺陷代码、也不证明已回移修复。分支级结论以上方主表（严格口径）为准，"
+                 "两区信息分别保留、互不覆盖。")
     lines.append("")
     lines.append("## 判定依据")
     lines.append("")

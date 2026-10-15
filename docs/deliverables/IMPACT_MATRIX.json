@@ -9,12 +9,12 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "affected",
-      "OpenHarmony-v5.0-Release": "affected",
-      "OpenHarmony-v5.1-Release": "affected",
-      "OpenHarmony-v6.0-Release": "affected",
-      "OpenHarmony-v7.0-Release": "affected",
-      "master": "affected"
+      "OpenHarmony-v4.1-Release": "unknown",
+      "OpenHarmony-v5.0-Release": "unknown",
+      "OpenHarmony-v5.1-Release": "unknown",
+      "OpenHarmony-v6.0-Release": "unknown",
+      "OpenHarmony-v7.0-Release": "unknown",
+      "master": "unknown"
     },
     "upstream_predictions": {
       "OpenHarmony-v4.1-Release": "affected",
@@ -25,8 +25,8 @@
       "master": "affected"
     },
     "branch_evidence": {},
-    "affected_count": 6,
-    "unknown_count": 0
+    "affected_count": 0,
+    "unknown_count": 6
   },
   "curl_native_ca_reuse": {
     "cve": "CVE-2026-80231",
@@ -38,12 +38,12 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "affected",
-      "OpenHarmony-v5.0-Release": "affected",
-      "OpenHarmony-v5.1-Release": "affected",
-      "OpenHarmony-v6.0-Release": "affected",
-      "OpenHarmony-v7.0-Release": "affected",
-      "master": "affected"
+      "OpenHarmony-v4.1-Release": "unknown",
+      "OpenHarmony-v5.0-Release": "unknown",
+      "OpenHarmony-v5.1-Release": "unknown",
+      "OpenHarmony-v6.0-Release": "unknown",
+      "OpenHarmony-v7.0-Release": "unknown",
+      "master": "unknown"
     },
     "upstream_predictions": {
       "OpenHarmony-v4.1-Release": "affected",
@@ -54,8 +54,8 @@
       "master": "affected"
     },
     "branch_evidence": {},
-    "affected_count": 6,
-    "unknown_count": 0
+    "affected_count": 0,
+    "unknown_count": 6
   },
   "curl_psl_supercookie": {
     "cve": "CVE-2026-82209",
@@ -67,12 +67,12 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "affected",
-      "OpenHarmony-v5.0-Release": "affected",
-      "OpenHarmony-v5.1-Release": "affected",
-      "OpenHarmony-v6.0-Release": "affected",
-      "OpenHarmony-v7.0-Release": "affected",
-      "master": "affected"
+      "OpenHarmony-v4.1-Release": "unknown",
+      "OpenHarmony-v5.0-Release": "unknown",
+      "OpenHarmony-v5.1-Release": "unknown",
+      "OpenHarmony-v6.0-Release": "unknown",
+      "OpenHarmony-v7.0-Release": "unknown",
+      "master": "unknown"
     },
     "upstream_predictions": {
       "OpenHarmony-v4.1-Release": "affected",
@@ -83,8 +83,8 @@
       "master": "affected"
     },
     "branch_evidence": {},
-    "affected_count": 6,
-    "unknown_count": 0
+    "affected_count": 0,
+    "unknown_count": 6
   },
   "ffmpeg_cfhd_transform2_width_oob": {
     "cve": "CVE-2026-70632",
@@ -96,12 +96,12 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "not_affected",
-      "OpenHarmony-v5.0-Release": "affected",
-      "OpenHarmony-v5.1-Release": "affected",
-      "OpenHarmony-v6.0-Release": "affected",
-      "OpenHarmony-v7.0-Release": "affected",
-      "master": "affected"
+      "OpenHarmony-v4.1-Release": "unknown",
+      "OpenHarmony-v5.0-Release": "unknown",
+      "OpenHarmony-v5.1-Release": "unknown",
+      "OpenHarmony-v6.0-Release": "unknown",
+      "OpenHarmony-v7.0-Release": "unknown",
+      "master": "unknown"
     },
     "upstream_predictions": {
       "OpenHarmony-v4.1-Release": "not_affected",
@@ -112,8 +112,8 @@
       "master": "affected"
     },
     "branch_evidence": {},
-    "affected_count": 5,
-    "unknown_count": 0
+    "affected_count": 0,
+    "unknown_count": 6
   },
   "ffmpeg_dvbsub_parser_capacity_overflow": {
     "cve": "CVE-2026-70628",
@@ -125,12 +125,12 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "affected",
-      "OpenHarmony-v5.0-Release": "affected",
-      "OpenHarmony-v5.1-Release": "affected",
-      "OpenHarmony-v6.0-Release": "affected",
-      "OpenHarmony-v7.0-Release": "affected",
-      "master": "affected"
+      "OpenHarmony-v4.1-Release": "unknown",
+      "OpenHarmony-v5.0-Release": "unknown",
+      "OpenHarmony-v5.1-Release": "unknown",
+      "OpenHarmony-v6.0-Release": "unknown",
+      "OpenHarmony-v7.0-Release": "unknown",
+      "master": "unknown"
     },
     "upstream_predictions": {
       "OpenHarmony-v4.1-Release": "affected",
@@ -141,8 +141,8 @@
       "master": "affected"
     },
     "branch_evidence": {},
-    "affected_count": 6,
-    "unknown_count": 0
+    "affected_count": 0,
+    "unknown_count": 6
   },
   "ffmpeg_floodfill_point_stack_oob": {
     "cve": "CVE-2026-65705",
@@ -154,12 +154,12 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "affected",
-      "OpenHarmony-v5.0-Release": "affected",
-      "OpenHarmony-v5.1-Release": "affected",
-      "OpenHarmony-v6.0-Release": "affected",
-      "OpenHarmony-v7.0-Release": "affected",
-      "master": "affected"
+      "OpenHarmony-v4.1-Release": "unknown",
+      "OpenHarmony-v5.0-Release": "unknown",
+      "OpenHarmony-v5.1-Release": "unknown",
+      "OpenHarmony-v6.0-Release": "unknown",
+      "OpenHarmony-v7.0-Release": "unknown",
+      "master": "unknown"
     },
     "upstream_predictions": {
       "OpenHarmony-v4.1-Release": "affected",
@@ -170,8 +170,8 @@
       "master": "affected"
     },
     "branch_evidence": {},
-    "affected_count": 6,
-    "unknown_count": 0
+    "affected_count": 0,
+    "unknown_count": 6
   },
   "ffmpeg_hqdn3d_dynamic_size_oob": {
     "cve": "CVE-2026-66036",
@@ -183,12 +183,12 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "affected",
-      "OpenHarmony-v5.0-Release": "affected",
-      "OpenHarmony-v5.1-Release": "affected",
-      "OpenHarmony-v6.0-Release": "affected",
-      "OpenHarmony-v7.0-Release": "affected",
-      "master": "affected"
+      "OpenHarmony-v4.1-Release": "unknown",
+      "OpenHarmony-v5.0-Release": "unknown",
+      "OpenHarmony-v5.1-Release": "unknown",
+      "OpenHarmony-v6.0-Release": "unknown",
+      "OpenHarmony-v7.0-Release": "unknown",
+      "master": "unknown"
     },
     "upstream_predictions": {
       "OpenHarmony-v4.1-Release": "affected",
@@ -199,8 +199,8 @@
       "master": "affected"
     },
     "branch_evidence": {},
-    "affected_count": 6,
-    "unknown_count": 0
+    "affected_count": 0,
+    "unknown_count": 6
   },
   "ffmpeg_iamf_count_label_dos": {
     "cve": "CVE-2026-66037",
@@ -212,12 +212,12 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "affected",
-      "OpenHarmony-v5.0-Release": "affected",
-      "OpenHarmony-v5.1-Release": "affected",
-      "OpenHarmony-v6.0-Release": "affected",
-      "OpenHarmony-v7.0-Release": "affected",
-      "master": "affected"
+      "OpenHarmony-v4.1-Release": "unknown",
+      "OpenHarmony-v5.0-Release": "unknown",
+      "OpenHarmony-v5.1-Release": "unknown",
+      "OpenHarmony-v6.0-Release": "unknown",
+      "OpenHarmony-v7.0-Release": "unknown",
+      "master": "unknown"
     },
     "upstream_predictions": {
       "OpenHarmony-v4.1-Release": "affected",
@@ -228,8 +228,8 @@
       "master": "affected"
     },
     "branch_evidence": {},
-    "affected_count": 6,
-    "unknown_count": 0
+    "affected_count": 0,
+    "unknown_count": 6
   },
   "ffmpeg_lcldec_zlib_tail_disclosure": {
     "cve": "CVE-2026-66038",
@@ -241,12 +241,12 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "affected",
-      "OpenHarmony-v5.0-Release": "affected",
-      "OpenHarmony-v5.1-Release": "affected",
-      "OpenHarmony-v6.0-Release": "affected",
-      "OpenHarmony-v7.0-Release": "affected",
-      "master": "affected"
+      "OpenHarmony-v4.1-Release": "unknown",
+      "OpenHarmony-v5.0-Release": "unknown",
+      "OpenHarmony-v5.1-Release": "unknown",
+      "OpenHarmony-v6.0-Release": "unknown",
+      "OpenHarmony-v7.0-Release": "unknown",
+      "master": "unknown"
     },
     "upstream_predictions": {
       "OpenHarmony-v4.1-Release": "affected",
@@ -257,8 +257,8 @@
       "master": "affected"
     },
     "branch_evidence": {},
-    "affected_count": 6,
-    "unknown_count": 0
+    "affected_count": 0,
+    "unknown_count": 6
   },
   "ffmpeg_nvdec_sep_ref_doublefree": {
     "cve": "CVE-2026-64832",
@@ -270,12 +270,12 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "not_affected",
-      "OpenHarmony-v5.0-Release": "affected",
-      "OpenHarmony-v5.1-Release": "affected",
-      "OpenHarmony-v6.0-Release": "affected",
-      "OpenHarmony-v7.0-Release": "affected",
-      "master": "affected"
+      "OpenHarmony-v4.1-Release": "unknown",
+      "OpenHarmony-v5.0-Release": "unknown",
+      "OpenHarmony-v5.1-Release": "unknown",
+      "OpenHarmony-v6.0-Release": "unknown",
+      "OpenHarmony-v7.0-Release": "unknown",
+      "master": "unknown"
     },
     "upstream_predictions": {
       "OpenHarmony-v4.1-Release": "not_affected",
@@ -286,8 +286,8 @@
       "master": "affected"
     },
     "branch_evidence": {},
-    "affected_count": 5,
-    "unknown_count": 0
+    "affected_count": 0,
+    "unknown_count": 6
   },
   "ffmpeg_quirc_resize_oob": {
     "cve": "CVE-2026-66041",
@@ -299,12 +299,12 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "not_affected",
-      "OpenHarmony-v5.0-Release": "not_affected",
-      "OpenHarmony-v5.1-Release": "not_affected",
-      "OpenHarmony-v6.0-Release": "not_affected",
-      "OpenHarmony-v7.0-Release": "affected",
-      "master": "affected"
+      "OpenHarmony-v4.1-Release": "unknown",
+      "OpenHarmony-v5.0-Release": "unknown",
+      "OpenHarmony-v5.1-Release": "unknown",
+      "OpenHarmony-v6.0-Release": "unknown",
+      "OpenHarmony-v7.0-Release": "unknown",
+      "master": "unknown"
     },
     "upstream_predictions": {
       "OpenHarmony-v4.1-Release": "not_affected",
@@ -315,8 +315,8 @@
       "master": "affected"
     },
     "branch_evidence": {},
-    "affected_count": 2,
-    "unknown_count": 0
+    "affected_count": 0,
+    "unknown_count": 6
   },
   "ffmpeg_rscc_short_deflate_uninit_leak": {
     "cve": "CVE-2026-70629",
@@ -328,12 +328,12 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "affected",
-      "OpenHarmony-v5.0-Release": "affected",
-      "OpenHarmony-v5.1-Release": "affected",
-      "OpenHarmony-v6.0-Release": "affected",
-      "OpenHarmony-v7.0-Release": "affected",
-      "master": "affected"
+      "OpenHarmony-v4.1-Release": "unknown",
+      "OpenHarmony-v5.0-Release": "unknown",
+      "OpenHarmony-v5.1-Release": "unknown",
+      "OpenHarmony-v6.0-Release": "unknown",
+      "OpenHarmony-v7.0-Release": "unknown",
+      "master": "unknown"
     },
     "upstream_predictions": {
       "OpenHarmony-v4.1-Release": "affected",
@@ -344,8 +344,8 @@
       "master": "affected"
     },
     "branch_evidence": {},
-    "affected_count": 6,
-    "unknown_count": 0
+    "affected_count": 0,
+    "unknown_count": 6
   },
   "ffmpeg_swaprect_temp_row_oob": {
     "cve": "CVE-2026-65706",
@@ -357,12 +357,12 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "affected",
-      "OpenHarmony-v5.0-Release": "affected",
-      "OpenHarmony-v5.1-Release": "affected",
-      "OpenHarmony-v6.0-Release": "affected",
-      "OpenHarmony-v7.0-Release": "affected",
-      "master": "affected"
+      "OpenHarmony-v4.1-Release": "unknown",
+      "OpenHarmony-v5.0-Release": "unknown",
+      "OpenHarmony-v5.1-Release": "unknown",
+      "OpenHarmony-v6.0-Release": "unknown",
+      "OpenHarmony-v7.0-Release": "unknown",
+      "master": "unknown"
     },
     "upstream_predictions": {
       "OpenHarmony-v4.1-Release": "affected",
@@ -373,8 +373,8 @@
       "master": "affected"
     },
     "branch_evidence": {},
-    "affected_count": 6,
-    "unknown_count": 0
+    "affected_count": 0,
+    "unknown_count": 6
   },
   "ffmpeg_ty_ac3_trim_underflow": {
     "cve": "CVE-2026-65704",
@@ -386,12 +386,12 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "affected",
-      "OpenHarmony-v5.0-Release": "affected",
-      "OpenHarmony-v5.1-Release": "affected",
-      "OpenHarmony-v6.0-Release": "affected",
-      "OpenHarmony-v7.0-Release": "affected",
-      "master": "affected"
+      "OpenHarmony-v4.1-Release": "unknown",
+      "OpenHarmony-v5.0-Release": "unknown",
+      "OpenHarmony-v5.1-Release": "unknown",
+      "OpenHarmony-v6.0-Release": "unknown",
+      "OpenHarmony-v7.0-Release": "unknown",
+      "master": "unknown"
     },
     "upstream_predictions": {
       "OpenHarmony-v4.1-Release": "affected",
@@ -402,8 +402,8 @@
       "master": "affected"
     },
     "branch_evidence": {},
-    "affected_count": 6,
-    "unknown_count": 0
+    "affected_count": 0,
+    "unknown_count": 6
   },
   "ffmpeg_wmaenc_extradata_padding": {
     "cve": "CVE-2026-52296",
@@ -415,12 +415,12 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "affected",
-      "OpenHarmony-v5.0-Release": "affected",
-      "OpenHarmony-v5.1-Release": "affected",
-      "OpenHarmony-v6.0-Release": "affected",
-      "OpenHarmony-v7.0-Release": "affected",
-      "master": "affected"
+      "OpenHarmony-v4.1-Release": "unknown",
+      "OpenHarmony-v5.0-Release": "unknown",
+      "OpenHarmony-v5.1-Release": "unknown",
+      "OpenHarmony-v6.0-Release": "unknown",
+      "OpenHarmony-v7.0-Release": "unknown",
+      "master": "unknown"
     },
     "upstream_predictions": {
       "OpenHarmony-v4.1-Release": "affected",
@@ -431,8 +431,8 @@
       "master": "affected"
     },
     "branch_evidence": {},
-    "affected_count": 6,
-    "unknown_count": 0
+    "affected_count": 0,
+    "unknown_count": 6
   },
   "hiappevent_ffi_watcher_null_filter": {
     "cve": "",
@@ -448,20 +448,20 @@
       "OpenHarmony-v5.0-Release": "unknown",
       "OpenHarmony-v5.1-Release": "unknown",
       "OpenHarmony-v6.0-Release": "unknown",
-      "OpenHarmony-v7.0-Release": "affected",
-      "master": "affected"
+      "OpenHarmony-v7.0-Release": "unknown",
+      "master": "unknown"
     },
     "upstream_predictions": {
       "OpenHarmony-v4.1-Release": "unknown",
       "OpenHarmony-v5.0-Release": "unknown",
       "OpenHarmony-v5.1-Release": "unknown",
       "OpenHarmony-v6.0-Release": "unknown",
-      "OpenHarmony-v7.0-Release": "affected",
-      "master": "affected"
+      "OpenHarmony-v7.0-Release": "unknown",
+      "master": "unknown"
     },
     "branch_evidence": {},
-    "affected_count": 2,
-    "unknown_count": 4
+    "affected_count": 0,
+    "unknown_count": 6
   },
   "ipc_cj_array_null_validation": {
     "cve": "",
@@ -477,20 +477,20 @@
       "OpenHarmony-v5.0-Release": "unknown",
       "OpenHarmony-v5.1-Release": "unknown",
       "OpenHarmony-v6.0-Release": "unknown",
-      "OpenHarmony-v7.0-Release": "affected",
-      "master": "affected"
+      "OpenHarmony-v7.0-Release": "unknown",
+      "master": "unknown"
     },
     "upstream_predictions": {
       "OpenHarmony-v4.1-Release": "unknown",
       "OpenHarmony-v5.0-Release": "unknown",
       "OpenHarmony-v5.1-Release": "unknown",
       "OpenHarmony-v6.0-Release": "unknown",
-      "OpenHarmony-v7.0-Release": "affected",
-      "master": "affected"
+      "OpenHarmony-v7.0-Release": "unknown",
+      "master": "unknown"
     },
     "branch_evidence": {},
-    "affected_count": 2,
-    "unknown_count": 4
+    "affected_count": 0,
+    "unknown_count": 6
   },
   "kv_ffi_array_validation": {
     "cve": "",
@@ -506,20 +506,20 @@
       "OpenHarmony-v5.0-Release": "unknown",
       "OpenHarmony-v5.1-Release": "unknown",
       "OpenHarmony-v6.0-Release": "unknown",
-      "OpenHarmony-v7.0-Release": "affected",
-      "master": "affected"
+      "OpenHarmony-v7.0-Release": "unknown",
+      "master": "unknown"
     },
     "upstream_predictions": {
       "OpenHarmony-v4.1-Release": "unknown",
       "OpenHarmony-v5.0-Release": "unknown",
       "OpenHarmony-v5.1-Release": "unknown",
       "OpenHarmony-v6.0-Release": "unknown",
-      "OpenHarmony-v7.0-Release": "affected",
-      "master": "affected"
+      "OpenHarmony-v7.0-Release": "unknown",
+      "master": "unknown"
     },
     "branch_evidence": {},
-    "affected_count": 2,
-    "unknown_count": 4
+    "affected_count": 0,
+    "unknown_count": 6
   },
   "openssl_ocb_oneshot_iv_discard": {
     "cve": "CVE-2026-45445",
@@ -531,12 +531,12 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "affected",
-      "OpenHarmony-v5.0-Release": "affected",
-      "OpenHarmony-v5.1-Release": "affected",
-      "OpenHarmony-v6.0-Release": "affected",
-      "OpenHarmony-v7.0-Release": "affected",
-      "master": "affected"
+      "OpenHarmony-v4.1-Release": "unknown",
+      "OpenHarmony-v5.0-Release": "unknown",
+      "OpenHarmony-v5.1-Release": "unknown",
+      "OpenHarmony-v6.0-Release": "unknown",
+      "OpenHarmony-v7.0-Release": "unknown",
+      "master": "unknown"
     },
     "upstream_predictions": {
       "OpenHarmony-v4.1-Release": "affected",
@@ -547,8 +547,8 @@
       "master": "affected"
     },
     "branch_evidence": {},
-    "affected_count": 6,
-    "unknown_count": 0
+    "affected_count": 0,
+    "unknown_count": 6
   },
   "udmf_ffi_setproperties_null_tag": {
     "cve": "",
@@ -564,7 +564,7 @@
       "OpenHarmony-v5.0-Release": "unknown",
       "OpenHarmony-v5.1-Release": "unknown",
       "OpenHarmony-v6.0-Release": "unknown",
-      "OpenHarmony-v7.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "unknown",
       "master": "affected"
     },
     "upstream_predictions": {
@@ -572,11 +572,17 @@
       "OpenHarmony-v5.0-Release": "unknown",
       "OpenHarmony-v5.1-Release": "unknown",
       "OpenHarmony-v6.0-Release": "unknown",
-      "OpenHarmony-v7.0-Release": "affected",
-      "master": "affected"
+      "OpenHarmony-v7.0-Release": "unknown",
+      "master": "unknown"
     },
-    "branch_evidence": {},
-    "affected_count": 2,
-    "unknown_count": 4
+    "branch_evidence": {
+      "master": {
+        "verdict": "affected",
+        "source_commit": "a4882ad72459e9ae7b8373c681c0f4bafab7781f",
+        "reference": "docs/analysis/UDMF_REAL_LIBRARY_CONFIRM_20261009.md（真库构建 317/317 全绿，case3 tag=NULL SIGSEGV run.exit=139；evidence zip sha256 a70accc94eefb4467d434a220b39cf39c78d35f35614e67d8cbc4a61faea14df）"
+      }
+    },
+    "affected_count": 1,
+    "unknown_count": 5
   }
 }
