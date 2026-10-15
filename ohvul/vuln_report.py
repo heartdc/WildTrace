@@ -180,7 +180,8 @@ def read_case(case_dir: Path, kb_records: dict | None = None) -> dict:
     poc_path = case_dir / "poc.c"
     drivers = {'hiappevent_ffi_watcher_null_filter': 'hiappevent_null_watcher.c',
                'ipc_cj_array_null_validation': 'ipc_null_bytearray.c',
-               'kv_ffi_array_validation': 'kv_null_entry.c'}
+               'kv_ffi_array_validation': 'kv_null_entry.c',
+               'udmf_ffi_setproperties_null_tag': 'udmf_null_tag.c'}
     if not poc_path.exists() and case_dir.name in drivers:
         poc_path = case_dir.parent.parent / 'tools' / 'validation_cases' / drivers[case_dir.name]
     poc_code = ""
