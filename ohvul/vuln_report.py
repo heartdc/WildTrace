@@ -252,11 +252,20 @@ def read_case(case_dir: Path, kb_records: dict | None = None) -> dict:
         "trigger_conditions": record.get("trigger_conditions") or (desc.get('trigger') if isinstance(desc, dict) else None) or candidate.get('input_type') or '未记录；需补充触发条件',
         "attack_path": record.get("attack_path") or record.get("entry_point") or candidate.get('entry_point') or '未记录；需补充产品可达性证据',
         "poc_code": poc_code,
-        "poc_usage": ('使用工作台 cJSON 隔离验证，或 tools/cjson_case.py prepare / run / verify-runtime；源码提交必须匹配 case.json。'
-                      if case_dir.name == 'cjson_merge_alias' else
-                      '依赖与运行参数以本案 PoC 文件注释、README 及验证驱动为准。' +
-                      ('\n\n' + str(record['build_requirements']) if record.get('build_requirements') else '') +
-                      '\n\n未提供经过独立复跑的完整命令时，报告保留为待补充状态。'),
+        "poc_usage": (
+            '使用工作台 cJSON 隔离验证，或 tools/cjson_case.py prepare / run / verify-runtime；源码提交必须匹配 case.json。'
+            if case_dir.name == 'cjson_merge_alias'
+            else (
+                # Gap-B backfill (2026-10-15): the case carries its own verified
+                # reproduction material (distilled from the submitted bounty
+                # form) — render that instead of the generic template.
+                str(record['reproduction_commands'])
+                if record.get('reproduction_commands')
+                else '依赖与运行参数以本案 PoC 文件注释、README 及验证驱动为准。'
+                + '\n\n未提供经过独立复跑的完整命令时，报告保留为待补充状态。'
+            )
+        )
+        + (('\n\n' + str(record['build_requirements']) if record.get('build_requirements') else '')),
         "code_module": component,
         "function_module": record.get("function_module", component.split("/")[-1] if "/" in component else component),
         "version_impact": "\n".join(version_impact_lines),

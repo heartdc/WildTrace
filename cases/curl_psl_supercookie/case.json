@@ -1,53 +1,67 @@
 {
-  "schema": "case-specific-validation-0.2",
-  "id": "curl-psl-supercookie-tailmatch",
-  "component": "third_party/curl",
-  "cve_reference": "CVE-2026-82209",
-  "cwe_candidate": "CWE-201",
-  "discovery_method": "middle-form version probe + source-level fix-gap verification (see docs/analysis/CURL_MIDDLEFORM_VERIFY_20260921.md)",
-  "new_discovery": false,
-  "public_upstream": {
-    "fix_commit": "https://github.com/curl/curl/commit/95c1e8915dce64606bd753fd47fc0bd236e31cd6",
-    "fix_date": "2026-08-28",
-    "regression_tests": ["tests/data/test798", "tests/data/test2318"]
+ "schema": "case-specific-validation-0.2",
+ "id": "curl-psl-supercookie-tailmatch",
+ "component": "third_party/curl",
+ "cve_reference": "CVE-2026-82209",
+ "cwe_candidate": "CWE-201",
+ "discovery_method": "middle-form version probe + source-level fix-gap verification (see docs/analysis/CURL_MIDDLEFORM_VERIFY_20260921.md)",
+ "new_discovery": false,
+ "public_upstream": {
+  "fix_commit": "https://github.com/curl/curl/commit/95c1e8915dce64606bd753fd47fc0bd236e31cd6",
+  "fix_date": "2026-08-28",
+  "regression_tests": [
+   "tests/data/test798",
+   "tests/data/test2318"
+  ]
+ },
+ "oh_source": {
+  "repo": "https://gitcode.com/openharmony/third_party_curl",
+  "commit": "f044ac3ac942adc9c56efd9a47854a7049a9a78f",
+  "lib_cookie_c_sha256": "3d0fbebf7733674d7375bf5f938102d4fb728fcd0ca598b0b761c174e25e97e6",
+  "version_label": "8.8.0 (stale; actual code = upstream 20260819 snapshot)",
+  "digest_note": "canonical digest computed on a native LF checkout; a Windows autocrlf checkout yields CRLF variant 0327ce5c... — content conclusions unaffected",
+  "gap_evidence": "upstream fix 2026-08-28 postdates the 20260819 snapshot; no backport commit found (grep CVE id + recent log); OH's lib/cookie.c retains the pre-refactor PSL structure without the tailmatch-clearing logic at the psl_is_cookie_domain_acceptable call site (line ~1049)"
+ },
+ "vulnerability": {
+  "summary": "With libpsl enabled, libcurl accepts a cookie whose Domain equals the request host when that host is itself a public suffix, keeping tailmatch=TRUE — a supercookie matching all subdomains of the suffix.",
+  "trigger": "HTTP response to a request for a PSL-listed host (e.g. localhost) carrying Set-Cookie with Domain equal to that host.",
+  "machine_signal": "CURLINFO_COOKIELIST entry for the PSL host: domain field with leading dot (tailmatch TRUE) = vulnerable; without dot = fixed. Equivalently in a Netscape-format jar, the leading-dot convention marks tailmatching.",
+  "fix_core": "After psl_is_cookie_domain_acceptable() accepts, clear co->tailmatch when the cookie domain is itself a public suffix (upstream 95c1e891, adapted to OH's pre-refactor structure)."
+ },
+ "controls": [
+  {
+   "name": "non-psl-domain",
+   "desc": "Set-Cookie Domain=sub.localhost (not a suffix): accepted with tailmatch on BOTH original and patched — must not regress"
   },
-  "oh_source": {
-    "repo": "https://gitcode.com/openharmony/third_party_curl",
-    "commit": "f044ac3ac942adc9c56efd9a47854a7049a9a78f",
-    "lib_cookie_c_sha256": "3d0fbebf7733674d7375bf5f938102d4fb728fcd0ca598b0b761c174e25e97e6",
-    "version_label": "8.8.0 (stale; actual code = upstream 20260819 snapshot)",
-    "digest_note": "canonical digest computed on a native LF checkout; a Windows autocrlf checkout yields CRLF variant 0327ce5c... — content conclusions unaffected",
-    "gap_evidence": "upstream fix 2026-08-28 postdates the 20260819 snapshot; no backport commit found (grep CVE id + recent log); OH's lib/cookie.c retains the pre-refactor PSL structure without the tailmatch-clearing logic at the psl_is_cookie_domain_acceptable call site (line ~1049)"
+  {
+   "name": "exact-host-non-suffix",
+   "desc": "host=127.0.0.1 style: unaffected path"
   },
-  "vulnerability": {
-    "summary": "With libpsl enabled, libcurl accepts a cookie whose Domain equals the request host when that host is itself a public suffix, keeping tailmatch=TRUE — a supercookie matching all subdomains of the suffix.",
-    "trigger": "HTTP response to a request for a PSL-listed host (e.g. localhost) carrying Set-Cookie with Domain equal to that host.",
-    "machine_signal": "CURLINFO_COOKIELIST entry for the PSL host: domain field with leading dot (tailmatch TRUE) = vulnerable; without dot = fixed. Equivalently in a Netscape-format jar, the leading-dot convention marks tailmatching.",
-    "fix_core": "After psl_is_cookie_domain_acceptable() accepts, clear co->tailmatch when the cookie domain is itself a public suffix (upstream 95c1e891, adapted to OH's pre-refactor structure)."
-  },
-  "controls": [
-    {"name": "non-psl-domain", "desc": "Set-Cookie Domain=sub.localhost (not a suffix): accepted with tailmatch on BOTH original and patched — must not regress"},
-    {"name": "exact-host-non-suffix", "desc": "host=127.0.0.1 style: unaffected path"},
-    {"name": "psl-reject", "desc": "Set-Cookie Domain=com for host x.example.com: rejected on BOTH (existing psl_is_cookie_domain_acceptable behavior unchanged)"}
-  ],
-  "build_requirements": "libcurl sources (OH tree) built with USE_LIBPSL; libpsl dev package; POSIX sockets (loopback only)",
-  "runtime_status": "not_run",
-  "product_reachability": "not_established",
-  "notes": "patch.diff is ADAPTED to OH's pre-refactor structure (upstream's is_public_suffix wrapper does not exist there); the second upstream hunk (check reordering) is defense-in-depth and intentionally omitted from the narrow patch.",
-  "submission": {
-    "platform": "OpenHarmony 漏洞奖励计划 (https://bugbounty.openharmony.cn)",
-    "ticket": "OHSA26-092226014",
-    "submission_id": "228159005971714048",
-    "submitted_at": "2026-09-21",
-    "account": "北辰522",
-    "status": "已提交",
-    "form": {
-      "type": "信息与隐私泄露类 / 敏感信息泄露",
-      "repo": "third_party_curl",
-      "file_path": "lib/cookie.c / 代码行:1049",
-      "introduced_by": "c140bd7891488993f09ff7454e106b724e9b85d5 (2016-03-02 'cookie: do not refuse cookies for localhost', git -S traced)",
-      "oh_version": "OpenHarmony-v7.0-Release（2026-08-21）",
-      "attachments": "附件包_CVE-2026-82209.zip (poc.c / patch.diff / 运行验证记录.md / curl_gap_verification.json / upstream_fix_verbatim.patch)"
-    }
+  {
+   "name": "psl-reject",
+   "desc": "Set-Cookie Domain=com for host x.example.com: rejected on BOTH (existing psl_is_cookie_domain_acceptable behavior unchanged)"
   }
+ ],
+ "build_requirements": "libcurl sources (OH tree) built with USE_LIBPSL; libpsl dev package; POSIX sockets (loopback only)",
+ "runtime_status": "not_run",
+ "product_reachability": "not_established",
+ "notes": "patch.diff is ADAPTED to OH's pre-refactor structure (upstream's is_public_suffix wrapper does not exist there); the second upstream hunk (check reordering) is defense-in-depth and intentionally omitted from the narrow patch.",
+ "submission": {
+  "platform": "OpenHarmony 漏洞奖励计划 (https://bugbounty.openharmony.cn)",
+  "ticket": "OHSA26-092226014",
+  "submission_id": "228159005971714048",
+  "submitted_at": "2026-09-21",
+  "account": "北辰522",
+  "status": "已提交",
+  "form": {
+   "type": "信息与隐私泄露类 / 敏感信息泄露",
+   "repo": "third_party_curl",
+   "file_path": "lib/cookie.c / 代码行:1049",
+   "introduced_by": "c140bd7891488993f09ff7454e106b724e9b85d5 (2016-03-02 'cookie: do not refuse cookies for localhost', git -S traced)",
+   "oh_version": "OpenHarmony-v7.0-Release（2026-08-21）",
+   "attachments": "附件包_CVE-2026-82209.zip (poc.c / patch.diff / 运行验证记录.md / curl_gap_verification.json / upstream_fix_verbatim.patch)"
+  }
+ },
+ "attack_path": "目标使用 libcurl 且启用 USE_LIBPSL+cookie 引擎，访问主机名恰为公共后缀的服务端点（localhost 类本地服务/特殊内网域）；攻击者控制该主机响应下发 Set-Cookie: Domain=<公共后缀主机名> → cookie 以 .主机名 通配域入库，对同后缀任意子域可注入/读取（会话固定/跨子域跟踪），不直接代码执行。",
+ "reproduction_commands": "源码等价运行级（curl-8.8.0，OH lib/cookie.c 与其逐文件 diff 84 行等价）：./configure --without-ssl --with-libpsl && make -C lib；clang -fsanitize=address,undefined -I<curl>/include poc.c <curl>/lib/.libs/libcurl.a -lpsl -lpthread -o probe；./probe psl-supercookie：原版 tailmatch=1（域字段 .localhost，漏洞行为）→ 应用 patch.diff 重建 → tailmatch=0（修复生效）；non-psl-control 对照两侧均 1（无回归）。"
 }

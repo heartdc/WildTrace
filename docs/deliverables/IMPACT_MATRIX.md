@@ -19,13 +19,13 @@
 | ffmpeg_swaprect_temp_row_oob | CVE-2026-65706 | ffmpeg | 3.0 | pending | ？ | ？ | ？ | ？ | ？ | ？ | 0 | 6 |
 | ffmpeg_ty_ac3_trim_underflow | CVE-2026-65704 | ffmpeg | 0 | pending | ？ | ？ | ？ | ？ | ？ | ？ | 0 | 6 |
 | ffmpeg_wmaenc_extradata_padding | CVE-2026-52296 | ffmpeg | 0 | 9.0 | ？ | ？ | ？ | ？ | ？ | ？ | 0 | 6 |
-| hiappevent_ffi_watcher_null_filter | — | oh_native | unknown | pending | ？ | ？ | ？ | ？ | ？ | ？ | 0 | 6 |
-| ipc_cj_array_null_validation | — | oh_native | unknown | pending | ？ | ？ | ？ | ？ | ？ | ？ | 0 | 6 |
+| hiappevent_ffi_watcher_null_filter | — | oh_native | unknown | pending | ？ | ？ | ？ | ？ | ？ | 🔴 | 1 | 5 |
+| ipc_cj_array_null_validation | — | oh_native | unknown | pending | ？ | ？ | ？ | ？ | ？ | 🔴 | 1 | 5 |
 | kv_ffi_array_validation | — | oh_native | unknown | pending | ？ | ？ | ？ | ？ | ？ | ？ | 0 | 6 |
 | openssl_ocb_oneshot_iv_discard | CVE-2026-45445 | openssl | 3.0.0 | 4.0.1 | ？ | ？ | ？ | ？ | ？ | ？ | 0 | 6 |
 | udmf_ffi_setproperties_null_tag | — | oh_native | unknown | pending | ？ | ？ | ？ | ？ | ？ | 🔴 | 1 | 5 |
 
-**总计**：20 案 × 6 分支；🔴 证实 affected 1 格；— 证实不受影响 0 格；？待定 119 格。本表只声明有证据的格子，？不是安全结论。
+**总计**：20 案 × 6 分支；🔴 证实 affected 3 格；— 证实不受影响 0 格；？待定 117 格。本表只声明有证据的格子，？不是安全结论。
 
 > 🔴 affected = 本案例记录了具体分支提交及验证证据；上游版本推测不计为分支实证。  
 > ✅ fixed = 分支基线已含上游修复  

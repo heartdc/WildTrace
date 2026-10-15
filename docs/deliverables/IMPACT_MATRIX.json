@@ -449,7 +449,7 @@
       "OpenHarmony-v5.1-Release": "unknown",
       "OpenHarmony-v6.0-Release": "unknown",
       "OpenHarmony-v7.0-Release": "unknown",
-      "master": "unknown"
+      "master": "affected"
     },
     "upstream_predictions": {
       "OpenHarmony-v4.1-Release": "unknown",
@@ -459,9 +459,15 @@
       "OpenHarmony-v7.0-Release": "unknown",
       "master": "unknown"
     },
-    "branch_evidence": {},
-    "affected_count": 0,
-    "unknown_count": 6
+    "branch_evidence": {
+      "master": {
+        "verdict": "affected",
+        "source_commit": "de94cb4d53f94afdbc75a5a7c46401f99bdcf17f",
+        "reference": "docs/analysis/HIAPPEVENT_REAL_LIBRARY_CONFIRM_20261003.md（PR #97；真库 sha256 bf8aa65e30c13782f54fa56b6d5e273a36425555865125a9bea6222943f6636a，证据包 hiappevent-evidence-20261003.zip）"
+      }
+    },
+    "affected_count": 1,
+    "unknown_count": 5
   },
   "ipc_cj_array_null_validation": {
     "cve": "",
@@ -478,7 +484,7 @@
       "OpenHarmony-v5.1-Release": "unknown",
       "OpenHarmony-v6.0-Release": "unknown",
       "OpenHarmony-v7.0-Release": "unknown",
-      "master": "unknown"
+      "master": "affected"
     },
     "upstream_predictions": {
       "OpenHarmony-v4.1-Release": "unknown",
@@ -488,9 +494,15 @@
       "OpenHarmony-v7.0-Release": "unknown",
       "master": "unknown"
     },
-    "branch_evidence": {},
-    "affected_count": 0,
-    "unknown_count": 6
+    "branch_evidence": {
+      "master": {
+        "verdict": "affected",
+        "source_commit": "edc6f3ab",
+        "reference": "docs/analysis/IPC_KV_REAL_LIBRARY_VALIDATION_20260928.md（PR #65；隔离构建与原仓 diff -qr 一致，gdb 两轮 ASLR 复现 rip 落库内）"
+      }
+    },
+    "affected_count": 1,
+    "unknown_count": 5
   },
   "kv_ffi_array_validation": {
     "cve": "",

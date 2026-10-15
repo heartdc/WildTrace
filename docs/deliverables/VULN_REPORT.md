@@ -47,9 +47,9 @@
 
 Non-object patch aliases a target-owned subtree or the target itself. Patch only fixes that branch; object-alias cases and product callers need separate review.
 
-**触发条件**：未记录；需补充触发条件
+**触发条件**：patch 参数为待合并 target 的内部子节点（如经 cJSON_GetObjectItem(target, k) 取出的子树），cJSON_Delete(target) 先释放含 patch 的整树、cJSON_Duplicate(patch) 随后读取已释放节点；配置合并/动态 patch 类业务以取自 target 的节点为 patch 即触发，上游公告标注远程可发起。
 
-**影响路径**：未记录；需补充产品可达性证据
+**影响路径**：业务 JSON 处理路径调用 cJSONUtils_MergePatch 且 patch 来源于 target 内部子树：攻击者构造 JSON 文档诱导业务以'取自 target 的子节点'为 patch 发起合并 → UAF；实际影响取决于调用方使用方式与堆布局。
 
 ### 3. PoC 源代码
 
@@ -201,18 +201,16 @@ int main(int argc, char **argv)
 
 libcurl reuses an HTTPS connection without checking that both requests used the same CURLSSLOPT_NATIVE_CA disposition, so the second request may be validated in a weaker CA-store context than requested.
 
-**触发条件**：未记录；需补充触发条件
+**触发条件**：同一主机先后两次 HTTPS 请求间混用 CURLSSLOPT_NATIVE_CA 开关（默认 CA → NATIVE_CA 或反向）；该选项仅 Schannel/GnuTLS 等特定 TLS 后端支持，运行级复现需对应后端环境（Linux 最小构建不触发，本案如实申报为源级）。
 
-**影响路径**：未记录；需补充产品可达性证据
+**影响路径**：应用在不同请求间对同一主机混用 NATIVE_CA 设置：OH 检出连接匹配逻辑未比较 native_ca_store（grep 零出现；上游 vtls_config.c:144 已修），第二个请求复用既有连接，证书校验语境与请求方指定 CA 来源不一致。
 
 ### 3. PoC 源代码
 
 > ⚠️ 本案 PoC 为源码级对照验证，无可执行触发器（原因见下）
 
 **PoC 使用方法**：
-依赖与运行参数以本案 PoC 文件注释、README 及验证驱动为准。
-
-未提供经过独立复跑的完整命令时，报告保留为待补充状态。
+源级三侧对照（无运行级 PoC，如实申报）：a) 上游 curl master vtls_config.c:144 连接比较含 native_ca_store；b) OH 检出 grep -rn native_ca_store 仅 setopt.c 两处赋值与 urldata.h 字段定义，连接匹配零出现；c) 官方受影响清单含 8.8.0（OH 快照基线）。运行级复现路径：Windows+Schannel 下同主机两请求切换 CURLSSLOPT_NATIVE_CA，CURLINFO_NUM_CONNECTS 观测复用差异。
 
 ### 4. 影响分析
 
@@ -266,7 +264,7 @@ With libpsl enabled, libcurl accepts a cookie whose Domain equals the request ho
 
 **触发条件**：HTTP response to a request for a PSL-listed host (e.g. localhost) carrying Set-Cookie with Domain equal to that host.
 
-**影响路径**：未记录；需补充产品可达性证据
+**影响路径**：目标使用 libcurl 且启用 USE_LIBPSL+cookie 引擎，访问主机名恰为公共后缀的服务端点（localhost 类本地服务/特殊内网域）；攻击者控制该主机响应下发 Set-Cookie: Domain=<公共后缀主机名> → cookie 以 .主机名 通配域入库，对同后缀任意子域可注入/读取（会话固定/跨子域跟踪），不直接代码执行。
 
 ### 3. PoC 源代码
 
@@ -419,11 +417,9 @@ int main(int argc, char **argv) {
 ```
 
 **PoC 使用方法**：
-依赖与运行参数以本案 PoC 文件注释、README 及验证驱动为准。
+源码等价运行级（curl-8.8.0，OH lib/cookie.c 与其逐文件 diff 84 行等价）：./configure --without-ssl --with-libpsl && make -C lib；clang -fsanitize=address,undefined -I<curl>/include poc.c <curl>/lib/.libs/libcurl.a -lpsl -lpthread -o probe；./probe psl-supercookie：原版 tailmatch=1（域字段 .localhost，漏洞行为）→ 应用 patch.diff 重建 → tailmatch=0（修复生效）；non-psl-control 对照两侧均 1（无回归）。
 
 libcurl sources (OH tree) built with USE_LIBPSL; libpsl dev package; POSIX sockets (loopback only)
-
-未提供经过独立复跑的完整命令时，报告保留为待补充状态。
 
 ### 4. 影响分析
 
@@ -502,18 +498,16 @@ After psl_is_cookie_domain_acceptable() accepts, clear co->tailmatch when the co
 
 CFHD transform-2 output width (lowpass_width*2) is stream-controlled and unbounded by plane width; decode writes past the plane allocation — heap OOB write, triggerable during stream probing via a crafted AVI.
 
-**触发条件**：未记录；需补充触发条件
+**触发条件**：带超宽 lowpass_width 的 CFHD transform-2 码流：cfhd.c:969/1010 两处平面尺寸校验未约束 lowpass_width*2 ≤ s->plane[plane].width，探测阶段即可触发堆越界写。
 
-**影响路径**：未记录；需补充产品可达性证据
+**影响路径**：产品用 ffmpeg 解复用/探测不可信媒体（CFHD 系码流）：攻击者提供构造码流即触发越界写，无需特权，应用自动处理不可信输入时无需用户交互。
 
 ### 3. PoC 源代码
 
 > ⚠️ 本案 PoC 为源码级对照验证，无可执行触发器（原因见下）
 
 **PoC 使用方法**：
-依赖与运行参数以本案 PoC 文件注释、README 及验证驱动为准。
-
-未提供经过独立复跑的完整命令时，报告保留为待补充状态。
+源级三侧对照：a) 上游 db05df9d/16b2049d 修复 diff（上游样本名 cfhd_transform2_output_width_oob.avi）；b) OH 检出 cfhd.c:969/1010 均无 lowpass_width*2 校验（修复前形态）；c) 与上游 n7.1.1 逐字节一致、官方清单含 7.1.1，两 diff 对 OH 检出 git apply --check 通过。运行级路径：按样本构造码流 ASan 构建下观测越界写。
 
 ### 4. 影响分析
 
@@ -732,9 +726,7 @@ int main(int argc, char **argv)
 ```
 
 **PoC 使用方法**：
-依赖与运行参数以本案 PoC 文件注释、README 及验证驱动为准。
-
-未提供经过独立复跑的完整命令时，报告保留为待补充状态。
+源级三侧对照（运行级需构造使守卫溢出的 WTV/传输流输入，如实申报）：a) 上游 93f2a525 改写守卫；b) OH dvbsub_parser.c:106 仍为修复前三数相加形态；c) 与 n7.1.1 逐字节一致、官方清单含 7.1.1，diff git apply --check 通过。运行级路径：可控尺寸 DVB 字幕流送入解析器观测 packet_buf 越界写。
 
 ### 4. 影响分析
 
@@ -767,7 +759,23 @@ int main(int argc, char **argv)
 patch.diff 即上游原文，对 OH 检出直接适用）。单行等价改写，
 无行为回归风险。
 
+**修复补丁**（`patch.diff`）：
+```diff
+diff --git a/libavcodec/dvbsub_parser.c b/libavcodec/dvbsub_parser.c
+index 4527e4dd75624..a93f39bfe034a 100644
+--- a/libavcodec/dvbsub_parser.c
++++ b/libavcodec/dvbsub_parser.c
+@@ -104,7 +104,7 @@ static int dvbsub_parse(AVCodecParserContext *s,
+         }
+     }
+ 
+-    if (buf_size - buf_pos + pc->packet_index > PARSE_BUF_SIZE)
++    if (buf_size - buf_pos > PARSE_BUF_SIZE - pc->packet_index)
+         return buf_size;
+ 
+ /* if not currently in a packet, pass data */
 
+```
 
 ---
 
@@ -912,9 +920,7 @@ int main(int argc, char **argv)
 ```
 
 **PoC 使用方法**：
-依赖与运行参数以本案 PoC 文件注释、README 及验证驱动为准。
-
-未提供经过独立复跑的完整命令时，报告保留为待补充状态。
+源级三侧对照（同族运行级证据见 66036/66041 两案）：a) 上游 24c322fd 修复（样本名 8aj_floodfill_dynamic_size.pgm）；b) OH vf_floodfill.c 点栈分配仍在 config_input、filter_frame 使用帧尺寸；c) 与 n7.1.1 逐字节一致、官方清单含 7.1.1。运行验证尝试如实记录：GRAY8 直连 graph 多组参数（512²/8192²/1x1→64²）未触发 ASan——7.1.1 分配含 4 倍余量，按上游样本构造非均匀图案拉满 DFS 栈深为后续路径。
 
 ### 4. 影响分析
 
@@ -948,7 +954,56 @@ int main(int argc, char **argv)
 对 OH 检出直接适用）。临时缓解：避免在包含 floodfill 的滤镜图
 中处理分辨率动态增大的不可信输入。
 
+**修复补丁**（`patch.diff`）：
+```diff
+diff --git a/libavfilter/vf_floodfill.c b/libavfilter/vf_floodfill.c
+index 6d89963e71582..e569d5f586352 100644
+--- a/libavfilter/vf_floodfill.c
++++ b/libavfilter/vf_floodfill.c
+@@ -41,6 +41,7 @@ typedef struct FloodfillContext {
+     int nb_planes;
+     int back, front;
+     Points *points;
++    unsigned int points_size;
+ 
+     int (*is_same)(const AVFrame *frame, int x, int y,
+                    unsigned s0, unsigned s1, unsigned s2, unsigned s3);
+@@ -271,9 +272,6 @@ static int config_input(AVFilterLink *inlink)
+     }
+ 
+     s->front = s->back = 0;
+-    s->points = av_calloc(inlink->w * inlink->h, 4 * sizeof(Points));
+-    if (!s->points)
+-        return AVERROR(ENOMEM);
+ 
+     return 0;
+ }
+@@ -292,8 +290,23 @@ static int filter_frame(AVFilterLink *link, AVFrame *frame)
+     int s3 = s->s[3];
+     const int w = frame->width;
+     const int h = frame->height;
++    size_t nb_points, points_size;
+     int i, ret;
+ 
++    if (w > UINT16_MAX + 1 || h > UINT16_MAX + 1 ||
++        av_size_mult(w, h, &nb_points) < 0 ||
++        av_size_mult(nb_points, 4 * sizeof(*s->points), &points_size) < 0) {
++        av_frame_free(&frame);
++        return AVERROR(EINVAL);
++    }
++
++    av_fast_malloc(&s->points, &s->points_size, points_size);
++    if (!s->points) {
++        av_frame_free(&frame);
++        return AVERROR(ENOMEM);
++    }
++    s->front = s->back = 0;
++
+     if (is_inside(s->x, s->y, w, h)) {
+         s->pick_pixel(frame, s->x, s->y, &s0, &s1, &s2, &s3);
+ 
 
+```
 
 ---
 
@@ -1101,9 +1156,7 @@ int main(int argc, char **argv)
 ```
 
 **PoC 使用方法**：
-依赖与运行参数以本案 PoC 文件注释、README 及验证驱动为准。
-
-未提供经过独立复跑的完整命令时，报告保留为待补充状态。
+运行级（ASan）：./poc_orig：buffer→hqdn3d→buffersink，第 1 帧 64x64 排空后直推 512x512 帧 → ASan heap-buffer-overflow WRITE size 2（写点 denoise_spatial vf_hqdn3d.c:98，越界 config_input 分配的 128 字节行缓冲末尾，退出码 1）；git apply patch.diff 重建 → 变尺寸帧被拒绝（'Frame size changed without filter graph reinitialization'，修复生效，退出码 0）；control（两帧均 64x64）两侧正常（无回归）。
 
 ### 4. 影响分析
 
@@ -1139,7 +1192,27 @@ avfilter.c 动态尺寸白名单）。短期可先落附件 patch.diff 的窄化
 的滤镜图中处理不可信变尺寸流；对不可信输入的滤镜处理置于资源
 受限环境。
 
+**修复补丁**（`patch.diff`）：
+```diff
+--- a/libavfilter/vf_hqdn3d.c
++++ b/libavfilter/vf_hqdn3d.c
+--- a/libavfilter/vf_hqdn3d.c
++++ b/libavfilter/vf_hqdn3d.c
+@@ -316,6 +316,12 @@ static int filter_frame(AVFilterLink *inlink, AVFrame *in)
+     AVFilterLink *outlink = ctx->outputs[0];
+ 
+     AVFrame *out;
++    if (in->width != inlink->w || in->height != inlink->h) {
++        av_log(ctx, AV_LOG_ERROR,
++               "Frame size changed without filter graph reinitialization\n");
++        av_frame_free(&in);
++        return AVERROR(EINVAL);
++    }
+     int direct = av_frame_is_writable(in) && !ctx->is_disabled;
+     ThreadData td;
+ 
 
+```
 
 ---
 
@@ -1161,18 +1234,16 @@ avfilter.c 动态尺寸白名单）。短期可先落附件 patch.diff 的窄化
 
 IAMF mix_presentation OBU: count_label taken from stream leb128 and used directly in av_calloc without bounding to remaining input bytes — unbounded allocation DoS.
 
-**触发条件**：未记录；需补充触发条件
+**触发条件**：IAMF mix_presentation OBU 的 count_label 为极大 leb128 值（2^32-1 量级）而实际剩余载荷远小：iamf_parse.c:864 读取后无 count_label > len - avio_tell(pbc) 校验直接 av_calloc。
 
-**影响路径**：未记录；需补充产品可达性证据
+**影响路径**：产品用 ffmpeg 解复用/解析不可信 IAMF 音频流（媒体处理服务、文件探测）：攻击者提供构造 OBU → 巨量分配 → 内存耗尽拒绝服务。
 
 ### 3. PoC 源代码
 
 > ⚠️ 本案 PoC 为源码级对照验证，无可执行触发器（原因见下）
 
 **PoC 使用方法**：
-依赖与运行参数以本案 PoC 文件注释、README 及验证驱动为准。
-
-未提供经过独立复跑的完整命令时，报告保留为待补充状态。
+源级三侧对照：a) 上游 8670835 修复 diff；b) OH iamf_parse.c:864 无剩余字节校验；c) 与 n7.1.1 逐字节一致、官方清单含 7.1.1、diff git apply --check 通过。运行级路径：构造极大 count_label 的 mix_presentation OBU，ulimit -v/容器内存上限下观测瞬时 OOM。
 
 ### 4. 影响分析
 
@@ -1356,9 +1427,7 @@ int main(int argc, char **argv)
 ```
 
 **PoC 使用方法**：
-依赖与运行参数以本案 PoC 文件注释、README 及验证驱动为准。
-
-未提供经过独立复跑的完整命令时，报告保留为待补充状态。
+源级三侧对照（运行级需构造解压后短于帧尺寸的 LCL/ZLIB 流，如实申报）：a) 上游 e7cbfd1c 两处返回路径补 memset；b) OH lcldec.c 两处均为修复前形态；c) 与 n7.1.1 逐字节一致、官方清单含 7.1.1、diff git apply --check 通过。运行级路径：膨胀输出小于帧期望尺寸的 zlib 流，MSan 观测输出帧未初始化字节。
 
 ### 4. 影响分析
 
@@ -1390,7 +1459,36 @@ int main(int argc, char **argv)
 路径补 memset 尾部清零（附件 patch.diff 即上游原文，对 OH 检出
 直接适用）。属低风险防御性修复，不改变正常解码行为。
 
+**修复补丁**（`patch.diff`）：
+```diff
+diff --git a/libavcodec/lcldec.c b/libavcodec/lcldec.c
+--- a/libavcodec/lcldec.c
++++ b/libavcodec/lcldec.c
+@@ -120,6 +120,9 @@ static unsigned int mszh_decomp(const unsigned char * srcptr, int srclen, unsign
+         }
+     }
+ 
++    if (destptr < destptr_end)
++        memset(destptr, 0, destptr_end - destptr);
++
+     return destptr - destptr_bak;
+ }
+ 
+@@ -153,8 +156,11 @@ static int zlib_decomp(AVCodecContext *avctx, const uint8_t *src, int src_len, i
+     if (expected != (unsigned int)zstream->total_out) {
+         av_log(avctx, AV_LOG_ERROR, "Decoded size differs (%d != %lu)\n",
+                expected, zstream->total_out);
+-        if (expected > (unsigned int)zstream->total_out)
++        if (expected > (unsigned int)zstream->total_out) {
++            memset(c->decomp_buf + offset + zstream->total_out, 0,
++                   c->decomp_size - offset - zstream->total_out);
+             return (unsigned int)zstream->total_out;
++        }
+         return AVERROR_UNKNOWN;
+     }
+     return zstream->total_out;
 
+```
 
 ---
 
@@ -1414,16 +1512,14 @@ nvdec hardware decode: when decoder surfaces are exhausted inside ff_nvdec_start
 
 **触发条件**：crafted video driving NVDEC into the sep_ref pool-exhaustion error path
 
-**影响路径**：未记录；需补充产品可达性证据
+**影响路径**：NVIDIA 平台产品用 ffmpeg NVDEC 硬解且码流走独立参考帧路径：攻击者以 crafted 视频流耗尽 decoder surface 池命中 sep_ref 错误分支（nvdec.c:612-616 goto fail）→ fail 标签对已移交 FrameDecodeData 的 cf 二次释放（double free）。
 
 ### 3. PoC 源代码
 
 > ⚠️ 本案 PoC 为源码级对照验证，无可执行触发器（原因见下）
 
 **PoC 使用方法**：
-依赖与运行参数以本案 PoC 文件注释、README 及验证驱动为准。
-
-未提供经过独立复跑的完整命令时，报告保留为待补充状态。
+源级三侧对照（运行级需 NVIDIA GPU+NVDEC 环境，如实申报）：a) 上游 4c621747 修复 diff；b) OH nvdec.c:599 起 612-616/624-626 为修复前形态；c) 与 n7.1.1 逐字节一致、官方清单含 7.1.1。运行级路径：--enable-cuda-nvcc 构建下 H.265 多参考帧流+低 surfaces 配置耗尽池，ASan/Valgrind 观测 nvdec_fdd_priv_free double-free。
 
 ### 4. 影响分析
 
@@ -1644,9 +1740,7 @@ int main(int argc, char **argv)
 ```
 
 **PoC 使用方法**：
-依赖与运行参数以本案 PoC 文件注释、README 及验证驱动为准。
-
-未提供经过独立复跑的完整命令时，报告保留为待补充状态。
+运行级（ASan）：./poc_orig linkgrow：buffer(gray8 64x64)→quirc→buffersink，第 1 帧排空后将 link 尺寸置 512x512（模拟重协商半途/上游直改 link），再推 512x512 帧 → ASan heap-buffer-overflow WRITE 512（quirc_resize 分配的 4096 字节缓冲末尾，写点 vf_quirc.c:102）；git apply upstream_fix_4da9812.diff 重建 → CASE_DONE；control 与 trigger-不变-link 对照两侧正常。
 
 ### 4. 影响分析
 
@@ -1681,7 +1775,47 @@ link 尺寸不一致时先 quirc_resize 再拷贝。临时缓解：避免在包�
 quirc 的滤镜图中使用会改变链路尺寸的动态路径；对不可信输入
 的滤镜处理置于资源受限环境。
 
+**修复补丁**（`upstream_fix_4da9812.diff`）：
+```diff
+diff --git a/libavfilter/vf_quirc.c b/libavfilter/vf_quirc.c
+index 59dc84caa8d4c..d2ba48e7bcbad 100644
+--- a/libavfilter/vf_quirc.c
++++ b/libavfilter/vf_quirc.c
+@@ -36,6 +36,7 @@ typedef struct QuircContext {
+     const AVClass *class;
+ 
+     struct quirc *quirc;
++    int width, height;
+ } QuircContext;
+ 
+ static av_cold int init(AVFilterContext *ctx)
+@@ -67,6 +68,8 @@ static int config_input(AVFilterLink *inlink)
+     if (err == -1) {
+         return AVERROR(ENOMEM);
+     }
++    quirc->width  = inlink->w;
++    quirc->height = inlink->h;
+ 
+     return 0;
+ }
+@@ -80,6 +83,15 @@ static int filter_frame(AVFilterLink *inlink, AVFrame *frame)
+     int codes_count;
+     uint8_t *image;
+ 
++    if (quirc->width != inlink->w || quirc->height != inlink->h) {
++        if (quirc_resize(quirc->quirc, inlink->w, inlink->h) < 0) {
++            av_frame_free(&frame);
++            return AVERROR(ENOMEM);
++        }
++        quirc->width  = inlink->w;
++        quirc->height = inlink->h;
++    }
++
+     /* copy input image to quirc buffer */
+     image = quirc_begin(quirc->quirc, NULL, NULL);
+     av_image_copy_plane(image, inlink->w,
 
+```
 
 ---
 
@@ -1703,18 +1837,16 @@ quirc 的滤镜图中使用会改变链路尺寸的动态路径；对不可信�
 
 RSCC screen-capture decoder: when the deflate output is shorter than the frame needs, the un-filled tail of inflated_buf is emitted as frame data — uninitialized heap disclosure.
 
-**触发条件**：未记录；需补充触发条件
+**触发条件**：RSCC 流 zlib 分支解压输出短于帧需求（len < pixel_size）：rscc.c 无尾部清零，帧尾保持未初始化（上游 cd1f545c/a5fe21a1 以 memset 补零修复）。
 
-**影响路径**：未记录；需补充产品可达性证据
+**影响路径**：产品用 ffmpeg 解码不可信屏幕捕获视频（远程支持/录屏处理场景）：攻击者提供短 deflate 输出的构造 RSCC 流 → 解码帧尾泄露未初始化堆内存。
 
 ### 3. PoC 源代码
 
 > ⚠️ 本案 PoC 为源码级对照验证，无可执行触发器（原因见下）
 
 **PoC 使用方法**：
-依赖与运行参数以本案 PoC 文件注释、README 及验证驱动为准。
-
-未提供经过独立复跑的完整命令时，报告保留为待补充状态。
+源级三侧对照：a) 上游 cd1f545c/a5fe21a1 修复（上游样本名 rscc_short_deflate_heap_disclosure）；b) OH rscc.c deflate 分支无 len<pixel_size 清零；c) 与 n7.1.1 逐字节一致、官方清单含 7.1.1、diff git apply --check 通过。运行级路径：合法但短的 deflate 输出，MSan 观测 uninit 或对比零填充差分。
 
 ### 4. 影响分析
 
@@ -1935,9 +2067,7 @@ int main(int argc, char **argv)
 ```
 
 **PoC 使用方法**：
-依赖与运行参数以本案 PoC 文件注释、README 及验证驱动为准。
-
-未提供经过独立复跑的完整命令时，报告保留为待补充状态。
+源级三侧对照（同族运行级证据见 66036/66041）：a) 上游 a7e38b61 修复（样本名 7aj_swaprect_odd17_nv12.nut——NV12 奇数 17 宽）；b) OH vf_swaprect.c:223 仍为首平面单因子分配；c) 与 n7.1.1 逐字节一致、官方清单含 7.1.1。运行级路径：NV12+奇数宽+swaprect 参数覆盖色度平面，ASan 观测行交换路径 heap-buffer-overflow。
 
 ### 4. 影响分析
 
@@ -1970,7 +2100,40 @@ int main(int argc, char **argv)
 原文，对 OH 检出直接适用）。临时缓解：避免在包含 swaprect 的
 滤镜图中处理 NV12 等平面步长不均匀格式的奇数尺寸输入。
 
+**修复补丁**（`patch.diff`）：
+```diff
+diff --git a/libavfilter/vf_swaprect.c b/libavfilter/vf_swaprect.c
+index 5d93f51c30f5e..fe007ee5e77dc 100644
+--- a/libavfilter/vf_swaprect.c
++++ b/libavfilter/vf_swaprect.c
+@@ -200,6 +200,7 @@ static int config_input(AVFilterLink *inlink)
+ {
+     AVFilterContext *ctx = inlink->dst;
+     SwapRectContext *s = ctx->priv;
++    int size = 0;
+ 
+     if (!s->w  || !s->h  ||
+         !s->x1 || !s->y1 ||
+@@ -210,7 +211,16 @@ static int config_input(AVFilterLink *inlink)
+     av_image_fill_max_pixsteps(s->pixsteps, NULL, s->desc);
+     s->nb_planes = av_pix_fmt_count_planes(inlink->format);
+ 
+-    s->temp = av_malloc_array(inlink->w, s->pixsteps[0]);
++    for (int p = 0; p < s->nb_planes; p++) {
++        int shift = p == 1 || p == 2 ? s->desc->log2_chroma_w : 0;
++        int width = AV_CEIL_RSHIFT(inlink->w, shift);
++
++        if (width > INT_MAX / s->pixsteps[p])
++            return AVERROR(EINVAL);
++        size = FFMAX(size, width * s->pixsteps[p]);
++    }
++
++    s->temp = av_malloc(size);
+     if (!s->temp)
+         return AVERROR(ENOMEM);
+ 
 
+```
 
 ---
 
@@ -2112,9 +2275,7 @@ int main(int argc, char **argv)
 ```
 
 **PoC 使用方法**：
-依赖与运行参数以本案 PoC 文件注释、README 及验证驱动为准。
-
-未提供经过独立复跑的完整命令时，报告保留为待补充状态。
+源级三侧对照：a) 上游 de771bd5 修复 ty.c demux_audio 下溢；b) OH ty.c:576 仍为 pkt->size -= 2；c) 与 n7.1.1 逐字节一致、官方清单含 7.1.1、diff git apply --check 通过。运行级路径：按上游样本 ty-s2-ac3-negative-size-single-file.ffconcat 构造（Series2 AC3 TY 流，ac3_pkt_size 累计逼近 768 且末包 size≤1），ASan/Valgrind 观测 negative-size-param。
 
 ### 4. 影响分析
 
@@ -2149,7 +2310,23 @@ AC3_PKT_LENGTH 前置保护，保持原样不动。临时缓解：产品侧限�
 对不可信 TiVo 流的解复用；升级后可补充 Series2 AC3 边界尺寸
 的回归用例（上游 oss-fuzz 语料已含该形态）。
 
+**修复补丁**（`patch.diff`）：
+```diff
+diff --git a/libavformat/ty.c b/libavformat/ty.c
+index 9be027fcca35b..842d97038cb6b 100644
+--- a/libavformat/ty.c
++++ b/libavformat/ty.c
+@@ -578,7 +578,7 @@ static int demux_audio(AVFormatContext *s, TyRecHdr *rec_hdr, AVPacket *pkt)
+         if (ty->audio_type == TIVO_AUDIO_AC3 &&
+                 ty->tivo_series == TIVO_SERIES2) {
+             if (ty->ac3_pkt_size + pkt->size > AC3_PKT_LENGTH) {
+-                pkt->size -= 2;
++                pkt->size -= FFMIN(pkt->size, 2);
+                 ty->ac3_pkt_size = 0;
+             } else {
+                 ty->ac3_pkt_size += pkt->size;
 
+```
 
 ---
 
@@ -2273,9 +2450,7 @@ int main(int argc, char **argv)
 ```
 
 **PoC 使用方法**：
-依赖与运行参数以本案 PoC 文件注释、README 及验证驱动为准。
-
-未提供经过独立复跑的完整命令时，报告保留为待补充状态。
+源级三侧对照（运行级需下游按填充读 extradata 的路径，如实申报）：a) 上游 23227a44 补齐两处extradata 分配填充；b) OH wmaenc.c encode_init（约 67/74 行）仍为 av_malloc(4)/av_mallocz(10)；c) 与 n7.1.1 逐字节一致、官方清单含 7.1.1、diff git apply --check 通过。运行级路径：WMAV1/WMAV2 编码初始化后，ff_wma_init 等按填充读 extradata 的消费侧 ASan 观测越界 READ。
 
 ### 4. 影响分析
 
@@ -2309,7 +2484,31 @@ int main(int argc, char **argv)
 手工分配点是否存在同类缺填充形态（上游在本修复同期对多处
 extradata 分配做过同类加固，可按上游提交历史对照排查）。
 
+**修复补丁**（`patch.diff`）：
+```diff
+diff --git a/libavcodec/wmaenc.c b/libavcodec/wmaenc.c
+index b419694c51aad..35a3c6f6e35aa 100644
+--- a/libavcodec/wmaenc.c
++++ b/libavcodec/wmaenc.c
+@@ -65,14 +65,14 @@ static av_cold int encode_init(AVCodecContext *avctx)
+     flags1 = 0;
+     flags2 = 1;
+     if (avctx->codec->id == AV_CODEC_ID_WMAV1) {
+-        extradata             = av_malloc(4);
++        extradata             = av_mallocz(4 + AV_INPUT_BUFFER_PADDING_SIZE);
+         if (!extradata)
+             return AVERROR(ENOMEM);
+         avctx->extradata_size = 4;
+         AV_WL16(extradata, flags1);
+         AV_WL16(extradata + 2, flags2);
+     } else if (avctx->codec->id == AV_CODEC_ID_WMAV2) {
+-        extradata             = av_mallocz(10);
++        extradata             = av_mallocz(10 + AV_INPUT_BUFFER_PADDING_SIZE);
+         if (!extradata)
+             return AVERROR(ENOMEM);
+         avctx->extradata_size = 10;
 
+```
 
 ---
 
@@ -2331,7 +2530,7 @@ extradata 分配做过同类加固，可按上游提交历史对照排查）。
 
 AddWatcher 路径对 watcher.appEventFilters 的嵌套循环直接解引用 head[i]，filters.head=NULL 且 size>0 时第一层即空指针解引用；对照组合法输入由 FFI 层参数校验拦截返回错误码，不崩溃——缺陷精确限定于 null head + 非零 size 组合。
 
-**触发条件**：CArrAppEventFilter { CAppEventFilter* head; int64_t size; }（frameworks/cj/ffi/include/common.h）
+**触发条件**：仓颉侧经 HiAppEvent 打点 API 注册 watcher 时，appEventFilters（CArrAppEventFilter）的 head 为 NULL 而 size > 0 的畸形组合进入嵌套过滤循环被直接解引用；对照组合法输入由 FFI 层参数校验拦截（错误码 11101001 不崩溃）。
 
 **影响路径**：FfiOHOSHiAppEventAddWatcher（FFI 导出符号；watcher.appEventFilters 嵌套过滤循环）
 
@@ -2451,9 +2650,7 @@ int main(int argc, char **argv)
 ```
 
 **PoC 使用方法**：
-依赖与运行参数以本案 PoC 文件注释、README 及验证驱动为准。
-
-未提供经过独立复跑的完整命令时，报告保留为待补充状态。
+真库运行级：libcj_hiappevent_ffi.z.so（官方完整树构建，sha256 bf8aa65e...f6636a，BuildID 252096ef）dlopen 驱动 poc_hiappevent_watcher.c：case0 对照（合法 head, size=1）→ 错误码 11101001 不崩溃；case1（head=NULL, size=1）→ SIGSEGV（退出码 139）；两轮 ASLR gdb 复现 rip 落库内 file_offset 0x11c9a。完整记录 hiappevent-evidence-20261003.zip（sha256 a8ae123d...13c7a6）。
 
 ### 4. 影响分析
 
@@ -2469,7 +2666,7 @@ int main(int argc, char **argv)
 - v5.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
 - v6.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
 - v7.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- master: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
+- master: 🔴 affected（分支实证：branch_evidence 记录提交与引用）
 
 **上游版本预测（风险线索，不代替分支证据）**
 - [预测] v4.1: ？ 无上游版本信息，无法预测
@@ -2580,9 +2777,7 @@ int main(int argc, char **argv)
 ```
 
 **PoC 使用方法**：
-依赖与运行参数以本案 PoC 文件注释、README 及验证驱动为准。
-
-未提供经过独立复跑的完整命令时，报告保留为待补充状态。
+真库运行级：libcj_ipc_ffi.z.so 隔离构建 x86_64（IPC HEAD edc6f3ab，CJ 绑定与原仓 diff -qr 一致）dlopen 驱动 ipc_null_bytearray.c：对照（data=NULL len=0）→ write_error=0 正常返回；候选（data=NULL len=1）→ 立即 SIGSEGV（run.exit=139）；两次 ASLR gdb 复现 rip 落库内 file_offset 0x1ed9b。记录 docs/analysis/IPC_KV_REAL_LIBRARY_VALIDATION_20260928.md（PR #65）。
 
 ### 4. 影响分析
 
@@ -2598,7 +2793,7 @@ int main(int argc, char **argv)
 - v5.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
 - v6.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
 - v7.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- master: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
+- master: 🔴 affected（分支实证：branch_evidence 记录提交与引用）
 
 **上游版本预测（风险线索，不代替分支证据）**
 - [预测] v4.1: ？ 无上游版本信息，无法预测
@@ -2746,9 +2941,7 @@ int main(int argc, char **argv)
 ```
 
 **PoC 使用方法**：
-依赖与运行参数以本案 PoC 文件注释、README 及验证驱动为准。
-
-未提供经过独立复跑的完整命令时，报告保留为待补充状态。
+等价运行级（WSL Clang 21.1.8 ASan/UBSan，驱动 kv_null_entry.c）：两条转换路径 null head 均 zero-page SEGV，对照组正常；未做真库链接（如实区分等价级与真库级）。
 
 ### 4. 影响分析
 
@@ -2916,9 +3109,7 @@ int main(void)
 ```
 
 **PoC 使用方法**：
-依赖与运行参数以本案 PoC 文件注释、README 及验证驱动为准。
-
-未提供经过独立复跑的完整命令时，报告保留为待补充状态。
+运行级：./poc_orig：同一 (key, iv) 下 body 分别经 EVP_Cipher()（one-shot）与 EVP_CipherUpdate/Final（streaming）加密——S1（无 AAD，one-shot 为首次数据调用）原版 ct=DIFF tag=DIFF（one-shot 实际以 nonce-0 加密、丢弃调用方 IV）；S2（AAD 先 streaming）原版 SAME（佐证机理：仅 one-shot 为首次数据调用时 IV 被丢弃）；应用 patch.diff 重建 → 两场景全 SAME（修复生效）。
 
 ### 4. 影响分析
 
@@ -2954,7 +3145,34 @@ key_set 并调用 update_iv() 刷入缓冲 IV。建议同步引入上游配套
 EVP_EncryptUpdate/EVP_EncryptFinal_ex 序列（streaming 槽位不受
 影响）；或升级至上游公告列出的修复版本。
 
+**修复补丁**（`patch.diff`）：
+```diff
+diff --git a/providers/implementations/ciphers/cipher_aes_ocb.c b/providers/implementations/ciphers/cipher_aes_ocb.c
+index 1f6da4b212296..329d4bfa3e17c 100644
+--- a/providers/implementations/ciphers/cipher_aes_ocb.c
++++ b/providers/implementations/ciphers/cipher_aes_ocb.c
+@@ -498,6 +498,19 @@ static int aes_ocb_cipher(void *vctx, unsigned char *out, size_t *outl,
+         return 0;
+     }
+ 
++    /*
++     * Mirror the streaming handler: refuse if the key has not been set,
++     * and push the buffered IV into the OCB context before any data is
++     * processed.  Without this, CRYPTO_ocb128_encrypt/decrypt runs with
++     * Offset_0 = 0 regardless of the caller's IV -- catastrophic
++     * (key, nonce) reuse, and a subsequent EVP_*Final_ex() emits a tag
++     * that is a function of (key, iv) only.
++     */
++    if (!ctx->key_set || !update_iv(ctx)) {
++        ERR_raise(ERR_LIB_PROV, PROV_R_CIPHER_OPERATION_FAILED);
++        return 0;
++    }
++
+     if (!aes_generic_ocb_cipher(ctx, in, out, inl)) {
+         ERR_raise(ERR_LIB_PROV, PROV_R_CIPHER_OPERATION_FAILED);
+         return 0;
 
+```
 
 ---
 
@@ -2985,9 +3203,7 @@ FfiUDMFSetProperties 对 properties.tag 未判空即传入 Utils::MallocCString�
 > ⚠️ 本案 PoC 为源码级对照验证，无可执行触发器（原因见下）
 
 **PoC 使用方法**：
-依赖与运行参数以本案 PoC 文件注释、README 及验证驱动为准。
-
-未提供经过独立复跑的完整命令时，报告保留为待补充状态。
+真库运行级：libcj_unified_data_channel_ffi.z.so（官方完整树构建，317/317 全绿，sha256 773867c9...213ee59）dlopen 驱动 tools/validation_cases/udmf_null_tag.c：case0-2 对照/证伪 不崩（含旧候选 extras.head=NULL 证伪）；case3（tag=NULL）→ SIGSEGV（run.exit=139）；gdb add-symbol-file 符号化 #0 strlen → #3 FfiUDMFSetProperties（unified_data_ffi.cpp:134）。evidence zip sha256 a70accc9...14df（run1+run2+MANIFEST）。
 
 ### 4. 影响分析
 

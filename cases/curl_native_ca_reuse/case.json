@@ -1,42 +1,45 @@
 {
-  "schema": "case-specific-validation-0.2",
-  "id": "curl-native-ca-reuse-mismatch",
-  "component": "third_party/curl",
-  "cve_reference": "CVE-2026-80231",
-  "cwe_candidate": "CWE-488",
-  "discovery_method": "middle-form version probe + source-level fix-gap verification (same gap window as CVE-2026-82209; see docs/analysis/CURL_MIDDLEFORM_VERIFY_20260921.md)",
-  "new_discovery": false,
-  "public_upstream": {
-    "fix_date": "2026-08-25",
-    "affected_upstream_versions": "7.71.0-8.14.1, 8.15.0-8.16.0, 8.17.0-8.20.0, 8.21.0 (includes 8.8.0 = OH snapshot baseline)",
-    "fixed_feature": "connection-config comparison includes (c1->native_ca_store == c2->native_ca_store), upstream master lib/vtls/vtls_config.c:144"
-  },
-  "oh_source": {
-    "repo": "https://gitcode.com/openharmony/third_party_curl",
-    "commit": "f044ac3ac942adc9c56efd9a47854a7049a9a78f",
-    "gap_evidence": "native_ca_store appears only in setopt.c:2470/2485 (option assignment) and urldata.h:340 (field definition) plus legitimate backend reads (gtls.c/openssl.c/wolfssl.c/doh.c); the connection-reuse comparison match_ssl_primary_config() at lib/vtls/vtls.c:176 lists every other ssl_primary_config field but omits native_ca_store",
-    "introduced_by": "148534db57dda611cf8516e92e4d6e35fc1e5074 (2019-09-13 'CURLOPT_SSL_OPTIONS: add *_NATIVE_CA to use Windows CA store (with openssl)', git log -S traced)"
-  },
-  "vulnerability": {
-    "summary": "libcurl reuses an HTTPS connection without checking that both requests used the same CURLSSLOPT_NATIVE_CA disposition, so the second request may be validated in a weaker CA-store context than requested.",
-    "verification_level": "source-level only; runtime repro requires Windows/Schannel or GnuTLS backend (reporter's Linux minimal build cannot trigger, declared as such in submission)",
-    "runtime_repro_hint": "two HTTPS requests to one host with the second flipping CURLSSLOPT_NATIVE_CA; observe reuse via CURLINFO_NUM_CONNECTS"
-  },
-  "submission": {
-    "platform": "OpenHarmony 漏洞奖励计划 (https://bugbounty.openharmony.cn)",
-    "ticket": "OHSA26-092209031",
-    "submission_id": "228161199659814912",
-    "submitted_at": "2026-09-21",
-    "account": "北辰522",
-    "status": "已提交",
-    "form": {
-      "type": "组件通信与逻辑类 (子类型留空：四个选项均不匹配 CWE-488，非必填)",
-      "repo": "third_party_curl",
-      "file_path": "lib/vtls/vtls.c / 代码行:176",
-      "introduced_by": "148534db57dda611cf8516e92e4d6e35fc1e5074",
-      "oh_version": "OpenHarmony-v7.0-Release（2026-08-21）",
-      "attachments": "附件包_CVE-2026-80231.zip (curl_gap_verification.json / 82209运行验证记录_姊妹案参考.md / 上游公告及修复对照.txt / 复核脚本_80231.sh)"
-    }
-  },
-  "fix_recommendation": "上游修复口径：match_ssl_primary_config() 的配置字段枚举补入 native_ca_store，使 HTTPS 连接复用时校验原生 CA 存储设置差异（字段枚举遗漏定位见 case.json oh_source.gap_evidence 与工单 OHSA26-092209031 源码级证据评论）。"
+ "schema": "case-specific-validation-0.2",
+ "id": "curl-native-ca-reuse-mismatch",
+ "component": "third_party/curl",
+ "cve_reference": "CVE-2026-80231",
+ "cwe_candidate": "CWE-488",
+ "discovery_method": "middle-form version probe + source-level fix-gap verification (same gap window as CVE-2026-82209; see docs/analysis/CURL_MIDDLEFORM_VERIFY_20260921.md)",
+ "new_discovery": false,
+ "public_upstream": {
+  "fix_date": "2026-08-25",
+  "affected_upstream_versions": "7.71.0-8.14.1, 8.15.0-8.16.0, 8.17.0-8.20.0, 8.21.0 (includes 8.8.0 = OH snapshot baseline)",
+  "fixed_feature": "connection-config comparison includes (c1->native_ca_store == c2->native_ca_store), upstream master lib/vtls/vtls_config.c:144"
+ },
+ "oh_source": {
+  "repo": "https://gitcode.com/openharmony/third_party_curl",
+  "commit": "f044ac3ac942adc9c56efd9a47854a7049a9a78f",
+  "gap_evidence": "native_ca_store appears only in setopt.c:2470/2485 (option assignment) and urldata.h:340 (field definition) plus legitimate backend reads (gtls.c/openssl.c/wolfssl.c/doh.c); the connection-reuse comparison match_ssl_primary_config() at lib/vtls/vtls.c:176 lists every other ssl_primary_config field but omits native_ca_store",
+  "introduced_by": "148534db57dda611cf8516e92e4d6e35fc1e5074 (2019-09-13 'CURLOPT_SSL_OPTIONS: add *_NATIVE_CA to use Windows CA store (with openssl)', git log -S traced)"
+ },
+ "vulnerability": {
+  "summary": "libcurl reuses an HTTPS connection without checking that both requests used the same CURLSSLOPT_NATIVE_CA disposition, so the second request may be validated in a weaker CA-store context than requested.",
+  "verification_level": "source-level only; runtime repro requires Windows/Schannel or GnuTLS backend (reporter's Linux minimal build cannot trigger, declared as such in submission)",
+  "runtime_repro_hint": "two HTTPS requests to one host with the second flipping CURLSSLOPT_NATIVE_CA; observe reuse via CURLINFO_NUM_CONNECTS"
+ },
+ "submission": {
+  "platform": "OpenHarmony 漏洞奖励计划 (https://bugbounty.openharmony.cn)",
+  "ticket": "OHSA26-092209031",
+  "submission_id": "228161199659814912",
+  "submitted_at": "2026-09-21",
+  "account": "北辰522",
+  "status": "已提交",
+  "form": {
+   "type": "组件通信与逻辑类 (子类型留空：四个选项均不匹配 CWE-488，非必填)",
+   "repo": "third_party_curl",
+   "file_path": "lib/vtls/vtls.c / 代码行:176",
+   "introduced_by": "148534db57dda611cf8516e92e4d6e35fc1e5074",
+   "oh_version": "OpenHarmony-v7.0-Release（2026-08-21）",
+   "attachments": "附件包_CVE-2026-80231.zip (curl_gap_verification.json / 82209运行验证记录_姊妹案参考.md / 上游公告及修复对照.txt / 复核脚本_80231.sh)"
+  }
+ },
+ "fix_recommendation": "上游修复口径：match_ssl_primary_config() 的配置字段枚举补入 native_ca_store，使 HTTPS 连接复用时校验原生 CA 存储设置差异（字段枚举遗漏定位见 case.json oh_source.gap_evidence 与工单 OHSA26-092209031 源码级证据评论）。",
+ "trigger_conditions": "同一主机先后两次 HTTPS 请求间混用 CURLSSLOPT_NATIVE_CA 开关（默认 CA → NATIVE_CA 或反向）；该选项仅 Schannel/GnuTLS 等特定 TLS 后端支持，运行级复现需对应后端环境（Linux 最小构建不触发，本案如实申报为源级）。",
+ "attack_path": "应用在不同请求间对同一主机混用 NATIVE_CA 设置：OH 检出连接匹配逻辑未比较 native_ca_store（grep 零出现；上游 vtls_config.c:144 已修），第二个请求复用既有连接，证书校验语境与请求方指定 CA 来源不一致。",
+ "reproduction_commands": "源级三侧对照（无运行级 PoC，如实申报）：a) 上游 curl master vtls_config.c:144 连接比较含 native_ca_store；b) OH 检出 grep -rn native_ca_store 仅 setopt.c 两处赋值与 urldata.h 字段定义，连接匹配零出现；c) 官方受影响清单含 8.8.0（OH 快照基线）。运行级复现路径：Windows+Schannel 下同主机两请求切换 CURLSSLOPT_NATIVE_CA，CURLINFO_NUM_CONNECTS 观测复用差异。"
 }
