@@ -191,6 +191,56 @@ BRANCH_EVIDENCE = {
     },
 }
 
+# B-closeout: master branch evidence for the third-party cases. Each form
+# pinned the verification baseline (HEAD commit) and recorded the L4
+# three-sided check (upstream diff / OH pre-fix form present / byte-identical
+# to the affected upstream version, git apply --check pass). openssl is
+# deliberately absent: no HEAD pin exists, only a version baseline — under
+# the strict policy that stays a prediction, not branch proof.
+_FF_HEAD = "0a0c4dd33c"
+_FF_SUB = {
+    "ffmpeg_cfhd_transform2_width_oob": "70632",
+    "ffmpeg_dvbsub_parser_capacity_overflow": "70628",
+    "ffmpeg_floodfill_point_stack_oob": "65705",
+    "ffmpeg_hqdn3d_dynamic_size_oob": "66036",
+    "ffmpeg_iamf_count_label_dos": "66037",
+    "ffmpeg_lcldec_zlib_tail_disclosure": "66038",
+    "ffmpeg_nvdec_sep_ref_doublefree": "64832",
+    "ffmpeg_quirc_resize_oob": "66041",
+    "ffmpeg_rscc_short_deflate_uninit_leak": "70629",
+    "ffmpeg_swaprect_temp_row_oob": "65706",
+    "ffmpeg_ty_ac3_trim_underflow": "65704",
+    "ffmpeg_wmaenc_extradata_padding": "52296",
+}
+_FF_RUNTIME = {"ffmpeg_hqdn3d_dynamic_size_oob", "ffmpeg_quirc_resize_oob"}
+for _case, _sub in _FF_SUB.items():
+    _ref = ("case.json oh_source（head_commit 0a0c4dd33c 2026-09-10；与上游 n7.1.1 逐字节一致；"
+            "修复前形态在位 + 上游修复 diff 对 OH 检出 git apply --check 通过）"
+            f"+ 提交材料包 submission_{_sub}（L4 三侧对照）")
+    if _case in _FF_RUNTIME:
+        _ref += "；运行级 ASan 矩阵见 reproduction_commands"
+    BRANCH_EVIDENCE[_case] = {"master": {"verdict": "affected",
+                                         "source_commit": _FF_HEAD,
+                                         "reference": _ref}}
+
+BRANCH_EVIDENCE["cjson_merge_alias"] = {"master": {
+    "verdict": "affected",
+    "source_commit": "0c2c9df",
+    "reference": "submission_87933（核验基线 HEAD 0c2c9df，cJSON 1.7.19；ASan 运行级 UAF 2×2 矩阵）",
+}}
+BRANCH_EVIDENCE["curl_psl_supercookie"] = {"master": {
+    "verdict": "affected",
+    "source_commit": "f044ac3ac942adc9c56efd9a47854a7049a9a78f",
+    "reference": "submission_82209（核验基线 commit 2026-09-11；OH lib/cookie.c 与 curl-8.8.0 "
+                 "逐文件 diff 84 行等价 + 源码等价运行级 tailmatch 矩阵）",
+}}
+BRANCH_EVIDENCE["curl_native_ca_reuse"] = {"master": {
+    "verdict": "affected",
+    "source_commit": "f044ac3ac942adc9c56efd9a47854a7049a9a78f",
+    "reference": "submission_82209（复核脚本_80231.sh + curl_gap_verification.json；"
+                 "OH 检出连接匹配逻辑零比较 native_ca_store，上游 vtls_config.c:144 已修）",
+}}
+
 
 def apply(case: str, fields: dict) -> bool:
     path = CASES / case / "case.json"

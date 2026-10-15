@@ -41,5 +41,12 @@
  },
  "trigger_conditions": "IAMF mix_presentation OBU 的 count_label 为极大 leb128 值（2^32-1 量级）而实际剩余载荷远小：iamf_parse.c:864 读取后无 count_label > len - avio_tell(pbc) 校验直接 av_calloc。",
  "attack_path": "产品用 ffmpeg 解复用/解析不可信 IAMF 音频流（媒体处理服务、文件探测）：攻击者提供构造 OBU → 巨量分配 → 内存耗尽拒绝服务。",
- "reproduction_commands": "源级三侧对照：a) 上游 8670835 修复 diff；b) OH iamf_parse.c:864 无剩余字节校验；c) 与 n7.1.1 逐字节一致、官方清单含 7.1.1、diff git apply --check 通过。运行级路径：构造极大 count_label 的 mix_presentation OBU，ulimit -v/容器内存上限下观测瞬时 OOM。"
+ "reproduction_commands": "源级三侧对照：a) 上游 8670835 修复 diff；b) OH iamf_parse.c:864 无剩余字节校验；c) 与 n7.1.1 逐字节一致、官方清单含 7.1.1、diff git apply --check 通过。运行级路径：构造极大 count_label 的 mix_presentation OBU，ulimit -v/容器内存上限下观测瞬时 OOM。",
+ "branch_evidence": {
+  "master": {
+   "verdict": "affected",
+   "source_commit": "0a0c4dd33c",
+   "reference": "case.json oh_source（head_commit 0a0c4dd33c 2026-09-10；与上游 n7.1.1 逐字节一致；修复前形态在位 + 上游修复 diff 对 OH 检出 git apply --check 通过）+ 提交材料包 submission_66037（L4 三侧对照）"
+  }
+ }
 }

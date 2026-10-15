@@ -41,5 +41,12 @@
  },
  "trigger_conditions": "RSCC 流 zlib 分支解压输出短于帧需求（len < pixel_size）：rscc.c 无尾部清零，帧尾保持未初始化（上游 cd1f545c/a5fe21a1 以 memset 补零修复）。",
  "attack_path": "产品用 ffmpeg 解码不可信屏幕捕获视频（远程支持/录屏处理场景）：攻击者提供短 deflate 输出的构造 RSCC 流 → 解码帧尾泄露未初始化堆内存。",
- "reproduction_commands": "源级三侧对照：a) 上游 cd1f545c/a5fe21a1 修复（上游样本名 rscc_short_deflate_heap_disclosure）；b) OH rscc.c deflate 分支无 len<pixel_size 清零；c) 与 n7.1.1 逐字节一致、官方清单含 7.1.1、diff git apply --check 通过。运行级路径：合法但短的 deflate 输出，MSan 观测 uninit 或对比零填充差分。"
+ "reproduction_commands": "源级三侧对照：a) 上游 cd1f545c/a5fe21a1 修复（上游样本名 rscc_short_deflate_heap_disclosure）；b) OH rscc.c deflate 分支无 len<pixel_size 清零；c) 与 n7.1.1 逐字节一致、官方清单含 7.1.1、diff git apply --check 通过。运行级路径：合法但短的 deflate 输出，MSan 观测 uninit 或对比零填充差分。",
+ "branch_evidence": {
+  "master": {
+   "verdict": "affected",
+   "source_commit": "0a0c4dd33c",
+   "reference": "case.json oh_source（head_commit 0a0c4dd33c 2026-09-10；与上游 n7.1.1 逐字节一致；修复前形态在位 + 上游修复 diff 对 OH 检出 git apply --check 通过）+ 提交材料包 submission_70629（L4 三侧对照）"
+  }
+ }
 }

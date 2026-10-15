@@ -42,5 +42,12 @@
  },
  "trigger_conditions": "patch 参数为待合并 target 的内部子节点（如经 cJSON_GetObjectItem(target, k) 取出的子树），cJSON_Delete(target) 先释放含 patch 的整树、cJSON_Duplicate(patch) 随后读取已释放节点；配置合并/动态 patch 类业务以取自 target 的节点为 patch 即触发，上游公告标注远程可发起。",
  "attack_path": "业务 JSON 处理路径调用 cJSONUtils_MergePatch 且 patch 来源于 target 内部子树：攻击者构造 JSON 文档诱导业务以'取自 target 的子节点'为 patch 发起合并 → UAF；实际影响取决于调用方使用方式与堆布局。",
- "reproduction_commands": "运行级（ASan）：OH third_party_cJSON 未改动源，clang -std=c11 -g -O1 -fsanitize=address,undefined 编译 poc_mergepatch.c；./poc_orig trigger → ASan heap-use-after-free READ size 4（释放点 cJSON.c:277，读点 cJSON.c:2802，退出码 1）；应用 patch.diff 重建重跑 → CASE_DONE（退出码 0）；control（独立 patch）两侧正常。2×2 矩阵记录见提交材料 submission_87933。"
+ "reproduction_commands": "运行级（ASan）：OH third_party_cJSON 未改动源，clang -std=c11 -g -O1 -fsanitize=address,undefined 编译 poc_mergepatch.c；./poc_orig trigger → ASan heap-use-after-free READ size 4（释放点 cJSON.c:277，读点 cJSON.c:2802，退出码 1）；应用 patch.diff 重建重跑 → CASE_DONE（退出码 0）；control（独立 patch）两侧正常。2×2 矩阵记录见提交材料 submission_87933。",
+ "branch_evidence": {
+  "master": {
+   "verdict": "affected",
+   "source_commit": "0c2c9df",
+   "reference": "submission_87933（核验基线 HEAD 0c2c9df，cJSON 1.7.19；ASan 运行级 UAF 2×2 矩阵）"
+  }
+ }
 }

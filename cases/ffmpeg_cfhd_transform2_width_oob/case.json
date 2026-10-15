@@ -42,5 +42,12 @@
  },
  "trigger_conditions": "带超宽 lowpass_width 的 CFHD transform-2 码流：cfhd.c:969/1010 两处平面尺寸校验未约束 lowpass_width*2 ≤ s->plane[plane].width，探测阶段即可触发堆越界写。",
  "attack_path": "产品用 ffmpeg 解复用/探测不可信媒体（CFHD 系码流）：攻击者提供构造码流即触发越界写，无需特权，应用自动处理不可信输入时无需用户交互。",
- "reproduction_commands": "源级三侧对照：a) 上游 db05df9d/16b2049d 修复 diff（上游样本名 cfhd_transform2_output_width_oob.avi）；b) OH 检出 cfhd.c:969/1010 均无 lowpass_width*2 校验（修复前形态）；c) 与上游 n7.1.1 逐字节一致、官方清单含 7.1.1，两 diff 对 OH 检出 git apply --check 通过。运行级路径：按样本构造码流 ASan 构建下观测越界写。"
+ "reproduction_commands": "源级三侧对照：a) 上游 db05df9d/16b2049d 修复 diff（上游样本名 cfhd_transform2_output_width_oob.avi）；b) OH 检出 cfhd.c:969/1010 均无 lowpass_width*2 校验（修复前形态）；c) 与上游 n7.1.1 逐字节一致、官方清单含 7.1.1，两 diff 对 OH 检出 git apply --check 通过。运行级路径：按样本构造码流 ASan 构建下观测越界写。",
+ "branch_evidence": {
+  "master": {
+   "verdict": "affected",
+   "source_commit": "0a0c4dd33c",
+   "reference": "case.json oh_source（head_commit 0a0c4dd33c 2026-09-10；与上游 n7.1.1 逐字节一致；修复前形态在位 + 上游修复 diff 对 OH 检出 git apply --check 通过）+ 提交材料包 submission_70632（L4 三侧对照）"
+  }
+ }
 }

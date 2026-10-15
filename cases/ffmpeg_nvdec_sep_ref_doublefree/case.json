@@ -49,5 +49,12 @@
  },
  "notes": "part of the ffmpeg gap batch (audit 2026-09-21)",
  "attack_path": "NVIDIA 平台产品用 ffmpeg NVDEC 硬解且码流走独立参考帧路径：攻击者以 crafted 视频流耗尽 decoder surface 池命中 sep_ref 错误分支（nvdec.c:612-616 goto fail）→ fail 标签对已移交 FrameDecodeData 的 cf 二次释放（double free）。",
- "reproduction_commands": "源级三侧对照（运行级需 NVIDIA GPU+NVDEC 环境，如实申报）：a) 上游 4c621747 修复 diff；b) OH nvdec.c:599 起 612-616/624-626 为修复前形态；c) 与 n7.1.1 逐字节一致、官方清单含 7.1.1。运行级路径：--enable-cuda-nvcc 构建下 H.265 多参考帧流+低 surfaces 配置耗尽池，ASan/Valgrind 观测 nvdec_fdd_priv_free double-free。"
+ "reproduction_commands": "源级三侧对照（运行级需 NVIDIA GPU+NVDEC 环境，如实申报）：a) 上游 4c621747 修复 diff；b) OH nvdec.c:599 起 612-616/624-626 为修复前形态；c) 与 n7.1.1 逐字节一致、官方清单含 7.1.1。运行级路径：--enable-cuda-nvcc 构建下 H.265 多参考帧流+低 surfaces 配置耗尽池，ASan/Valgrind 观测 nvdec_fdd_priv_free double-free。",
+ "branch_evidence": {
+  "master": {
+   "verdict": "affected",
+   "source_commit": "0a0c4dd33c",
+   "reference": "case.json oh_source（head_commit 0a0c4dd33c 2026-09-10；与上游 n7.1.1 逐字节一致；修复前形态在位 + 上游修复 diff 对 OH 检出 git apply --check 通过）+ 提交材料包 submission_64832（L4 三侧对照）"
+  }
+ }
 }

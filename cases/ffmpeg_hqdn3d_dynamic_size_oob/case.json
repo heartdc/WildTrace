@@ -41,5 +41,12 @@
  },
  "attack_path": "前提条件：产品/应用使用 ffmpeg 滤镜图且包含 hqdn3d 去噪滤镜\n（常用视频处理链），输入为不可信媒体（转码/滤镜服务场景典型）。\n攻击者构造分辨率中途增大的视频流驱动越界写；应用自动处理不可信\n输入时无需用户交互。越界写发生在去噪管线内、写入内容与媒体数据\n相关（可控度取决于输入构造），上游评定可致堆内存破坏。断言开启\n的构建下变尺寸帧触发 abort（拒绝服务）；断言关闭的构建进入越界写。\n\n四、PoC & Exploit：\n\n见附件 poc_hqdn3d.c 与运行验证记录.md（2×2 矩阵：原版 trigger\nASan 堆越界写 / 补丁版拒绝变尺寸帧 / control 两侧正常；环境 WSL2\nUbuntu 24.04、clang 18.1.3、ASan+UBSan、无网络无文件 I/O）。本报告\n未构造代码执行利用，越界写原语与上游公告一致。\n\n五、修复及缓解措施建议：\n\n推荐回移上游 5d7112c（filter_frame 检测帧尺寸变化后重跑\nconfig_input 重新分配行缓冲、输出按帧尺寸分配，并将 hqdn3d 加入\navfilter.c ",
  "fix_recommendation": "推荐回移上游 5d7112c（filter_frame 检测帧尺寸变化后重跑\nconfig_input 重新分配行缓冲、输出按帧尺寸分配，并将 hqdn3d 加入\navfilter.c 动态尺寸白名单）。短期可先落附件 patch.diff 的窄化防御\n（filter_frame 校验帧尺寸与链路尺寸不一致即拒绝该帧，等价于上游\n中间版本的安全语义，已验证无回归）。临时缓解：避免在包含 hqdn3d\n的滤镜图中处理不可信变尺寸流；对不可信输入的滤镜处理置于资源\n受限环境。",
- "reproduction_commands": "运行级（ASan）：./poc_orig：buffer→hqdn3d→buffersink，第 1 帧 64x64 排空后直推 512x512 帧 → ASan heap-buffer-overflow WRITE size 2（写点 denoise_spatial vf_hqdn3d.c:98，越界 config_input 分配的 128 字节行缓冲末尾，退出码 1）；git apply patch.diff 重建 → 变尺寸帧被拒绝（'Frame size changed without filter graph reinitialization'，修复生效，退出码 0）；control（两帧均 64x64）两侧正常（无回归）。"
+ "reproduction_commands": "运行级（ASan）：./poc_orig：buffer→hqdn3d→buffersink，第 1 帧 64x64 排空后直推 512x512 帧 → ASan heap-buffer-overflow WRITE size 2（写点 denoise_spatial vf_hqdn3d.c:98，越界 config_input 分配的 128 字节行缓冲末尾，退出码 1）；git apply patch.diff 重建 → 变尺寸帧被拒绝（'Frame size changed without filter graph reinitialization'，修复生效，退出码 0）；control（两帧均 64x64）两侧正常（无回归）。",
+ "branch_evidence": {
+  "master": {
+   "verdict": "affected",
+   "source_commit": "0a0c4dd33c",
+   "reference": "case.json oh_source（head_commit 0a0c4dd33c 2026-09-10；与上游 n7.1.1 逐字节一致；修复前形态在位 + 上游修复 diff 对 OH 检出 git apply --check 通过）+ 提交材料包 submission_66036（L4 三侧对照）；运行级 ASan 矩阵见 reproduction_commands"
+  }
+ }
 }

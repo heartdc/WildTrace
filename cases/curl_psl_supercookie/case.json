@@ -63,5 +63,12 @@
   }
  },
  "attack_path": "目标使用 libcurl 且启用 USE_LIBPSL+cookie 引擎，访问主机名恰为公共后缀的服务端点（localhost 类本地服务/特殊内网域）；攻击者控制该主机响应下发 Set-Cookie: Domain=<公共后缀主机名> → cookie 以 .主机名 通配域入库，对同后缀任意子域可注入/读取（会话固定/跨子域跟踪），不直接代码执行。",
- "reproduction_commands": "源码等价运行级（curl-8.8.0，OH lib/cookie.c 与其逐文件 diff 84 行等价）：./configure --without-ssl --with-libpsl && make -C lib；clang -fsanitize=address,undefined -I<curl>/include poc.c <curl>/lib/.libs/libcurl.a -lpsl -lpthread -o probe；./probe psl-supercookie：原版 tailmatch=1（域字段 .localhost，漏洞行为）→ 应用 patch.diff 重建 → tailmatch=0（修复生效）；non-psl-control 对照两侧均 1（无回归）。"
+ "reproduction_commands": "源码等价运行级（curl-8.8.0，OH lib/cookie.c 与其逐文件 diff 84 行等价）：./configure --without-ssl --with-libpsl && make -C lib；clang -fsanitize=address,undefined -I<curl>/include poc.c <curl>/lib/.libs/libcurl.a -lpsl -lpthread -o probe；./probe psl-supercookie：原版 tailmatch=1（域字段 .localhost，漏洞行为）→ 应用 patch.diff 重建 → tailmatch=0（修复生效）；non-psl-control 对照两侧均 1（无回归）。",
+ "branch_evidence": {
+  "master": {
+   "verdict": "affected",
+   "source_commit": "f044ac3ac942adc9c56efd9a47854a7049a9a78f",
+   "reference": "submission_82209（核验基线 commit 2026-09-11；OH lib/cookie.c 与 curl-8.8.0 逐文件 diff 84 行等价 + 源码等价运行级 tailmatch 矩阵）"
+  }
+ }
 }

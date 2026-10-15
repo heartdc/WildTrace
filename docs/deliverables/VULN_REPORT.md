@@ -149,7 +149,7 @@ int main(int argc, char **argv)
 - v5.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
 - v6.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
 - v7.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- master: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
+- master: 🔴 affected（分支实证：branch_evidence 记录提交与引用）
 
 **上游版本预测（风险线索，不代替分支证据）**
 - [预测] v4.1: 🔴 预测可能受影响（上游范围覆盖该基线）
@@ -226,7 +226,7 @@ libcurl reuses an HTTPS connection without checking that both requests used the 
 - v5.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
 - v6.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
 - v7.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- master: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
+- master: 🔴 affected（分支实证：branch_evidence 记录提交与引用）
 
 **上游版本预测（风险线索，不代替分支证据）**
 - [预测] v4.1: 🔴 预测可能受影响（上游范围覆盖该基线）
@@ -435,7 +435,7 @@ libcurl sources (OH tree) built with USE_LIBPSL; libpsl dev package; POSIX socke
 - v5.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
 - v6.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
 - v7.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- master: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
+- master: 🔴 affected（分支实证：branch_evidence 记录提交与引用）
 
 **上游版本预测（风险线索，不代替分支证据）**
 - [预测] v4.1: 🔴 预测可能受影响（上游范围覆盖该基线）
@@ -523,7 +523,7 @@ CFHD transform-2 output width (lowpass_width*2) is stream-controlled and unbound
 - v5.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
 - v6.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
 - v7.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- master: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
+- master: 🔴 affected（分支实证：branch_evidence 记录提交与引用）
 
 **上游版本预测（风险线索，不代替分支证据）**
 - [预测] v4.1: — 预测不受影响（上游范围不含该基线）
@@ -742,7 +742,7 @@ int main(int argc, char **argv)
 - v5.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
 - v6.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
 - v7.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- master: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
+- master: 🔴 affected（分支实证：branch_evidence 记录提交与引用）
 
 **上游版本预测（风险线索，不代替分支证据）**
 - [预测] v4.1: 🔴 预测可能受影响（上游范围覆盖该基线）
@@ -936,7 +936,7 @@ int main(int argc, char **argv)
 - v5.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
 - v6.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
 - v7.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- master: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
+- master: 🔴 affected（分支实证：branch_evidence 记录提交与引用）
 
 **上游版本预测（风险线索，不代替分支证据）**
 - [预测] v4.1: 🔴 预测可能受影响（上游范围覆盖该基线）
@@ -1172,7 +1172,7 @@ int main(int argc, char **argv)
 - v5.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
 - v6.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
 - v7.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- master: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
+- master: 🔴 affected（分支实证：branch_evidence 记录提交与引用）
 
 **上游版本预测（风险线索，不代替分支证据）**
 - [预测] v4.1: 🔴 预测可能受影响（上游范围覆盖该基线）
@@ -1259,7 +1259,7 @@ IAMF mix_presentation OBU: count_label taken from stream leb128 and used directl
 - v5.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
 - v6.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
 - v7.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- master: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
+- master: 🔴 affected（分支实证：branch_evidence 记录提交与引用）
 
 **上游版本预测（风险线索，不代替分支证据）**
 - [预测] v4.1: 🔴 预测可能受影响（上游范围覆盖该基线）
@@ -1443,7 +1443,7 @@ int main(int argc, char **argv)
 - v5.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
 - v6.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
 - v7.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- master: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
+- master: 🔴 affected（分支实证：branch_evidence 记录提交与引用）
 
 **上游版本预测（风险线索，不代替分支证据）**
 - [预测] v4.1: 🔴 预测可能受影响（上游范围覆盖该基线）
@@ -1535,7 +1535,7 @@ nvdec hardware decode: when decoder surfaces are exhausted inside ff_nvdec_start
 - v5.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
 - v6.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
 - v7.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- master: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
+- master: 🔴 affected（分支实证：branch_evidence 记录提交与引用）
 
 **上游版本预测（风险线索，不代替分支证据）**
 - [预测] v4.1: — 预测不受影响（上游范围不含该基线）
@@ -1756,7 +1756,7 @@ int main(int argc, char **argv)
 - v5.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
 - v6.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
 - v7.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- master: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
+- master: 🔴 affected（分支实证：branch_evidence 记录提交与引用）
 
 **上游版本预测（风险线索，不代替分支证据）**
 - [预测] v4.1: — 预测不受影响（上游范围不含该基线）
@@ -1862,7 +1862,7 @@ RSCC screen-capture decoder: when the deflate output is shorter than the frame n
 - v5.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
 - v6.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
 - v7.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- master: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
+- master: 🔴 affected（分支实证：branch_evidence 记录提交与引用）
 
 **上游版本预测（风险线索，不代替分支证据）**
 - [预测] v4.1: 🔴 预测可能受影响（上游范围覆盖该基线）
@@ -2083,7 +2083,7 @@ int main(int argc, char **argv)
 - v5.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
 - v6.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
 - v7.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- master: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
+- master: 🔴 affected（分支实证：branch_evidence 记录提交与引用）
 
 **上游版本预测（风险线索，不代替分支证据）**
 - [预测] v4.1: 🔴 预测可能受影响（上游范围覆盖该基线）
@@ -2291,7 +2291,7 @@ int main(int argc, char **argv)
 - v5.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
 - v6.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
 - v7.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- master: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
+- master: 🔴 affected（分支实证：branch_evidence 记录提交与引用）
 
 **上游版本预测（风险线索，不代替分支证据）**
 - [预测] v4.1: 🔴 预测可能受影响（上游范围覆盖该基线）
@@ -2466,7 +2466,7 @@ int main(int argc, char **argv)
 - v5.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
 - v6.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
 - v7.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- master: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
+- master: 🔴 affected（分支实证：branch_evidence 记录提交与引用）
 
 **上游版本预测（风险线索，不代替分支证据）**
 - [预测] v4.1: 🔴 预测可能受影响（上游范围覆盖该基线）
