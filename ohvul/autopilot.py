@@ -206,6 +206,12 @@ def score_finding(f: Finding, body: str, cleaned: str, params: str) -> Finding:
         # Higher: in a security-critical path (auth/crypto/ipc)
         if any(k in f.file.lower() for k in ('auth', 'crypto', 'ipc', 'ssl', 'tls', 'security')):
             score += 15; factors.append("+15 (security-critical path)")
+        # Provability ranking (Gap-A, mentor step: 排序依据问题证据):
+        # an Ffi* export symbol is directly reachable by a dlopen driver —
+        # the exact validation ladder WildTrace already runs — so those
+        # leads sort first in the proof funnel.
+        if re.match(r'Ffi[A-Z0-9]', f.function or ''):
+            score += 15; factors.append("+15 (FFI export: dlopen-provable entry)")
         # Lower: very short function (likely just a wrapper with caller-side check)
         if len(cleaned) < 200:
             score -= 10; factors.append("-10 (very short function)")
@@ -589,38 +595,71 @@ def _p6_guards(cleaned: str, varesc: str):
     return guards
 
 
-def _p6_first_unprotected(cleaned: str, varesc: str, accesses: list) -> tuple:
-    """(access_match, reason) for the first access no guard protects, or
-    (None, None) when every access is protected."""
+def _p6_access_states(cleaned: str, varesc: str, accesses: list):
+    """Intra-function pointer-state timeline (mentor step 4, Gap A).
+
+    Walks the cleaned body as ordered events (guards + assignments) and
+    evaluates each access's state: Null / NonNull / MaybeNull(reason).
+    Model scope is deliberately tiny: straight-line position semantics,
+    the two guard forms from _p6_guards, direct assignments. Anything
+    else (compound conditions, aliasing, loops) stays MaybeNull — an
+    explicit unknown, never a guess of safety. Note NonNull means
+    non-null only, not alive or valid (malloc results stay MaybeNull:
+    allocation can return NULL).
+    """
     guards = _p6_guards(cleaned, varesc)
     neg_aborts = [g for g in guards if g["kind"] == "neg-abort"]
     pos_blocks = [g for g in guards if g["kind"] == "pos-block"]
-    reassign = re.compile(rf'\b{varesc}\s*=\s*[^=]')
+    assigns = []
+    for m in re.finditer(rf'\b{varesc}\s*=\s*([^;=][^;]*);', cleaned):
+        rhs = m.group(1).strip()
+        if re.fullmatch(r'(?:NULL|nullptr|0)\b.*', rhs):
+            assigns.append({"pos": m.start(), "state": "Null",
+                            "reason": "assigned-null"})
+        elif re.match(r'&\s*\w', rhs):
+            assigns.append({"pos": m.start(), "state": "NonNull",
+                            "reason": "assigned-address"})
+        else:
+            assigns.append({"pos": m.start(), "state": "MaybeNull",
+                            "reason": "reassigned-source-unknown"
+                            if neg_aborts else "assigned-source-unknown"})
+    out = []
     for acc in accesses:
         p = acc.start()
-        if any(g["block"][0] <= p <= g["block"][1] for g in pos_blocks):
-            continue
-        protected = False
-        for g in neg_aborts:
-            if g["end"] <= p:
-                span = cleaned[g["end"]:p]
-                if reassign.search(span):
-                    continue  # fact invalidated: checked value was replaced
-                protected = True
-                break
-        if protected:
-            continue
-        late = [g for g in guards if g["start"] > p]
-        reassigned = any(reassign.search(cleaned[g["end"]:p]) for g in neg_aborts
-                         if g["end"] <= p)
-        if reassigned:
-            return acc, "reassigned-after-check"
-        if late:
-            return acc, "check-after-access"
-        if guards:
-            return acc, "log-only-check"
-        return acc, "no-null-check"
-    return None, None
+        in_pos_block = any(g["block"][0] <= p <= g["block"][1]
+                           for g in pos_blocks)
+        state, reason = None, None
+        # latest fact before the access wins (chronological walk)
+        facts = [{"pos": g["end"], "state": "NonNull",
+                  "reason": "guard-fallthrough"} for g in neg_aborts
+                 if g["end"] <= p] + [a for a in assigns if a["pos"] < p]
+        if in_pos_block:
+            state, reason = "NonNull", "positive-block"
+        elif facts:
+            last = max(facts, key=lambda f: f["pos"])
+            state, reason = last["state"], last["reason"]
+            # a guard BEFORE a later assignment does not survive it
+            if last["reason"] == "guard-fallthrough":
+                later_assign = [a for a in assigns
+                                if a["pos"] < p and a["reason"] != "assigned-address"
+                                and any(g["end"] <= a["pos"] for g in neg_aborts
+                                        if g["end"] <= a["pos"] < p)]
+                if later_assign:
+                    a = max(later_assign, key=lambda x: x["pos"])
+                    if a["state"] != "NonNull":
+                        state, reason = a["state"], \
+                            "reassigned-after-check" if neg_aborts else a["reason"]
+        else:
+            state, reason = "MaybeNull", "param-no-contract"
+        if state == "MaybeNull":
+            late = [g for g in guards if g["start"] > p]
+            non_abort_checks = len(guards) - len(neg_aborts)
+            if late:
+                reason = "check-after-access"
+            elif non_abort_checks:
+                reason = "log-only-check"
+        out.append((acc, state, reason))
+    return out
 
 
 def scan_p6(root, call_graph=None):
@@ -638,15 +677,23 @@ def scan_p6(root, call_graph=None):
                 accesses = list(re.finditer(rf'\b{varesc}\s*(?:->\w+|\[|\.\w)', cl))
                 if not accesses:
                     continue
-                acc, reason = _p6_first_unprotected(cl, varesc, accesses)
+                acc, state, reason = None, None, None
+                for a, st, rs in _p6_access_states(cl, varesc, accesses):
+                    if st != "NonNull":
+                        acc, state, reason = a, st, rs
+                        break
                 if acc is None:
                     continue
-                f = Finding(_fid("P6", rel, line, pp), "P6_null_deref", "medium",
+                severity = "high" if state == "Null" else "medium"
+                f = Finding(_fid("P6", rel, line, pp), "P6_null_deref", severity,
                            rel, line, name, pp, "CWE-476",
-                           f"Ptr '{pp}' ×{len(accesses)} deref(s), unprotected "
-                           f"access: {reason}",
+                           f"Ptr '{pp}' ×{len(accesses)} deref(s), access state="
+                           f"{state} ({reason})",
                            trigger_hint=f"{name}(NULL)")
                 f = score_finding(f, body, cl, params)
+                if state == "Null":
+                    f.confidence = min(100, f.confidence + 25)
+                    f.confidence_factors += "; +25 (access state=Null: certain deref)"
                 # Cross-function: a caller that null-checks the argument
                 # lowers confidence — it must NOT silently drop the finding
                 # (audit P1: name coincidence with a caller param used to

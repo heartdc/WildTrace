@@ -103,5 +103,65 @@ class P6DetectionContractTests(unittest.TestCase):
                             "non-null fact is invalidated by reassignment")
 
 
+class P6StateModelTests(unittest.TestCase):
+    """Step-4 contracts: Null/NonNull/MaybeNull with explicit reasons.
+
+    NonNull means non-null only, never alive-or-valid; malloc results stay
+    MaybeNull (allocation can return NULL). Unknown forms stay MaybeNull
+    with a reason — the tool never guesses safety.
+    """
+
+    def _state(self, parameter: str, body: str):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sample.c").write_text(
+                "typedef struct Node { int a, b; } Node;\n"
+                "Node *find_node(int id);\n"
+                f"void use(Node *{parameter}) {{\n{body}\n}}\n",
+                encoding="utf-8")
+            found = _finds(root, "use", parameter)
+            return (found[0] if found else None)
+
+    def test_assigned_null_access_is_certain(self):
+        f = self._state("node", "    node = NULL;\n    node->a = 1;")
+        self.assertIsNotNone(f)
+        self.assertIn("state=Null (assigned-null)", f.description)
+        self.assertEqual(f.severity, "high")
+
+    def test_address_of_assignment_is_non_null(self):
+        f = self._state("node", "    struct { int a; } holder;\n"
+                                "    node = &holder;\n    node->a = 1;")
+        self.assertIsNone(f, "assigned &x is NonNull by construction")
+
+    def test_nullable_source_guarded_then_accessed(self):
+        f = self._state("node", "    node = find_node(1);\n"
+                                "    if (!node) return;\n"
+                                "    node->a = 1;")
+        self.assertIsNone(f, "guard after a nullable source restores NonNull")
+
+    def test_nullable_source_unguarded_labels_reason(self):
+        f = self._state("node", "    node = find_node(1);\n    node->a = 1;")
+        self.assertIsNotNone(f)
+        self.assertIn("assigned-source-unknown", f.description)
+
+    def test_plain_param_labels_no_contract(self):
+        f = self._state("node", "    node->a = 1;")
+        self.assertIsNotNone(f)
+        self.assertIn("state=MaybeNull (param-no-contract)", f.description)
+
+    def test_ffi_export_gets_provable_ranking(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sample.c").write_text(
+                "typedef struct Node { int a; } Node;\n"
+                "void FfiUseNode(Node *node) {\n"
+                "    node->a = 1;\n"
+                "}\n", encoding="utf-8")
+            found = _finds(root, "FfiUseNode", "node")
+            self.assertTrue(found)
+            self.assertIn("+15 (FFI export: dlopen-provable entry)",
+                          found[0].confidence_factors)
+
+
 if __name__ == "__main__":
     unittest.main()
