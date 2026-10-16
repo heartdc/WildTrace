@@ -609,6 +609,36 @@ def _p6_guards(cleaned: str, varesc: str):
     return guards
 
 
+def _p6_block_spans(cleaned: str):
+    """Innermost brace span for every position (positions between spans
+    get None). Assignments inside a conditional block must not project
+    their state past the block end: 'if (x) p = foo(); else p = NULL;'
+    leaves p MaybeNull after the merge, not Null (straight-line
+    latest-wins fabricated ~1.2k certain-deref FPs on dsoftbus)."""
+    stack, spans = [], {}
+    for i, c in enumerate(cleaned):
+        if c == '{':
+            stack.append(i)
+        elif c == '}' and stack:
+            s = stack.pop()
+            spans[(s, i)] = None  # span markers kept by interval below
+    # build position -> innermost span via sorted intervals
+    intervals = sorted(spans.keys())
+    import bisect
+    starts = [s for s, _ in intervals]
+
+    def enclosing(pos):
+        # innermost interval containing pos
+        idx = bisect.bisect_right(starts, pos) - 1
+        while idx >= 0:
+            s, e = intervals[idx]
+            if s <= pos <= e:
+                return (s, e)
+            idx -= 1
+        return None
+    return enclosing
+
+
 def _p6_access_states(cleaned: str, varesc: str, accesses: list):
     """Intra-function pointer-state timeline (mentor step 4, Gap A).
 
@@ -624,6 +654,7 @@ def _p6_access_states(cleaned: str, varesc: str, accesses: list):
     guards = _p6_guards(cleaned, varesc)
     neg_aborts = [g for g in guards if g["kind"] == "neg-abort"]
     pos_blocks = [g for g in guards if g["kind"] == "pos-block"]
+    enclosing = _p6_block_spans(cleaned)
     assigns = []
     for m in re.finditer(rf'\b{varesc}\s*=\s*([^;=][^;]*);', cleaned):
         rhs = m.group(1).strip()
@@ -637,23 +668,52 @@ def _p6_access_states(cleaned: str, varesc: str, accesses: list):
             assigns.append({"pos": m.start(), "state": "MaybeNull",
                             "reason": "reassigned-source-unknown"
                             if neg_aborts else "assigned-source-unknown"})
+    for a in assigns:
+        a["scope"] = enclosing(a["pos"])
+    for g in neg_aborts:
+        g["scope"] = enclosing(g["start"])
     out = []
     for acc in accesses:
         p = acc.start()
         in_pos_block = any(g["block"][0] <= p <= g["block"][1]
                            for g in pos_blocks)
         state, reason = None, None
-        # latest fact before the access wins (chronological walk)
+        # latest fact before the access wins (chronological walk); facts
+        # born inside a conditional block do NOT project past that block —
+        # after the merge the variable is at best MaybeNull (branch-merge
+        # rule; straight-line projection fabricated certain-deref FPs)
+        def _applies(f):
+            s = f.get("scope")
+            return s is None or p <= s[1] or s[0] <= p <= s[1]
         facts = [{"pos": g["end"], "state": "NonNull",
-                  "reason": "guard-fallthrough"} for g in neg_aborts
-                 if g["end"] <= p] + [a for a in assigns if a["pos"] < p]
+                  "reason": "guard-fallthrough", "scope": g["scope"]}
+                 for g in neg_aborts
+                 if g["end"] <= p and _applies(g)] + \
+                [a for a in assigns if a["pos"] < p and _applies(a)]
+        merged = None
         if in_pos_block:
             state, reason = "NonNull", "positive-block"
         elif facts:
             last = max(facts, key=lambda f: f["pos"])
-            state, reason = last["state"], last["reason"]
+            s = last.get("scope")
+            if s is not None and p > s[1]:
+                state, reason = "MaybeNull", "merged-branches"
+                merged = True
+            else:
+                state, reason = last["state"], last["reason"]
+            # a scoped assignment whose block already closed joins the
+            # merge: carried Null + conditional reassign = MaybeNull
+            # (only the branch that skipped the block still carries Null)
+            excluded = [a for a in assigns
+                        if a["pos"] < p and a.get("scope")
+                        and p > a["scope"][1] and a["pos"] > last["pos"]]
+            if excluded and not merged and state != "MaybeNull":
+                differing = [a for a in excluded if a["state"] != state]
+                if differing:
+                    state, reason = "MaybeNull", "merged-branches"
+                    merged = True
             # a guard BEFORE a later assignment does not survive it
-            if last["reason"] == "guard-fallthrough":
+            if last["reason"] == "guard-fallthrough" and not merged:
                 later_assign = [a for a in assigns
                                 if a["pos"] < p and a["reason"] != "assigned-address"
                                 and any(g["end"] <= a["pos"] for g in neg_aborts

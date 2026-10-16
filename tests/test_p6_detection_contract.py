@@ -257,6 +257,40 @@ class P6LocalPointerTests(unittest.TestCase):
             "    proxy->Fire(2);")
         self.assertIsNotNone(f)
 
+    def test_conditional_null_assignment_merges_to_maybenull(self):
+        # if (x) p = foo(); else p = NULL; p->a  — on the x-true path p is
+        # non-null; straight-line 'latest assign wins' must not call it Null
+        f = self._state(
+            "    IObs *p = NULL;\n"
+            "    if (other()) {\n"
+            "        p = other();\n"
+            "    }\n"
+            "    p->Fire(1);", var="p")
+        self.assertIsNotNone(f)
+        self.assertIn("merged-branches", f.description)
+        self.assertNotIn("state=Null", f.description)
+        self.assertEqual(f.severity, "medium")
+
+    def test_toplevel_null_assignment_stays_certain(self):
+        f = self._state(
+            "    IObs *p = NULL;\n"
+            "    p->Fire(1);", var="p")
+        self.assertIsNotNone(f)
+        self.assertIn("state=Null", f.description)
+
+    def test_scoped_guard_does_not_protect_after_block(self):
+        # the return only happens when other() is true; the fall-through
+        # path can still carry a null p
+        f = self._state(
+            "    sptr<IObs> proxy = GetRemoteProxy<IObs>(1);\n"
+            "    if (other()) {\n"
+            "        if (!proxy) {\n"
+            "            return;\n"
+            "        }\n"
+            "    }\n"
+            "    proxy->Fire(2);")
+        self.assertIsNotNone(f)
+
 
 if __name__ == "__main__":
     unittest.main()
