@@ -163,5 +163,100 @@ class P6StateModelTests(unittest.TestCase):
                           found[0].confidence_factors)
 
 
+class P6LocalPointerTests(unittest.TestCase):
+    """GT1 contracts (mentor step 6 first item): local pointer /
+    smart-pointer declarations join the state timeline via their
+    initializer — retro GT1's 'sptr<> proxy = GetRemoteProxy(...)' shape."""
+
+    def _state(self, body: str, var: str = "proxy"):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sample.cpp").write_text(
+                "struct IObs { void Fire(int x); };\n"
+                "template <typename T> T *GetRemoteProxy(int id);\n"
+                "int other(void);\n"
+                f"void use() {{\n{body}\n}}\n",
+                encoding="utf-8")
+            found = _finds(root, "use", var)
+            return (found[0] if found else None)
+
+    def test_local_sptr_unguarded_is_candidate(self):
+        f = self._state(
+            "    sptr<IObs> proxy = GetRemoteProxy<IObs>(1);\n"
+            "    proxy->Fire(2);")
+        self.assertIsNotNone(f)
+        self.assertIn("assigned-source-unknown", f.description)
+
+    def test_local_sptr_macro_guarded_suppresses(self):
+        # CHECK_AND_RETURN_LOG_RET form is a return-polarity guard
+        f = self._state(
+            "    #define CHECK_AND_RETURN_LOG_RET(c, r, ...) do { "
+            "if (!(c)) return r; } while (0)\n"
+            "    sptr<IObs> proxy = GetRemoteProxy<IObs>(1);\n"
+            "    CHECK_AND_RETURN_LOG_RET(proxy != nullptr, -1, \"null\");\n"
+            "    proxy->Fire(2);")
+        self.assertIsNone(f)
+
+    def test_local_sptr_if_guarded_suppresses(self):
+        f = self._state(
+            "    sptr<IObs> proxy = GetRemoteProxy<IObs>(1);\n"
+            "    if (proxy == nullptr) {\n"
+            "        return;\n"
+            "    }\n"
+            "    proxy->Fire(2);")
+        self.assertIsNone(f)
+
+    def test_local_raw_pointer_unguarded_is_candidate(self):
+        f = self._state(
+            "    IObs *p = other();\n"
+            "    p->Fire(1);", var="p")
+        self.assertIsNotNone(f)
+        self.assertIn("assigned-source-unknown", f.description)
+
+    def test_local_null_assignment_is_certain(self):
+        f = self._state(
+            "    IObs *p = NULL;\n"
+            "    p->Fire(1);", var="p")
+        self.assertIsNotNone(f)
+        self.assertIn("state=Null (assigned-null)", f.description)
+        self.assertEqual(f.severity, "high")
+
+    def test_local_address_of_is_non_null(self):
+        f = self._state(
+            "    IObs holder;\n"
+            "    IObs *p = &holder;\n"
+            "    p->Fire(1);", var="p")
+        self.assertIsNone(f)
+
+    def test_disjunction_with_null_test_guards(self):
+        # short-circuit: the branch is taken when p is null on its own
+        f = self._state(
+            "    sptr<IObs> proxy = GetRemoteProxy<IObs>(1);\n"
+            "    if (proxy == nullptr || other()) {\n"
+            "        return;\n"
+            "    }\n"
+            "    proxy->Fire(2);")
+        self.assertIsNone(f)
+
+    def test_disjunction_null_test_on_either_side_guards(self):
+        f = self._state(
+            "    sptr<IObs> proxy = GetRemoteProxy<IObs>(1);\n"
+            "    if (other() || !proxy) {\n"
+            "        return;\n"
+            "    }\n"
+            "    proxy->Fire(2);")
+        self.assertIsNone(f)
+
+    def test_conjunction_with_null_test_does_not_guard(self):
+        # p null but other() false → branch not taken → not a guard
+        f = self._state(
+            "    sptr<IObs> proxy = GetRemoteProxy<IObs>(1);\n"
+            "    if (proxy == nullptr && other()) {\n"
+            "        return;\n"
+            "    }\n"
+            "    proxy->Fire(2);")
+        self.assertIsNotNone(f)
+
+
 if __name__ == "__main__":
     unittest.main()

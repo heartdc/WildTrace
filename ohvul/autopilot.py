@@ -570,10 +570,24 @@ def _p6_guards(cleaned: str, varesc: str):
     Log-only negative checks yield nothing (they protect no path).
     """
     guards = []
-    for m in re.finditer(r'if\s*\(([^()]*)\)\s*[{;]?', cleaned):
+    # condition may itself contain calls: allow one level of balanced parens
+    # (`p == nullptr || !dev.IsValid()`) — the old [^()]* could not match
+    # such an if at all, silently dropping every compound guard.
+    for m in re.finditer(
+            r'if\s*\(([^()]*(?:\([^()]*\)[^()]*)*)\)\s*[{;]?', cleaned):
         cond = m.group(1)
-        is_neg = re.fullmatch(rf'\s*!\s*{varesc}\s*', cond) or \
-            re.fullmatch(rf'\s*{varesc}\s*==\s*(?:NULL|nullptr|0)\s*', cond)
+        # a null test disjoined with other conditions still guards (short
+        # circuit: var null alone takes the branch) — dsoftbus/bluetooth
+        # commonly write `p == nullptr || !other()`. Conjunctions do NOT
+        # guard (p might be checked only when the other side is false).
+        def _neg(c):
+            return re.fullmatch(rf'\s*!\s*{varesc}\s*', c) or \
+                re.fullmatch(rf'\s*{varesc}\s*==\s*(?:NULL|nullptr|0)\s*', c)
+        is_neg = _neg(cond)
+        if not is_neg:
+            parts = re.split(r'\|\|', cond)
+            if len(parts) > 1 and any(_neg(p) for p in parts):
+                is_neg = True
         is_pos = re.fullmatch(rf'\s*{varesc}\s*', cond) or \
             re.fullmatch(rf'\s*{varesc}\s*!=\s*(?:NULL|nullptr)\s*', cond)
         if not (is_neg or is_pos):
@@ -662,6 +676,26 @@ def _p6_access_states(cleaned: str, varesc: str, accesses: list):
     return out
 
 
+def _p6_pointer_vars(params: str, cl: str) -> set:
+    """Candidate pointer variables of one function: parameters plus GT1
+    local declarations (sptr<T>/shared_ptr<T>/T* initialized in the body).
+    Locals enter the same state timeline — their initializer is the first
+    assignment fact, so 'assigned-source-unknown' / Null / &x classify
+    exactly as parameter reassignments do (retro GT1: hid_host
+    'sptr<> proxy = GetRemoteProxy(...)' was invisible to a params-only
+    model; mentor step 6 first item)."""
+    out = set(re.findall(r'(?:const\s+)?\w+\s*\*+\s*(\w+)', params))
+    out |= set(_SMART_PTR_PARAM.findall(params))
+    local_smart = re.compile(
+        r'(?:const\s+)?(?:(?:std::)?(?:shared|unique)_ptr|[sw]ptr)'
+        r'\s*<[^>;()]*>\s*(\w+)\s*=')
+    local_raw = re.compile(r'(?:const\s+)?\w+\s*\*+\s*(\w+)\s*=')
+    out |= set(local_smart.findall(cl)) | set(local_raw.findall(cl))
+    return {v for v in out
+            if v not in ('if', 'for', 'while', 'return', 'sizeof', 'NULL',
+                         'void', 'new', 'delete')}
+
+
 def scan_p6(root, call_graph=None):
     out = []
     for src in list(root.rglob('*.c')) + list(root.rglob('*.cpp')):
@@ -669,10 +703,7 @@ def scan_p6(root, call_graph=None):
         try: text = src.read_text(encoding='utf-8', errors='replace')
         except OSError: continue
         for name, params, line, body, cl in _iter_functions(text):
-            ptr_params = set(re.findall(r'(?:const\s+)?\w+\s*\*+\s*(\w+)', params))
-            ptr_params |= set(_SMART_PTR_PARAM.findall(params))
-            for pp in ptr_params:
-                if pp in ('if','for','while','return','sizeof','NULL','void'): continue
+            for pp in sorted(_p6_pointer_vars(params, cl)):
                 varesc = re.escape(pp)
                 accesses = list(re.finditer(rf'\b{varesc}\s*(?:->\w+|\[|\.\w)', cl))
                 if not accesses:
