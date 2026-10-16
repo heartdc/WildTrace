@@ -22,3 +22,16 @@ udmf FFI 目标自身边唯一，不受无关重复边影响。
 - 本仓库审计脚本目录排除列表曾含 `toolchain`，导致 `arkcompiler/toolchain`（组件
   "toolchain" 提供者）被整目录跳过、rich.json 误删后回滚——教训：排除列表应锚定
   顶层路径而非任意层级同名目录
+
+## 补记 2026-10-16 晚间（快照钉定全过程，含一次撤回）
+
+| # | 操作 | 结果 |
+|---|---|---|
+| 5 | manifests checkout 至 0bc9850 快照 + repo sync 钉定尝试 | 快照 manifest 同样无 asmjit/zydis 登记（revision=master 本就不钉提交）；sync 因直克隆仓 .git 形态不兼容失败后清理重试 |
+| 6 | runtime_core 多轮钉定（c52f31b2^ → 4a174350@09-29 → 8bfecab3^） | **全部仍带 asmjit/zydis 引用**（09-29 时已有 5 处，今日 12 处）；当前树停在 4a174350 |
+| 7 | **asmjit shim：建立后撤回** | 曾以上游 master tarball + 自写 BUILD.gn 垫 third_party/asmjit（glob 被魔改 gn 拒后改为生成清单）——违反红线精神，经 owner 叫停后 `rm -rf` 完整撤回；保留此记录作为教训：上游 master ≠ OH 定制版、自写 target 拆分不可信、会污染 sha256 验收 |
+| 8 | rich.json 11 处失效引用二次移除 | 快照 sync 把 productdefine 重置回 master 版，修正重新应用（toolchain 保留，同第 1 条口径） |
+| 9 | 直克隆仓二次重装（icu/vk-gl-cts/webview 等 24 仓） | repo 对其 .git 形态报 unsupported checkout state，rm 后直克隆 master |
+
+**结论**：third_party/{asmjit,zydis} 在公开渠道（gitcode/gitee/全部 manifest）已不存在，
+仅存于 airgap 主机树的早期同步遗留。第二环境构建阻塞于此，待 #131 模式原件交接。
