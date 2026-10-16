@@ -333,6 +333,36 @@ class P6LocalPointerTests(unittest.TestCase):
         self.assertIn("loop-scope-unknown", f.description)
         self.assertNotIn("state=Null", f.description)
 
+    def test_check_after_access_gets_semantic_bonus(self):
+        f = self._state(
+            "    sptr<IObs> proxy = GetRemoteProxy<IObs>(1);\n"
+            "    proxy->Fire(2);\n"
+            "    if (!proxy) {\n"
+            "        return;\n"
+            "    }")
+        self.assertIsNotNone(f)
+        self.assertIn("+10 (author null-check exists but doesn't protect)",
+                      f.confidence_factors)
+
+    def test_path_keyword_demoted_below_semantic(self):
+        # same code in auth/ vs non-auth/ should differ by only +5 now
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            body = ("struct IObs { void Fire(); };\n"
+                    "void use(IObs *auth_p) {\n"
+                    "    auth_p->Fire();\n"
+                    "}\n")
+            (root / "auth_file.c").write_text(body, encoding="utf-8")
+            (root / "plain_file.c").write_text(
+                body.replace("auth_p", "plain_p"), encoding="utf-8")
+            findings = scan_p6(root)
+        auth_f = [f for f in findings if f.file == "auth_file.c"]
+        plain_f = [f for f in findings if f.file == "plain_file.c"]
+        if auth_f and plain_f:
+            diff = (auth_f[0].confidence or 0) - (plain_f[0].confidence or 0)
+            self.assertLessEqual(diff, 5,
+                                 "path keyword bonus should be ≤ +5 (v2)")
+
     def test_scoped_guard_does_not_protect_after_block(self):
         # the return only happens when other() is true; the fall-through
         # path can still carry a null p

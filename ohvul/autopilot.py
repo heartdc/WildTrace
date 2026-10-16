@@ -203,15 +203,27 @@ def score_finding(f: Finding, body: str, cleaned: str, params: str) -> Finding:
         # Lower: pointer is checked in a different form (e.g., !ptr in a macro)
         if re.search(rf'\b(?:ASSERT|CHECK|RET_VAL|RETURN_IF)\s*\([^)]*{re.escape(f.struct_type)}', cleaned, re.I):
             score -= 20; factors.append("-20 (macro-based check)")
-        # Higher: in a security-critical path (auth/crypto/ipc)
+        # Higher: in a security-critical path (auth/crypto/ipc) — demoted
+        # from +15 to +5 per mentor ranking guidance ("目录名最多作为次
+        # 要提示"): semantic evidence should dominate over path keywords
         if any(k in f.file.lower() for k in ('auth', 'crypto', 'ipc', 'ssl', 'tls', 'security')):
-            score += 15; factors.append("+15 (security-critical path)")
+            score += 5; factors.append("+5 (security-critical path, secondary)")
         # Provability ranking (Gap-A, mentor step: 排序依据问题证据):
         # an Ffi* export symbol is directly reachable by a dlopen driver —
         # the exact validation ladder WildTrace already runs — so those
         # leads sort first in the proof funnel.
         if re.match(r'Ffi[A-Z0-9]', f.function or ''):
             score += 15; factors.append("+15 (FFI export: dlopen-provable entry)")
+        # Ranking v2: semantic-class evidence (author believed nullable but
+        # the check doesn't protect) outranks generic no-check — mentor:
+        # "排序依据与真实风险关系" (adjudication round 1)
+        desc = f.description or ''
+        if 'check-after-access' in desc or 'log-only-check' in desc:
+            score += 10; factors.append("+10 (author null-check exists but doesn't protect)")
+        elif 'reassigned-after-check' in desc or 'merged-branches' in desc:
+            score += 10; factors.append("+10 (state invalidated by reassignment/merge)")
+        elif 'out-param-source' in desc:
+            score += 5; factors.append("+5 (out-param fill: callee contract)");
         # Lower: very short function (likely just a wrapper with caller-side check)
         if len(cleaned) < 200:
             score -= 10; factors.append("-10 (very short function)")
