@@ -77,6 +77,7 @@ sanitizer 报告（如有）、产物哈希、parent_run_id（用于独立复现
 | A-1 | C:\Projects\OpenHarmony-complete | 已通过 profile 来源校验的 OpenHarmony 组件源码；仅限人工指定的只读本地树 | 2026-09-15 |
 | A-2 | C:\Projects\OpenHarmony\third_party\cJSON | 钉定提交 `388cfc96` 的 cJSON 检出（merge-alias 运行案例源码）；仅限经人工审查入库的案例 harness 所声明的文件，只读 | 2026-09-16 |
 | A-4 | /home/airgap/oh-real-20260925（WSL Ubuntu 内路径） | x86_64_virt 自定义配置的 OpenHarmony 隔离构建树（IPC/KV 真库验证目标源码）；无 git 元数据，版本钉定依据构建产物指纹（`libcj_ipc_ffi.z.so` sha256 `2bccd55c…`、BuildID `8e3e71ce…`）与 `build-run7.log`；仅限经人工审查入库的 IPC/KV 验证 harness（tools/validation_cases/，PR #61）所声明的目标，源码只读 | 2026-09-28 |
+| A-5 | /home/beichen/oh（WSL Ubuntu 内路径，lenovo 机） | x86_64_virt 靶向构建树（自 D:/oh-full/openharmony 迁入，master 快照）；依据仓库所有者 2026-10-16 书面指示登记（本机自足完成真库验证构建，不再依赖 airgap 主机）；仅限靶向 root-target 构建（udmf/hiappevent/ipc FFI 验证目标）与 tools/validation_cases/ 已入库 harness 的运行；树修改遵循 OH_BUILD_PIPELINE.md 红线（仅登记性/环境兼容改动，不碰 FFI 源码） | 2026-10-16 |
 
 ## 附录 B：执行环境登记表
 
