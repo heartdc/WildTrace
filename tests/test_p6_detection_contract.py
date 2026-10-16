@@ -278,6 +278,21 @@ class P6LocalPointerTests(unittest.TestCase):
         self.assertIsNotNone(f)
         self.assertIn("state=Null", f.description)
 
+    def test_null_cursor_in_loop_is_unknown_not_certain(self):
+        # list cursors are reassigned inside traversal macros the model
+        # cannot see (assignment not regex-visible) — a Null init carried
+        # into a loop-body access is an explicit unknown, never certain
+        # (dsoftbus macro-cursor FP class, ~1.2k leads)
+        f = self._state(
+            "    IObs *item = NULL;\n"
+            "    while (HasNext(list)) {\n"
+            "        item->Fire(1);\n"
+            "    }", var="item")
+        self.assertIsNotNone(f)
+        self.assertIn("loop-scope-unknown", f.description)
+        self.assertNotIn("state=Null", f.description)
+        self.assertEqual(f.severity, "medium")
+
     def test_scoped_guard_does_not_protect_after_block(self):
         # the return only happens when other() is true; the fall-through
         # path can still carry a null p

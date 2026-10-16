@@ -672,6 +672,26 @@ def _p6_access_states(cleaned: str, varesc: str, accesses: list):
         a["scope"] = enclosing(a["pos"])
     for g in neg_aborts:
         g["scope"] = enclosing(g["start"])
+    # loop bodies: list-cursor variables are assigned inside traversal
+    # macros (LIST_FOR_EACH* et al.) the model cannot see; a Null carried
+    # into a loop-body access is 'loop-scope-unknown', never certain —
+    # ~1.2k macro-cursor FPs on dsoftbus were labeled state=Null before
+    loop_spans = []
+    for m in re.finditer(r'(?:for|while)\s*\(', cleaned):
+        blk = _p6_block_span(cleaned, m.end() - 1)
+        if blk:
+            loop_spans.append(blk)
+    # traversal-macro cursors: LIST_FOR_EACH(item, ...)-style invocations
+    # carry their for-loop inside a macro defined elsewhere — no literal
+    # for/while appears at the call site, so match the invocation shape
+    traversal_macro = re.search(
+        rf'\b\w*(?:LIST|FOR_EACH|FOR_EACH_ENTRY|ITER|TRAVERSE)\w*\s*\(\s*{varesc}\s*[,)]',
+        cleaned)
+
+    def in_loop(pos):
+        if any(s <= pos <= e for s, e in loop_spans):
+            return True
+        return bool(traversal_macro) and traversal_macro.start() < pos
     out = []
     for acc in accesses:
         p = acc.start()
@@ -725,6 +745,8 @@ def _p6_access_states(cleaned: str, varesc: str, accesses: list):
                             "reassigned-after-check" if neg_aborts else a["reason"]
         else:
             state, reason = "MaybeNull", "param-no-contract"
+        if state == "Null" and in_loop(p):
+            state, reason = "MaybeNull", "loop-scope-unknown"
         if state == "MaybeNull":
             late = [g for g in guards if g["start"] > p]
             non_abort_checks = len(guards) - len(neg_aborts)
