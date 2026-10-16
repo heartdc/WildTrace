@@ -363,6 +363,28 @@ class P6LocalPointerTests(unittest.TestCase):
             self.assertLessEqual(diff, 5,
                                  "path keyword bonus should be ≤ +5 (v2)")
 
+    def test_suppression_log_records_protected_accesses(self):
+        # mentor: "这次访问没有出现在最终结果里，原因是什么？"
+        suppressed = []
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sample.c").write_text(
+                "typedef struct Node { int a; } Node;\n"
+                "void guarded(Node *node) {\n"
+                "    if (!node) return;\n"
+                "    node->a = 1;\n"
+                "}\n"
+                "void unguarded(Node *node) {\n"
+                "    node->a = 1;\n"
+                "}\n", encoding="utf-8")
+            findings = scan_p6(root, _suppressed=suppressed)
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0].function, "unguarded")
+        self.assertEqual(len(suppressed), 1)
+        self.assertEqual(suppressed[0]["function"], "guarded")
+        self.assertEqual(suppressed[0]["state"], "NonNull")
+        self.assertEqual(suppressed[0]["reason"], "guard-fallthrough")
+
     def test_scoped_guard_does_not_protect_after_block(self):
         # the return only happens when other() is true; the fall-through
         # path can still carry a null p

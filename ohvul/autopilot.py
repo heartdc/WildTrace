@@ -799,7 +799,7 @@ def _p6_pointer_vars(params: str, cl: str) -> set:
                          'void', 'new', 'delete')}
 
 
-def scan_p6(root, call_graph=None):
+def scan_p6(root, call_graph=None, _suppressed=None):
     out = []
     for src in list(root.rglob('*.c')) + list(root.rglob('*.cpp')):
         rel = str(src.relative_to(root))
@@ -823,6 +823,14 @@ def scan_p6(root, call_graph=None):
                         acc, state, reason = a, st, rs
                         break
                 if acc is None:
+                    # mentor: "这次访问没有出现在最终结果里，原因是什么？"
+                    # log the suppression reason for every protected access
+                    if _suppressed is not None:
+                        for a, st, rs in _p6_access_states(cl, varesc, accesses):
+                            _suppressed.append({
+                                "file": rel, "function": name, "var": pp,
+                                "line": line, "state": st, "reason": rs,
+                            })
                     continue
                 severity = "high" if state == "Null" else "medium"
                 f = Finding(_fid("P6", rel, line, pp), "P6_null_deref", severity,
