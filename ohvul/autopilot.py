@@ -670,6 +670,13 @@ def _p6_access_states(cleaned: str, varesc: str, accesses: list):
                             if neg_aborts else "assigned-source-unknown"})
     for a in assigns:
         a["scope"] = enclosing(a["pos"])
+    # out-param fills: Func(&var, ...) supersedes an earlier NULL init —
+    # the callee's contract decides, so the honest state is MaybeNull
+    # (40/43 of the top-funnel state=Null leads were this pattern)
+    for m in re.finditer(rf'\w+\s*\(\s*[^();]*&\s*{varesc}\b', cleaned):
+        assigns.append({"pos": m.start(), "state": "MaybeNull",
+                        "reason": "out-param-source", "scope": enclosing(m.start())})
+    assigns.sort(key=lambda a: a["pos"])
     for g in neg_aborts:
         g["scope"] = enclosing(g["start"])
     # loop bodies: list-cursor variables are assigned inside traversal
@@ -681,12 +688,14 @@ def _p6_access_states(cleaned: str, varesc: str, accesses: list):
         blk = _p6_block_span(cleaned, m.end() - 1)
         if blk:
             loop_spans.append(blk)
-    # traversal-macro cursors: LIST_FOR_EACH(item, ...)-style invocations
-    # carry their for-loop inside a macro defined elsewhere — no literal
-    # for/while appears at the call site, so match the invocation shape
+    # traversal-macro cursors: LIST_FOR_EACH(item, ...)- and camelCase
+    # ForEach(capability, ...)-style invocations carry their for-loop inside
+    # a macro defined elsewhere — no literal for/while appears at the call
+    # site, so match the invocation shape (adjudication lead #15:
+    # cJSON_ArrayForEach)
     traversal_macro = re.search(
-        rf'\b\w*(?:LIST|FOR_EACH|FOR_EACH_ENTRY|ITER|TRAVERSE)\w*\s*\(\s*{varesc}\s*[,)]',
-        cleaned)
+        rf'\b\w*(?:LIST|FOR_EACH|FOREACH|ITER|TRAVERSE)\w*\s*\(\s*{varesc}\s*[,)]',
+        cleaned, re.I)
 
     def in_loop(pos):
         if any(s <= pos <= e for s, e in loop_spans):
@@ -787,7 +796,13 @@ def scan_p6(root, call_graph=None):
         for name, params, line, body, cl in _iter_functions(text):
             for pp in sorted(_p6_pointer_vars(params, cl)):
                 varesc = re.escape(pp)
-                accesses = list(re.finditer(rf'\b{varesc}\s*(?:->\w+|\[|\.\w)', cl))
+                # access = the variable itself dereferenced; a match
+                # preceded by -> or . is a MEMBER NAME (fileList->fileInfo[i]),
+                # not an access of the variable — adjudication lead #1
+                def _real_access(m):
+                    return not cl[max(0, m.start() - 2):m.start()].endswith(('->', '.'))
+                accesses = [m for m in re.finditer(
+                    rf'\b{varesc}\s*(?:->\w+|\[|\.\w)', cl) if _real_access(m)]
                 if not accesses:
                     continue
                 acc, state, reason = None, None, None

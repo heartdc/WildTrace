@@ -293,6 +293,46 @@ class P6LocalPointerTests(unittest.TestCase):
         self.assertNotIn("state=Null", f.description)
         self.assertEqual(f.severity, "medium")
 
+    def test_member_name_is_not_an_access(self):
+        # adjudication lead #1: fileList->fileInfo[i] — fileInfo is a
+        # MEMBER name here, not the variable being indexed
+        f = self._state(
+            "    IObs *fileInfo = NULL;\n"
+            "    for (int i = 0; i < 3; i++) {\n"
+            "        if (other->fileInfo[i].size > 0) {\n"
+            "            continue;\n"
+            "        }\n"
+            "        fileInfo = &other->fileInfo[i];\n"
+            "        fileInfo->Fire(1);\n"
+            "    }", var="fileInfo")
+        self.assertIsNone(f, "&x assignment in-loop protects the access;"
+                            " the earlier member-name match is not an access")
+
+    def test_outparam_fill_supersedes_null_init(self):
+        # adjudication: 40/43 top-funnel state=Null leads were this —
+        # the callee fills &var; its contract decides, so MaybeNull
+        f = self._state(
+            "    IObs *userIds = NULL;\n"
+            "    if (GetAll(&userIds) != 0) {\n"
+            "        return;\n"
+            "    }\n"
+            "    userIds->Fire(1);", var="userIds")
+        self.assertIsNotNone(f)
+        self.assertIn("out-param-source", f.description)
+        self.assertNotIn("state=Null", f.description)
+        self.assertEqual(f.severity, "medium")
+
+    def test_camelcase_foreach_is_traversal(self):
+        # adjudication lead #15: cJSON_ArrayForEach(capability, item)
+        f = self._state(
+            "    IObs *capability = NULL;\n"
+            "    cJSON_ArrayForEach(capability, item) {\n"
+            "        capability->Fire(1);\n"
+            "    }", var="capability")
+        self.assertIsNotNone(f)
+        self.assertIn("loop-scope-unknown", f.description)
+        self.assertNotIn("state=Null", f.description)
+
     def test_scoped_guard_does_not_protect_after_block(self):
         # the return only happens when other() is true; the fall-through
         # path can still carry a null p
