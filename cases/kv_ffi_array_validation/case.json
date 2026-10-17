@@ -1,44 +1,45 @@
 {
- "schema": "wildtrace-candidate-case-0.2",
- "case_id": "kv-ffi-array-validation",
- "component": "foundation/distributeddatamgr/kv_store",
- "status": "candidate_source_equivalent_reproduction",
- "cwe_candidate": [
-  "CWE-476",
-  "CWE-125"
- ],
- "confirmed_vulnerability": false,
- "candidate": {
-  "source": "foundation/distributeddatamgr/kv_store/frameworks/cj/src/distributed_kv_store_impl.cpp",
-  "lines": [
-   373,
-   378
+  "schema": "wildtrace-candidate-case-0.2",
+  "case_id": "kv-ffi-array-validation",
+  "component": "foundation/distributeddatamgr/kv_store",
+  "status": "candidate_source_equivalent_reproduction",
+  "cwe_candidate": [
+    "CWE-476",
+    "CWE-125"
   ],
-  "entry_point": "foundation/distributeddatamgr/kv_store/frameworks/cj/src/distributed_kv_store_ffi.cpp:135-142",
-  "input_type": "foundation/distributeddatamgr/kv_store/frameworks/cj/include/distributed_kv_store_impl.h:107-110",
-  "description": "CArrEntry.size controls a loop that dereferences CArrEntry.head without checking negative/positive bounds or null head."
- },
- "source_equivalent_result": ".cache/kv-ffi-equivalent/result.json",
- "runtime_scope": {
-  "target_executed": false,
-  "open_harmony_binary_linked": false,
-  "network": false,
-  "production_data": false,
-  "model_invoked": false
- },
- "limitations": [
-  "The harness copies the conversion function and uses local type stubs.",
-  "Windows access violation is not a platform vulnerability confirmation.",
-  "FFI caller reachability and process privilege boundary remain unverified."
- ],
- "next_gate": "Build or obtain a complete OpenHarmony FFI library and run the malformed input cases in an isolated process.",
- "validation_evidence": {
-  "asan": "WSL Clang 21.1.8; zero-page SEGV for null head in both conversion paths; controls normal",
-  "platform_binary_linked": false
- },
- "oh_source": {
-  "l4_evidence": "L4 源级定位（L4_TIER_C + kv_null_entry 执行件）：FFI 侧以 CArray/CJByteArray 形态传入键值数据，C++ 侧 distributed_kv_store 接口在 entry/data 为空数组时未做空校验即遍历。 pinned 树的 FfiOHOSDistributedKVStoreCreateKVManager ABI 为 (const char*, Context*)——无错误出参且 Context 无法在纯 C 侧构造（2026-09-28 真库实测：历史 ABI 形态调用即 SIGSEGV），记录为隔离限制并以 tools/validation_cases/kv_null_entry.c 执行件保留 malformed 入口矩阵（run_malformed.sh）。"
- },
- "fix_recommendation": "建议 CArrStrToVectorKey/String 族 FFI 转换（同文件 3 处）在 length>0 时校验数组指针非空并返回参数校验错误码；本案为源级归档口径（AbilityRuntime Context 隔离限制，如实记录，见 docs/status/TASK_IPC_KV_VALIDATION_20260928.md）。",
- "reproduction_commands": "等价运行级（WSL Clang 21.1.8 ASan/UBSan，驱动 kv_null_entry.c）：两条转换路径 null head 均 zero-page SEGV，对照组正常；未做真库链接（如实区分等价级与真库级）。"
+  "confirmed_vulnerability": false,
+  "candidate": {
+    "source": "foundation/distributeddatamgr/kv_store/frameworks/cj/src/distributed_kv_store_impl.cpp",
+    "lines": [
+      373,
+      378
+    ],
+    "entry_point": "foundation/distributeddatamgr/kv_store/frameworks/cj/src/distributed_kv_store_ffi.cpp:135-142",
+    "input_type": "foundation/distributeddatamgr/kv_store/frameworks/cj/include/distributed_kv_store_impl.h:107-110",
+    "description": "CArrEntry.size controls a loop that dereferences CArrEntry.head without checking negative/positive bounds or null head."
+  },
+  "source_equivalent_result": ".cache/kv-ffi-equivalent/result.json",
+  "runtime_scope": {
+    "target_executed": false,
+    "open_harmony_binary_linked": false,
+    "network": false,
+    "production_data": false,
+    "model_invoked": false
+  },
+  "limitations": [
+    "The harness copies the conversion function and uses local type stubs.",
+    "Windows access violation is not a platform vulnerability confirmation.",
+    "FFI caller reachability and process privilege boundary remain unverified."
+  ],
+  "next_gate": "Build or obtain a complete OpenHarmony FFI library and run the malformed input cases in an isolated process.",
+  "validation_evidence": {
+    "asan": "WSL Clang 21.1.8; zero-page SEGV for null head in both conversion paths; controls normal",
+    "platform_binary_linked": false
+  },
+  "oh_source": {
+    "l4_evidence": "L4 源级定位（L4_TIER_C + kv_null_entry 执行件）：FFI 侧以 CArray/CJByteArray 形态传入键值数据，C++ 侧 distributed_kv_store 接口在 entry/data 为空数组时未做空校验即遍历。 pinned 树的 FfiOHOSDistributedKVStoreCreateKVManager ABI 为 (const char*, Context*)——无错误出参且 Context 无法在纯 C 侧构造（2026-09-28 真库实测：历史 ABI 形态调用即 SIGSEGV），记录为隔离限制并以 tools/validation_cases/kv_null_entry.c 执行件保留 malformed 入口矩阵（run_malformed.sh）。"
+  },
+  "fix_recommendation": "建议 CArrStrToVectorKey/String 族 FFI 转换（同文件 3 处）在 length>0 时校验数组指针非空并返回参数校验错误码；本案为源级归档口径（AbilityRuntime Context 隔离限制，如实记录，见 docs/status/TASK_IPC_KV_VALIDATION_20260928.md）。",
+  "reproduction_commands": "等价运行级（WSL Clang 21.1.8 ASan/UBSan，驱动 kv_null_entry.c）：两条转换路径 null head 均 zero-page SEGV，对照组正常；未做真库链接（如实区分等价级与真库级）。",
+  "notes": "2026-10-17：补入修复建议补丁 patch.diff（CArrStrToVectorKey 边界形态按空集返回，同型函数同补）。"
 }

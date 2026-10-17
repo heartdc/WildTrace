@@ -1,47 +1,72 @@
 {
- "schema": "case-specific-validation-0.2",
- "id": "ffmpeg-dvbsub-parser-capacity-overflow",
- "component": "third_party/ffmpeg",
- "cve_reference": "CVE-2026-70628",
- "cwe_candidate": "CWE-190 (leading to CWE-787)",
- "discovery_method": "kb_gap_audit.py pipeline + manual L4 2026-09-22; gap_l4_batch row for this CVE used the wrong reference commit (c6ec28b1 = 2005 introducer) and was corrected by hand: real fix is 93f2a525 (= branch backport 02fc47e1, diffs identical)",
- "new_discovery": false,
- "public_upstream": {
-  "fix_commit": "https://github.com/FFmpeg/FFmpeg/commit/93f2a525ec6c7b467bae68322720d10188fc6e30",
-  "fix_date": "2026-07-22",
-  "fix_subject": "avcodec/dvbsub_parser: avoid signed overflow in the capacity check"
- },
- "oh_source": {
-  "repo": "https://gitcode.com/openharmony/third_party_ffmpeg",
-  "head_commit": "0a0c4dd33c (2026-09-10)",
-  "baseline": "FFmpeg 7.1.1",
-  "equivalence": "dvbsub_parser.c byte-identical to upstream n7.1.1",
-  "l4_evidence": "dvbsub_parse() capacity guard at line 106 is still the signed-overflow-prone three-term form 'buf_size - buf_pos + pc->packet_index > PARSE_BUF_SIZE'; upstream one-line rewrite applies clean to OH checkout (git apply --check pass 2026-09-22)",
-  "gap_semantics": "version-baseline gap (fix 2026-07-22 postdates the vendored n7.1.1 tag and the repo snapshot); CVE ref list includes the 2005 introducer commit c6ec28b1 which is NOT the fix"
- },
- "vulnerability": {
-  "summary": "DVB subtitle parser capacity guard adds three attacker-influenced ints and can signed-overflow (CWE-190), bypassing the bound so the copy overruns the 64 KiB stack buffer packet_buf (CWE-787); attack surface per CVE record is a crafted WTV file.",
-  "verification_level": "source-level confirmed (three-sided L4, reference-commit errata documented); runtime observation path documented (ASan stack-buffer-overflow via crafted DVB subtitle stream) but not executed - declared as such",
-  "runtime_status": "not_run"
- },
- "controls": [],
- "submission_materials": "D:/cve_data/submission_70628/ (对照.txt with ref errata, patch.diff = upstream verbatim applies clean, upstream_fix_93f2a52.diff, form draft)",
- "notes": "closes the ffmpeg gap batch: 70628 was the second of the two pending manual-L4 candidates (2026-09-22)",
- "evidence_locations": {
-  "source_file": "libavcodec/dvbsub_parser.c",
-  "lines": [
-   106
-  ]
- },
- "trigger_conditions": "本报告为源码级验证（L4 三侧对照；运行级观测需构造使守卫表达式\n溢出的 WTV/传输流输入，报告人未构造端到端样本，如实申报）：\n  a) 上游对照：FFmpeg 93f2a525 改写守卫（diff 见附件）；\n  b) OH 检出检查：dvbsub_parser.c 106 行仍为修复前三数相加形态\n     （实测见附件对照.txt）；\n  c) 等价性：OH dvbsub_parser.c 与上游 n7.1.1 逐字节一致；官方\n     受影响清单含 7.1.1——结构性证据成立；上游修复 diff 对\n     OH 检出 git apply --check 直接通过。\n  如需运行级观测：以可控尺寸的 DVB 字幕流送入解析器并观测\n  packet_buf 越界写（ASan stack-buffer-overflow）。",
- "attack_path": "前提条件：产品经 ffmpeg 解析含 DVB 字幕轨道的媒体输入（WTV\n文件或 MPEG-TS 流，媒体解析管线处理外部文件/流场景）。攻击者\n构造使守卫表达式有符号溢出的输入，绕过容量检查后触发栈缓冲\n越界写——内存破坏类缺陷，潜在影响为崩溃至代码执行。\n\n四、PoC & Exploit：\n\n无运行级 PoC（原因如上）；证据为三侧源码对照（上游已修 diff /\nOH 检出修复前形态逐行对应 / 官方受影响清单含基线版本），附件\npatch.diff 为可直接应用的修复（git apply --check 通过）。\n\n五、修复及缓解措施建议：\n\n回移上游修复 93f2a525：dvbsub_parse() 容量守卫改为\n\"buf_size - buf_pos > PARSE_BUF_SIZE - pc->packet_index\"（附件\npatch.diff 即上游原文，对 OH 检出直接适用）。单行等价改写，\n无行为回归风险。",
- "fix_recommendation": "回移上游修复 93f2a525：dvbsub_parse() 容量守卫改为\n\"buf_size - buf_pos > PARSE_BUF_SIZE - pc->packet_index\"（附件\npatch.diff 即上游原文，对 OH 检出直接适用）。单行等价改写，\n无行为回归风险。",
- "reproduction_commands": "源级三侧对照（运行级需构造使守卫溢出的 WTV/传输流输入，如实申报）：a) 上游 93f2a525 改写守卫；b) OH dvbsub_parser.c:106 仍为修复前三数相加形态；c) 与 n7.1.1 逐字节一致、官方清单含 7.1.1，diff git apply --check 通过。运行级路径：可控尺寸 DVB 字幕流送入解析器观测 packet_buf 越界写。",
- "branch_evidence": {
-  "master": {
-   "verdict": "affected",
-   "source_commit": "0a0c4dd33c",
-   "reference": "case.json oh_source（head_commit 0a0c4dd33c 2026-09-10；与上游 n7.1.1 逐字节一致；修复前形态在位 + 上游修复 diff 对 OH 检出 git apply --check 通过）+ 提交材料包 submission_70628（L4 三侧对照）"
+  "schema": "case-specific-validation-0.2",
+  "id": "ffmpeg-dvbsub-parser-capacity-overflow",
+  "component": "third_party/ffmpeg",
+  "cve_reference": "CVE-2026-70628",
+  "cwe_candidate": "CWE-190 (leading to CWE-787)",
+  "discovery_method": "kb_gap_audit.py pipeline + manual L4 2026-09-22; gap_l4_batch row for this CVE used the wrong reference commit (c6ec28b1 = 2005 introducer) and was corrected by hand: real fix is 93f2a525 (= branch backport 02fc47e1, diffs identical)",
+  "new_discovery": false,
+  "public_upstream": {
+    "fix_commit": "https://github.com/FFmpeg/FFmpeg/commit/93f2a525ec6c7b467bae68322720d10188fc6e30",
+    "fix_date": "2026-07-22",
+    "fix_subject": "avcodec/dvbsub_parser: avoid signed overflow in the capacity check"
+  },
+  "oh_source": {
+    "repo": "https://gitcode.com/openharmony/third_party_ffmpeg",
+    "head_commit": "0a0c4dd33c (2026-09-10)",
+    "baseline": "FFmpeg 7.1.1",
+    "equivalence": "dvbsub_parser.c byte-identical to upstream n7.1.1",
+    "l4_evidence": "dvbsub_parse() capacity guard at line 106 is still the signed-overflow-prone three-term form 'buf_size - buf_pos + pc->packet_index > PARSE_BUF_SIZE'; upstream one-line rewrite applies clean to OH checkout (git apply --check pass 2026-09-22)",
+    "gap_semantics": "version-baseline gap (fix 2026-07-22 postdates the vendored n7.1.1 tag and the repo snapshot); CVE ref list includes the 2005 introducer commit c6ec28b1 which is NOT the fix"
+  },
+  "vulnerability": {
+    "summary": "DVB subtitle parser capacity guard adds three attacker-influenced ints and can signed-overflow (CWE-190), bypassing the bound so the copy overruns the 64 KiB stack buffer packet_buf (CWE-787); attack surface per CVE record is a crafted WTV file.",
+    "verification_level": "source-level confirmed (three-sided L4, reference-commit errata documented); runtime observation path documented (ASan stack-buffer-overflow via crafted DVB subtitle stream) but not executed - declared as such",
+    "runtime_status": "not_run"
+  },
+  "controls": [],
+  "submission_materials": "D:/cve_data/submission_70628/ (对照.txt with ref errata, patch.diff = upstream verbatim applies clean, upstream_fix_93f2a52.diff, form draft)",
+  "notes": "closes the ffmpeg gap batch: 70628 was the second of the two pending manual-L4 candidates (2026-09-22)",
+  "evidence_locations": {
+    "source_file": "libavcodec/dvbsub_parser.c",
+    "lines": [
+      106
+    ]
+  },
+  "trigger_conditions": "本报告为源码级验证（L4 三侧对照；运行级观测需构造使守卫表达式\n溢出的 WTV/传输流输入，报告人未构造端到端样本，如实申报）：\n  a) 上游对照：FFmpeg 93f2a525 改写守卫（diff 见附件）；\n  b) OH 检出检查：dvbsub_parser.c 106 行仍为修复前三数相加形态\n     （实测见附件对照.txt）；\n  c) 等价性：OH dvbsub_parser.c 与上游 n7.1.1 逐字节一致；官方\n     受影响清单含 7.1.1——结构性证据成立；上游修复 diff 对\n     OH 检出 git apply --check 直接通过。\n  如需运行级观测：以可控尺寸的 DVB 字幕流送入解析器并观测\n  packet_buf 越界写（ASan stack-buffer-overflow）。",
+  "attack_path": "前提条件：产品经 ffmpeg 解析含 DVB 字幕轨道的媒体输入（WTV\n文件或 MPEG-TS 流，媒体解析管线处理外部文件/流场景）。攻击者\n构造使守卫表达式有符号溢出的输入，绕过容量检查后触发栈缓冲\n越界写——内存破坏类缺陷，潜在影响为崩溃至代码执行。\n\n四、PoC & Exploit：\n\n无运行级 PoC（原因如上）；证据为三侧源码对照（上游已修 diff /\nOH 检出修复前形态逐行对应 / 官方受影响清单含基线版本），附件\npatch.diff 为可直接应用的修复（git apply --check 通过）。\n\n五、修复及缓解措施建议：\n\n回移上游修复 93f2a525：dvbsub_parse() 容量守卫改为\n\"buf_size - buf_pos > PARSE_BUF_SIZE - pc->packet_index\"（附件\npatch.diff 即上游原文，对 OH 检出直接适用）。单行等价改写，\n无行为回归风险。",
+  "fix_recommendation": "回移上游修复 93f2a525：dvbsub_parse() 容量守卫改为\n\"buf_size - buf_pos > PARSE_BUF_SIZE - pc->packet_index\"（附件\npatch.diff 即上游原文，对 OH 检出直接适用）。单行等价改写，\n无行为回归风险。",
+  "reproduction_commands": "源级三侧对照（运行级需构造使守卫溢出的 WTV/传输流输入，如实申报）：a) 上游 93f2a525 改写守卫；b) OH dvbsub_parser.c:106 仍为修复前三数相加形态；c) 与 n7.1.1 逐字节一致、官方清单含 7.1.1，diff git apply --check 通过。运行级路径：可控尺寸 DVB 字幕流送入解析器观测 packet_buf 越界写。",
+  "branch_evidence": {
+    "master": {
+      "verdict": "affected",
+      "source_commit": "0a0c4dd33c",
+      "reference": "case.json oh_source（head_commit 0a0c4dd33c 2026-09-10；与上游 n7.1.1 逐字节一致；修复前形态在位 + 上游修复 diff 对 OH 检出 git apply --check 通过）+ 提交材料包 submission_70628（L4 三侧对照）"
+    },
+    "OpenHarmony-v4.1-Release": {
+      "verdict": "affected",
+      "source_commit": "OpenHarmony-4.1-Release",
+      "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-4.1-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-4.1-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '4.4.1', 'curl': '8.4.0', 'openssl': '3.0.9', 'cjson': '1.7.16'}；kb[cvelistV5] 受影响区间 ≥0.5；分支钉住 {'ffmpeg': '4.4.1', 'curl': '8.4.0', 'openssl': '3.0.9', 'cjson': '1.7.16'} 位于上游修复之前（CVE-2026-70628）"
+    },
+    "OpenHarmony-v5.0-Release": {
+      "verdict": "affected",
+      "source_commit": "OpenHarmony-5.0-Release",
+      "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-5.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-5.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.6.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；kb[cvelistV5] 受影响区间 ≥0.5；分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.6.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 位于上游修复之前（CVE-2026-70628）"
+    },
+    "OpenHarmony-v5.1-Release": {
+      "verdict": "affected",
+      "source_commit": "OpenHarmony-5.1.0-Release",
+      "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-5.1.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-5.1.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；kb[cvelistV5] 受影响区间 ≥0.5；分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 位于上游修复之前（CVE-2026-70628）"
+    },
+    "OpenHarmony-v6.0-Release": {
+      "verdict": "affected",
+      "source_commit": "OpenHarmony-6.0-Release",
+      "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-6.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-6.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；kb[cvelistV5] 受影响区间 ≥0.5；分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 位于上游修复之前（CVE-2026-70628）"
+    },
+    "OpenHarmony-v7.0-Release": {
+      "verdict": "affected",
+      "source_commit": "OpenHarmony-7.0-Release",
+      "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-7.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-7.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '7.1.1', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.19'}；kb[cvelistV5] 受影响区间 ≥0.5；分支钉住 {'ffmpeg': '7.1.1', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.19'} 位于上游修复之前（CVE-2026-70628）"
+    }
   }
- }
 }

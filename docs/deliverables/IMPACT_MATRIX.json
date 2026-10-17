@@ -44,11 +44,11 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "unknown",
-      "OpenHarmony-v5.0-Release": "unknown",
-      "OpenHarmony-v5.1-Release": "unknown",
-      "OpenHarmony-v6.0-Release": "unknown",
-      "OpenHarmony-v7.0-Release": "unknown",
+      "OpenHarmony-v4.1-Release": "affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
     "upstream_predictions": {
@@ -64,10 +64,35 @@
         "verdict": "affected",
         "source_commit": "f044ac3ac942adc9c56efd9a47854a7049a9a78f",
         "reference": "submission_82209（复核脚本_80231.sh + curl_gap_verification.json；OH 检出连接匹配逻辑零比较 native_ca_store，上游 vtls_config.c:144 已修）"
+      },
+      "OpenHarmony-v4.1-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-4.1-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-4.1-Release 分支 ohos/ohos.xml 钉住 third_party curl（ref=OpenHarmony-4.1-Release），gitcode README.OpenSource 声明版本 8.4.0；kb[cvelistV5] 受影响区间 ≥7.71.0；分支钉住 8.4.0 位于上游修复之前（CVE-2026-80231）"
+      },
+      "OpenHarmony-v5.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-5.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-5.0-Release 分支 ohos/ohos.xml 钉住 third_party curl（ref=OpenHarmony-5.0-Release），gitcode README.OpenSource 声明版本 8.6.0；kb[cvelistV5] 受影响区间 ≥7.71.0；分支钉住 8.6.0 位于上游修复之前（CVE-2026-80231）"
+      },
+      "OpenHarmony-v5.1-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-5.1.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-5.1.0-Release 分支 ohos/ohos.xml 钉住 third_party curl（ref=OpenHarmony-5.1.0-Release），gitcode README.OpenSource 声明版本 8.8.0；kb[cvelistV5] 受影响区间 ≥7.71.0；分支钉住 8.8.0 位于上游修复之前（CVE-2026-80231）"
+      },
+      "OpenHarmony-v6.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-6.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-6.0-Release 分支 ohos/ohos.xml 钉住 third_party curl（ref=OpenHarmony-6.0-Release），gitcode README.OpenSource 声明版本 8.8.0；kb[cvelistV5] 受影响区间 ≥7.71.0；分支钉住 8.8.0 位于上游修复之前（CVE-2026-80231）"
+      },
+      "OpenHarmony-v7.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-7.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-7.0-Release 分支 ohos/ohos.xml 钉住 third_party curl（ref=OpenHarmony-7.0-Release），gitcode README.OpenSource 声明版本 8.8.0；kb[cvelistV5] 受影响区间 ≥7.71.0；分支钉住 8.8.0 位于上游修复之前（CVE-2026-80231）"
       }
     },
-    "affected_count": 1,
-    "unknown_count": 5
+    "affected_count": 6,
+    "unknown_count": 0
   },
   "curl_psl_supercookie": {
     "cve": "CVE-2026-82209",
@@ -79,11 +104,11 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "unknown",
-      "OpenHarmony-v5.0-Release": "unknown",
-      "OpenHarmony-v5.1-Release": "unknown",
-      "OpenHarmony-v6.0-Release": "unknown",
-      "OpenHarmony-v7.0-Release": "unknown",
+      "OpenHarmony-v4.1-Release": "affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
     "upstream_predictions": {
@@ -99,10 +124,35 @@
         "verdict": "affected",
         "source_commit": "f044ac3ac942adc9c56efd9a47854a7049a9a78f",
         "reference": "submission_82209（核验基线 commit 2026-09-11；OH lib/cookie.c 与 curl-8.8.0 逐文件 diff 84 行等价 + 源码等价运行级 tailmatch 矩阵）"
+      },
+      "OpenHarmony-v4.1-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-4.1-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-4.1-Release 分支 ohos/ohos.xml 钉住 third_party curl（ref=OpenHarmony-4.1-Release），gitcode README.OpenSource 声明版本 8.4.0；kb[cvelistV5] 受影响区间 ≥7.46.0；分支钉住 8.4.0 位于上游修复之前（CVE-2026-82209）"
+      },
+      "OpenHarmony-v5.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-5.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-5.0-Release 分支 ohos/ohos.xml 钉住 third_party curl（ref=OpenHarmony-5.0-Release），gitcode README.OpenSource 声明版本 8.6.0；kb[cvelistV5] 受影响区间 ≥7.46.0；分支钉住 8.6.0 位于上游修复之前（CVE-2026-82209）"
+      },
+      "OpenHarmony-v5.1-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-5.1.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-5.1.0-Release 分支 ohos/ohos.xml 钉住 third_party curl（ref=OpenHarmony-5.1.0-Release），gitcode README.OpenSource 声明版本 8.8.0；kb[cvelistV5] 受影响区间 ≥7.46.0；分支钉住 8.8.0 位于上游修复之前（CVE-2026-82209）"
+      },
+      "OpenHarmony-v6.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-6.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-6.0-Release 分支 ohos/ohos.xml 钉住 third_party curl（ref=OpenHarmony-6.0-Release），gitcode README.OpenSource 声明版本 8.8.0；kb[cvelistV5] 受影响区间 ≥7.46.0；分支钉住 8.8.0 位于上游修复之前（CVE-2026-82209）"
+      },
+      "OpenHarmony-v7.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-7.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-7.0-Release 分支 ohos/ohos.xml 钉住 third_party curl（ref=OpenHarmony-7.0-Release），gitcode README.OpenSource 声明版本 8.8.0；kb[cvelistV5] 受影响区间 ≥7.46.0；分支钉住 8.8.0 位于上游修复之前（CVE-2026-82209）"
       }
     },
-    "affected_count": 1,
-    "unknown_count": 5
+    "affected_count": 6,
+    "unknown_count": 0
   },
   "ffmpeg_cfhd_transform2_width_oob": {
     "cve": "CVE-2026-70632",
@@ -114,15 +164,15 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "unknown",
-      "OpenHarmony-v5.0-Release": "unknown",
-      "OpenHarmony-v5.1-Release": "unknown",
-      "OpenHarmony-v6.0-Release": "unknown",
-      "OpenHarmony-v7.0-Release": "unknown",
+      "OpenHarmony-v4.1-Release": "affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
     "upstream_predictions": {
-      "OpenHarmony-v4.1-Release": "not_affected",
+      "OpenHarmony-v4.1-Release": "affected",
       "OpenHarmony-v5.0-Release": "affected",
       "OpenHarmony-v5.1-Release": "affected",
       "OpenHarmony-v6.0-Release": "affected",
@@ -134,10 +184,35 @@
         "verdict": "affected",
         "source_commit": "0a0c4dd33c",
         "reference": "case.json oh_source（head_commit 0a0c4dd33c 2026-09-10；与上游 n7.1.1 逐字节一致；修复前形态在位 + 上游修复 diff 对 OH 检出 git apply --check 通过）+ 提交材料包 submission_70632（L4 三侧对照）"
+      },
+      "OpenHarmony-v4.1-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-4.1-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-4.1-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-4.1-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '4.4.1', 'curl': '8.4.0', 'openssl': '3.0.9', 'cjson': '1.7.16'}；kb[cvelistV5] 受影响区间 ≥4.4；分支钉住 {'ffmpeg': '4.4.1', 'curl': '8.4.0', 'openssl': '3.0.9', 'cjson': '1.7.16'} 位于上游修复之前（CVE-2026-70632）"
+      },
+      "OpenHarmony-v5.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-5.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-5.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-5.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.6.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；kb[cvelistV5] 受影响区间 ≥4.4；分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.6.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 位于上游修复之前（CVE-2026-70632）"
+      },
+      "OpenHarmony-v5.1-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-5.1.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-5.1.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-5.1.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；kb[cvelistV5] 受影响区间 ≥4.4；分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 位于上游修复之前（CVE-2026-70632）"
+      },
+      "OpenHarmony-v6.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-6.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-6.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-6.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；kb[cvelistV5] 受影响区间 ≥4.4；分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 位于上游修复之前（CVE-2026-70632）"
+      },
+      "OpenHarmony-v7.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-7.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-7.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-7.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '7.1.1', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.19'}；kb[cvelistV5] 受影响区间 ≥4.4；分支钉住 {'ffmpeg': '7.1.1', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.19'} 位于上游修复之前（CVE-2026-70632）"
       }
     },
-    "affected_count": 1,
-    "unknown_count": 5
+    "affected_count": 6,
+    "unknown_count": 0
   },
   "ffmpeg_dvbsub_parser_capacity_overflow": {
     "cve": "CVE-2026-70628",
@@ -149,11 +224,11 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "unknown",
-      "OpenHarmony-v5.0-Release": "unknown",
-      "OpenHarmony-v5.1-Release": "unknown",
-      "OpenHarmony-v6.0-Release": "unknown",
-      "OpenHarmony-v7.0-Release": "unknown",
+      "OpenHarmony-v4.1-Release": "affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
     "upstream_predictions": {
@@ -169,10 +244,35 @@
         "verdict": "affected",
         "source_commit": "0a0c4dd33c",
         "reference": "case.json oh_source（head_commit 0a0c4dd33c 2026-09-10；与上游 n7.1.1 逐字节一致；修复前形态在位 + 上游修复 diff 对 OH 检出 git apply --check 通过）+ 提交材料包 submission_70628（L4 三侧对照）"
+      },
+      "OpenHarmony-v4.1-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-4.1-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-4.1-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-4.1-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '4.4.1', 'curl': '8.4.0', 'openssl': '3.0.9', 'cjson': '1.7.16'}；kb[cvelistV5] 受影响区间 ≥0.5；分支钉住 {'ffmpeg': '4.4.1', 'curl': '8.4.0', 'openssl': '3.0.9', 'cjson': '1.7.16'} 位于上游修复之前（CVE-2026-70628）"
+      },
+      "OpenHarmony-v5.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-5.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-5.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-5.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.6.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；kb[cvelistV5] 受影响区间 ≥0.5；分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.6.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 位于上游修复之前（CVE-2026-70628）"
+      },
+      "OpenHarmony-v5.1-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-5.1.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-5.1.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-5.1.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；kb[cvelistV5] 受影响区间 ≥0.5；分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 位于上游修复之前（CVE-2026-70628）"
+      },
+      "OpenHarmony-v6.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-6.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-6.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-6.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；kb[cvelistV5] 受影响区间 ≥0.5；分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 位于上游修复之前（CVE-2026-70628）"
+      },
+      "OpenHarmony-v7.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-7.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-7.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-7.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '7.1.1', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.19'}；kb[cvelistV5] 受影响区间 ≥0.5；分支钉住 {'ffmpeg': '7.1.1', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.19'} 位于上游修复之前（CVE-2026-70628）"
       }
     },
-    "affected_count": 1,
-    "unknown_count": 5
+    "affected_count": 6,
+    "unknown_count": 0
   },
   "ffmpeg_floodfill_point_stack_oob": {
     "cve": "CVE-2026-65705",
@@ -184,11 +284,11 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "unknown",
-      "OpenHarmony-v5.0-Release": "unknown",
-      "OpenHarmony-v5.1-Release": "unknown",
-      "OpenHarmony-v6.0-Release": "unknown",
-      "OpenHarmony-v7.0-Release": "unknown",
+      "OpenHarmony-v4.1-Release": "affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
     "upstream_predictions": {
@@ -204,10 +304,35 @@
         "verdict": "affected",
         "source_commit": "0a0c4dd33c",
         "reference": "case.json oh_source（head_commit 0a0c4dd33c 2026-09-10；与上游 n7.1.1 逐字节一致；修复前形态在位 + 上游修复 diff 对 OH 检出 git apply --check 通过）+ 提交材料包 submission_65705（L4 三侧对照）"
+      },
+      "OpenHarmony-v4.1-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-4.1-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-4.1-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-4.1-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '4.4.1', 'curl': '8.4.0', 'openssl': '3.0.9', 'cjson': '1.7.16'}；kb[cvelistV5] 受影响区间 ≥3.4；分支钉住 {'ffmpeg': '4.4.1', 'curl': '8.4.0', 'openssl': '3.0.9', 'cjson': '1.7.16'} 位于上游修复之前（CVE-2026-65705）"
+      },
+      "OpenHarmony-v5.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-5.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-5.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-5.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.6.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；kb[cvelistV5] 受影响区间 ≥3.4；分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.6.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 位于上游修复之前（CVE-2026-65705）"
+      },
+      "OpenHarmony-v5.1-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-5.1.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-5.1.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-5.1.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；kb[cvelistV5] 受影响区间 ≥3.4；分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 位于上游修复之前（CVE-2026-65705）"
+      },
+      "OpenHarmony-v6.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-6.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-6.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-6.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；kb[cvelistV5] 受影响区间 ≥3.4；分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 位于上游修复之前（CVE-2026-65705）"
+      },
+      "OpenHarmony-v7.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-7.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-7.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-7.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '7.1.1', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.19'}；kb[cvelistV5] 受影响区间 ≥3.4；分支钉住 {'ffmpeg': '7.1.1', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.19'} 位于上游修复之前（CVE-2026-65705）"
       }
     },
-    "affected_count": 1,
-    "unknown_count": 5
+    "affected_count": 6,
+    "unknown_count": 0
   },
   "ffmpeg_hqdn3d_dynamic_size_oob": {
     "cve": "CVE-2026-66036",
@@ -219,11 +344,11 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "unknown",
-      "OpenHarmony-v5.0-Release": "unknown",
-      "OpenHarmony-v5.1-Release": "unknown",
-      "OpenHarmony-v6.0-Release": "unknown",
-      "OpenHarmony-v7.0-Release": "unknown",
+      "OpenHarmony-v4.1-Release": "affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
     "upstream_predictions": {
@@ -239,10 +364,35 @@
         "verdict": "affected",
         "source_commit": "0a0c4dd33c",
         "reference": "case.json oh_source（head_commit 0a0c4dd33c 2026-09-10；与上游 n7.1.1 逐字节一致；修复前形态在位 + 上游修复 diff 对 OH 检出 git apply --check 通过）+ 提交材料包 submission_66036（L4 三侧对照）；运行级 ASan 矩阵见 reproduction_commands"
+      },
+      "OpenHarmony-v4.1-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-4.1-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-4.1-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-4.1-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '4.4.1', 'curl': '8.4.0', 'openssl': '3.0.9', 'cjson': '1.7.16'}；kb[cvelistV5] 受影响区间 ≥0；分支钉住 {'ffmpeg': '4.4.1', 'curl': '8.4.0', 'openssl': '3.0.9', 'cjson': '1.7.16'} 位于上游修复之前（CVE-2026-66036）"
+      },
+      "OpenHarmony-v5.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-5.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-5.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-5.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.6.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；kb[cvelistV5] 受影响区间 ≥0；分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.6.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 位于上游修复之前（CVE-2026-66036）"
+      },
+      "OpenHarmony-v5.1-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-5.1.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-5.1.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-5.1.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；kb[cvelistV5] 受影响区间 ≥0；分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 位于上游修复之前（CVE-2026-66036）"
+      },
+      "OpenHarmony-v6.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-6.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-6.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-6.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；kb[cvelistV5] 受影响区间 ≥0；分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 位于上游修复之前（CVE-2026-66036）"
+      },
+      "OpenHarmony-v7.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-7.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-7.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-7.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '7.1.1', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.19'}；kb[cvelistV5] 受影响区间 ≥0；分支钉住 {'ffmpeg': '7.1.1', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.19'} 位于上游修复之前（CVE-2026-66036）"
       }
     },
-    "affected_count": 1,
-    "unknown_count": 5
+    "affected_count": 6,
+    "unknown_count": 0
   },
   "ffmpeg_iamf_count_label_dos": {
     "cve": "CVE-2026-66037",
@@ -254,11 +404,11 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "unknown",
-      "OpenHarmony-v5.0-Release": "unknown",
-      "OpenHarmony-v5.1-Release": "unknown",
-      "OpenHarmony-v6.0-Release": "unknown",
-      "OpenHarmony-v7.0-Release": "unknown",
+      "OpenHarmony-v4.1-Release": "not_affected",
+      "OpenHarmony-v5.0-Release": "not_affected",
+      "OpenHarmony-v5.1-Release": "not_affected",
+      "OpenHarmony-v6.0-Release": "not_affected",
+      "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
     "upstream_predictions": {
@@ -274,10 +424,35 @@
         "verdict": "affected",
         "source_commit": "0a0c4dd33c",
         "reference": "case.json oh_source（head_commit 0a0c4dd33c 2026-09-10；与上游 n7.1.1 逐字节一致；修复前形态在位 + 上游修复 diff 对 OH 检出 git apply --check 通过）+ 提交材料包 submission_66037（L4 三侧对照）"
+      },
+      "OpenHarmony-v4.1-Release": {
+        "verdict": "not_affected",
+        "source_commit": "OpenHarmony-4.1-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-4.1-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-4.1-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '4.4.1', 'curl': '8.4.0', 'openssl': '3.0.9', 'cjson': '1.7.16'}；上游 IAMF 支持于 n6.1 引入；分支钉住 {'ffmpeg': '4.4.1', 'curl': '8.4.0', 'openssl': '3.0.9', 'cjson': '1.7.16'} 不含 iamf_parse.c（缺陷代码不存在）（CVE-2026-66037）"
+      },
+      "OpenHarmony-v5.0-Release": {
+        "verdict": "not_affected",
+        "source_commit": "OpenHarmony-5.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-5.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-5.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.6.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；上游 IAMF 支持于 n6.1 引入；分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.6.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 不含 iamf_parse.c（缺陷代码不存在）（CVE-2026-66037）"
+      },
+      "OpenHarmony-v5.1-Release": {
+        "verdict": "not_affected",
+        "source_commit": "OpenHarmony-5.1.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-5.1.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-5.1.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；上游 IAMF 支持于 n6.1 引入；分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 不含 iamf_parse.c（缺陷代码不存在）（CVE-2026-66037）"
+      },
+      "OpenHarmony-v6.0-Release": {
+        "verdict": "not_affected",
+        "source_commit": "OpenHarmony-6.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-6.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-6.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；上游 IAMF 支持于 n6.1 引入；分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 不含 iamf_parse.c（缺陷代码不存在）（CVE-2026-66037）"
+      },
+      "OpenHarmony-v7.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-7.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-7.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-7.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '7.1.1', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.19'}；钉住版本 {'ffmpeg': '7.1.1', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.19'} 含 iamf_parse.c，位于上游修复（2026-06-28 8670835）之前（CVE-2026-66037）"
       }
     },
-    "affected_count": 1,
-    "unknown_count": 5
+    "affected_count": 2,
+    "unknown_count": 0
   },
   "ffmpeg_lcldec_zlib_tail_disclosure": {
     "cve": "CVE-2026-66038",
@@ -289,11 +464,11 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "unknown",
-      "OpenHarmony-v5.0-Release": "unknown",
-      "OpenHarmony-v5.1-Release": "unknown",
-      "OpenHarmony-v6.0-Release": "unknown",
-      "OpenHarmony-v7.0-Release": "unknown",
+      "OpenHarmony-v4.1-Release": "affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
     "upstream_predictions": {
@@ -309,10 +484,35 @@
         "verdict": "affected",
         "source_commit": "0a0c4dd33c",
         "reference": "case.json oh_source（head_commit 0a0c4dd33c 2026-09-10；与上游 n7.1.1 逐字节一致；修复前形态在位 + 上游修复 diff 对 OH 检出 git apply --check 通过）+ 提交材料包 submission_66038（L4 三侧对照）"
+      },
+      "OpenHarmony-v4.1-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-4.1-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-4.1-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-4.1-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '4.4.1', 'curl': '8.4.0', 'openssl': '3.0.9', 'cjson': '1.7.16'}；kb[cvelistV5] 受影响区间 ≥0；分支钉住 {'ffmpeg': '4.4.1', 'curl': '8.4.0', 'openssl': '3.0.9', 'cjson': '1.7.16'} 位于上游修复之前（CVE-2026-66038）"
+      },
+      "OpenHarmony-v5.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-5.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-5.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-5.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.6.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；kb[cvelistV5] 受影响区间 ≥0；分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.6.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 位于上游修复之前（CVE-2026-66038）"
+      },
+      "OpenHarmony-v5.1-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-5.1.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-5.1.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-5.1.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；kb[cvelistV5] 受影响区间 ≥0；分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 位于上游修复之前（CVE-2026-66038）"
+      },
+      "OpenHarmony-v6.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-6.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-6.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-6.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；kb[cvelistV5] 受影响区间 ≥0；分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 位于上游修复之前（CVE-2026-66038）"
+      },
+      "OpenHarmony-v7.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-7.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-7.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-7.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '7.1.1', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.19'}；kb[cvelistV5] 受影响区间 ≥0；分支钉住 {'ffmpeg': '7.1.1', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.19'} 位于上游修复之前（CVE-2026-66038）"
       }
     },
-    "affected_count": 1,
-    "unknown_count": 5
+    "affected_count": 6,
+    "unknown_count": 0
   },
   "ffmpeg_nvdec_sep_ref_doublefree": {
     "cve": "CVE-2026-64832",
@@ -324,15 +524,15 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "unknown",
-      "OpenHarmony-v5.0-Release": "unknown",
-      "OpenHarmony-v5.1-Release": "unknown",
-      "OpenHarmony-v6.0-Release": "unknown",
-      "OpenHarmony-v7.0-Release": "unknown",
+      "OpenHarmony-v4.1-Release": "affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
     "upstream_predictions": {
-      "OpenHarmony-v4.1-Release": "not_affected",
+      "OpenHarmony-v4.1-Release": "affected",
       "OpenHarmony-v5.0-Release": "affected",
       "OpenHarmony-v5.1-Release": "affected",
       "OpenHarmony-v6.0-Release": "affected",
@@ -344,10 +544,35 @@
         "verdict": "affected",
         "source_commit": "0a0c4dd33c",
         "reference": "case.json oh_source（head_commit 0a0c4dd33c 2026-09-10；与上游 n7.1.1 逐字节一致；修复前形态在位 + 上游修复 diff 对 OH 检出 git apply --check 通过）+ 提交材料包 submission_64832（L4 三侧对照）"
+      },
+      "OpenHarmony-v4.1-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-4.1-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-4.1-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-4.1-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '4.4.1', 'curl': '8.4.0', 'openssl': '3.0.9', 'cjson': '1.7.16'}；kb[cvelistV5] 受影响区间 ≥4.4；分支钉住 {'ffmpeg': '4.4.1', 'curl': '8.4.0', 'openssl': '3.0.9', 'cjson': '1.7.16'} 位于上游修复之前（CVE-2026-64832）"
+      },
+      "OpenHarmony-v5.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-5.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-5.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-5.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.6.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；kb[cvelistV5] 受影响区间 ≥4.4；分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.6.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 位于上游修复之前（CVE-2026-64832）"
+      },
+      "OpenHarmony-v5.1-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-5.1.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-5.1.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-5.1.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；kb[cvelistV5] 受影响区间 ≥4.4；分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 位于上游修复之前（CVE-2026-64832）"
+      },
+      "OpenHarmony-v6.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-6.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-6.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-6.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；kb[cvelistV5] 受影响区间 ≥4.4；分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 位于上游修复之前（CVE-2026-64832）"
+      },
+      "OpenHarmony-v7.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-7.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-7.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-7.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '7.1.1', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.19'}；kb[cvelistV5] 受影响区间 ≥4.4；分支钉住 {'ffmpeg': '7.1.1', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.19'} 位于上游修复之前（CVE-2026-64832）"
       }
     },
-    "affected_count": 1,
-    "unknown_count": 5
+    "affected_count": 6,
+    "unknown_count": 0
   },
   "ffmpeg_quirc_resize_oob": {
     "cve": "CVE-2026-66041",
@@ -359,11 +584,11 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "unknown",
-      "OpenHarmony-v5.0-Release": "unknown",
-      "OpenHarmony-v5.1-Release": "unknown",
-      "OpenHarmony-v6.0-Release": "unknown",
-      "OpenHarmony-v7.0-Release": "unknown",
+      "OpenHarmony-v4.1-Release": "not_affected",
+      "OpenHarmony-v5.0-Release": "not_affected",
+      "OpenHarmony-v5.1-Release": "not_affected",
+      "OpenHarmony-v6.0-Release": "not_affected",
+      "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
     "upstream_predictions": {
@@ -379,10 +604,35 @@
         "verdict": "affected",
         "source_commit": "0a0c4dd33c",
         "reference": "case.json oh_source（head_commit 0a0c4dd33c 2026-09-10；与上游 n7.1.1 逐字节一致；修复前形态在位 + 上游修复 diff 对 OH 检出 git apply --check 通过）+ 提交材料包 submission_66041（L4 三侧对照）；运行级 ASan 矩阵见 reproduction_commands"
+      },
+      "OpenHarmony-v4.1-Release": {
+        "verdict": "not_affected",
+        "source_commit": "OpenHarmony-4.1-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-4.1-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-4.1-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '4.4.1', 'curl': '8.4.0', 'openssl': '3.0.9', 'cjson': '1.7.16'}；kb[cvelistV5] 受影响区间下界 7.0，分支钉住 {'ffmpeg': '4.4.1', 'curl': '8.4.0', 'openssl': '3.0.9', 'cjson': '1.7.16'} 低于区间下界（CVE-2026-66041）"
+      },
+      "OpenHarmony-v5.0-Release": {
+        "verdict": "not_affected",
+        "source_commit": "OpenHarmony-5.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-5.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-5.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.6.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；kb[cvelistV5] 受影响区间下界 7.0，分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.6.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 低于区间下界（CVE-2026-66041）"
+      },
+      "OpenHarmony-v5.1-Release": {
+        "verdict": "not_affected",
+        "source_commit": "OpenHarmony-5.1.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-5.1.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-5.1.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；kb[cvelistV5] 受影响区间下界 7.0，分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 低于区间下界（CVE-2026-66041）"
+      },
+      "OpenHarmony-v6.0-Release": {
+        "verdict": "not_affected",
+        "source_commit": "OpenHarmony-6.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-6.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-6.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；kb[cvelistV5] 受影响区间下界 7.0，分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 低于区间下界（CVE-2026-66041）"
+      },
+      "OpenHarmony-v7.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-7.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-7.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-7.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '7.1.1', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.19'}；kb[cvelistV5] 受影响区间 ≥7.0；分支钉住 {'ffmpeg': '7.1.1', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.19'} 位于上游修复之前（CVE-2026-66041）"
       }
     },
-    "affected_count": 1,
-    "unknown_count": 5
+    "affected_count": 2,
+    "unknown_count": 0
   },
   "ffmpeg_rscc_short_deflate_uninit_leak": {
     "cve": "CVE-2026-70629",
@@ -394,11 +644,11 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "unknown",
-      "OpenHarmony-v5.0-Release": "unknown",
-      "OpenHarmony-v5.1-Release": "unknown",
-      "OpenHarmony-v6.0-Release": "unknown",
-      "OpenHarmony-v7.0-Release": "unknown",
+      "OpenHarmony-v4.1-Release": "affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
     "upstream_predictions": {
@@ -414,10 +664,35 @@
         "verdict": "affected",
         "source_commit": "0a0c4dd33c",
         "reference": "case.json oh_source（head_commit 0a0c4dd33c 2026-09-10；与上游 n7.1.1 逐字节一致；修复前形态在位 + 上游修复 diff 对 OH 检出 git apply --check 通过）+ 提交材料包 submission_70629（L4 三侧对照）"
+      },
+      "OpenHarmony-v4.1-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-4.1-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-4.1-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-4.1-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '4.4.1', 'curl': '8.4.0', 'openssl': '3.0.9', 'cjson': '1.7.16'}；kb[cvelistV5] 受影响区间 ≥3.0；分支钉住 {'ffmpeg': '4.4.1', 'curl': '8.4.0', 'openssl': '3.0.9', 'cjson': '1.7.16'} 位于上游修复之前（CVE-2026-70629）"
+      },
+      "OpenHarmony-v5.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-5.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-5.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-5.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.6.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；kb[cvelistV5] 受影响区间 ≥3.0；分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.6.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 位于上游修复之前（CVE-2026-70629）"
+      },
+      "OpenHarmony-v5.1-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-5.1.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-5.1.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-5.1.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；kb[cvelistV5] 受影响区间 ≥3.0；分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 位于上游修复之前（CVE-2026-70629）"
+      },
+      "OpenHarmony-v6.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-6.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-6.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-6.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；kb[cvelistV5] 受影响区间 ≥3.0；分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 位于上游修复之前（CVE-2026-70629）"
+      },
+      "OpenHarmony-v7.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-7.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-7.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-7.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '7.1.1', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.19'}；kb[cvelistV5] 受影响区间 ≥3.0；分支钉住 {'ffmpeg': '7.1.1', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.19'} 位于上游修复之前（CVE-2026-70629）"
       }
     },
-    "affected_count": 1,
-    "unknown_count": 5
+    "affected_count": 6,
+    "unknown_count": 0
   },
   "ffmpeg_swaprect_temp_row_oob": {
     "cve": "CVE-2026-65706",
@@ -429,11 +704,11 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "unknown",
-      "OpenHarmony-v5.0-Release": "unknown",
-      "OpenHarmony-v5.1-Release": "unknown",
-      "OpenHarmony-v6.0-Release": "unknown",
-      "OpenHarmony-v7.0-Release": "unknown",
+      "OpenHarmony-v4.1-Release": "affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
     "upstream_predictions": {
@@ -449,10 +724,35 @@
         "verdict": "affected",
         "source_commit": "0a0c4dd33c",
         "reference": "case.json oh_source（head_commit 0a0c4dd33c 2026-09-10；与上游 n7.1.1 逐字节一致；修复前形态在位 + 上游修复 diff 对 OH 检出 git apply --check 通过）+ 提交材料包 submission_65706（L4 三侧对照）"
+      },
+      "OpenHarmony-v4.1-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-4.1-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-4.1-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-4.1-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '4.4.1', 'curl': '8.4.0', 'openssl': '3.0.9', 'cjson': '1.7.16'}；kb[cvelistV5] 受影响区间 ≥3.0；分支钉住 {'ffmpeg': '4.4.1', 'curl': '8.4.0', 'openssl': '3.0.9', 'cjson': '1.7.16'} 位于上游修复之前（CVE-2026-65706）"
+      },
+      "OpenHarmony-v5.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-5.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-5.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-5.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.6.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；kb[cvelistV5] 受影响区间 ≥3.0；分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.6.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 位于上游修复之前（CVE-2026-65706）"
+      },
+      "OpenHarmony-v5.1-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-5.1.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-5.1.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-5.1.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；kb[cvelistV5] 受影响区间 ≥3.0；分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 位于上游修复之前（CVE-2026-65706）"
+      },
+      "OpenHarmony-v6.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-6.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-6.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-6.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；kb[cvelistV5] 受影响区间 ≥3.0；分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 位于上游修复之前（CVE-2026-65706）"
+      },
+      "OpenHarmony-v7.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-7.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-7.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-7.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '7.1.1', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.19'}；kb[cvelistV5] 受影响区间 ≥3.0；分支钉住 {'ffmpeg': '7.1.1', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.19'} 位于上游修复之前（CVE-2026-65706）"
       }
     },
-    "affected_count": 1,
-    "unknown_count": 5
+    "affected_count": 6,
+    "unknown_count": 0
   },
   "ffmpeg_ty_ac3_trim_underflow": {
     "cve": "CVE-2026-65704",
@@ -464,11 +764,11 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "unknown",
-      "OpenHarmony-v5.0-Release": "unknown",
-      "OpenHarmony-v5.1-Release": "unknown",
-      "OpenHarmony-v6.0-Release": "unknown",
-      "OpenHarmony-v7.0-Release": "unknown",
+      "OpenHarmony-v4.1-Release": "affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
     "upstream_predictions": {
@@ -484,10 +784,35 @@
         "verdict": "affected",
         "source_commit": "0a0c4dd33c",
         "reference": "case.json oh_source（head_commit 0a0c4dd33c 2026-09-10；与上游 n7.1.1 逐字节一致；修复前形态在位 + 上游修复 diff 对 OH 检出 git apply --check 通过）+ 提交材料包 submission_65704（L4 三侧对照）"
+      },
+      "OpenHarmony-v4.1-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-4.1-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-4.1-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-4.1-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '4.4.1', 'curl': '8.4.0', 'openssl': '3.0.9', 'cjson': '1.7.16'}；kb[cvelistV5] 受影响区间 ≥0；分支钉住 {'ffmpeg': '4.4.1', 'curl': '8.4.0', 'openssl': '3.0.9', 'cjson': '1.7.16'} 位于上游修复之前（CVE-2026-65704）"
+      },
+      "OpenHarmony-v5.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-5.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-5.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-5.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.6.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；kb[cvelistV5] 受影响区间 ≥0；分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.6.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 位于上游修复之前（CVE-2026-65704）"
+      },
+      "OpenHarmony-v5.1-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-5.1.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-5.1.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-5.1.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；kb[cvelistV5] 受影响区间 ≥0；分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 位于上游修复之前（CVE-2026-65704）"
+      },
+      "OpenHarmony-v6.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-6.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-6.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-6.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；kb[cvelistV5] 受影响区间 ≥0；分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 位于上游修复之前（CVE-2026-65704）"
+      },
+      "OpenHarmony-v7.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-7.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-7.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-7.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '7.1.1', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.19'}；kb[cvelistV5] 受影响区间 ≥0；分支钉住 {'ffmpeg': '7.1.1', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.19'} 位于上游修复之前（CVE-2026-65704）"
       }
     },
-    "affected_count": 1,
-    "unknown_count": 5
+    "affected_count": 6,
+    "unknown_count": 0
   },
   "ffmpeg_wmaenc_extradata_padding": {
     "cve": "CVE-2026-52296",
@@ -499,11 +824,11 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "unknown",
-      "OpenHarmony-v5.0-Release": "unknown",
-      "OpenHarmony-v5.1-Release": "unknown",
-      "OpenHarmony-v6.0-Release": "unknown",
-      "OpenHarmony-v7.0-Release": "unknown",
+      "OpenHarmony-v4.1-Release": "affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
     "upstream_predictions": {
@@ -519,10 +844,35 @@
         "verdict": "affected",
         "source_commit": "0a0c4dd33c",
         "reference": "case.json oh_source（head_commit 0a0c4dd33c 2026-09-10；与上游 n7.1.1 逐字节一致；修复前形态在位 + 上游修复 diff 对 OH 检出 git apply --check 通过）+ 提交材料包 submission_52296（L4 三侧对照）"
+      },
+      "OpenHarmony-v4.1-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-4.1-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-4.1-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-4.1-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '4.4.1', 'curl': '8.4.0', 'openssl': '3.0.9', 'cjson': '1.7.16'}；kb[cvelistV5] 受影响区间 ≥0；分支钉住 {'ffmpeg': '4.4.1', 'curl': '8.4.0', 'openssl': '3.0.9', 'cjson': '1.7.16'} 位于上游修复之前（CVE-2026-52296）"
+      },
+      "OpenHarmony-v5.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-5.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-5.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-5.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.6.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；kb[cvelistV5] 受影响区间 ≥0；分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.6.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 位于上游修复之前（CVE-2026-52296）"
+      },
+      "OpenHarmony-v5.1-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-5.1.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-5.1.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-5.1.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；kb[cvelistV5] 受影响区间 ≥0；分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 位于上游修复之前（CVE-2026-52296）"
+      },
+      "OpenHarmony-v6.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-6.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-6.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-6.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；kb[cvelistV5] 受影响区间 ≥0；分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 位于上游修复之前（CVE-2026-52296）"
+      },
+      "OpenHarmony-v7.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-7.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-7.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-7.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '7.1.1', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.19'}；kb[cvelistV5] 受影响区间 ≥0；分支钉住 {'ffmpeg': '7.1.1', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.19'} 位于上游修复之前（CVE-2026-52296）"
       }
     },
-    "affected_count": 1,
-    "unknown_count": 5
+    "affected_count": 6,
+    "unknown_count": 0
   },
   "hiappevent_ffi_watcher_null_filter": {
     "cve": "",
@@ -633,12 +983,12 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "unknown",
-      "OpenHarmony-v5.0-Release": "unknown",
-      "OpenHarmony-v5.1-Release": "unknown",
-      "OpenHarmony-v6.0-Release": "unknown",
-      "OpenHarmony-v7.0-Release": "unknown",
-      "master": "unknown"
+      "OpenHarmony-v4.1-Release": "affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
+      "master": "affected"
     },
     "upstream_predictions": {
       "OpenHarmony-v4.1-Release": "affected",
@@ -648,9 +998,40 @@
       "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
-    "branch_evidence": {},
-    "affected_count": 0,
-    "unknown_count": 6
+    "branch_evidence": {
+      "master": {
+        "verdict": "affected",
+        "source_commit": "master",
+        "reference": "OH master 检出基线 OpenSSL 3.0.9（本案 oh_source：snapshot 2024-10-18，one-shot 路径与上游一致，CVE-2026-45445 受影响区间 ≥3.0.0、修复 3.0.21）"
+      },
+      "OpenHarmony-v4.1-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-4.1-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-4.1-Release 分支 ohos/ohos.xml 钉住 third_party openssl（ref=OpenHarmony-4.1-Release），gitcode README.OpenSource 声明版本 3.0.9；kb[cvelistV5] 受影响区间 ≥3.0.0；分支钉住 3.0.9 位于上游修复之前（CVE-2026-45445）"
+      },
+      "OpenHarmony-v5.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-5.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-5.0-Release 分支 ohos/ohos.xml 钉住 third_party openssl（ref=OpenHarmony-5.0-Release），gitcode README.OpenSource 声明版本 3.0.9；kb[cvelistV5] 受影响区间 ≥3.0.0；分支钉住 3.0.9 位于上游修复之前（CVE-2026-45445）"
+      },
+      "OpenHarmony-v5.1-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-5.1.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-5.1.0-Release 分支 ohos/ohos.xml 钉住 third_party openssl（ref=OpenHarmony-5.1.0-Release），gitcode README.OpenSource 声明版本 3.0.9；kb[cvelistV5] 受影响区间 ≥3.0.0；分支钉住 3.0.9 位于上游修复之前（CVE-2026-45445）"
+      },
+      "OpenHarmony-v6.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-6.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-6.0-Release 分支 ohos/ohos.xml 钉住 third_party openssl（ref=OpenHarmony-6.0-Release），gitcode README.OpenSource 声明版本 3.0.9；kb[cvelistV5] 受影响区间 ≥3.0.0；分支钉住 3.0.9 位于上游修复之前（CVE-2026-45445）"
+      },
+      "OpenHarmony-v7.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-7.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-7.0-Release 分支 ohos/ohos.xml 钉住 third_party openssl（ref=OpenHarmony-7.0-Release），gitcode README.OpenSource 声明版本 3.0.9；kb[cvelistV5] 受影响区间 ≥3.0.0；分支钉住 3.0.9 位于上游修复之前（CVE-2026-45445）"
+      }
+    },
+    "affected_count": 6,
+    "unknown_count": 0
   },
   "udmf_ffi_setproperties_null_tag": {
     "cve": "",

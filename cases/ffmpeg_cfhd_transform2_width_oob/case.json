@@ -1,53 +1,78 @@
 {
- "schema": "case-specific-validation-0.2",
- "id": "ffmpeg-cfhd-transform2-width-oob",
- "component": "third_party/ffmpeg",
- "cve_reference": "CVE-2026-70632",
- "cwe_candidate": "CWE-787",
- "discovery_method": "kb_gap_audit pipeline + batch L4 (initially misjudged already_fixed because the cvelist refs cite the 2020 introducing commit 1006a215 first; newest-ref recalibration + manual L4 with both real fix commits)",
- "new_discovery": false,
- "public_upstream": {
-  "fix_commit": "https://github.com/FFmpeg/FFmpeg/commit/db05df9d135fb56a4babb836d5e9f5c1d984e087 and 16b2049d4d5222db6cd7c031409058571c94f6a9",
-  "fix_date": "2026-07-31 / 2026-08-02",
-  "fix_subject": "avcodec/cfhd: reject transform-2 output wider than the plane (Fixes: out of array access; repro cfhd_transform2_output_width_oob.avi)"
- },
- "oh_source": {
-  "repo": "https://gitcode.com/openharmony/third_party_ffmpeg",
-  "head_commit": "0a0c4dd33c",
-  "baseline": "FFmpeg 7.1.1, snapshot 2026-06-01",
-  "equivalence": "cfhd.c byte-identical to upstream n7.1.1",
-  "l4_evidence": "cfhd.c:969 and :1010 plane-size checks lack 'lowpass_width * 2 > s->plane[plane].width'; the similar check at :1049 is pre-existing code on another path. Both upstream fix diffs apply clean",
-  "ref_triage": "cvelist refs include introducing commit 1006a215 (2020-08 'add 3d transform support') which is NOT the fix — documented in 对照.txt"
- },
- "vulnerability": {
-  "summary": "CFHD transform-2 output width (lowpass_width*2) is stream-controlled and unbounded by plane width; decode writes past the plane allocation — heap OOB write, triggerable during stream probing via a crafted AVI.",
-  "verification_level": "source-level confirmed; runtime repro via upstream oss-fuzz sample name documented",
-  "runtime_status": "not_run"
- },
- "controls": [],
- "submission_materials": "D:/cve_data/submission_70632/",
- "notes": "ffmpeg gap batch; second already_fixed false-positive root cause (stale ref ordering) fixed in l4_batch_ffmpeg.py",
- "submission": {
-  "platform": "OpenHarmony 漏洞奖励计划 (https://bugbounty.openharmony.cn)",
-  "ticket": "OHSA26-092843135",
-  "submitted_at": "2026-09-28",
-  "account": "北辰522",
-  "status": "已提交",
-  "form": {
-   "type": "内存破坏与执行类 / 越界读写",
-   "repo": "third_party_ffmpeg",
-   "oh_version": "OpenHarmony-v7.0-Release（2026-08-21）",
-   "attachments": "附件包_CVE-2026-70632.zip, patch.diff, upstream_fix2_16b2049.diff, upstream_fix_db05df9.diff, 上游修复对照.txt"
+  "schema": "case-specific-validation-0.2",
+  "id": "ffmpeg-cfhd-transform2-width-oob",
+  "component": "third_party/ffmpeg",
+  "cve_reference": "CVE-2026-70632",
+  "cwe_candidate": "CWE-787",
+  "discovery_method": "kb_gap_audit pipeline + batch L4 (initially misjudged already_fixed because the cvelist refs cite the 2020 introducing commit 1006a215 first; newest-ref recalibration + manual L4 with both real fix commits)",
+  "new_discovery": false,
+  "public_upstream": {
+    "fix_commit": "https://github.com/FFmpeg/FFmpeg/commit/db05df9d135fb56a4babb836d5e9f5c1d984e087 and 16b2049d4d5222db6cd7c031409058571c94f6a9",
+    "fix_date": "2026-07-31 / 2026-08-02",
+    "fix_subject": "avcodec/cfhd: reject transform-2 output wider than the plane (Fixes: out of array access; repro cfhd_transform2_output_width_oob.avi)"
+  },
+  "oh_source": {
+    "repo": "https://gitcode.com/openharmony/third_party_ffmpeg",
+    "head_commit": "0a0c4dd33c",
+    "baseline": "FFmpeg 7.1.1, snapshot 2026-06-01",
+    "equivalence": "cfhd.c byte-identical to upstream n7.1.1",
+    "l4_evidence": "cfhd.c:969 and :1010 plane-size checks lack 'lowpass_width * 2 > s->plane[plane].width'; the similar check at :1049 is pre-existing code on another path. Both upstream fix diffs apply clean",
+    "ref_triage": "cvelist refs include introducing commit 1006a215 (2020-08 'add 3d transform support') which is NOT the fix — documented in 对照.txt"
+  },
+  "vulnerability": {
+    "summary": "CFHD transform-2 output width (lowpass_width*2) is stream-controlled and unbounded by plane width; decode writes past the plane allocation — heap OOB write, triggerable during stream probing via a crafted AVI.",
+    "verification_level": "source-level confirmed; driver verified on dimension bookkeeping path (2026-10-17: tag-only stream clean-rejected as expected); runtime OOB observation requires the upstream coefficient-bearing sample via poc sample mode (documented path)",
+    "runtime_status": "not_run"
+  },
+  "controls": [],
+  "submission_materials": "D:/cve_data/submission_70632/",
+  "notes": "ffmpeg gap batch; second already_fixed false-positive root cause (stale ref ordering) fixed in l4_batch_ffmpeg.py\n2026-10-17：补入可执行 PoC（poc.c）与运行验证记录（poc_evidence_20261017.md）；修复建议补丁见 patch.diff。",
+  "submission": {
+    "platform": "OpenHarmony 漏洞奖励计划 (https://bugbounty.openharmony.cn)",
+    "ticket": "OHSA26-092843135",
+    "submitted_at": "2026-09-28",
+    "account": "北辰522",
+    "status": "已提交",
+    "form": {
+      "type": "内存破坏与执行类 / 越界读写",
+      "repo": "third_party_ffmpeg",
+      "oh_version": "OpenHarmony-v7.0-Release（2026-08-21）",
+      "attachments": "附件包_CVE-2026-70632.zip, patch.diff, upstream_fix2_16b2049.diff, upstream_fix_db05df9.diff, 上游修复对照.txt"
+    }
+  },
+  "trigger_conditions": "带超宽 lowpass_width 的 CFHD transform-2 码流：cfhd.c:969/1010 两处平面尺寸校验未约束 lowpass_width*2 ≤ s->plane[plane].width，探测阶段即可触发堆越界写。",
+  "attack_path": "产品用 ffmpeg 解复用/探测不可信媒体（CFHD 系码流）：攻击者提供构造码流即触发越界写，无需特权，应用自动处理不可信输入时无需用户交互。",
+  "reproduction_commands": "源级三侧对照：a) 上游 db05df9d/16b2049d 修复 diff（上游样本名 cfhd_transform2_output_width_oob.avi）；b) OH 检出 cfhd.c:969/1010 均无 lowpass_width*2 校验（修复前形态）；c) 与上游 n7.1.1 逐字节一致、官方清单含 7.1.1，两 diff 对 OH 检出 git apply --check 通过。运行级路径：按样本构造码流 ASan 构建下观测越界写。",
+  "branch_evidence": {
+    "master": {
+      "verdict": "affected",
+      "source_commit": "0a0c4dd33c",
+      "reference": "case.json oh_source（head_commit 0a0c4dd33c 2026-09-10；与上游 n7.1.1 逐字节一致；修复前形态在位 + 上游修复 diff 对 OH 检出 git apply --check 通过）+ 提交材料包 submission_70632（L4 三侧对照）"
+    },
+    "OpenHarmony-v4.1-Release": {
+      "verdict": "affected",
+      "source_commit": "OpenHarmony-4.1-Release",
+      "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-4.1-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-4.1-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '4.4.1', 'curl': '8.4.0', 'openssl': '3.0.9', 'cjson': '1.7.16'}；kb[cvelistV5] 受影响区间 ≥4.4；分支钉住 {'ffmpeg': '4.4.1', 'curl': '8.4.0', 'openssl': '3.0.9', 'cjson': '1.7.16'} 位于上游修复之前（CVE-2026-70632）"
+    },
+    "OpenHarmony-v5.0-Release": {
+      "verdict": "affected",
+      "source_commit": "OpenHarmony-5.0-Release",
+      "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-5.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-5.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.6.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；kb[cvelistV5] 受影响区间 ≥4.4；分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.6.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 位于上游修复之前（CVE-2026-70632）"
+    },
+    "OpenHarmony-v5.1-Release": {
+      "verdict": "affected",
+      "source_commit": "OpenHarmony-5.1.0-Release",
+      "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-5.1.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-5.1.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；kb[cvelistV5] 受影响区间 ≥4.4；分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 位于上游修复之前（CVE-2026-70632）"
+    },
+    "OpenHarmony-v6.0-Release": {
+      "verdict": "affected",
+      "source_commit": "OpenHarmony-6.0-Release",
+      "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-6.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-6.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；kb[cvelistV5] 受影响区间 ≥4.4；分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 位于上游修复之前（CVE-2026-70632）"
+    },
+    "OpenHarmony-v7.0-Release": {
+      "verdict": "affected",
+      "source_commit": "OpenHarmony-7.0-Release",
+      "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-7.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-7.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '7.1.1', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.19'}；kb[cvelistV5] 受影响区间 ≥4.4；分支钉住 {'ffmpeg': '7.1.1', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.19'} 位于上游修复之前（CVE-2026-70632）"
+    }
   }
- },
- "trigger_conditions": "带超宽 lowpass_width 的 CFHD transform-2 码流：cfhd.c:969/1010 两处平面尺寸校验未约束 lowpass_width*2 ≤ s->plane[plane].width，探测阶段即可触发堆越界写。",
- "attack_path": "产品用 ffmpeg 解复用/探测不可信媒体（CFHD 系码流）：攻击者提供构造码流即触发越界写，无需特权，应用自动处理不可信输入时无需用户交互。",
- "reproduction_commands": "源级三侧对照：a) 上游 db05df9d/16b2049d 修复 diff（上游样本名 cfhd_transform2_output_width_oob.avi）；b) OH 检出 cfhd.c:969/1010 均无 lowpass_width*2 校验（修复前形态）；c) 与上游 n7.1.1 逐字节一致、官方清单含 7.1.1，两 diff 对 OH 检出 git apply --check 通过。运行级路径：按样本构造码流 ASan 构建下观测越界写。",
- "branch_evidence": {
-  "master": {
-   "verdict": "affected",
-   "source_commit": "0a0c4dd33c",
-   "reference": "case.json oh_source（head_commit 0a0c4dd33c 2026-09-10；与上游 n7.1.1 逐字节一致；修复前形态在位 + 上游修复 diff 对 OH 检出 git apply --check 通过）+ 提交材料包 submission_70632（L4 三侧对照）"
-  }
- }
 }

@@ -1,59 +1,60 @@
 {
- "schema": "wildtrace-candidate-case-0.2",
- "case_id": "udmf-ffi-setproperties-null-tag",
- "component": "foundation/distributeddatamgr/udmf",
- "status": "real_library_reproduction_confirmed",
- "cwe_candidate": [
-  "CWE-476"
- ],
- "confirmed_vulnerability": false,
- "discovery_method": "run1 对照反常（对照 case 即崩）暴露 tag 路径 → run2 矩阵重设计定位 → 真库级证实（PR #117）；旧候选（extras.head 不判空）同批证伪",
- "new_discovery": true,
- "candidate": {
-  "source": "foundation/distributeddatamgr/udmf/interfaces/cj/src/unified_data_ffi.cpp",
-  "lines": [
-   134
+  "schema": "wildtrace-candidate-case-0.2",
+  "case_id": "udmf-ffi-setproperties-null-tag",
+  "component": "foundation/distributeddatamgr/udmf",
+  "status": "real_library_reproduction_confirmed",
+  "cwe_candidate": [
+    "CWE-476"
   ],
-  "entry_point": "FfiUDMFSetProperties（FFI 导出符号；CUnifiedDataProperties.tag 直传 Utils::MallocCString）",
-  "input_type": "CUnifiedDataProperties { CArrParameters extras; char* tag; int64_t timestamp; int32_t shareOptions; }（interfaces/cj/include/unified_data_impl.h）",
-  "description": "FfiUDMFSetProperties 对 properties.tag 未判空即传入 Utils::MallocCString（形参 const std::string&，utils.cpp:18）——char* NULL 隐式构造 std::string(nullptr) → strlen(NULL) SIGSEGV。round-trip 自毁论据：FfiUDMFGetProperties 对空存储 tag 本来就返回 nullptr（MallocCString 对空 std::string 返回 nullptr），即 getter 的合法输出直接喂回 setter 必崩——可达性不依赖恶意调用者，正常 API 使用模式即触发。"
- },
- "source_equivalent_result": "旧候选（extras.head）源级链路追踪在同批被真库证伪：当前快照 SetDataParameters 已有 head==nullptr || size<=0 || size>MAX_COLLECTION_SIZE 前置 return——候选分级如实降级",
- "validation_evidence": {
-  "real_library_reproduction": {
-   "date": "2026-10-09",
-   "library": "libcj_unified_data_channel_ffi.z.so —— 官方完整树构建（root-target //foundation/distributeddatamgr/udmf/interfaces/cj:cj_unified_data_channel_ffi，317/317 全绿；sha256 773867c9d7c381f8e323943f7920e5f7ca1c477c182c47e36949fa313213ee59，BuildID 30239ec8b295bffe351d1c437d2aa1cf，42 个 FfiUDMF* 导出符号）。零 FFI 源码改动",
-   "result": "case0 对照（extras 合法 I32 1 项 + tag='rt-tag'）→ done 无崩溃；case1 旧候选（extras.head=NULL, size=3）→ done 无崩溃（证伪）；case2 对照（head=NULL, size=0）→ done 无崩溃；case3 候选（extras 合法 + tag=NULL）→ SIGSEGV（run.exit=139）。缺陷精确限定于 tag==NULL，与 extras 内容无关",
-   "frame_attribution": "gdb + 未剥离产物 add-symbol-file 一次成型符号化：#0 strlen → #1 std::char_traits<char>::length(__s=0x0) → #2 basic_string(nullptr) → #3 FfiUDMFSetProperties（unified_data_ffi.cpp:134）；调用帧偏移 0x1716f 落在 libcj_unified_data_channel_ffi.z.so 内",
-   "record": "docs/analysis/UDMF_REAL_LIBRARY_CONFIRM_20261009.md（PR #117）；run1（对照反常发现记录）原样入证据包",
-   "evidence_zip_sha256": "a70accc94eefb4467d434a220b39cf39c78d35f35614e67d8cbc4a61faea14df（run1+run2 完整 evidence 目录含 gdb-backtrace.txt + MANIFEST）"
+  "confirmed_vulnerability": false,
+  "discovery_method": "run1 对照反常（对照 case 即崩）暴露 tag 路径 → run2 矩阵重设计定位 → 真库级证实（PR #117）；旧候选（extras.head 不判空）同批证伪",
+  "new_discovery": true,
+  "candidate": {
+    "source": "foundation/distributeddatamgr/udmf/interfaces/cj/src/unified_data_ffi.cpp",
+    "lines": [
+      134
+    ],
+    "entry_point": "FfiUDMFSetProperties（FFI 导出符号；CUnifiedDataProperties.tag 直传 Utils::MallocCString）",
+    "input_type": "CUnifiedDataProperties { CArrParameters extras; char* tag; int64_t timestamp; int32_t shareOptions; }（interfaces/cj/include/unified_data_impl.h）",
+    "description": "FfiUDMFSetProperties 对 properties.tag 未判空即传入 Utils::MallocCString（形参 const std::string&，utils.cpp:18）——char* NULL 隐式构造 std::string(nullptr) → strlen(NULL) SIGSEGV。round-trip 自毁论据：FfiUDMFGetProperties 对空存储 tag 本来就返回 nullptr（MallocCString 对空 std::string 返回 nullptr），即 getter 的合法输出直接喂回 setter 必崩——可达性不依赖恶意调用者，正常 API 使用模式即触发。"
   },
-  "caveats": "隔离环境（bwrap）、无产品服务、自定义 x86_64_virt 构建配置；x86_64_virt 跨平台构建 + musl 加载器运行，真机行为以工单侧复核为准",
-  "platform_binary_linked": false
- },
- "runtime_scope": {
-  "target_executed": true,
-  "open_harmony_binary_linked": false,
-  "network": false,
-  "production_data": false,
-  "model_invoked": false
- },
- "limitations": [
-  "验证执行件（tools/validation_cases/udmf_null_tag.c，PR #117 入库）本地构造 C 结构并 dlopen 真库，未复制目标实现；崩溃 case 置尾以保留归因标记。",
-  "单库单入口（FfiUDMFSetProperties/GetProperties 对）——udmf 其余 FFI 导出未展开，按台账另行排批。",
-  "仓颉侧调用者进程权限边界未验证（产品可达性独立问题；round-trip 论据已将其从'恶意调用者'收紧到'正常 API 使用模式'）。"
- ],
- "next_gate": "第 18 张工单提交（材料待证据 zip 入库后齐备）；产品级可达性为后续独立验证。",
- "oh_source": {
-  "build_provenance": "构建提交 a4882ad72459e9ae7b8373c681c0f4bafab7781f（.repo/projects/foundation/distributeddatamgr/udmf.git 裸仓 HEAD，即实际构建提交）；manifest 解析分支 master（gitcode default revision）——PR #117 预记录，无需 #100 式往返"
- },
- "branch_evidence": {
-  "master": {
-   "verdict": "affected",
-   "source_commit": "a4882ad72459e9ae7b8373c681c0f4bafab7781f",
-   "reference": "docs/analysis/UDMF_REAL_LIBRARY_CONFIRM_20261009.md（真库构建 317/317 全绿，case3 tag=NULL SIGSEGV run.exit=139；evidence zip sha256 a70accc94eefb4467d434a220b39cf39c78d35f35614e67d8cbc4a61faea14df）"
-  }
- },
- "fix_recommendation": "FfiUDMFSetProperties 对 properties.tag 判空（tag != nullptr ? Utils::MallocCString(...) : 空串语义），或 Utils::MallocCString 增加 const char* 判空重载（与 UDMF_REAL_LIBRARY_CONFIRM_20261009.md 后续节一致）；同步核查同文件其余直传点。",
- "reproduction_commands": "真库运行级：libcj_unified_data_channel_ffi.z.so（官方完整树构建，317/317 全绿，sha256 773867c9...213ee59）dlopen 驱动 tools/validation_cases/udmf_null_tag.c：case0-2 对照/证伪 不崩（含旧候选 extras.head=NULL 证伪）；case3（tag=NULL）→ SIGSEGV（run.exit=139）；gdb add-symbol-file 符号化 #0 strlen → #3 FfiUDMFSetProperties（unified_data_ffi.cpp:134）。evidence zip sha256 a70accc9...14df（run1+run2+MANIFEST）。"
+  "source_equivalent_result": "旧候选（extras.head）源级链路追踪在同批被真库证伪：当前快照 SetDataParameters 已有 head==nullptr || size<=0 || size>MAX_COLLECTION_SIZE 前置 return——候选分级如实降级",
+  "validation_evidence": {
+    "real_library_reproduction": {
+      "date": "2026-10-09",
+      "library": "libcj_unified_data_channel_ffi.z.so —— 官方完整树构建（root-target //foundation/distributeddatamgr/udmf/interfaces/cj:cj_unified_data_channel_ffi，317/317 全绿；sha256 773867c9d7c381f8e323943f7920e5f7ca1c477c182c47e36949fa313213ee59，BuildID 30239ec8b295bffe351d1c437d2aa1cf，42 个 FfiUDMF* 导出符号）。零 FFI 源码改动",
+      "result": "case0 对照（extras 合法 I32 1 项 + tag='rt-tag'）→ done 无崩溃；case1 旧候选（extras.head=NULL, size=3）→ done 无崩溃（证伪）；case2 对照（head=NULL, size=0）→ done 无崩溃；case3 候选（extras 合法 + tag=NULL）→ SIGSEGV（run.exit=139）。缺陷精确限定于 tag==NULL，与 extras 内容无关",
+      "frame_attribution": "gdb + 未剥离产物 add-symbol-file 一次成型符号化：#0 strlen → #1 std::char_traits<char>::length(__s=0x0) → #2 basic_string(nullptr) → #3 FfiUDMFSetProperties（unified_data_ffi.cpp:134）；调用帧偏移 0x1716f 落在 libcj_unified_data_channel_ffi.z.so 内",
+      "record": "docs/analysis/UDMF_REAL_LIBRARY_CONFIRM_20261009.md（PR #117）；run1（对照反常发现记录）原样入证据包",
+      "evidence_zip_sha256": "a70accc94eefb4467d434a220b39cf39c78d35f35614e67d8cbc4a61faea14df（run1+run2 完整 evidence 目录含 gdb-backtrace.txt + MANIFEST）"
+    },
+    "caveats": "隔离环境（bwrap）、无产品服务、自定义 x86_64_virt 构建配置；x86_64_virt 跨平台构建 + musl 加载器运行，真机行为以工单侧复核为准",
+    "platform_binary_linked": false
+  },
+  "runtime_scope": {
+    "target_executed": true,
+    "open_harmony_binary_linked": false,
+    "network": false,
+    "production_data": false,
+    "model_invoked": false
+  },
+  "limitations": [
+    "验证执行件（tools/validation_cases/udmf_null_tag.c，PR #117 入库）本地构造 C 结构并 dlopen 真库，未复制目标实现；崩溃 case 置尾以保留归因标记。",
+    "单库单入口（FfiUDMFSetProperties/GetProperties 对）——udmf 其余 FFI 导出未展开，按台账另行排批。",
+    "仓颉侧调用者进程权限边界未验证（产品可达性独立问题；round-trip 论据已将其从'恶意调用者'收紧到'正常 API 使用模式'）。"
+  ],
+  "next_gate": "第 18 张工单提交（材料待证据 zip 入库后齐备）；产品级可达性为后续独立验证。",
+  "oh_source": {
+    "build_provenance": "构建提交 a4882ad72459e9ae7b8373c681c0f4bafab7781f（.repo/projects/foundation/distributeddatamgr/udmf.git 裸仓 HEAD，即实际构建提交）；manifest 解析分支 master（gitcode default revision）——PR #117 预记录，无需 #100 式往返"
+  },
+  "branch_evidence": {
+    "master": {
+      "verdict": "affected",
+      "source_commit": "a4882ad72459e9ae7b8373c681c0f4bafab7781f",
+      "reference": "docs/analysis/UDMF_REAL_LIBRARY_CONFIRM_20261009.md（真库构建 317/317 全绿，case3 tag=NULL SIGSEGV run.exit=139；evidence zip sha256 a70accc94eefb4467d434a220b39cf39c78d35f35614e67d8cbc4a61faea14df）"
+    }
+  },
+  "fix_recommendation": "FfiUDMFSetProperties 对 properties.tag 判空（tag != nullptr ? Utils::MallocCString(...) : 空串语义），或 Utils::MallocCString 增加 const char* 判空重载（与 UDMF_REAL_LIBRARY_CONFIRM_20261009.md 后续节一致）；同步核查同文件其余直传点。",
+  "reproduction_commands": "真库运行级：libcj_unified_data_channel_ffi.z.so（官方完整树构建，317/317 全绿，sha256 773867c9...213ee59）dlopen 驱动 tools/validation_cases/udmf_null_tag.c：case0-2 对照/证伪 不崩（含旧候选 extras.head=NULL 证伪）；case3（tag=NULL）→ SIGSEGV（run.exit=139）；gdb add-symbol-file 符号化 #0 strlen → #3 FfiUDMFSetProperties（unified_data_ffi.cpp:134）。evidence zip sha256 a70accc9...14df（run1+run2+MANIFEST）。",
+  "notes": "2026-10-17：补入修复建议补丁 patch.diff（SetProperties 入口对 tag 判空，空指针按空串语义）。"
 }

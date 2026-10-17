@@ -1,66 +1,91 @@
 {
- "schema": "case-specific-validation-0.2",
- "id": "ffmpeg-quirc-resize-oob",
- "component": "third_party/ffmpeg",
- "cve_reference": "CVE-2026-66041",
- "cwe_candidate": "CWE-787",
- "discovery_method": "kb_gap_audit.py four-signal pipeline (L1 cve-grep negative + L2 disclosure 2026-07-04 > snapshot 2026-06-01 + L3 baseline 7.1.1 in [7.0, 8.1.2) + L4 source signature confirmed)",
- "new_discovery": false,
- "public_upstream": {
-  "fix_commit": "https://github.com/FFmpeg/FFmpeg/commit/4da9812e25894fb51d62a8875cfa8eb39b5e20f5",
-  "fix_date": "2026-07-05",
-  "fix_subject": "avfilter/vf_quirc: resize the quirc buffers when the input size changes"
- },
- "oh_source": {
-  "repo": "https://gitcode.com/openharmony/third_party_ffmpeg",
-  "head_commit": "0a0c4dd33c (2026-09-10)",
-  "baseline": "FFmpeg 7.1.1, README.OpenSource last change 2026-06-01",
-  "vf_quirc_c_blob": "afd172fa347b7ed4d412fe418a6023ac3e111914",
-  "l4_evidence": "OH vf_quirc.c has quirc_resize only in config_input (initial size); filter_frame copies into the quirc buffer with no dimension-change check and QuircContext carries no width/height fields — the exact pre-fix structure upstream 4da9812 changed"
- },
- "vulnerability": {
-  "summary": "vf_quirc filter: a crafted PGS/SUP subtitle whose later frames have dimensions differing from the configured input writes out of bounds of the quirc buffer allocated for the first frame's size (heap OOB write).",
-  "trigger": "feed a subtitle stream with mismatched frame dimensions through the quirc filter",
-  "verification_level": "runtime-verified 2x3 matrix (2026-09-21, WSL2 Ubuntu 24.04, clang 18.1.3 + ASan/UBSan): original build linkgrow -> heap-buffer-overflow WRITE of size 512 into the 4096-byte (64x64) quirc_resize allocation, write site filter_frame vf_quirc.c:102, exit 1; patched (4da9812e applied clean) linkgrow -> CASE_DONE exit 0; control/trigger identical on both builds (no regression). PoC uses public libavfilter API only",
-  "runtime_status": "verified",
-  "introduced_by": "030e1401451200566a5303f35cbe1456e31dd81e (2024-01-01 'lavfi: add quirc filter')",
-  "submission_materials": "D:/cve_data/submission_66041/ (poc_quirc.c, upstream fix diff, runtime record, gap audit, form draft)",
-  "submission": {
-   "platform": "OpenHarmony 漏洞奖励计划 (https://bugbounty.openharmony.cn)",
-   "ticket": "OHSA26-092224881",
-   "submission_id": "228180140511727616",
-   "submitted_at": "2026-09-21",
-   "status": "已提交",
-   "form": {
-    "type": "内存破坏与执行类 / 缓冲区溢出",
-    "repo": "third_party_ffmpeg",
-    "file_path": "libavfilter/vf_quirc.c / 代码行:102",
-    "introduced_by": "030e1401451200566a5303f35cbe1456e31dd81e",
-    "oh_version": "OpenHarmony-v7.0-Release（2026-08-21）"
-   }
+  "schema": "case-specific-validation-0.2",
+  "id": "ffmpeg-quirc-resize-oob",
+  "component": "third_party/ffmpeg",
+  "cve_reference": "CVE-2026-66041",
+  "cwe_candidate": "CWE-787",
+  "discovery_method": "kb_gap_audit.py four-signal pipeline (L1 cve-grep negative + L2 disclosure 2026-07-04 > snapshot 2026-06-01 + L3 baseline 7.1.1 in [7.0, 8.1.2) + L4 source signature confirmed)",
+  "new_discovery": false,
+  "public_upstream": {
+    "fix_commit": "https://github.com/FFmpeg/FFmpeg/commit/4da9812e25894fb51d62a8875cfa8eb39b5e20f5",
+    "fix_date": "2026-07-05",
+    "fix_subject": "avfilter/vf_quirc: resize the quirc buffers when the input size changes"
+  },
+  "oh_source": {
+    "repo": "https://gitcode.com/openharmony/third_party_ffmpeg",
+    "head_commit": "0a0c4dd33c (2026-09-10)",
+    "baseline": "FFmpeg 7.1.1, README.OpenSource last change 2026-06-01",
+    "vf_quirc_c_blob": "afd172fa347b7ed4d412fe418a6023ac3e111914",
+    "l4_evidence": "OH vf_quirc.c has quirc_resize only in config_input (initial size); filter_frame copies into the quirc buffer with no dimension-change check and QuircContext carries no width/height fields — the exact pre-fix structure upstream 4da9812 changed"
+  },
+  "vulnerability": {
+    "summary": "vf_quirc filter: a crafted PGS/SUP subtitle whose later frames have dimensions differing from the configured input writes out of bounds of the quirc buffer allocated for the first frame's size (heap OOB write).",
+    "trigger": "feed a subtitle stream with mismatched frame dimensions through the quirc filter",
+    "verification_level": "runtime-verified 2x3 matrix (2026-09-21, WSL2 Ubuntu 24.04, clang 18.1.3 + ASan/UBSan): original build linkgrow -> heap-buffer-overflow WRITE of size 512 into the 4096-byte (64x64) quirc_resize allocation, write site filter_frame vf_quirc.c:102, exit 1; patched (4da9812e applied clean) linkgrow -> CASE_DONE exit 0; control/trigger identical on both builds (no regression). PoC uses public libavfilter API only",
+    "runtime_status": "verified",
+    "introduced_by": "030e1401451200566a5303f35cbe1456e31dd81e (2024-01-01 'lavfi: add quirc filter')",
+    "submission_materials": "D:/cve_data/submission_66041/ (poc_quirc.c, upstream fix diff, runtime record, gap audit, form draft)",
+    "submission": {
+      "platform": "OpenHarmony 漏洞奖励计划 (https://bugbounty.openharmony.cn)",
+      "ticket": "OHSA26-092224881",
+      "submission_id": "228180140511727616",
+      "submitted_at": "2026-09-21",
+      "status": "已提交",
+      "form": {
+        "type": "内存破坏与执行类 / 缓冲区溢出",
+        "repo": "third_party_ffmpeg",
+        "file_path": "libavfilter/vf_quirc.c / 代码行:102",
+        "introduced_by": "030e1401451200566a5303f35cbe1456e31dd81e",
+        "oh_version": "OpenHarmony-v7.0-Release（2026-08-21）"
+      }
+    }
+  },
+  "controls": [
+    {
+      "name": "same-size-subtitle",
+      "desc": "frames matching config_input dimensions: filter works unchanged on both original and patched"
+    }
+  ],
+  "notes": "part of the ffmpeg gap batch (audit 2026-09-21); candidate for platform submission after optional runtime matrix",
+  "evidence_locations": {
+    "source_file": "libavfilter/vf_quirc.c",
+    "lines": [
+      102
+    ]
+  },
+  "attack_path": "前提条件：产品/应用使用 ffmpeg 滤镜图且包含 quirc 滤镜（二维码\n检测场景），且滤镜图存在使 quirc 输入 link 尺寸在配置后变化的路径\n（动态协商半途、上游滤镜直改输出尺寸等）。攻击者可通过构造使\n帧尺寸序列递增的输入流驱动越界写；是否需要用户交互取决于应用\n是否自动处理不可信输入。越界写内容为图像数据（可控度取决于\n输入构造），上游评定特定条件下可利用于代码执行。\n\n四、PoC & Exploit：\n\n见附件 poc_quirc.c 与运行验证记录.md（2×3 结果矩阵：原版 linkgrow\nASan 堆越界写 / 补丁版正常 / control 与 trigger 两侧均正常；环境\nWSL2 Ubuntu 24.04、clang 18.1.3、ASan+UBSan、无网络无文件 I/O）。\n本报告未构造代码执行利用，越界写原语与上游公告一致。\n\n五、修复及缓解措施建议：\n\n回移上游修复 4da9812e 至 master 及各 release 分支（已验证对 OH\n代码结构 git apply 干净适用且无回归）：QuircContext 增加 widt",
+  "fix_recommendation": "回移上游修复 4da9812e 至 master 及各 release 分支（已验证对 OH\n代码结构 git apply 干净适用且无回归）：QuircContext 增加 width/height\n字段记录配置尺寸；config_input 写入记录；filter_frame 比较当前\nlink 尺寸不一致时先 quirc_resize 再拷贝。临时缓解：避免在包含\nquirc 的滤镜图中使用会改变链路尺寸的动态路径；对不可信输入\n的滤镜处理置于资源受限环境。",
+  "reproduction_commands": "运行级（ASan）：./poc_orig linkgrow：buffer(gray8 64x64)→quirc→buffersink，第 1 帧排空后将 link 尺寸置 512x512（模拟重协商半途/上游直改 link），再推 512x512 帧 → ASan heap-buffer-overflow WRITE 512（quirc_resize 分配的 4096 字节缓冲末尾，写点 vf_quirc.c:102）；git apply upstream_fix_4da9812.diff 重建 → CASE_DONE；control 与 trigger-不变-link 对照两侧正常。",
+  "branch_evidence": {
+    "master": {
+      "verdict": "affected",
+      "source_commit": "0a0c4dd33c",
+      "reference": "case.json oh_source（head_commit 0a0c4dd33c 2026-09-10；与上游 n7.1.1 逐字节一致；修复前形态在位 + 上游修复 diff 对 OH 检出 git apply --check 通过）+ 提交材料包 submission_66041（L4 三侧对照）；运行级 ASan 矩阵见 reproduction_commands"
+    },
+    "OpenHarmony-v4.1-Release": {
+      "verdict": "not_affected",
+      "source_commit": "OpenHarmony-4.1-Release",
+      "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-4.1-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-4.1-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '4.4.1', 'curl': '8.4.0', 'openssl': '3.0.9', 'cjson': '1.7.16'}；kb[cvelistV5] 受影响区间下界 7.0，分支钉住 {'ffmpeg': '4.4.1', 'curl': '8.4.0', 'openssl': '3.0.9', 'cjson': '1.7.16'} 低于区间下界（CVE-2026-66041）"
+    },
+    "OpenHarmony-v5.0-Release": {
+      "verdict": "not_affected",
+      "source_commit": "OpenHarmony-5.0-Release",
+      "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-5.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-5.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.6.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；kb[cvelistV5] 受影响区间下界 7.0，分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.6.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 低于区间下界（CVE-2026-66041）"
+    },
+    "OpenHarmony-v5.1-Release": {
+      "verdict": "not_affected",
+      "source_commit": "OpenHarmony-5.1.0-Release",
+      "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-5.1.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-5.1.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；kb[cvelistV5] 受影响区间下界 7.0，分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 低于区间下界（CVE-2026-66041）"
+    },
+    "OpenHarmony-v6.0-Release": {
+      "verdict": "not_affected",
+      "source_commit": "OpenHarmony-6.0-Release",
+      "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-6.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-6.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；kb[cvelistV5] 受影响区间下界 7.0，分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 低于区间下界（CVE-2026-66041）"
+    },
+    "OpenHarmony-v7.0-Release": {
+      "verdict": "affected",
+      "source_commit": "OpenHarmony-7.0-Release",
+      "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-7.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-7.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '7.1.1', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.19'}；kb[cvelistV5] 受影响区间 ≥7.0；分支钉住 {'ffmpeg': '7.1.1', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.19'} 位于上游修复之前（CVE-2026-66041）"
+    }
   }
- },
- "controls": [
-  {
-   "name": "same-size-subtitle",
-   "desc": "frames matching config_input dimensions: filter works unchanged on both original and patched"
-  }
- ],
- "notes": "part of the ffmpeg gap batch (audit 2026-09-21); candidate for platform submission after optional runtime matrix",
- "evidence_locations": {
-  "source_file": "libavfilter/vf_quirc.c",
-  "lines": [
-   102
-  ]
- },
- "attack_path": "前提条件：产品/应用使用 ffmpeg 滤镜图且包含 quirc 滤镜（二维码\n检测场景），且滤镜图存在使 quirc 输入 link 尺寸在配置后变化的路径\n（动态协商半途、上游滤镜直改输出尺寸等）。攻击者可通过构造使\n帧尺寸序列递增的输入流驱动越界写；是否需要用户交互取决于应用\n是否自动处理不可信输入。越界写内容为图像数据（可控度取决于\n输入构造），上游评定特定条件下可利用于代码执行。\n\n四、PoC & Exploit：\n\n见附件 poc_quirc.c 与运行验证记录.md（2×3 结果矩阵：原版 linkgrow\nASan 堆越界写 / 补丁版正常 / control 与 trigger 两侧均正常；环境\nWSL2 Ubuntu 24.04、clang 18.1.3、ASan+UBSan、无网络无文件 I/O）。\n本报告未构造代码执行利用，越界写原语与上游公告一致。\n\n五、修复及缓解措施建议：\n\n回移上游修复 4da9812e 至 master 及各 release 分支（已验证对 OH\n代码结构 git apply 干净适用且无回归）：QuircContext 增加 widt",
- "fix_recommendation": "回移上游修复 4da9812e 至 master 及各 release 分支（已验证对 OH\n代码结构 git apply 干净适用且无回归）：QuircContext 增加 width/height\n字段记录配置尺寸；config_input 写入记录；filter_frame 比较当前\nlink 尺寸不一致时先 quirc_resize 再拷贝。临时缓解：避免在包含\nquirc 的滤镜图中使用会改变链路尺寸的动态路径；对不可信输入\n的滤镜处理置于资源受限环境。",
- "reproduction_commands": "运行级（ASan）：./poc_orig linkgrow：buffer(gray8 64x64)→quirc→buffersink，第 1 帧排空后将 link 尺寸置 512x512（模拟重协商半途/上游直改 link），再推 512x512 帧 → ASan heap-buffer-overflow WRITE 512（quirc_resize 分配的 4096 字节缓冲末尾，写点 vf_quirc.c:102）；git apply upstream_fix_4da9812.diff 重建 → CASE_DONE；control 与 trigger-不变-link 对照两侧正常。",
- "branch_evidence": {
-  "master": {
-   "verdict": "affected",
-   "source_commit": "0a0c4dd33c",
-   "reference": "case.json oh_source（head_commit 0a0c4dd33c 2026-09-10；与上游 n7.1.1 逐字节一致；修复前形态在位 + 上游修复 diff 对 OH 检出 git apply --check 通过）+ 提交材料包 submission_66041（L4 三侧对照）；运行级 ASan 矩阵见 reproduction_commands"
-  }
- }
 }

@@ -1,0 +1,49 @@
+{
+  "_comment": "Empirical branch pins, 2026-10-17: openharmony/manifest@<branch> ohos/ohos.xml revision pins resolved on gitcode (the manifest's declared remote); README.OpenSource 'Version Number' at each pinned ref via shallow git fetch. gitee mirror branches agree.",
+  "pins": {
+    "v4.1": {
+      "ffmpeg": "4.4.1",
+      "curl": "8.4.0",
+      "openssl": "3.0.9",
+      "cjson": "1.7.16"
+    },
+    "v5.0": {
+      "ffmpeg": "5.1.4",
+      "curl": "8.6.0",
+      "openssl": "3.0.9",
+      "cjson": "1.7.17"
+    },
+    "v5.1": {
+      "ffmpeg": "5.1.4",
+      "curl": "8.8.0",
+      "openssl": "3.0.9",
+      "cjson": "1.7.17"
+    },
+    "v6.0": {
+      "ffmpeg": "5.1.4",
+      "curl": "8.8.0",
+      "openssl": "3.0.9",
+      "cjson": "1.7.17"
+    },
+    "v7.0": {
+      "ffmpeg": "7.1.1",
+      "curl": "8.8.0",
+      "openssl": "3.0.9",
+      "cjson": "1.7.19"
+    },
+    "master": {
+      "ffmpeg": "7.1.1",
+      "curl": "8.8.0",
+      "openssl": "3.0.9",
+      "cjson": "1.7.19"
+    }
+  },
+  "branch_refs": {
+    "v4.1": "OpenHarmony-4.1-Release",
+    "v5.0": "OpenHarmony-5.0-Release",
+    "v5.1": "OpenHarmony-5.1.0-Release",
+    "v6.0": "OpenHarmony-6.0-Release",
+    "v7.0": "OpenHarmony-7.0-Release",
+    "master": "master"
+  }
+}

@@ -186,6 +186,8 @@ dsoftbus 全树扫描（651.7s，~1,046 行/秒，峰值内存 176.4MB）初始�
 
 其中 UDMF 案附带 **round-trip 自毁论据**：`FfiUDMFSetProperties` 对空 tag 崩溃，而 `FfiUDMFGetProperties` 对空存储 tag 本来就返回 nullptr——**getter 的合法输出直接喂回 setter 必崩**，可达性论证从"恶意调用者"提升到"正常 API 使用模式"。
 
+**安全影响定性（对"普通 DoS 不纳入"条款的正面回应）**：上述新发现均为跨语言信任边界上的 **CWE-476 内存安全缺陷**，不属于资源耗尽/逻辑类的"普通 DoS"。分两个层级陈述（完整论证见 `docs/analysis/SECURITY_IMPACT_QUALIFICATION_20261017.md`）：层级 A——系统服务进程远端崩溃（2026-10-17 新增 bt#19 候选：bluetooth 服务 `DeregisterServerObserver` 无权限要求 + 无判空，任意应用畸形 IPC 即致系统服务 SIGSEGV，gdb 帧归因 `bluetooth_socket_server.cpp:54`，exit 139）；层级 B——系统框架 FFI 库的边界输入验证缺失（本表 IPC/HiAppEvent/UDMF 三案，缺陷位于系统侧代码，受害面为全部使用该系统 API 的应用）。CWE-476 的后果表述统一为"可用性破坏 + 潜在内存安全影响"，最终价值以漏洞奖励计划评审结果为准。
+
 #### 3.3.3 回放评估与检测质量
 
 正向：bluetooth 4 个历史已知漏洞回放命中 0/4——暴露四类检测盲点（非裸指针形态：局部智能指针/成员指针/宏展开取指针/智能指针参数），其中智能指针参数形态已修复（回归测试钉死）；反向：2 例误报根因定位（真值宏抑制缺失 + 智能指针建模缺失）并修复闭环，发现数 13→12，**精确移除目标误报、零误伤**。四类盲点已全部立账跟踪。
