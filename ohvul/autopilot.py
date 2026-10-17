@@ -923,7 +923,79 @@ def scan_p7(root):
                 out.append(score_finding(f, body, cl, params))
     return out
 
-def scan_p8(root):
+def _p8_block_spans(cl):
+    """Every {...} in the (comment-masked, length-preserving) function body
+    as (open, close) index pairs."""
+    stack, spans = [], []
+    for i, ch in enumerate(cl):
+        if ch == '{':
+            stack.append(i)
+        elif ch == '}' and stack:
+            spans.append((stack.pop(), i))
+    return spans
+
+
+_P8_ESCAPE = re.compile(r'\breturn\b')
+_P8_LAMBDA_HEAD = re.compile(
+    r'\]\s*(?:\([^()]*(?:\([^()]*\)[^()]*)*\))?\s*(?:->\s*[\w:<>,\s\*&]+)?\s*$')
+
+
+def _p8_innermost(pos, spans):
+    """Deepest (latest-opening) block span containing pos, or None."""
+    best = None
+    for s, e in spans:
+        if s < pos < e and (best is None or s > best[0]):
+            best = (s, e)
+    return best
+
+
+def _p8_flat_escape(text):
+    """A `return` at the top level of this slice — the branch terminator
+    itself, not one inside a nested block (goto/break/continue are excluded:
+    they can jump to a later use, so counting them would over-suppress)."""
+    for m in _P8_ESCAPE.finditer(text):
+        prefix = text[:m.start()]
+        if prefix.count('{') == prefix.count('}'):
+            return True
+    return False
+
+
+def _p8_use_exclusive_reason(cl, spans, free_start, free_end, use_start):
+    """Why `use_start` is unreachable from the free at (free_start, free_end)
+    on the same-function level — or None if the use is a live signal.
+
+    Two documented false-positive shapes (works report 不足#2):
+    - branch-exclusive free: the free sits in a branch that is
+      escape-terminated before the block closes (error-path free + return),
+      or the use lives in the sibling else-arm;
+    - callback closure: the use is inside a lambda body while the free is
+      outside it (async/registered lifetime, not the same execution).
+    """
+    fb = _p8_innermost(free_start, spans)
+    ub = _p8_innermost(use_start, spans)
+
+    # closure shape: the use's enclosing block opens right behind a lambda
+    # introducer `]…(…) -> …` while the free is not inside that same closure
+    if ub is not None:
+        head = cl[:ub[0]].rstrip()
+        if _P8_LAMBDA_HEAD.search(head[-160:]) and not (fb and fb[0] >= ub[0]):
+            return "closure-use (free outside the callback body)"
+
+    if fb is None:
+        return None
+    # escape shape: the free's branch terminates before falling through and
+    # the use lies beyond that branch
+    if use_start > fb[1] and _p8_flat_escape(cl[free_end:fb[1]]):
+        return "branch-exclusive (escape-terminated free branch)"
+    # else-sibling shape: the use is in the sibling arm of the free's if/else
+    if ub is not None and ub != fb and fb[1] < ub[0]:
+        gap = cl[fb[1] + 1:ub[0]]
+        if re.match(r'\s*(?:else\b|else\s+if\b)', gap):
+            return "branch-exclusive (else-sibling use)"
+    return None
+
+
+def scan_p8(root, _suppressed=None):
     out = []
     for src in list(root.rglob('*.c')) + list(root.rglob('*.cpp')):
         rel = str(src.relative_to(root))
@@ -935,11 +1007,24 @@ def scan_p8(root):
                 if fv in ('NULL','nullptr'): continue
                 after = cl[fm.end():]
                 if re.search(rf'{re.escape(fv)}\s*=\s*(?:NULL|nullptr|0)\s*;', after): continue
-                uses = re.findall(rf'\b{re.escape(fv)}\s*(?:->|\[|\.|\+\+|=)', after)
-                if uses:
+                spans = _p8_block_spans(cl)
+                kept, suppressed = [], []
+                for um in re.finditer(rf'\b{re.escape(fv)}\s*(?:->|\[|\.|\+\+|=)', after):
+                    reason = _p8_use_exclusive_reason(cl, spans, fm.start(), fm.end(), fm.end() + um.start())
+                    if reason is None:
+                        kept.append(um)
+                    else:
+                        suppressed.append((um, reason))
+                if _suppressed is not None:
+                    for um, reason in suppressed:
+                        _suppressed.append({
+                            "file": rel, "function": name, "var": fv,
+                            "line": line, "reason": reason,
+                        })
+                if kept:
                     f = Finding(_fid("P8", rel, line, fv), "P8_use_after_free", "high",
                                rel, line, name, fv, "CWE-416",
-                               f"'{fv}' freed then used ({len(uses)}×)",
+                               f"'{fv}' freed then used ({len(kept)}×)",
                                trigger_hint=f"UAF path in {name}()")
                     out.append(score_finding(f, body, cl, params))
     return out
