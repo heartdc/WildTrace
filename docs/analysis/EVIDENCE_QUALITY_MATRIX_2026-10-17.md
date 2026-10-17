@@ -8,33 +8,31 @@
 | 案例 | CVE | 漏洞描述 | 触发条件 | 攻击路径 | 源码片段 | PoC代码 | PoC用法 | 模块定位 | 修复建议 | 补丁 | 版本判定 | 真库复现 | 得分 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | cjson_merge_alias | ● | ● | ● | ● | ◐ | ● | ● | ◐ | ◐ | ● | ◐ | — | 18/22 |
-| curl_native_ca_reuse | ● | ● | ● | ● | ◐ | ○ | ◐ | ◐ | ● | ○ | ◐ | — | 14/22 |
-| curl_psl_supercookie | ● | ● | ● | ● | ◐ | ● | ◐ | ◐ | ● | ● | ◐ | — | 18/22 |
-| ffmpeg_cfhd_transform2_width_oob | ● | ● | ● | ● | ◐ | ○ | ◐ | ◐ | ◐ | ● | ◐ | — | 15/22 |
-| ffmpeg_dvbsub_parser_capacity_overflow | ● | ● | ● | ● | ◐ | ● | ◐ | ◐ | ● | ● | ◐ | — | 18/22 |
-| ffmpeg_floodfill_point_stack_oob | ● | ● | ● | ● | ◐ | ● | ◐ | ◐ | ● | ● | ◐ | — | 18/22 |
-| ffmpeg_hqdn3d_dynamic_size_oob | ● | ● | ● | ● | ◐ | ● | ◐ | ◐ | ● | ● | ◐ | — | 18/22 |
-| ffmpeg_iamf_count_label_dos | ● | ● | ● | ● | ◐ | ○ | ◐ | ◐ | ◐ | ● | ◐ | — | 15/22 |
-| ffmpeg_lcldec_zlib_tail_disclosure | ● | ● | ● | ● | ◐ | ● | ◐ | ◐ | ● | ● | ◐ | — | 18/22 |
-| ffmpeg_nvdec_sep_ref_doublefree | ● | ● | ● | ● | ◐ | ○ | ◐ | ◐ | ◐ | ● | ◐ | — | 15/22 |
-| ffmpeg_quirc_resize_oob | ● | ● | ● | ● | ◐ | ● | ◐ | ◐ | ● | ● | ◐ | — | 18/22 |
-| ffmpeg_rscc_short_deflate_uninit_leak | ● | ● | ● | ● | ◐ | ○ | ◐ | ◐ | ◐ | ● | ◐ | — | 15/22 |
-| ffmpeg_swaprect_temp_row_oob | ● | ● | ● | ● | ◐ | ● | ◐ | ◐ | ● | ● | ◐ | — | 18/22 |
-| ffmpeg_ty_ac3_trim_underflow | ● | ● | ● | ● | ◐ | ● | ◐ | ◐ | ● | ● | ◐ | — | 18/22 |
-| ffmpeg_wmaenc_extradata_padding | ● | ● | ● | ● | ◐ | ● | ◐ | ◐ | ● | ● | ◐ | — | 18/22 |
-| hiappevent_ffi_watcher_null_filter | — | ● | ● | ◐ | ◐ | ● | ◐ | ◐ | ● | ○ | ◐ | ● | 15/22 |
-| ipc_cj_array_null_validation | — | ● | ◐ | ◐ | ◐ | ● | ◐ | ◐ | ● | ○ | ◐ | ● | 14/22 |
-| kv_ffi_array_validation | — | ● | ◐ | ◐ | ◐ | ● | ◐ | ◐ | ● | ○ | ○ | — | 11/20 |
-| openssl_ocb_oneshot_iv_discard | ● | ● | ● | ● | ◐ | ● | ◐ | ◐ | ● | ● | ○ | — | 17/22 |
-| udmf_ffi_setproperties_null_tag | — | ● | ◐ | ◐ | ● | ● | ◐ | ◐ | ● | ○ | ◐ | ● | 15/22 |
+| curl_native_ca_reuse | ● | ● | ● | ● | ◐ | ● | ◐ | ◐ | ● | ● | ● | — | 19/22 |
+| curl_psl_supercookie | ● | ● | ● | ● | ◐ | ● | ◐ | ◐ | ● | ● | ● | — | 19/22 |
+| ffmpeg_cfhd_transform2_width_oob | ● | ● | ● | ● | ◐ | ● | ◐ | ◐ | ◐ | ● | ● | — | 18/22 |
+| ffmpeg_dvbsub_parser_capacity_overflow | ● | ● | ● | ● | ◐ | ● | ◐ | ◐ | ● | ● | ● | — | 19/22 |
+| ffmpeg_floodfill_point_stack_oob | ● | ● | ● | ● | ◐ | ● | ◐ | ◐ | ● | ● | ● | — | 19/22 |
+| ffmpeg_hqdn3d_dynamic_size_oob | ● | ● | ● | ● | ◐ | ● | ◐ | ◐ | ● | ● | ● | — | 19/22 |
+| ffmpeg_iamf_count_label_dos | ● | ● | ● | ● | ◐ | ● | ◐ | ◐ | ◐ | ● | ● | — | 18/22 |
+| ffmpeg_lcldec_zlib_tail_disclosure | ● | ● | ● | ● | ◐ | ● | ◐ | ◐ | ● | ● | ● | — | 19/22 |
+| ffmpeg_nvdec_sep_ref_doublefree | ● | ● | ● | ● | ◐ | ● | ◐ | ◐ | ◐ | ● | ● | — | 18/22 |
+| ffmpeg_quirc_resize_oob | ● | ● | ● | ● | ◐ | ● | ◐ | ◐ | ● | ● | ● | — | 19/22 |
+| ffmpeg_rscc_short_deflate_uninit_leak | ● | ● | ● | ● | ◐ | ● | ◐ | ◐ | ◐ | ● | ● | — | 18/22 |
+| ffmpeg_swaprect_temp_row_oob | ● | ● | ● | ● | ◐ | ● | ◐ | ◐ | ● | ● | ● | — | 19/22 |
+| ffmpeg_ty_ac3_trim_underflow | ● | ● | ● | ● | ◐ | ● | ◐ | ◐ | ● | ● | ● | — | 19/22 |
+| ffmpeg_wmaenc_extradata_padding | ● | ● | ● | ● | ◐ | ● | ◐ | ◐ | ● | ● | ● | — | 19/22 |
+| hiappevent_ffi_watcher_null_filter | — | ● | ● | ◐ | ◐ | ● | ◐ | ◐ | ● | ● | ◐ | ● | 17/22 |
+| ipc_cj_array_null_validation | — | ● | ◐ | ◐ | ◐ | ● | ◐ | ◐ | ● | ● | ◐ | ● | 16/22 |
+| kv_ffi_array_validation | — | ● | ◐ | ◐ | ◐ | ● | ◐ | ◐ | ● | ● | ○ | — | 13/20 |
+| openssl_ocb_oneshot_iv_discard | ● | ● | ● | ● | ◐ | ● | ◐ | ◐ | ● | ● | ● | — | 19/22 |
+| udmf_ffi_setproperties_null_tag | — | ● | ◐ | ◐ | ● | ● | ◐ | ◐ | ● | ● | ◐ | ● | 17/22 |
 
 ## 字段汇总（按占位数升序 = 最差字段在前）
 
 | 字段 | ●实质 | ◐降级 | ○占位 | —不适用 |
 |---|---|---|---|---|
-| PoC代码 | 15 | 0 | 5 | 0 |
-| 补丁 | 15 | 0 | 5 | 0 |
-| 版本判定 | 0 | 18 | 2 | 0 |
+| 版本判定 | 15 | 4 | 1 | 0 |
 | 模块定位 | 0 | 20 | 0 | 0 |
 | 源码片段 | 1 | 19 | 0 | 0 |
 | PoC用法 | 1 | 19 | 0 | 0 |
@@ -43,6 +41,8 @@
 | 触发条件 | 17 | 3 | 0 | 0 |
 | CVE | 16 | 0 | 0 | 4 |
 | 漏洞描述 | 20 | 0 | 0 | 0 |
+| PoC代码 | 20 | 0 | 0 | 0 |
+| 补丁 | 20 | 0 | 0 | 0 |
 | 真库复现 | 3 | 0 | 0 | 17 |
 
 ## 逐案降级/占位明细
@@ -55,89 +55,82 @@
 
 ### curl_native_ca_reuse
 - 源码片段: 指针+证据引文,未嵌码
-- PoC代码: 源级对照,无可执行PoC
 - 模块定位: 缺省回退component尾段
-- 补丁: 无补丁文件
-- 版本判定: 1实/5unknown
+- 版本判定: 6实/0unknown
 
 ### curl_psl_supercookie
 - 源码片段: 指针+证据引文,未嵌码
 - 模块定位: 缺省回退component尾段
-- 版本判定: 1实/5unknown
+- 版本判定: 6实/0unknown
 
 ### ffmpeg_cfhd_transform2_width_oob
 - 源码片段: 指针+证据引文,未嵌码
-- PoC代码: 源级对照,无可执行PoC
 - 模块定位: 缺省回退component尾段
 - 修复建议: 仅指向补丁附件
-- 版本判定: 1实/5unknown
+- 版本判定: 6实/0unknown
 
 ### ffmpeg_dvbsub_parser_capacity_overflow
 - 源码片段: 指针+证据引文,未嵌码
 - 模块定位: 缺省回退component尾段
-- 版本判定: 1实/5unknown
+- 版本判定: 6实/0unknown
 
 ### ffmpeg_floodfill_point_stack_oob
 - 源码片段: 指针+证据引文,未嵌码
 - 模块定位: 缺省回退component尾段
-- 版本判定: 1实/5unknown
+- 版本判定: 6实/0unknown
 
 ### ffmpeg_hqdn3d_dynamic_size_oob
 - 源码片段: 指针+证据引文,未嵌码
 - 模块定位: 缺省回退component尾段
-- 版本判定: 1实/5unknown
+- 版本判定: 6实/0unknown
 
 ### ffmpeg_iamf_count_label_dos
 - 源码片段: 指针+证据引文,未嵌码
-- PoC代码: 源级对照,无可执行PoC
 - 模块定位: 缺省回退component尾段
 - 修复建议: 仅指向补丁附件
-- 版本判定: 1实/5unknown
+- 版本判定: 6实/0unknown
 
 ### ffmpeg_lcldec_zlib_tail_disclosure
 - 源码片段: 指针+证据引文,未嵌码
 - 模块定位: 缺省回退component尾段
-- 版本判定: 1实/5unknown
+- 版本判定: 6实/0unknown
 
 ### ffmpeg_nvdec_sep_ref_doublefree
 - 源码片段: 指针+证据引文,未嵌码
-- PoC代码: 源级对照,无可执行PoC
 - 模块定位: 缺省回退component尾段
 - 修复建议: 仅指向补丁附件
-- 版本判定: 1实/5unknown
+- 版本判定: 6实/0unknown
 
 ### ffmpeg_quirc_resize_oob
 - 源码片段: 指针+证据引文,未嵌码
 - 模块定位: 缺省回退component尾段
-- 版本判定: 1实/5unknown
+- 版本判定: 6实/0unknown
 
 ### ffmpeg_rscc_short_deflate_uninit_leak
 - 源码片段: 指针+证据引文,未嵌码
-- PoC代码: 源级对照,无可执行PoC
 - 模块定位: 缺省回退component尾段
 - 修复建议: 仅指向补丁附件
-- 版本判定: 1实/5unknown
+- 版本判定: 6实/0unknown
 
 ### ffmpeg_swaprect_temp_row_oob
 - 源码片段: 指针+证据引文,未嵌码
 - 模块定位: 缺省回退component尾段
-- 版本判定: 1实/5unknown
+- 版本判定: 6实/0unknown
 
 ### ffmpeg_ty_ac3_trim_underflow
 - 源码片段: 指针+证据引文,未嵌码
 - 模块定位: 缺省回退component尾段
-- 版本判定: 1实/5unknown
+- 版本判定: 6实/0unknown
 
 ### ffmpeg_wmaenc_extradata_padding
 - 源码片段: 指针+证据引文,未嵌码
 - 模块定位: 缺省回退component尾段
-- 版本判定: 1实/5unknown
+- 版本判定: 6实/0unknown
 
 ### hiappevent_ffi_watcher_null_filter
 - 攻击路径: 回退到 candidate.entry_point
 - 源码片段: 指针+证据引文,未嵌码
 - 模块定位: 缺省回退component尾段
-- 补丁: 无补丁文件
 - 版本判定: 1实/5unknown
 
 ### ipc_cj_array_null_validation
@@ -145,7 +138,6 @@
 - 攻击路径: 回退到 candidate.entry_point
 - 源码片段: 指针+证据引文,未嵌码
 - 模块定位: 缺省回退component尾段
-- 补丁: 无补丁文件
 - 版本判定: 1实/5unknown
 
 ### kv_ffi_array_validation
@@ -153,27 +145,30 @@
 - 攻击路径: 回退到 candidate.entry_point
 - 源码片段: 指针+证据引文,未嵌码
 - 模块定位: 缺省回退component尾段
-- 补丁: 无补丁文件
 - 版本判定: 0实/6unknown
 
 ### openssl_ocb_oneshot_iv_discard
 - 源码片段: 指针+证据引文,未嵌码
 - 模块定位: 缺省回退component尾段
-- 版本判定: 0实/6unknown
+- 版本判定: 6实/0unknown
 
 ### udmf_ffi_setproperties_null_tag
 - 触发条件: 回退到 candidate.input_type
 - 攻击路径: 回退到 candidate.entry_point
 - 模块定位: 缺省回退component尾段
-- 补丁: 无补丁文件
 - 版本判定: 1实/5unknown
 
 ## 跨案例重复字符串（≥3 案复用，模板文案候选）
 
 > 其中 schema 标签、状态枚举（`verified`、`case-specific-validation-0.2`）、组件名/仓 URL、基线日期属正常复用，非文案问题；真正的模板文案见 PoC 用法字段。
 
-- [18案] affected
+- [19案] affected
 - [15案] case-specific-validation-0.2
+- [15案] OpenHarmony-4.1-Release
+- [15案] OpenHarmony-5.0-Release
+- [15案] OpenHarmony-5.1.0-Release
+- [15案] OpenHarmony-6.0-Release
+- [15案] OpenHarmony-7.0-Release
 - [12案] third_party/ffmpeg
 - [12案] https://gitcode.com/openharmony/third_party_ffmpeg
 - [12案] 0a0c4dd33c
@@ -182,13 +177,13 @@
 - [7案] 0a0c4dd33c (2026-09-10)
 - [6案] FFmpeg 7.1.1, snapshot 2026-06-01
 - [5案] third_party_ffmpeg
+- [5案] verified
 - [4案] 2026-09-21
 - [4案] 2026-09-28
 - [4案] wildtrace-candidate-case-0.2
 - [3案] FFmpeg 7.1.1
 - [3案] 2026-07-13
 - [3案] FFmpeg 7.1.1, README.OpenSource last change 2026-06-01
-- [3案] verified
 - [3案] real_library_reproduction_confirmed
 
 ## VULN_REPORT.md 渲染占位计数（逐案）
