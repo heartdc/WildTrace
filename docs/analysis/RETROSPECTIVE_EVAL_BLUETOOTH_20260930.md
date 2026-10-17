@@ -91,3 +91,39 @@ git worktree add --detach ../wt_btpre 59cac79b   # 并 sparse-checkout disable
 cd <WildTrace> && python -m ohvul.autopilot D:/cve_data/cjffi_sweep/wt_btpre --output D:/cve_data/cjffi_sweep/replay_bt
 # 严格对比脚本：见本文件"反向结果"节的方法描述（git show 前后版本 + 函数体提取）
 ```
+
+---
+
+## 复评 2026-10-15：GT4 解锁，三层遮挡链归因（learn/p6-detection-contract）
+
+上节留下的"阈值调整"按导师提升_doc 路线执行（次数降为排序因子而非发射门槛）。回放复跑发现
+GT4 的遮挡其实有三层，此前文档只命名了第三层：
+
+| 层 | 遮挡 | 修复 |
+|---|---|---|
+| 解析层 | `Class::Method(...)` 跨行定义（OH C++ 标准写法）在 `_FUNC_RE` 下解析为 0 个函数——proxy/impl 类 cpp 整文件不可见（GT4 站点全部在此类文件中） | 函数头正则分隔符 `\s+`→`\s*` |
+| 形态层 | GT4 实际参数形态是 OH 自研 `const sptr<I...>&`，而智能指针正则只覆盖 `std::shared_ptr/unique_ptr`（本文件原文写 `shared_ptr<>`，与真实站点不符） | `_SMART_PTR_PARAM` 增补 `sptr/wptr` |
+| 门槛层 | 解引用次数 <3 不发射（本文件"智能指针新增发现 0"行的原因） | 生成与排序分离；单次解引用 -10 分降权 |
+
+**复跑结果**（wt_btpre @59cac79b，同树同法）：
+
+- 回放总量 13 → **73**；
+- **GT4 RegisterObserver 命中 0 → 12 站点**（本文件正向表仅登记 7 处——a2dp_src、map_mse 等
+  站点在 2026-09-30 评估时因整文件不可解析而缺席，本次一并浮出）；
+- 正向召回 0/4 → **1/4 GT 族**；GT1（局部智能指针）/GT2（成员指针）/GT3（宏展开取指针）
+  仍为命名盲点，对应导师第六步（扩展局部智能指针、函数摘要和成员状态）。
+
+**同批 dsoftbus 对照**（master 基线锚定 2,662 条，同树同机复跑）：
+
+| 指标 | master | 本分支 |
+|---|---|---|
+| 总 lead | 2,662 | 5,599 |
+| 高危 | 438 | 564 |
+| conf≥70 | 1,340 | 1,788 |
+| 基线键保留 | — | 2,651/2,653（99.9%） |
+| 语义类 lead（检查过晚/仅日志/重赋值失效） | — | 14 |
+
+**如实记录**：nstackx_dfile.c 的 2 条 P8 跨函数 join（DFileRecverInit / DFileSenderInitWithTargetDev）
+随解析图变化消失——人工复裁定为**分支互斥误报**（CloseSocket 均在 `CheckFdSetSize != EOK` 错误分支内
+且立即 return，后续使用全在未释放路径上），属正确移除而非回归；P8 的分支敏感化与 P6 同型，
+列为本文件后续项。新增 lead 的反向逐条裁定（误报率）为后续工作，不在本次宣称。
