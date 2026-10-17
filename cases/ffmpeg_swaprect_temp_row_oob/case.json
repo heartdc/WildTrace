@@ -1,38 +1,46 @@
 {
-  "schema": "case-specific-validation-0.2",
-  "id": "ffmpeg-swaprect-temp-row-oob",
-  "component": "third_party/ffmpeg",
-  "cve_reference": "CVE-2026-65706",
-  "cwe_candidate": "CWE-787",
-  "discovery_method": "batch L4 (gap_likely, recalibrated tool) + manual L4",
-  "new_discovery": false,
-  "public_upstream": {
-    "fix_commit": "https://github.com/FFmpeg/FFmpeg/commit/a7e38b617b32f996beaa371bbf04b39907d7a527",
-    "fix_date": "2026-07-13",
-    "fix_subject": "avfilter/vf_swaprect: size the temp row buffer for the widest plane (Fixes: out of array access; repro 7aj_swaprect_odd17_nv12.nut)"
-  },
-  "oh_source": {
-    "repo": "https://gitcode.com/openharmony/third_party_ffmpeg",
-    "head_commit": "0a0c4dd33c",
-    "baseline": "FFmpeg 7.1.1, snapshot 2026-06-01",
-    "equivalence": "vf_swaprect.c byte-identical to upstream n7.1.1",
-    "l4_evidence": "vf_swaprect.c:223 allocates the temp row buffer as av_malloc_array(inlink->w, pixsteps[0]) — plane 0's step only; upstream fix sizes it across all planes (width<<shift * pixstep max, with INT_MAX check). Applies clean"
-  },
-  "vulnerability": {
-    "summary": "Row-swap temp buffer is sized for plane 0 only; formats where another plane's width*pixstep exceeds it (e.g. NV12 with odd widths, per the upstream repro) overrun the buffer during row exchange.",
-    "verification_level": "source-level confirmed; family equivalence to runtime-verified CVE-2026-66036/66041; runtime repro path documented (nv12 odd-width input per upstream sample name)",
-    "runtime_status": "not_run"
-  },
-  "controls": [],
-  "submission_materials": "D:/cve_data/submission_65706/",
-  "notes": "size-family member; closes the last of the 21-gap ffmpeg batch — all 21 now have case records or batch-triage evidence",
-  "evidence_locations": {
-    "source_file": "libavfilter/vf_swaprect.c",
-    "lines": [
-      223
-    ]
-  },
-  "trigger_conditions": "本报告为源码级验证（同族运行级证据见 CVE-2026-66036/66041）：\n  a) 上游对照：a7e38b61 为该缺陷修复（diff 见附件，复现样本\n     7aj_swaprect_odd17_nv12.nut——NV12 奇数 17 宽）；\n  b) OH 检出检查：vf_swaprect.c:223 仍为首平面单因子分配\n     （修复前形态在位）；\n  c) 等价性：OH 文件与上游 n7.1.1 逐字节一致；官方受影响清单\n     含 7.1.1——结构性证据成立；上游修复 diff 对 OH 检出\n     git apply --check 直接通过。\n  如需运行级复现：按上游样本构造（NV12 格式、奇数宽度、swaprect\n  参数覆盖色度平面区域），ASan 下观测行交换路径的\n  heap-buffer-overflow。",
-  "attack_path": "前提条件：产品/应用使用 ffmpeg 滤镜图包含 swaprect 且输入为\n满足\"非首平面宽度×步长超过首平面\"条件的格式与尺寸组合（NV12\n奇宽为代表）。攻击者构造相应媒体流驱动行交换越界写；应用自动\n处理不可信输入时无需用户交互。越界写内容为像素数据。\n\n四、PoC & Exploit：\n\n无运行级 PoC（上游复现样本名已在修复 commit 标注，可按其构造）；\n证据为三侧源码对照，附件 patch.diff 为可直接应用的修复。\n\n五、修复及缓解措施建议：\n\n回移上游修复 a7e38b61：s->temp 分配改为遍历全部平面取\n宽度×步长最大值（含 INT_MAX 溢出检查）（附件 patch.diff 即上游\n原文，对 OH 检出直接适用）。临时缓解：避免在包含 swaprect 的\n滤镜图中处理 NV12 等平面步长不均匀格式的奇数尺寸输入。",
-  "fix_recommendation": "回移上游修复 a7e38b61：s->temp 分配改为遍历全部平面取\n宽度×步长最大值（含 INT_MAX 溢出检查）（附件 patch.diff 即上游\n原文，对 OH 检出直接适用）。临时缓解：避免在包含 swaprect 的\n滤镜图中处理 NV12 等平面步长不均匀格式的奇数尺寸输入。"
+ "schema": "case-specific-validation-0.2",
+ "id": "ffmpeg-swaprect-temp-row-oob",
+ "component": "third_party/ffmpeg",
+ "cve_reference": "CVE-2026-65706",
+ "cwe_candidate": "CWE-787",
+ "discovery_method": "batch L4 (gap_likely, recalibrated tool) + manual L4",
+ "new_discovery": false,
+ "public_upstream": {
+  "fix_commit": "https://github.com/FFmpeg/FFmpeg/commit/a7e38b617b32f996beaa371bbf04b39907d7a527",
+  "fix_date": "2026-07-13",
+  "fix_subject": "avfilter/vf_swaprect: size the temp row buffer for the widest plane (Fixes: out of array access; repro 7aj_swaprect_odd17_nv12.nut)"
+ },
+ "oh_source": {
+  "repo": "https://gitcode.com/openharmony/third_party_ffmpeg",
+  "head_commit": "0a0c4dd33c",
+  "baseline": "FFmpeg 7.1.1, snapshot 2026-06-01",
+  "equivalence": "vf_swaprect.c byte-identical to upstream n7.1.1",
+  "l4_evidence": "vf_swaprect.c:223 allocates the temp row buffer as av_malloc_array(inlink->w, pixsteps[0]) — plane 0's step only; upstream fix sizes it across all planes (width<<shift * pixstep max, with INT_MAX check). Applies clean"
+ },
+ "vulnerability": {
+  "summary": "Row-swap temp buffer is sized for plane 0 only; formats where another plane's width*pixstep exceeds it (e.g. NV12 with odd widths, per the upstream repro) overrun the buffer during row exchange.",
+  "verification_level": "source-level confirmed; family equivalence to runtime-verified CVE-2026-66036/66041; runtime repro path documented (nv12 odd-width input per upstream sample name)",
+  "runtime_status": "not_run"
+ },
+ "controls": [],
+ "submission_materials": "D:/cve_data/submission_65706/",
+ "notes": "size-family member; closes the last of the 21-gap ffmpeg batch — all 21 now have case records or batch-triage evidence",
+ "evidence_locations": {
+  "source_file": "libavfilter/vf_swaprect.c",
+  "lines": [
+   223
+  ]
+ },
+ "trigger_conditions": "本报告为源码级验证（同族运行级证据见 CVE-2026-66036/66041）：\n  a) 上游对照：a7e38b61 为该缺陷修复（diff 见附件，复现样本\n     7aj_swaprect_odd17_nv12.nut——NV12 奇数 17 宽）；\n  b) OH 检出检查：vf_swaprect.c:223 仍为首平面单因子分配\n     （修复前形态在位）；\n  c) 等价性：OH 文件与上游 n7.1.1 逐字节一致；官方受影响清单\n     含 7.1.1——结构性证据成立；上游修复 diff 对 OH 检出\n     git apply --check 直接通过。\n  如需运行级复现：按上游样本构造（NV12 格式、奇数宽度、swaprect\n  参数覆盖色度平面区域），ASan 下观测行交换路径的\n  heap-buffer-overflow。",
+ "attack_path": "前提条件：产品/应用使用 ffmpeg 滤镜图包含 swaprect 且输入为\n满足\"非首平面宽度×步长超过首平面\"条件的格式与尺寸组合（NV12\n奇宽为代表）。攻击者构造相应媒体流驱动行交换越界写；应用自动\n处理不可信输入时无需用户交互。越界写内容为像素数据。\n\n四、PoC & Exploit：\n\n无运行级 PoC（上游复现样本名已在修复 commit 标注，可按其构造）；\n证据为三侧源码对照，附件 patch.diff 为可直接应用的修复。\n\n五、修复及缓解措施建议：\n\n回移上游修复 a7e38b61：s->temp 分配改为遍历全部平面取\n宽度×步长最大值（含 INT_MAX 溢出检查）（附件 patch.diff 即上游\n原文，对 OH 检出直接适用）。临时缓解：避免在包含 swaprect 的\n滤镜图中处理 NV12 等平面步长不均匀格式的奇数尺寸输入。",
+ "fix_recommendation": "回移上游修复 a7e38b61：s->temp 分配改为遍历全部平面取\n宽度×步长最大值（含 INT_MAX 溢出检查）（附件 patch.diff 即上游\n原文，对 OH 检出直接适用）。临时缓解：避免在包含 swaprect 的\n滤镜图中处理 NV12 等平面步长不均匀格式的奇数尺寸输入。",
+ "reproduction_commands": "源级三侧对照（同族运行级证据见 66036/66041）：a) 上游 a7e38b61 修复（样本名 7aj_swaprect_odd17_nv12.nut——NV12 奇数 17 宽）；b) OH vf_swaprect.c:223 仍为首平面单因子分配；c) 与 n7.1.1 逐字节一致、官方清单含 7.1.1。运行级路径：NV12+奇数宽+swaprect 参数覆盖色度平面，ASan 观测行交换路径 heap-buffer-overflow。",
+ "branch_evidence": {
+  "master": {
+   "verdict": "affected",
+   "source_commit": "0a0c4dd33c",
+   "reference": "case.json oh_source（head_commit 0a0c4dd33c 2026-09-10；与上游 n7.1.1 逐字节一致；修复前形态在位 + 上游修复 diff 对 OH 检出 git apply --check 通过）+ 提交材料包 submission_65706（L4 三侧对照）"
+  }
+ }
 }
