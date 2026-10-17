@@ -203,9 +203,29 @@ def score_finding(f: Finding, body: str, cleaned: str, params: str) -> Finding:
         # Lower: pointer is checked in a different form (e.g., !ptr in a macro)
         if re.search(rf'\b(?:ASSERT|CHECK|RET_VAL|RETURN_IF)\s*\([^)]*{re.escape(f.struct_type)}', cleaned, re.I):
             score -= 20; factors.append("-20 (macro-based check)")
-        # Higher: in a security-critical path (auth/crypto/ipc)
+        # Higher: in a security-critical path (auth/crypto/ipc) — demoted
+        # from +15 to +5 per mentor ranking guidance ("目录名最多作为次
+        # 要提示"): semantic evidence should dominate over path keywords
         if any(k in f.file.lower() for k in ('auth', 'crypto', 'ipc', 'ssl', 'tls', 'security')):
-            score += 15; factors.append("+15 (security-critical path)")
+            score += 5; factors.append("+5 (security-critical path, secondary)")
+        # Provability ranking (Gap-A, mentor step: 排序依据问题证据):
+        # an Ffi* export symbol is directly reachable by a dlopen driver —
+        # the exact validation ladder WildTrace already runs — so those
+        # leads sort first in the proof funnel.
+        if re.match(r'Ffi[A-Z0-9]', f.function or ''):
+            score += 15; factors.append("+15 (FFI export: dlopen-provable entry)")
+        # Ranking v2: semantic-class evidence (author believed nullable but
+        # the check doesn't protect) outranks generic no-check — mentor:
+        # "排序依据与真实风险关系" (adjudication round 1)
+        desc = f.description or ''
+        if 'check-after-access' in desc or 'log-only-check' in desc:
+            score += 10; factors.append("+10 (author null-check exists but doesn't protect)")
+        elif 'reassigned-after-check' in desc or 'merged-branches' in desc:
+            score += 10; factors.append("+10 (state invalidated by reassignment/merge)")
+        elif 'out-param-source' in desc:
+            score += 5; factors.append("+5 (out-param fill: callee contract)")
+        elif 'known-nullable-source' in desc or 'reassigned-known-nullable' in desc:
+            score += 10; factors.append("+10 (known-nullable API: verified contract)");
         # Lower: very short function (likely just a wrapper with caller-side check)
         if len(cleaned) < 200:
             score -= 10; factors.append("-10 (very short function)")
@@ -564,12 +584,26 @@ def _p6_guards(cleaned: str, varesc: str):
     Log-only negative checks yield nothing (they protect no path).
     """
     guards = []
-    for m in re.finditer(r'if\s*\(([^()]*)\)\s*[{;]?', cleaned):
+    # condition may itself contain calls: allow one level of balanced parens
+    # (`p == nullptr || !dev.IsValid()`) — the old [^()]* could not match
+    # such an if at all, silently dropping every compound guard.
+    for m in re.finditer(
+            r'if\s*\(([^()]*(?:\([^()]*\)[^()]*)*)\)\s*[{;]?', cleaned):
         cond = m.group(1)
-        is_neg = re.fullmatch(rf'\s*!\s*{varesc}\s*', cond) or \
-            re.fullmatch(rf'\s*{varesc}\s*==\s*(?:NULL|nullptr|0)\s*', cond)
+        # GT3: macro invocations — GATTSERVICE(x, y) == nullptr is a null
+        # check on the macro's pointer-typed expansion result
+        def _neg(c):
+            return re.fullmatch(rf'\s*!\s*{varesc}\s*', c) or \
+                re.fullmatch(rf'\s*{varesc}\s*==\s*(?:NULL|nullptr|0)\s*', c) or \
+                re.fullmatch(rf'\s*{varesc}\s*\([^()]*\)\s*==\s*(?:NULL|nullptr|0)\s*', c)
+        is_neg = _neg(cond)
+        if not is_neg:
+            parts = re.split(r'\|\|', cond)
+            if len(parts) > 1 and any(_neg(p) for p in parts):
+                is_neg = True
         is_pos = re.fullmatch(rf'\s*{varesc}\s*', cond) or \
-            re.fullmatch(rf'\s*{varesc}\s*!=\s*(?:NULL|nullptr)\s*', cond)
+            re.fullmatch(rf'\s*{varesc}\s*!=\s*(?:NULL|nullptr)\s*', cond) or \
+            re.fullmatch(rf'\s*{varesc}\s*\([^()]*\)\s*!=\s*(?:NULL|nullptr)\s*', cond)
         if not (is_neg or is_pos):
             continue
         block = _p6_block_span(cleaned, m.end() - 1) or (m.end(), m.end())
@@ -589,64 +623,278 @@ def _p6_guards(cleaned: str, varesc: str):
     return guards
 
 
-def _p6_first_unprotected(cleaned: str, varesc: str, accesses: list) -> tuple:
-    """(access_match, reason) for the first access no guard protects, or
-    (None, None) when every access is protected."""
+def _p6_block_spans(cleaned: str):
+    """Innermost brace span for every position (positions between spans
+    get None). Assignments inside a conditional block must not project
+    their state past the block end: 'if (x) p = foo(); else p = NULL;'
+    leaves p MaybeNull after the merge, not Null (straight-line
+    latest-wins fabricated ~1.2k certain-deref FPs on dsoftbus)."""
+    stack, spans = [], {}
+    for i, c in enumerate(cleaned):
+        if c == '{':
+            stack.append(i)
+        elif c == '}' and stack:
+            s = stack.pop()
+            spans[(s, i)] = None  # span markers kept by interval below
+    # build position -> innermost span via sorted intervals
+    intervals = sorted(spans.keys())
+    import bisect
+    starts = [s for s, _ in intervals]
+
+    def enclosing(pos):
+        # innermost interval containing pos
+        idx = bisect.bisect_right(starts, pos) - 1
+        while idx >= 0:
+            s, e = intervals[idx]
+            if s <= pos <= e:
+                return (s, e)
+            idx -= 1
+        return None
+    return enclosing
+
+
+# Function summaries (mentor step 6 item 4): VERIFIED nullable-return
+# patterns. Each entry must cite the implementation or contract that
+# verifies it. These affect the MaybeNull reason tag (known-nullable vs
+# source-unknown) and ranking (+10 known > +5 unknown), never candidate
+# generation. Patterns are name-prefix/suffix conventions from the
+# OpenHarmony codebase, not guesses.
+_P6_KNOWN_NULLABLE = [
+    # Allocators: standard contract — allocation can fail → NULL
+    # (SoftBusMalloc/Calloc verified in common/include/softbus_utils.h;
+    #  malloc/calloc/new are ISO C/C++ contracts)
+    re.compile(r'\b(?:\w*Malloc|\w*Calloc|\w*Alloc|malloc|calloc|new)\b'),
+    # Getters returning pointers: OH convention — Get* can return NULL
+    # when the target is not found/available
+    # (GetRemoteProxy verified: callers all guard with CHECK_AND_RETURN;
+    #  LnnGet*Info verified in bus_center/lnn; GetSession* in transmission)
+    re.compile(r'\b(?:Get\w+Proxy|LnnGet\w+|Get\w*Session\w*|Find\w+)\b'),
+]
+
+
+def _p6_known_nullable_source(rhs: str) -> bool:
+    """Does this assignment RHS call a verified nullable-returning API?"""
+    for pattern in _P6_KNOWN_NULLABLE:
+        if pattern.search(rhs):
+            return True
+    return False
+
+
+def _p6_access_states(cleaned: str, varesc: str, accesses: list):
+    """Intra-function pointer-state timeline (mentor step 4, Gap A).
+
+    Walks the cleaned body as ordered events (guards + assignments) and
+    evaluates each access's state: Null / NonNull / MaybeNull(reason).
+    Model scope is deliberately tiny: straight-line position semantics,
+    the two guard forms from _p6_guards, direct assignments. Anything
+    else (compound conditions, aliasing, loops) stays MaybeNull — an
+    explicit unknown, never a guess of safety. Note NonNull means
+    non-null only, not alive or valid (malloc results stay MaybeNull:
+    allocation can return NULL).
+    """
     guards = _p6_guards(cleaned, varesc)
     neg_aborts = [g for g in guards if g["kind"] == "neg-abort"]
     pos_blocks = [g for g in guards if g["kind"] == "pos-block"]
-    reassign = re.compile(rf'\b{varesc}\s*=\s*[^=]')
+    enclosing = _p6_block_spans(cleaned)
+    assigns = []
+    for m in re.finditer(rf'\b{varesc}\s*=\s*([^;=][^;]*);', cleaned):
+        rhs = m.group(1).strip()
+        if re.fullmatch(r'(?:NULL|nullptr|0)\b.*', rhs):
+            assigns.append({"pos": m.start(), "state": "Null",
+                            "reason": "assigned-null"})
+        elif re.match(r'&\s*\w', rhs):
+            assigns.append({"pos": m.start(), "state": "NonNull",
+                            "reason": "assigned-address"})
+        else:
+            reason = ("reassigned-source-unknown"
+                      if neg_aborts else "assigned-source-unknown")
+            # function summaries: known-nullable APIs rank above unknown
+            if _p6_known_nullable_source(rhs):
+                reason = ("reassigned-known-nullable"
+                          if neg_aborts else "known-nullable-source")
+            assigns.append({"pos": m.start(), "state": "MaybeNull",
+                            "reason": reason})
+    for a in assigns:
+        a["scope"] = enclosing(a["pos"])
+    # out-param fills: Func(&var, ...) supersedes an earlier NULL init —
+    # the callee's contract decides, so the honest state is MaybeNull
+    # (40/43 of the top-funnel state=Null leads were this pattern)
+    for m in re.finditer(rf'\w+\s*\(\s*[^();]*&\s*{varesc}\b', cleaned):
+        assigns.append({"pos": m.start(), "state": "MaybeNull",
+                        "reason": "out-param-source", "scope": enclosing(m.start())})
+    assigns.sort(key=lambda a: a["pos"])
+    for g in neg_aborts:
+        g["scope"] = enclosing(g["start"])
+    # loop bodies: list-cursor variables are assigned inside traversal
+    # macros (LIST_FOR_EACH* et al.) the model cannot see; a Null carried
+    # into a loop-body access is 'loop-scope-unknown', never certain —
+    # ~1.2k macro-cursor FPs on dsoftbus were labeled state=Null before
+    loop_spans = []
+    for m in re.finditer(r'(?:for|while)\s*\(', cleaned):
+        blk = _p6_block_span(cleaned, m.end() - 1)
+        if blk:
+            loop_spans.append(blk)
+    # traversal-macro cursors: LIST_FOR_EACH(item, ...)- and camelCase
+    # ForEach(capability, ...)-style invocations carry their for-loop inside
+    # a macro defined elsewhere — no literal for/while appears at the call
+    # site, so match the invocation shape (adjudication lead #15:
+    # cJSON_ArrayForEach)
+    traversal_macro = re.search(
+        rf'\b\w*(?:LIST|FOR_EACH|FOREACH|ITER|TRAVERSE)\w*\s*\(\s*{varesc}\s*[,)]',
+        cleaned, re.I)
+
+    def in_loop(pos):
+        if any(s <= pos <= e for s, e in loop_spans):
+            return True
+        return bool(traversal_macro) and traversal_macro.start() < pos
+    out = []
     for acc in accesses:
         p = acc.start()
-        if any(g["block"][0] <= p <= g["block"][1] for g in pos_blocks):
-            continue
-        protected = False
-        for g in neg_aborts:
-            if g["end"] <= p:
-                span = cleaned[g["end"]:p]
-                if reassign.search(span):
-                    continue  # fact invalidated: checked value was replaced
-                protected = True
-                break
-        if protected:
-            continue
-        late = [g for g in guards if g["start"] > p]
-        reassigned = any(reassign.search(cleaned[g["end"]:p]) for g in neg_aborts
-                         if g["end"] <= p)
-        if reassigned:
-            return acc, "reassigned-after-check"
-        if late:
-            return acc, "check-after-access"
-        if guards:
-            return acc, "log-only-check"
-        return acc, "no-null-check"
-    return None, None
+        in_pos_block = any(g["block"][0] <= p <= g["block"][1]
+                           for g in pos_blocks)
+        state, reason = None, None
+        # latest fact before the access wins (chronological walk); facts
+        # born inside a conditional block do NOT project past that block —
+        # after the merge the variable is at best MaybeNull (branch-merge
+        # rule; straight-line projection fabricated certain-deref FPs)
+        def _applies(f):
+            s = f.get("scope")
+            return s is None or p <= s[1] or s[0] <= p <= s[1]
+        facts = [{"pos": g["end"], "state": "NonNull",
+                  "reason": "guard-fallthrough", "scope": g["scope"]}
+                 for g in neg_aborts
+                 if g["end"] <= p and _applies(g)] + \
+                [a for a in assigns if a["pos"] < p and _applies(a)]
+        merged = None
+        if in_pos_block:
+            state, reason = "NonNull", "positive-block"
+        elif facts:
+            last = max(facts, key=lambda f: f["pos"])
+            s = last.get("scope")
+            if s is not None and p > s[1]:
+                state, reason = "MaybeNull", "merged-branches"
+                merged = True
+            else:
+                state, reason = last["state"], last["reason"]
+            # a scoped assignment whose block already closed joins the
+            # merge: carried Null + conditional reassign = MaybeNull
+            # (only the branch that skipped the block still carries Null)
+            excluded = [a for a in assigns
+                        if a["pos"] < p and a.get("scope")
+                        and p > a["scope"][1] and a["pos"] > last["pos"]]
+            if excluded and not merged and state != "MaybeNull":
+                differing = [a for a in excluded if a["state"] != state]
+                if differing:
+                    state, reason = "MaybeNull", "merged-branches"
+                    merged = True
+            # a guard BEFORE a later assignment does not survive it
+            if last["reason"] == "guard-fallthrough" and not merged:
+                later_assign = [a for a in assigns
+                                if a["pos"] < p and a["reason"] != "assigned-address"
+                                and any(g["end"] <= a["pos"] for g in neg_aborts
+                                        if g["end"] <= a["pos"] < p)]
+                if later_assign:
+                    a = max(later_assign, key=lambda x: x["pos"])
+                    if a["state"] != "NonNull":
+                        state, reason = a["state"], \
+                            "reassigned-after-check" if neg_aborts else a["reason"]
+        else:
+            state, reason = "MaybeNull", "param-no-contract"
+        if state == "Null" and in_loop(p):
+            state, reason = "MaybeNull", "loop-scope-unknown"
+        if state == "MaybeNull":
+            late = [g for g in guards if g["start"] > p]
+            non_abort_checks = len(guards) - len(neg_aborts)
+            if late:
+                reason = "check-after-access"
+            elif non_abort_checks:
+                reason = "log-only-check"
+        out.append((acc, state, reason))
+    return out
 
 
-def scan_p6(root, call_graph=None):
+def _p6_pointer_vars(params: str, cl: str) -> set:
+    """Candidate pointer variables of one function: parameters, GT1 local
+    declarations, and GT2 member pointers.
+
+    Members behave exactly like no-contract parameters from the single
+    function's perspective — it cannot see the constructor. The state
+    timeline, guards, and branch-merge rules apply unchanged (mentor step
+    6 second item; retro GT2: bluetooth_socket pimpl)."""
+    out = set(re.findall(r'(?:const\s+)?\w+\s*\*+\s*(\w+)', params))
+    out |= set(_SMART_PTR_PARAM.findall(params))
+    local_smart = re.compile(
+        r'(?:const\s+)?(?:(?:std::)?(?:shared|unique)_ptr|[sw]ptr)'
+        r'\s*<[^>;()]*>\s*(\w+)\s*=')
+    local_raw = re.compile(r'(?:const\s+)?\w+\s*\*+\s*(\w+)\s*=')
+    out |= set(local_smart.findall(cl)) | set(local_raw.findall(cl))
+    # GT2: identifiers dereferenced with -> that aren't params/locals are
+    # member or global pointers — treat as no-contract candidates. Only
+    # those appearing at a dereference site (not in declarations/strings).
+    # GT3: ALL-CAPS macro invocations dereferenced as *MACRO(...) or
+    # MACRO(...)-> — the macro expands to a struct-member chain
+    # (GATTSERVICE(serverId, handle) → g_gattServers[x].gattServices[y].gattService)
+    keywords = ('if', 'for', 'while', 'return', 'sizeof', 'NULL', 'void',
+                'new', 'delete', 'this', 'true', 'false', 'else', 'case',
+                'break', 'continue', 'goto', 'switch', 'default')
+    for m in re.finditer(r'\b(\w+)\s*->\w', cl):
+        name = m.group(1)
+        if name not in out and name not in keywords and len(name) > 1:
+            out.add(name)
+    # GT3: *MACRO(...) — macro call result is dereferenced
+    for m in re.finditer(r'\*(\w+)\s*\(', cl):
+        name = m.group(1)
+        if (name.isupper() and name not in out and len(name) > 2
+                and name not in keywords):
+            out.add(name)
+    return {v for v in out if v not in keywords}
+
+
+def scan_p6(root, call_graph=None, _suppressed=None):
     out = []
     for src in list(root.rglob('*.c')) + list(root.rglob('*.cpp')):
         rel = str(src.relative_to(root))
         try: text = src.read_text(encoding='utf-8', errors='replace')
         except OSError: continue
         for name, params, line, body, cl in _iter_functions(text):
-            ptr_params = set(re.findall(r'(?:const\s+)?\w+\s*\*+\s*(\w+)', params))
-            ptr_params |= set(_SMART_PTR_PARAM.findall(params))
-            for pp in ptr_params:
-                if pp in ('if','for','while','return','sizeof','NULL','void'): continue
+            for pp in sorted(_p6_pointer_vars(params, cl)):
                 varesc = re.escape(pp)
-                accesses = list(re.finditer(rf'\b{varesc}\s*(?:->\w+|\[|\.\w)', cl))
+                # access = the variable itself dereferenced; a match
+                # preceded by -> or . is a MEMBER NAME (fileList->fileInfo[i]),
+                # not an access of the variable — adjudication lead #1
+                # GT3: *MACRO(...) is also an access (macro call deref)
+                def _real_access(m):
+                    return not cl[max(0, m.start() - 2):m.start()].endswith(('->', '.'))
+                accesses = [m for m in re.finditer(
+                    rf'(?:\*{varesc}\s*\(|\b{varesc}\s*(?:->\w+|\[|\.\w))', cl)
+                    if _real_access(m)]
                 if not accesses:
                     continue
-                acc, reason = _p6_first_unprotected(cl, varesc, accesses)
+                acc, state, reason = None, None, None
+                for a, st, rs in _p6_access_states(cl, varesc, accesses):
+                    if st != "NonNull":
+                        acc, state, reason = a, st, rs
+                        break
                 if acc is None:
+                    # mentor: "这次访问没有出现在最终结果里，原因是什么？"
+                    # log the suppression reason for every protected access
+                    if _suppressed is not None:
+                        for a, st, rs in _p6_access_states(cl, varesc, accesses):
+                            _suppressed.append({
+                                "file": rel, "function": name, "var": pp,
+                                "line": line, "state": st, "reason": rs,
+                            })
                     continue
-                f = Finding(_fid("P6", rel, line, pp), "P6_null_deref", "medium",
+                severity = "high" if state == "Null" else "medium"
+                f = Finding(_fid("P6", rel, line, pp), "P6_null_deref", severity,
                            rel, line, name, pp, "CWE-476",
-                           f"Ptr '{pp}' ×{len(accesses)} deref(s), unprotected "
-                           f"access: {reason}",
+                           f"Ptr '{pp}' ×{len(accesses)} deref(s), access state="
+                           f"{state} ({reason})",
                            trigger_hint=f"{name}(NULL)")
                 f = score_finding(f, body, cl, params)
+                if state == "Null":
+                    f.confidence = min(100, f.confidence + 25)
+                    f.confidence_factors += "; +25 (access state=Null: certain deref)"
                 # Cross-function: a caller that null-checks the argument
                 # lowers confidence — it must NOT silently drop the finding
                 # (audit P1: name coincidence with a caller param used to

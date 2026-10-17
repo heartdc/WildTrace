@@ -103,5 +103,481 @@ class P6DetectionContractTests(unittest.TestCase):
                             "non-null fact is invalidated by reassignment")
 
 
+class P6StateModelTests(unittest.TestCase):
+    """Step-4 contracts: Null/NonNull/MaybeNull with explicit reasons.
+
+    NonNull means non-null only, never alive-or-valid; malloc results stay
+    MaybeNull (allocation can return NULL). Unknown forms stay MaybeNull
+    with a reason — the tool never guesses safety.
+    """
+
+    def _state(self, parameter: str, body: str):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sample.c").write_text(
+                "typedef struct Node { int a, b; } Node;\n"
+                "Node *find_node(int id);\n"
+                f"void use(Node *{parameter}) {{\n{body}\n}}\n",
+                encoding="utf-8")
+            found = _finds(root, "use", parameter)
+            return (found[0] if found else None)
+
+    def test_assigned_null_access_is_certain(self):
+        f = self._state("node", "    node = NULL;\n    node->a = 1;")
+        self.assertIsNotNone(f)
+        self.assertIn("state=Null (assigned-null)", f.description)
+        self.assertEqual(f.severity, "high")
+
+    def test_address_of_assignment_is_non_null(self):
+        f = self._state("node", "    struct { int a; } holder;\n"
+                                "    node = &holder;\n    node->a = 1;")
+        self.assertIsNone(f, "assigned &x is NonNull by construction")
+
+    def test_nullable_source_guarded_then_accessed(self):
+        f = self._state("node", "    node = find_node(1);\n"
+                                "    if (!node) return;\n"
+                                "    node->a = 1;")
+        self.assertIsNone(f, "guard after a nullable source restores NonNull")
+
+    def test_nullable_source_unguarded_labels_reason(self):
+        f = self._state("node", "    node = find_node(1);\n    node->a = 1;")
+        self.assertIsNotNone(f)
+        self.assertIn("assigned-source-unknown", f.description)
+
+    def test_plain_param_labels_no_contract(self):
+        f = self._state("node", "    node->a = 1;")
+        self.assertIsNotNone(f)
+        self.assertIn("state=MaybeNull (param-no-contract)", f.description)
+
+    def test_ffi_export_gets_provable_ranking(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sample.c").write_text(
+                "typedef struct Node { int a; } Node;\n"
+                "void FfiUseNode(Node *node) {\n"
+                "    node->a = 1;\n"
+                "}\n", encoding="utf-8")
+            found = _finds(root, "FfiUseNode", "node")
+            self.assertTrue(found)
+            self.assertIn("+15 (FFI export: dlopen-provable entry)",
+                          found[0].confidence_factors)
+
+
+class P6LocalPointerTests(unittest.TestCase):
+    """GT1 contracts (mentor step 6 first item): local pointer /
+    smart-pointer declarations join the state timeline via their
+    initializer — retro GT1's 'sptr<> proxy = GetRemoteProxy(...)' shape."""
+
+    def _state(self, body: str, var: str = "proxy"):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sample.cpp").write_text(
+                "struct IObs { void Fire(int x); };\n"
+                "template <typename T> T *GetRemoteProxy(int id);\n"
+                "int other(void);\n"
+                f"void use() {{\n{body}\n}}\n",
+                encoding="utf-8")
+            found = _finds(root, "use", var)
+            return (found[0] if found else None)
+
+    def test_local_sptr_unguarded_is_candidate(self):
+        f = self._state(
+            "    sptr<IObs> proxy = GetRemoteProxy<IObs>(1);\n"
+            "    proxy->Fire(2);")
+        self.assertIsNotNone(f)
+        # GetRemoteProxy is a verified nullable-return pattern → tagged
+        # known-nullable-source (upgraded from assigned-source-unknown
+        # when function summaries were added)
+        self.assertIn("known-nullable-source", f.description)
+
+    def test_local_sptr_macro_guarded_suppresses(self):
+        # CHECK_AND_RETURN_LOG_RET form is a return-polarity guard
+        f = self._state(
+            "    #define CHECK_AND_RETURN_LOG_RET(c, r, ...) do { "
+            "if (!(c)) return r; } while (0)\n"
+            "    sptr<IObs> proxy = GetRemoteProxy<IObs>(1);\n"
+            "    CHECK_AND_RETURN_LOG_RET(proxy != nullptr, -1, \"null\");\n"
+            "    proxy->Fire(2);")
+        self.assertIsNone(f)
+
+    def test_local_sptr_if_guarded_suppresses(self):
+        f = self._state(
+            "    sptr<IObs> proxy = GetRemoteProxy<IObs>(1);\n"
+            "    if (proxy == nullptr) {\n"
+            "        return;\n"
+            "    }\n"
+            "    proxy->Fire(2);")
+        self.assertIsNone(f)
+
+    def test_local_raw_pointer_unguarded_is_candidate(self):
+        f = self._state(
+            "    IObs *p = other();\n"
+            "    p->Fire(1);", var="p")
+        self.assertIsNotNone(f)
+        self.assertIn("assigned-source-unknown", f.description)
+
+    def test_local_null_assignment_is_certain(self):
+        f = self._state(
+            "    IObs *p = NULL;\n"
+            "    p->Fire(1);", var="p")
+        self.assertIsNotNone(f)
+        self.assertIn("state=Null (assigned-null)", f.description)
+        self.assertEqual(f.severity, "high")
+
+    def test_local_address_of_is_non_null(self):
+        f = self._state(
+            "    IObs holder;\n"
+            "    IObs *p = &holder;\n"
+            "    p->Fire(1);", var="p")
+        self.assertIsNone(f)
+
+    def test_disjunction_with_null_test_guards(self):
+        # short-circuit: the branch is taken when p is null on its own
+        f = self._state(
+            "    sptr<IObs> proxy = GetRemoteProxy<IObs>(1);\n"
+            "    if (proxy == nullptr || other()) {\n"
+            "        return;\n"
+            "    }\n"
+            "    proxy->Fire(2);")
+        self.assertIsNone(f)
+
+    def test_disjunction_null_test_on_either_side_guards(self):
+        f = self._state(
+            "    sptr<IObs> proxy = GetRemoteProxy<IObs>(1);\n"
+            "    if (other() || !proxy) {\n"
+            "        return;\n"
+            "    }\n"
+            "    proxy->Fire(2);")
+        self.assertIsNone(f)
+
+    def test_conjunction_with_null_test_does_not_guard(self):
+        # p null but other() false → branch not taken → not a guard
+        f = self._state(
+            "    sptr<IObs> proxy = GetRemoteProxy<IObs>(1);\n"
+            "    if (proxy == nullptr && other()) {\n"
+            "        return;\n"
+            "    }\n"
+            "    proxy->Fire(2);")
+        self.assertIsNotNone(f)
+
+    def test_conditional_null_assignment_merges_to_maybenull(self):
+        # if (x) p = foo(); else p = NULL; p->a  — on the x-true path p is
+        # non-null; straight-line 'latest assign wins' must not call it Null
+        f = self._state(
+            "    IObs *p = NULL;\n"
+            "    if (other()) {\n"
+            "        p = other();\n"
+            "    }\n"
+            "    p->Fire(1);", var="p")
+        self.assertIsNotNone(f)
+        self.assertIn("merged-branches", f.description)
+        self.assertNotIn("state=Null", f.description)
+        self.assertEqual(f.severity, "medium")
+
+    def test_toplevel_null_assignment_stays_certain(self):
+        f = self._state(
+            "    IObs *p = NULL;\n"
+            "    p->Fire(1);", var="p")
+        self.assertIsNotNone(f)
+        self.assertIn("state=Null", f.description)
+
+    def test_null_cursor_in_loop_is_unknown_not_certain(self):
+        # list cursors are reassigned inside traversal macros the model
+        # cannot see (assignment not regex-visible) — a Null init carried
+        # into a loop-body access is an explicit unknown, never certain
+        # (dsoftbus macro-cursor FP class, ~1.2k leads)
+        f = self._state(
+            "    IObs *item = NULL;\n"
+            "    while (HasNext(list)) {\n"
+            "        item->Fire(1);\n"
+            "    }", var="item")
+        self.assertIsNotNone(f)
+        self.assertIn("loop-scope-unknown", f.description)
+        self.assertNotIn("state=Null", f.description)
+        self.assertEqual(f.severity, "medium")
+
+    def test_member_name_is_not_an_access(self):
+        # adjudication lead #1: fileList->fileInfo[i] — fileInfo is a
+        # MEMBER name here, not the variable being indexed
+        f = self._state(
+            "    IObs *fileInfo = NULL;\n"
+            "    for (int i = 0; i < 3; i++) {\n"
+            "        if (other->fileInfo[i].size > 0) {\n"
+            "            continue;\n"
+            "        }\n"
+            "        fileInfo = &other->fileInfo[i];\n"
+            "        fileInfo->Fire(1);\n"
+            "    }", var="fileInfo")
+        self.assertIsNone(f, "&x assignment in-loop protects the access;"
+                            " the earlier member-name match is not an access")
+
+    def test_outparam_fill_supersedes_null_init(self):
+        # adjudication: 40/43 top-funnel state=Null leads were this —
+        # the callee fills &var; its contract decides, so MaybeNull
+        f = self._state(
+            "    IObs *userIds = NULL;\n"
+            "    if (GetAll(&userIds) != 0) {\n"
+            "        return;\n"
+            "    }\n"
+            "    userIds->Fire(1);", var="userIds")
+        self.assertIsNotNone(f)
+        self.assertIn("out-param-source", f.description)
+        self.assertNotIn("state=Null", f.description)
+        self.assertEqual(f.severity, "medium")
+
+    def test_camelcase_foreach_is_traversal(self):
+        # adjudication lead #15: cJSON_ArrayForEach(capability, item)
+        f = self._state(
+            "    IObs *capability = NULL;\n"
+            "    cJSON_ArrayForEach(capability, item) {\n"
+            "        capability->Fire(1);\n"
+            "    }", var="capability")
+        self.assertIsNotNone(f)
+        self.assertIn("loop-scope-unknown", f.description)
+        self.assertNotIn("state=Null", f.description)
+
+    def test_check_after_access_gets_semantic_bonus(self):
+        f = self._state(
+            "    sptr<IObs> proxy = GetRemoteProxy<IObs>(1);\n"
+            "    proxy->Fire(2);\n"
+            "    if (!proxy) {\n"
+            "        return;\n"
+            "    }")
+        self.assertIsNotNone(f)
+        self.assertIn("+10 (author null-check exists but doesn't protect)",
+                      f.confidence_factors)
+
+    def test_path_keyword_demoted_below_semantic(self):
+        # same code in auth/ vs non-auth/ should differ by only +5 now
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            body = ("struct IObs { void Fire(); };\n"
+                    "void use(IObs *auth_p) {\n"
+                    "    auth_p->Fire();\n"
+                    "}\n")
+            (root / "auth_file.c").write_text(body, encoding="utf-8")
+            (root / "plain_file.c").write_text(
+                body.replace("auth_p", "plain_p"), encoding="utf-8")
+            findings = scan_p6(root)
+        auth_f = [f for f in findings if f.file == "auth_file.c"]
+        plain_f = [f for f in findings if f.file == "plain_file.c"]
+        if auth_f and plain_f:
+            diff = (auth_f[0].confidence or 0) - (plain_f[0].confidence or 0)
+            self.assertLessEqual(diff, 5,
+                                 "path keyword bonus should be ≤ +5 (v2)")
+
+    def test_suppression_log_records_protected_accesses(self):
+        # mentor: "这次访问没有出现在最终结果里，原因是什么？"
+        suppressed = []
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sample.c").write_text(
+                "typedef struct Node { int a; } Node;\n"
+                "void guarded(Node *node) {\n"
+                "    if (!node) return;\n"
+                "    node->a = 1;\n"
+                "}\n"
+                "void unguarded(Node *node) {\n"
+                "    node->a = 1;\n"
+                "}\n", encoding="utf-8")
+            findings = scan_p6(root, _suppressed=suppressed)
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0].function, "unguarded")
+        self.assertEqual(len(suppressed), 1)
+        self.assertEqual(suppressed[0]["function"], "guarded")
+        self.assertEqual(suppressed[0]["state"], "NonNull")
+        self.assertEqual(suppressed[0]["reason"], "guard-fallthrough")
+
+
+class P6MemberPointerTests(unittest.TestCase):
+    """GT2 contracts (mentor step 6 second item): member pointers join the
+    candidate set — a method can't see the constructor, so an unguarded
+    member deref is a no-contract MaybeNull, same as an unchecked param."""
+
+    def _finds(self, root: Path, function: str, var: str) -> list:
+        return [f for f in scan_p6(root)
+                if f.pattern == "P6_null_deref" and f.function == function
+                and f.struct_type == var]
+
+    def test_member_pointer_unguarded_is_candidate(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "gt2.cpp").write_text(
+                "class ClientSocket {\n"
+                "public:\n"
+                "    Impl *pimpl;\n"
+                "    int Init() {\n"
+                "        return pimpl->Init();\n"
+                "    }\n"
+                "};\n", encoding="utf-8")
+            found = self._finds(root, "Init", "pimpl")
+        self.assertTrue(found, "unguarded member deref must be a candidate")
+        self.assertIn("param-no-contract", found[0].description)
+
+    def test_member_pointer_guarded_suppresses(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "gt2.cpp").write_text(
+                "#define CHECK_AND_RETURN_LOG(c, ...) do { "
+                "if (!(c)) return -1; } while (0)\n"
+                "class ClientSocket {\n"
+                "public:\n"
+                "    Impl *pimpl;\n"
+                "    int Init() {\n"
+                "        CHECK_AND_RETURN_LOG(pimpl != nullptr, \"null\");\n"
+                "        return pimpl->Init();\n"
+                "    }\n"
+                "};\n", encoding="utf-8")
+            found = self._finds(root, "Init", "pimpl")
+        self.assertEqual(found, [], "guarded member deref must suppress")
+
+    def test_member_pointer_if_guard_suppresses(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "gt2.cpp").write_text(
+                "class ClientSocket {\n"
+                "public:\n"
+                "    Impl *pimpl;\n"
+                "    int Init() {\n"
+                "        if (pimpl == nullptr) {\n"
+                "            return -1;\n"
+                "        }\n"
+                "        return pimpl->Init();\n"
+                "    }\n"
+                "};\n", encoding="utf-8")
+            found = self._finds(root, "Init", "pimpl")
+        self.assertEqual(found, [], "if-guarded member deref must suppress")
+
+
+class P6MacroPointerTests(unittest.TestCase):
+    """GT3 contracts: ALL-CAPS accessor macros expanding to pointer chains.
+    The fix b9fd4075 added `|| GATTSERVICE(...) == nullptr` to a disjunction —
+    existing short-circuit guard logic handles the rest unchanged."""
+
+    def _finds(self, root: Path, function: str, var: str) -> list:
+        return [f for f in scan_p6(root)
+                if f.pattern == "P6_null_deref" and f.function == function
+                and f.struct_type == var]
+
+    def test_macro_deref_unguarded_is_candidate(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "gt3.cpp").write_text(
+                "#define GATTSERVER(x) g_servers[x].server\n"
+                "#define GATTSERVICE(x, y) g_servers[x].services[y].svc\n"
+                "int StartService(int serverId, int handle) {\n"
+                "    if (GATTSERVER(serverId) == nullptr) {\n"
+                "        return -1;\n"
+                "    }\n"
+                "    GATTSERVER(serverId)->AddService(*GATTSERVICE(serverId, handle));\n"
+                "    return 0;\n"
+                "}\n", encoding="utf-8")
+            found = self._finds(root, "StartService", "GATTSERVICE")
+        self.assertTrue(found, "unguarded macro deref must be a candidate")
+
+    def test_macro_deref_disjunction_guard_suppresses(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "gt3.cpp").write_text(
+                "#define GATTSERVER(x) g_servers[x].server\n"
+                "#define GATTSERVICE(x, y) g_servers[x].services[y].svc\n"
+                "int StartService(int serverId, int handle) {\n"
+                "    if (GATTSERVER(serverId) == nullptr || "
+                "GATTSERVICE(serverId, handle) == nullptr) {\n"
+                "        return -1;\n"
+                "    }\n"
+                "    GATTSERVER(serverId)->AddService(*GATTSERVICE(serverId, handle));\n"
+                "    return 0;\n"
+                "}\n", encoding="utf-8")
+            found = self._finds(root, "StartService", "GATTSERVICE")
+        self.assertEqual(found, [], "disjunction-guarded macro deref must suppress")
+
+
+class P6FunctionSummaryTests(unittest.TestCase):
+    """Step 6 item 4: verified nullable-return APIs tag their MaybeNull
+    leads as known-nullable-source (ranking +10) vs the generic
+    assigned-source-unknown (+0). Summaries cite verified contracts."""
+
+    def _finds(self, root: Path, function: str, var: str) -> list:
+        return [f for f in scan_p6(root)
+                if f.pattern == "P6_null_deref" and f.function == function
+                and f.struct_type == var]
+
+    def test_allocator_source_tags_known_nullable(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "summary.c").write_text(
+                "typedef struct Node { int a; } Node;\n"
+                "Node *SoftBusMalloc(unsigned long size);\n"
+                "void use(void) {\n"
+                "    Node *p = SoftBusMalloc(sizeof(Node));\n"
+                "    p->a = 1;\n"
+                "}\n", encoding="utf-8")
+            found = self._finds(root, "use", "p")
+        self.assertTrue(found)
+        self.assertIn("known-nullable-source", found[0].description)
+        self.assertIn("+10 (known-nullable API", found[0].confidence_factors)
+
+    def test_getter_source_tags_known_nullable(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "summary.cpp").write_text(
+                "struct IObs { void Fire(); };\n"
+                "template <typename T> T *GetRemoteProxy(int id);\n"
+                "void use(void) {\n"
+                "    IObs *proxy = GetRemoteProxy<IObs>(1);\n"
+                "    proxy->Fire();\n"
+                "}\n", encoding="utf-8")
+            found = self._finds(root, "use", "proxy")
+        self.assertTrue(found)
+        self.assertIn("known-nullable-source", found[0].description)
+
+    def test_unknown_source_stays_untagged(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "summary.c").write_text(
+                "typedef struct Node { int a; } Node;\n"
+                "Node *some_random_function(void);\n"
+                "void use(void) {\n"
+                "    Node *p = some_random_function();\n"
+                "    p->a = 1;\n"
+                "}\n", encoding="utf-8")
+            found = self._finds(root, "use", "p")
+        self.assertTrue(found)
+        self.assertIn("assigned-source-unknown", found[0].description)
+        self.assertNotIn("known-nullable", found[0].description)
+
+
+class P6ScopedGuardTests(unittest.TestCase):
+    """Scoped guard: a return inside a nested if only fires on the branch
+    that entered it — the fall-through path can still carry null."""
+
+    def _state(self, parameter: str, body: str):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sample.cpp").write_text(
+                "struct IObs { void Fire(int x); };\n"
+                "template <typename T> T *GetRemoteProxy(int id);\n"
+                "int other(void);\n"
+                f"void use() {{\n{body}\n}}\n",
+                encoding="utf-8")
+            found = _finds(root, "use", parameter)
+            return (found[0] if found else None)
+
+    def test_scoped_guard_does_not_protect_after_block(self):
+        # the return only happens when other() is true; the fall-through
+        # path can still carry a null p
+        f = self._state(
+            "proxy",
+            "    sptr<IObs> proxy = GetRemoteProxy<IObs>(1);\n"
+            "    if (other()) {\n"
+            "        if (!proxy) {\n"
+            "            return;\n"
+            "        }\n"
+            "    }\n"
+            "    proxy->Fire(2);")
+        self.assertIsNotNone(f)
+
+
 if __name__ == "__main__":
     unittest.main()
