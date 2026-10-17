@@ -99,5 +99,15 @@ bluetooth_socket_server.cpp:52-55  socketObserverList_->RemoveObserver(
 
 ### 遗留事项
 
-- [ ] #19 候选运行时 PoC：raw IPC 空 Parcel 复现 + gdb 崩溃帧归属服务进程（复用 ipc/hiappevent 证据包模板）
-- [ ] 提交前核验上游 master 是否已修（bluetooth_service 2e9e230 之后的新提交）
+- [x] #19 候选运行时 PoC（2026-10-17 完成）：官方完整树靶向构建 `libbluetooth_server.z.so`，
+      PoC 以攻击者形态 Parcel（正确 token + 省略 observer）驱动真实
+      `BluetoothSocketServer::OnRemoteRequest(DEREGISTER_SERVER_OBSERVER)` →
+      **exit 139（SIGSEGV）**，符号化归因 `bluetooth_socket_server.cpp:54:51`
+      （`observer->AsObject()`）。一键复现：`tools/validation_cases/run_bt_dereg.sh`。
+      证据包：`D:/cve_data/bt_server_dereg_observer/`（TICKET_DRAFT + evidence 16 项 +
+      双版本修复补丁）
+- [x] 上游核验：gitee master 服务端无守卫代码仍在（`observer->AsObject()` 原样），
+      但 memberFuncMap_ 重构后 `DEREGISTER_SERVER_OBSERVER` 被二次赋值为
+      `DeregisterClientObserverInner`（疑似 `DEREGISTER_CLIENT_OBSERVER` 键名手误），
+      IPC 入口被意外掩盖——缺陷仍在，入口待上游修复键名后即恢复可达。报障版本：
+      官方树 2e9e230（分发链完整）。gitcode master raw 不可达（返回门户页），待人工复核。
