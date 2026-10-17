@@ -98,3 +98,31 @@ CJ FFI 63+ 仓，耗时与内存数据随附）。
 `docs/deliverables/`：TECHNICAL_SPEC（技术说明书）、VULN_REPORT（漏洞分析报告）、
 IMPACT_MATRIX（影响矩阵）、PERFORMANCE（性能说明）、VIDEO_SCRIPT + DEMO_RUNBOOK（演示）、
 USAGE（本文件）。状态台账在 `docs/status/`，审计与实验记录在 `docs/analysis/`。
+
+## 6. 本地工作台（2026-10 增补）
+
+```powershell
+.\Start-Workbench.ps1                 # 或：python -m ohvul.workbench.launch
+# 浏览器打开 http://127.0.0.1:8765
+```
+
+- 总览页：案例证据完整度指标（计数无关断言）、扫描/任务状态
+- 案例对话框：源码位置 / PoC 与附件 / 版本影响三标签，证据链字段直读 case.json
+- 候选审查页与报告中心：发现队列、报告预览与导出；双引擎（P6 规则层 +
+  Joern CPG 选配）同一界面驱动
+- 数据目录默认 `.cache/workbench`，可用 `--data-dir` 指定
+
+## 7. 验证 harness 一键化（2026-10 增补）
+
+`tools/validation_cases/`（17 个 .c/.sh，含 20+ 验证客户端）：
+
+| runner | 用途 |
+|---|---|
+| `run_malformed.sh` | 任意真库 malformed 客户端的编译-加载-执行-封存（udmf/ipc/kv/hiappevent 等，exit 139 判读） |
+| `run_ipc_normal.sh` | IPC 正常路径 round-trip（对照组） |
+| `run_bt_dereg.sh` | bluetooth 服务端 DeregisterServerObserver PoC：构建到帧归因一键完成（符号化 `bluetooth_socket_server.cpp:54`） |
+
+其余单案客户端（`*_null_*.c`、`bluetooth_neg_advert.c` 等）均以
+`run_malformed.sh <root> <out> <evid> <client> <lib>` 统一驱动，证据哈希
+前后封存。LLM 侧：`tools/llm_review_run.py`（plan/run/verify）与
+`tools/llm_cross_compare.py`。

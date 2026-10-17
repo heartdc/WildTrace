@@ -48,6 +48,31 @@
       "verdict": "affected",
       "source_commit": "0c2c9df",
       "reference": "submission_87933（核验基线 HEAD 0c2c9df，cJSON 1.7.19；ASan 运行级 UAF 2×2 矩阵）"
+    },
+    "OpenHarmony-v4.1-Release": {
+      "verdict": "affected",
+      "source_commit": "OpenHarmony-4.1-Release",
+      "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-4.1-Release 分支 ohos/ohos.xml 钉住 third_party_cjson（ref=OpenHarmony-4.1-Release），gitcode README.OpenSource 声明版本 1.7.16；kb[cvelistV5] CVE-2026-87933（cJSON_Utils.c cJSONUtils_MergePatch UAF）受影响区间 up to 1.7.19 且修复 PR 待接受，1.7.16 在区间内"
+    },
+    "OpenHarmony-v5.0-Release": {
+      "verdict": "affected",
+      "source_commit": "OpenHarmony-5.0-Release",
+      "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-5.0-Release 分支 ohos/ohos.xml 钉住 third_party_cjson（ref=OpenHarmony-5.0-Release），gitcode README.OpenSource 声明版本 1.7.17；kb[cvelistV5] CVE-2026-87933（cJSON_Utils.c cJSONUtils_MergePatch UAF）受影响区间 up to 1.7.19 且修复 PR 待接受，1.7.17 在区间内"
+    },
+    "OpenHarmony-v5.1-Release": {
+      "verdict": "affected",
+      "source_commit": "OpenHarmony-5.1.0-Release",
+      "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-5.1.0-Release 分支 ohos/ohos.xml 钉住 third_party_cjson（ref=OpenHarmony-5.1.0-Release），gitcode README.OpenSource 声明版本 1.7.17；kb[cvelistV5] CVE-2026-87933（cJSON_Utils.c cJSONUtils_MergePatch UAF）受影响区间 up to 1.7.19 且修复 PR 待接受，1.7.17 在区间内"
+    },
+    "OpenHarmony-v6.0-Release": {
+      "verdict": "affected",
+      "source_commit": "OpenHarmony-6.0-Release",
+      "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-6.0-Release 分支 ohos/ohos.xml 钉住 third_party_cjson（ref=OpenHarmony-6.0-Release），gitcode README.OpenSource 声明版本 1.7.17；kb[cvelistV5] CVE-2026-87933（cJSON_Utils.c cJSONUtils_MergePatch UAF）受影响区间 up to 1.7.19 且修复 PR 待接受，1.7.17 在区间内"
+    },
+    "OpenHarmony-v7.0-Release": {
+      "verdict": "affected",
+      "source_commit": "OpenHarmony-7.0-Release",
+      "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-7.0-Release 分支 ohos/ohos.xml 钉住 third_party_cjson（ref=OpenHarmony-7.0-Release），gitcode README.OpenSource 声明版本 1.7.19；kb[cvelistV5] CVE-2026-87933（cJSON_Utils.c cJSONUtils_MergePatch UAF）受影响区间 up to 1.7.19 且修复 PR 待接受，1.7.19 在区间内"
     }
   }
 }

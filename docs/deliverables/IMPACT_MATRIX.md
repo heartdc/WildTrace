@@ -1,10 +1,10 @@
 # 版本分支影响矩阵
 
-生成日期：2026-10-17（工具 `ohvul.impact_matrix` 从 cases/ 自动生成）
+生成日期：2026-10-18（工具 `ohvul.impact_matrix` 从 cases/ 自动生成）
 
 | 案例 | CVE | 组件 | 引入版本 | 上游修复 | v4.1 | v5.0 | v5.1 | v6.0 | v7.0 | master | 证实分支数 | 待定格数 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| cjson_merge_alias | CVE-2026-87933 | cjson | 1.7.0 | pending | ？ | ？ | ？ | ？ | ？ | 🔴 | 1 | 5 |
+| cjson_merge_alias | CVE-2026-87933 | cjson | 1.7.0 | pending | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 6 | 0 |
 | curl_native_ca_reuse | CVE-2026-80231 | curl | 7.71.0 | 8.22.0 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 6 | 0 |
 | curl_psl_supercookie | CVE-2026-82209 | curl | 7.46.0 | 8.22.0 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 6 | 0 |
 | ffmpeg_cfhd_transform2_width_oob | CVE-2026-70632 | ffmpeg | 4.4 | 9.0 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 6 | 0 |
@@ -19,13 +19,13 @@
 | ffmpeg_swaprect_temp_row_oob | CVE-2026-65706 | ffmpeg | 3.0 | pending | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 6 | 0 |
 | ffmpeg_ty_ac3_trim_underflow | CVE-2026-65704 | ffmpeg | 0 | pending | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 6 | 0 |
 | ffmpeg_wmaenc_extradata_padding | CVE-2026-52296 | ffmpeg | 0 | 9.0 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 6 | 0 |
-| hiappevent_ffi_watcher_null_filter | — | oh_native | unknown | pending | ？ | ？ | ？ | ？ | ？ | 🔴 | 1 | 5 |
-| ipc_cj_array_null_validation | — | oh_native | unknown | pending | ？ | ？ | ？ | ？ | ？ | 🔴 | 1 | 5 |
-| kv_ffi_array_validation | — | oh_native | unknown | pending | ？ | ？ | ？ | ？ | ？ | ？ | 0 | 6 |
+| hiappevent_ffi_watcher_null_filter | — | oh_native | unknown | pending | — | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 5 | 0 |
+| ipc_cj_array_null_validation | — | oh_native | unknown | pending | — | — | 🔴 | 🔴 | 🔴 | 🔴 | 4 | 0 |
+| kv_ffi_array_validation | — | oh_native | unknown | pending | — | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 5 | 0 |
 | openssl_ocb_oneshot_iv_discard | CVE-2026-45445 | openssl | 3.0.0 | 4.0.1 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 6 | 0 |
-| udmf_ffi_setproperties_null_tag | — | oh_native | unknown | pending | ？ | ？ | ？ | ？ | ？ | 🔴 | 1 | 5 |
+| udmf_ffi_setproperties_null_tag | — | oh_native | unknown | pending | — | — | — | 🔴 | 🔴 | 🔴 | 3 | 0 |
 
-**总计**：20 案 × 6 分支；🔴 证实 affected 86 格；— 证实不受影响 8 格；？待定 26 格。本表只声明有证据的格子，？不是安全结论。
+**总计**：20 案 × 6 分支；🔴 证实 affected 105 格；— 证实不受影响 15 格；？待定 0 格。本表只声明有证据的格子，？不是安全结论。
 
 > 🔴 affected = 本案例记录了具体分支提交及验证证据；上游版本推测不计为分支实证。  
 > ✅ fixed = 分支基线已含上游修复  

@@ -9,11 +9,11 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "unknown",
-      "OpenHarmony-v5.0-Release": "unknown",
-      "OpenHarmony-v5.1-Release": "unknown",
-      "OpenHarmony-v6.0-Release": "unknown",
-      "OpenHarmony-v7.0-Release": "unknown",
+      "OpenHarmony-v4.1-Release": "affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
     "upstream_predictions": {
@@ -29,10 +29,35 @@
         "verdict": "affected",
         "source_commit": "0c2c9df",
         "reference": "submission_87933（核验基线 HEAD 0c2c9df，cJSON 1.7.19；ASan 运行级 UAF 2×2 矩阵）"
+      },
+      "OpenHarmony-v4.1-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-4.1-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-4.1-Release 分支 ohos/ohos.xml 钉住 third_party_cjson（ref=OpenHarmony-4.1-Release），gitcode README.OpenSource 声明版本 1.7.16；kb[cvelistV5] CVE-2026-87933（cJSON_Utils.c cJSONUtils_MergePatch UAF）受影响区间 up to 1.7.19 且修复 PR 待接受，1.7.16 在区间内"
+      },
+      "OpenHarmony-v5.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-5.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-5.0-Release 分支 ohos/ohos.xml 钉住 third_party_cjson（ref=OpenHarmony-5.0-Release），gitcode README.OpenSource 声明版本 1.7.17；kb[cvelistV5] CVE-2026-87933（cJSON_Utils.c cJSONUtils_MergePatch UAF）受影响区间 up to 1.7.19 且修复 PR 待接受，1.7.17 在区间内"
+      },
+      "OpenHarmony-v5.1-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-5.1.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-5.1.0-Release 分支 ohos/ohos.xml 钉住 third_party_cjson（ref=OpenHarmony-5.1.0-Release），gitcode README.OpenSource 声明版本 1.7.17；kb[cvelistV5] CVE-2026-87933（cJSON_Utils.c cJSONUtils_MergePatch UAF）受影响区间 up to 1.7.19 且修复 PR 待接受，1.7.17 在区间内"
+      },
+      "OpenHarmony-v6.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-6.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-6.0-Release 分支 ohos/ohos.xml 钉住 third_party_cjson（ref=OpenHarmony-6.0-Release），gitcode README.OpenSource 声明版本 1.7.17；kb[cvelistV5] CVE-2026-87933（cJSON_Utils.c cJSONUtils_MergePatch UAF）受影响区间 up to 1.7.19 且修复 PR 待接受，1.7.17 在区间内"
+      },
+      "OpenHarmony-v7.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-7.0-Release",
+        "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-7.0-Release 分支 ohos/ohos.xml 钉住 third_party_cjson（ref=OpenHarmony-7.0-Release），gitcode README.OpenSource 声明版本 1.7.19；kb[cvelistV5] CVE-2026-87933（cJSON_Utils.c cJSONUtils_MergePatch UAF）受影响区间 up to 1.7.19 且修复 PR 待接受，1.7.19 在区间内"
       }
     },
-    "affected_count": 1,
-    "unknown_count": 5
+    "affected_count": 6,
+    "unknown_count": 0
   },
   "curl_native_ca_reuse": {
     "cve": "CVE-2026-80231",
@@ -884,11 +909,11 @@
     "evidence_rule": "no-version-evidence",
     "kb_source": "",
     "branches": {
-      "OpenHarmony-v4.1-Release": "unknown",
-      "OpenHarmony-v5.0-Release": "unknown",
-      "OpenHarmony-v5.1-Release": "unknown",
-      "OpenHarmony-v6.0-Release": "unknown",
-      "OpenHarmony-v7.0-Release": "unknown",
+      "OpenHarmony-v4.1-Release": "not_affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
     "upstream_predictions": {
@@ -904,10 +929,35 @@
         "verdict": "affected",
         "source_commit": "de94cb4d53f94afdbc75a5a7c46401f99bdcf17f",
         "reference": "docs/analysis/HIAPPEVENT_REAL_LIBRARY_CONFIRM_20261003.md（PR #97；真库 sha256 bf8aa65e30c13782f54fa56b6d5e273a36425555865125a9bea6222943f6636a，证据包 hiappevent-evidence-20261003.zip）"
+      },
+      "OpenHarmony-v4.1-Release": {
+        "verdict": "not_affected",
+        "source_commit": "OpenHarmony-4.1-Release",
+        "reference": "2026-10-17 实证：gitcode openharmony/hiviewdfx_hiappevent@OpenHarmony-4.1-Release 浅取，frameworks/cj/ffi/src/hiappevent_ffi.cpp 不存在（CJ FFI 代码未引入该分支），缺陷代码不在位"
+      },
+      "OpenHarmony-v5.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-5.0-Release",
+        "reference": "2026-10-17 实证：gitcode openharmony/hiviewdfx_hiappevent@OpenHarmony-5.0-Release 浅取，frameworks/cj/ffi/src/hiappevent_ffi.cpp 含漏洞符号 FfiOHOSHiAppEventAddWatcher；该缺陷无上游修复（修复为本案工单建议补丁 patch.diff，未见于任何分支），漏洞形态在位"
+      },
+      "OpenHarmony-v5.1-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-5.1.0-Release",
+        "reference": "2026-10-17 实证：gitcode openharmony/hiviewdfx_hiappevent@OpenHarmony-5.1.0-Release 浅取，frameworks/cj/ffi/src/hiappevent_ffi.cpp 含漏洞符号 FfiOHOSHiAppEventAddWatcher；该缺陷无上游修复（修复为本案工单建议补丁 patch.diff，未见于任何分支），漏洞形态在位"
+      },
+      "OpenHarmony-v6.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-6.0-Release",
+        "reference": "2026-10-17 实证：gitcode openharmony/hiviewdfx_hiappevent@OpenHarmony-6.0-Release 浅取，frameworks/cj/ffi/src/hiappevent_ffi.cpp 含漏洞符号 FfiOHOSHiAppEventAddWatcher；该缺陷无上游修复（修复为本案工单建议补丁 patch.diff，未见于任何分支），漏洞形态在位"
+      },
+      "OpenHarmony-v7.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-7.0-Release",
+        "reference": "2026-10-17 实证：gitcode openharmony/hiviewdfx_hiappevent@OpenHarmony-7.0-Release 浅取，frameworks/cj/ffi/src/hiappevent_ffi.cpp 含漏洞符号 FfiOHOSHiAppEventAddWatcher；该缺陷无上游修复（修复为本案工单建议补丁 patch.diff，未见于任何分支），漏洞形态在位"
       }
     },
-    "affected_count": 1,
-    "unknown_count": 5
+    "affected_count": 5,
+    "unknown_count": 0
   },
   "ipc_cj_array_null_validation": {
     "cve": "",
@@ -919,11 +969,11 @@
     "evidence_rule": "no-version-evidence",
     "kb_source": "",
     "branches": {
-      "OpenHarmony-v4.1-Release": "unknown",
-      "OpenHarmony-v5.0-Release": "unknown",
-      "OpenHarmony-v5.1-Release": "unknown",
-      "OpenHarmony-v6.0-Release": "unknown",
-      "OpenHarmony-v7.0-Release": "unknown",
+      "OpenHarmony-v4.1-Release": "not_affected",
+      "OpenHarmony-v5.0-Release": "not_affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
     "upstream_predictions": {
@@ -939,10 +989,35 @@
         "verdict": "affected",
         "source_commit": "edc6f3ab",
         "reference": "docs/analysis/IPC_KV_REAL_LIBRARY_VALIDATION_20260928.md（PR #65；隔离构建与原仓 diff -qr 一致，gdb 两轮 ASLR 复现 rip 落库内）"
+      },
+      "OpenHarmony-v4.1-Release": {
+        "verdict": "not_affected",
+        "source_commit": "OpenHarmony-4.1-Release",
+        "reference": "2026-10-17 实证：gitcode openharmony/communication_ipc@OpenHarmony-4.1-Release 浅取，interfaces/innerkits/cj/src/message_sequence_impl.cpp 不存在（CJ FFI 代码未引入该分支），缺陷代码不在位"
+      },
+      "OpenHarmony-v5.0-Release": {
+        "verdict": "not_affected",
+        "source_commit": "OpenHarmony-5.0-Release",
+        "reference": "2026-10-17 实证：gitcode openharmony/communication_ipc@OpenHarmony-5.0-Release 浅取，interfaces/innerkits/cj/src/message_sequence_impl.cpp 不存在（CJ FFI 代码未引入该分支），缺陷代码不在位"
+      },
+      "OpenHarmony-v5.1-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-5.1.0-Release",
+        "reference": "2026-10-17 实证：gitcode openharmony/communication_ipc@OpenHarmony-5.1.0-Release 浅取，interfaces/innerkits/cj/src/message_sequence_impl.cpp 含漏洞符号 CJ_WriteByteArray；该缺陷无上游修复（修复为本案工单建议补丁 patch.diff，未见于任何分支），漏洞形态在位"
+      },
+      "OpenHarmony-v6.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-6.0-Release",
+        "reference": "2026-10-17 实证：gitcode openharmony/communication_ipc@OpenHarmony-6.0-Release 浅取，interfaces/innerkits/cj/src/message_sequence_impl.cpp 含漏洞符号 CJ_WriteByteArray；该缺陷无上游修复（修复为本案工单建议补丁 patch.diff，未见于任何分支），漏洞形态在位"
+      },
+      "OpenHarmony-v7.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-7.0-Release",
+        "reference": "2026-10-17 实证：gitcode openharmony/communication_ipc@OpenHarmony-7.0-Release 浅取，interfaces/innerkits/cj/src/message_sequence_impl.cpp 含漏洞符号 CJ_WriteByteArray；该缺陷无上游修复（修复为本案工单建议补丁 patch.diff，未见于任何分支），漏洞形态在位"
       }
     },
-    "affected_count": 1,
-    "unknown_count": 5
+    "affected_count": 4,
+    "unknown_count": 0
   },
   "kv_ffi_array_validation": {
     "cve": "",
@@ -954,12 +1029,12 @@
     "evidence_rule": "no-version-evidence",
     "kb_source": "",
     "branches": {
-      "OpenHarmony-v4.1-Release": "unknown",
-      "OpenHarmony-v5.0-Release": "unknown",
-      "OpenHarmony-v5.1-Release": "unknown",
-      "OpenHarmony-v6.0-Release": "unknown",
-      "OpenHarmony-v7.0-Release": "unknown",
-      "master": "unknown"
+      "OpenHarmony-v4.1-Release": "not_affected",
+      "OpenHarmony-v5.0-Release": "affected",
+      "OpenHarmony-v5.1-Release": "affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
+      "master": "affected"
     },
     "upstream_predictions": {
       "OpenHarmony-v4.1-Release": "unknown",
@@ -969,9 +1044,40 @@
       "OpenHarmony-v7.0-Release": "unknown",
       "master": "unknown"
     },
-    "branch_evidence": {},
-    "affected_count": 0,
-    "unknown_count": 6
+    "branch_evidence": {
+      "OpenHarmony-v4.1-Release": {
+        "verdict": "not_affected",
+        "source_commit": "OpenHarmony-4.1-Release",
+        "reference": "2026-10-17 实证：gitcode openharmony/distributeddatamgr_kv_store@OpenHarmony-4.1-Release 浅取，frameworks/cj/src/distributed_kv_store_impl.cpp 不存在（CJ FFI 代码未引入该分支），缺陷代码不在位"
+      },
+      "OpenHarmony-v5.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-5.0-Release",
+        "reference": "2026-10-17 实证：gitcode openharmony/distributeddatamgr_kv_store@OpenHarmony-5.0-Release 浅取，frameworks/cj/src/distributed_kv_store_impl.cpp 含漏洞符号 CArrStrToVectorKey；该缺陷无上游修复（修复为本案工单建议补丁 patch.diff，未见于任何分支），漏洞形态在位"
+      },
+      "OpenHarmony-v5.1-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-5.1.0-Release",
+        "reference": "2026-10-17 实证：gitcode openharmony/distributeddatamgr_kv_store@OpenHarmony-5.1.0-Release 浅取，frameworks/cj/src/distributed_kv_store_impl.cpp 含漏洞符号 CArrStrToVectorKey；该缺陷无上游修复（修复为本案工单建议补丁 patch.diff，未见于任何分支），漏洞形态在位"
+      },
+      "OpenHarmony-v6.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-6.0-Release",
+        "reference": "2026-10-17 实证：gitcode openharmony/distributeddatamgr_kv_store@OpenHarmony-6.0-Release 浅取，frameworks/cj/src/distributed_kv_store_impl.cpp 含漏洞符号 CArrStrToVectorKey；该缺陷无上游修复（修复为本案工单建议补丁 patch.diff，未见于任何分支），漏洞形态在位"
+      },
+      "OpenHarmony-v7.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-7.0-Release",
+        "reference": "2026-10-17 实证：gitcode openharmony/distributeddatamgr_kv_store@OpenHarmony-7.0-Release 浅取，frameworks/cj/src/distributed_kv_store_impl.cpp 含漏洞符号 CArrStrToVectorKey；该缺陷无上游修复（修复为本案工单建议补丁 patch.diff，未见于任何分支），漏洞形态在位"
+      },
+      "master": {
+        "verdict": "affected",
+        "source_commit": "master",
+        "reference": "官方完整树 master 检出（/home/beichen/oh）含 CArrStrToVectorKey（本案源级对照对象）；无上游修复，漏洞形态在位"
+      }
+    },
+    "affected_count": 5,
+    "unknown_count": 0
   },
   "openssl_ocb_oneshot_iv_discard": {
     "cve": "CVE-2026-45445",
@@ -1043,11 +1149,11 @@
     "evidence_rule": "no-version-evidence",
     "kb_source": "",
     "branches": {
-      "OpenHarmony-v4.1-Release": "unknown",
-      "OpenHarmony-v5.0-Release": "unknown",
-      "OpenHarmony-v5.1-Release": "unknown",
-      "OpenHarmony-v6.0-Release": "unknown",
-      "OpenHarmony-v7.0-Release": "unknown",
+      "OpenHarmony-v4.1-Release": "not_affected",
+      "OpenHarmony-v5.0-Release": "not_affected",
+      "OpenHarmony-v5.1-Release": "not_affected",
+      "OpenHarmony-v6.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
     "upstream_predictions": {
@@ -1063,9 +1169,34 @@
         "verdict": "affected",
         "source_commit": "a4882ad72459e9ae7b8373c681c0f4bafab7781f",
         "reference": "docs/analysis/UDMF_REAL_LIBRARY_CONFIRM_20261009.md（真库构建 317/317 全绿，case3 tag=NULL SIGSEGV run.exit=139；evidence zip sha256 a70accc94eefb4467d434a220b39cf39c78d35f35614e67d8cbc4a61faea14df）"
+      },
+      "OpenHarmony-v4.1-Release": {
+        "verdict": "not_affected",
+        "source_commit": "OpenHarmony-4.1-Release",
+        "reference": "2026-10-17 实证：gitcode openharmony/distributeddatamgr_udmf@OpenHarmony-4.1-Release 浅取，interfaces/cj/src/unified_data_ffi.cpp 不存在（CJ FFI 代码未引入该分支），缺陷代码不在位"
+      },
+      "OpenHarmony-v5.0-Release": {
+        "verdict": "not_affected",
+        "source_commit": "OpenHarmony-5.0-Release",
+        "reference": "2026-10-17 实证：gitcode openharmony/distributeddatamgr_udmf@OpenHarmony-5.0-Release 浅取，interfaces/cj/src/unified_data_ffi.cpp 不存在（CJ FFI 代码未引入该分支），缺陷代码不在位"
+      },
+      "OpenHarmony-v5.1-Release": {
+        "verdict": "not_affected",
+        "source_commit": "OpenHarmony-5.1.0-Release",
+        "reference": "2026-10-17 实证：gitcode openharmony/distributeddatamgr_udmf@OpenHarmony-5.1.0-Release 浅取，interfaces/cj/src/unified_data_ffi.cpp 存在但不含 FfiUDMFSetProperties（该入口此分支尚未引入），漏洞函数不在位"
+      },
+      "OpenHarmony-v6.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-6.0-Release",
+        "reference": "2026-10-17 实证：gitcode openharmony/distributeddatamgr_udmf@OpenHarmony-6.0-Release 浅取，interfaces/cj/src/unified_data_ffi.cpp 含漏洞符号 FfiUDMFSetProperties；该缺陷无上游修复（修复为本案工单建议补丁 patch.diff，未见于任何分支），漏洞形态在位"
+      },
+      "OpenHarmony-v7.0-Release": {
+        "verdict": "affected",
+        "source_commit": "OpenHarmony-7.0-Release",
+        "reference": "2026-10-17 实证：gitcode openharmony/distributeddatamgr_udmf@OpenHarmony-7.0-Release 浅取，interfaces/cj/src/unified_data_ffi.cpp 含漏洞符号 FfiUDMFSetProperties；该缺陷无上游修复（修复为本案工单建议补丁 patch.diff，未见于任何分支），漏洞形态在位"
       }
     },
-    "affected_count": 1,
-    "unknown_count": 5
+    "affected_count": 3,
+    "unknown_count": 0
   }
 }

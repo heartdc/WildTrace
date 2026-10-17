@@ -76,3 +76,23 @@ python -m ohvul.performance --files 100 --lines 100
 ## 7. 安全边界
 
 默认模式不联网、不执行目标、不访问设备、不提交外部报告。授权的隔离运行必须绑定授权记录、源码快照、工具链、PoC 摘要、资源限制和日志摘要。普通功能错误或没有安全影响的 DoS 不应升级为漏洞结论。
+
+## 8. 工作台与真库验证（2026-10 增补）
+
+- **工作台**：`Start-Workbench.ps1` 启动本地 Web 界面（总览指标 / 案例证据
+  三标签 / 候选审查 / 报告中心）。概览指标断言为计数无关口径；Joern 为
+  `--joern` 选配层（WSL /opt/joern），异常时规则层独立可用。
+- **真库 malformed 验证**：`tools/validation_cases/run_malformed.sh`（通用，
+  支持 udmf/ipc/kv/hiappevent 等客户端）与 `run_bt_dereg.sh`（bluetooth
+  服务端空指针，含 ASan 构建、gdb 帧归因与 unstripped 符号化）。判读：
+  run.exit∈{11,139} = 崩溃观测；证据目录含 inputs-before/after SHA-256。
+- **LLM 审查**：`tools/llm_review_run.py`（全队列 plan/run/verify；密钥经
+  `--key-file` 单行文件运行时注入）。模型输出恒为 proposal，
+  final_verdict=undetermined。
+
+## 9. 影响矩阵与分支实证（2026-10 增补）
+
+`python -m ohvul.impact_matrix --cases cases --output docs/deliverables/IMPACT_MATRIX.md`
+可复算。分支证据三层来源（case.json branch_evidence.reference 可溯源）：
+分支 manifest 钉版 → gitcode README.OpenSource 版本实证（第三方 16 案）；
+漏洞符号逐分支存在性探测（原生四案，2026-10-17）；master 检出三侧对照。

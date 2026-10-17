@@ -36,3 +36,12 @@ python -m ohvul.candidate_triage --result .\demo-out\findings.json --verify .\de
 - 失败输入或缺失工具的保留记录；
 - 不包含 API key、真实用户数据、设备凭据或未授权源码；
 - 视频旁附同版本的命令脚本和 SHA-256。
+
+## 2026-10-17 增补段（配 VIDEO_SCRIPT v2）
+
+1. 工作台段：预启动 `Start-Workbench.ps1` 并预载案例数据（避免冷启动）；
+   演示路径 = 总览 → 案例对话框（ipc 案三标签）→ 候选审查 → 报告中心。
+2. 真库验证段：预演一次 `run_malformed.sh` 与 `run_bt_dereg.sh`（WSL 环境 +
+   OH 构建产物就绪为前置）；录制时展示 run.exit=139 与 attribution.txt。
+3. 数字基线：全量回归 1,162 项；漏斗 2,662→13；影响矩阵 20 案全分支判定
+   （实质率 68%）；四项真库级 SIGSEGV（ipc/hiappevent/udmf/bt）。
