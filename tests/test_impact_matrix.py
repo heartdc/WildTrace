@@ -119,15 +119,16 @@ class AffectedRangeTests(unittest.TestCase):
         self.assertEqual(check_branch_affected("1.0", "2.0", "0.9"), "not_affected")
 
     def test_structured_range_beats_version_equality(self):
+        # 2026-10-17 实证校准（branch_pins.json）：v5.1/v6.0/v7.0/master curl=8.8.0，v5.0=8.6.0
         verdicts = evaluate_case({
-            "component": "third_party/openssl",
-            "observed_version": "3.0.9",
+            "component": "third_party/curl",
+            "observed_version": "8.8.0",
             "affected_raw": {"versions": [
-                {"status": "affected", "version": "3.0.12", "lessThan": "3.0.13"}]},
+                {"status": "affected", "version": "8.8.0", "lessThan": "8.9.0"}]},
         })["branches"]
-        self.assertEqual(verdicts["OpenHarmony-v6.0-Release"], "affected")  # 3.0.12
-        self.assertEqual(verdicts["master"], "not_affected")               # 3.0.9 < introduced 3.0.12
-        self.assertEqual(verdicts["OpenHarmony-v5.0-Release"], "not_affected")
+        self.assertEqual(verdicts["OpenHarmony-v5.1-Release"], "affected")      # 8.8.0 == 区间下界（区间判定生效）
+        self.assertEqual(verdicts["OpenHarmony-v5.0-Release"], "not_affected")  # 8.6.0 < 下界
+        self.assertEqual(verdicts["OpenHarmony-v4.1-Release"], "not_affected")  # 8.4.0 < 下界
 
 
 class KbJoinTests(unittest.TestCase):

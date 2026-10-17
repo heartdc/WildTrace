@@ -1,77 +1,78 @@
 {
- "schema": "wildtrace-candidate-case-0.2",
- "case_id": "hiappevent-ffi-watcher-null-filter",
- "component": "base/hiviewdfx/hiappevent",
- "status": "real_library_reproduction_confirmed",
- "cwe_candidate": [
-  "CWE-476"
- ],
- "confirmed_vulnerability": false,
- "discovery_method": "autopilot CJ FFI sweep (P1/P3 族) → L4 Tier C 链路追踪（PR #72）→ 真库级证实（PR #97）",
- "new_discovery": true,
- "candidate": {
-  "source": "base/hiviewdfx/hiappevent/frameworks/cj/ffi/src/hiappevent_ffi.cpp",
-  "lines": [
-   372,
-   385
+  "schema": "wildtrace-candidate-case-0.2",
+  "case_id": "hiappevent-ffi-watcher-null-filter",
+  "component": "base/hiviewdfx/hiappevent",
+  "status": "real_library_reproduction_confirmed",
+  "cwe_candidate": [
+    "CWE-476"
   ],
-  "entry_point": "FfiOHOSHiAppEventAddWatcher（FFI 导出符号；watcher.appEventFilters 嵌套过滤循环）",
-  "input_type": "CArrAppEventFilter { CAppEventFilter* head; int64_t size; }（frameworks/cj/ffi/include/common.h）",
-  "description": "AddWatcher 路径对 watcher.appEventFilters 的嵌套循环直接解引用 head[i]，filters.head=NULL 且 size>0 时第一层即空指针解引用；对照组合法输入由 FFI 层参数校验拦截返回错误码，不崩溃——缺陷精确限定于 null head + 非零 size 组合。"
- },
- "source_equivalent_result": "Tier C 链路追踪有效判定（L4_TIER_C_20260929.md #1，验证难度最低：无前置对象）",
- "validation_evidence": {
-  "equivalent_reproduction": "链路级等价（PR #72 Tier C：FFI(:416 族) → 嵌套过滤循环 head 无 NULL 检查）",
-  "real_library_reproduction": {
-   "date": "2026-10-03/04",
-   "library": "libcj_hiappevent_ffi.z.so —— 官方完整树构建（manifest repo sync 471+ 项目，官方 gn gen --root-target 一次通过，16,000+ 目标官方构建链；sha256 bf8aa65e30c13782f54fa56b6d5e273a36425555865125a9bea6222943f6636a，BuildID 252096ef，15 个 FfiOHOSHiAppEvent* 导出符号）。树修改仅为登记/环境兼容类，零 FFI 源码改动",
-   "result": "对照（合法 head, size=1）→ 错误码 11101001 不崩溃；候选（head=NULL, size=1）→ SIGSEGV（run.exit=139）",
-   "frame_attribution": "两轮 ASLR 不同 gdb 复现，rip 经 /proc/maps 映射落在 libcj_hiappevent_ffi.z.so 内 file_offset 0x11c9a，不在 musl 运行库、不在 hilog",
-   "record": "docs/analysis/HIAPPEVENT_REAL_LIBRARY_CONFIRM_20261003.md（PR #97）",
-   "evidence_zip_sha256": "a8ae123ded484280d3dc15903683875518f90250d4f8104098ce9a157713c7a6（完整 evidence 目录 + gdb transcripts + ELF dump + inputs-*.sha256 + MANIFEST）"
+  "confirmed_vulnerability": false,
+  "discovery_method": "autopilot CJ FFI sweep (P1/P3 族) → L4 Tier C 链路追踪（PR #72）→ 真库级证实（PR #97）",
+  "new_discovery": true,
+  "candidate": {
+    "source": "base/hiviewdfx/hiappevent/frameworks/cj/ffi/src/hiappevent_ffi.cpp",
+    "lines": [
+      372,
+      385
+    ],
+    "entry_point": "FfiOHOSHiAppEventAddWatcher（FFI 导出符号；watcher.appEventFilters 嵌套过滤循环）",
+    "input_type": "CArrAppEventFilter { CAppEventFilter* head; int64_t size; }（frameworks/cj/ffi/include/common.h）",
+    "description": "AddWatcher 路径对 watcher.appEventFilters 的嵌套循环直接解引用 head[i]，filters.head=NULL 且 size>0 时第一层即空指针解引用；对照组合法输入由 FFI 层参数校验拦截返回错误码，不崩溃——缺陷精确限定于 null head + 非零 size 组合。"
   },
-  "caveats": "隔离环境（bwrap）、无产品服务、自定义 x86_64_virt 构建配置；与 IPC 案不同，本库构建自官方完整树且零 FFI 源码改动",
-  "platform_binary_linked": false
- },
- "runtime_scope": {
-  "target_executed": true,
-  "open_harmony_binary_linked": false,
-  "network": false,
-  "production_data": false,
-  "model_invoked": false
- },
- "limitations": [
-  "验证执行件（tools/validation_cases/hiappevent_null_watcher.c）本地构造 C 结构并 dlopen 真库，未复制目标实现。",
-  "仓颉侧调用者可达性与进程权限边界未验证（产品可达性独立问题）。"
- ],
- "next_gate": "平台受理评审；产品级可达性（应用侧经仓颉 HiAppEvent API 传入畸形 watcher 的现实路径）为后续独立验证。",
- "oh_source": {
-  "l4_evidence": "L4 Tier C 链路（L4_TIER_C_20260929.md #1）：FFI 导出 FfiOHOSHiAppEventAddWatcher 直传 CWatcher（含 CArrAppEventFilter），C++ 侧 hiappevent_ffi.cpp:372-385 嵌套循环 for(i<size){head[i]...} 无 head 判空——链路预判与真库崩溃位置逐行一致。HiAppEvent 打点 API 应用侧直接可达、无前置对象创建（Tier C 评级：验证最易）。"
- },
- "fix_recommendation": "AddWatcher 入口对 appEventFilters.head 判空（head==NULL 且 size>0 时返回参数校验错误码，与对照路径现有校验口径一致）；内层 names.head / eventTypes.head 同步补判空。（与提交表单第五节修复建议一致：D:/cve_data/submission_hiappevent/奖励计划表单v1_hiappevent.md）",
- "submission": {
-  "platform": "OpenHarmony 漏洞奖励计划 (https://bugbounty.openharmony.cn)",
-  "ticket": "OHSA26-100821855",
-  "submission_id": "233895538108403712",
-  "submitted_at": "2026-10-08 10:17（平台时间；本地 2026-10-07 23:17 提交）",
-  "account": "北辰522",
-  "status": "已提交",
-  "form": {
-   "type": "内存破坏与执行类 / 越界读写 (Out-of-Bounds Read/Write)",
-   "repo": "hiviewdfx_hiappevent",
-   "file_path": "frameworks/cj/ffi/src/hiappevent_ffi.cpp / 代码行:372-385",
-   "introduced_by": "de94cb4d53f94afdbc75a5a7c46401f99bdcf17f（实际构建提交，manifest=master；缺陷引入点未单独考证，如实）",
-   "oh_version": "OpenHarmony-v7.0-Release（2026-08-21）",
-   "attachments": "无平台附件（内置浏览器不支持上传控件）：PoC 全文内嵌问题描述四节；证据包以 sha256 a8ae123ded484280d3dc15903683875518f90250d4f8104098ce9a157713c7a6 引用，已入库 cases/hiappevent_ffi_watcher_null_filter/hiappevent-evidence-20261003.zip，可按要求提供"
-  }
- },
- "trigger_conditions": "仓颉侧经 HiAppEvent 打点 API 注册 watcher 时，appEventFilters（CArrAppEventFilter）的 head 为 NULL 而 size > 0 的畸形组合进入嵌套过滤循环被直接解引用；对照组合法输入由 FFI 层参数校验拦截（错误码 11101001 不崩溃）。",
- "reproduction_commands": "真库运行级：libcj_hiappevent_ffi.z.so（官方完整树构建，sha256 bf8aa65e...f6636a，BuildID 252096ef）dlopen 驱动 poc_hiappevent_watcher.c：case0 对照（合法 head, size=1）→ 错误码 11101001 不崩溃；case1（head=NULL, size=1）→ SIGSEGV（退出码 139）；两轮 ASLR gdb 复现 rip 落库内 file_offset 0x11c9a。完整记录 hiappevent-evidence-20261003.zip（sha256 a8ae123d...13c7a6）。",
- "branch_evidence": {
-  "master": {
-   "verdict": "affected",
-   "source_commit": "de94cb4d53f94afdbc75a5a7c46401f99bdcf17f",
-   "reference": "docs/analysis/HIAPPEVENT_REAL_LIBRARY_CONFIRM_20261003.md（PR #97；真库 sha256 bf8aa65e30c13782f54fa56b6d5e273a36425555865125a9bea6222943f6636a，证据包 hiappevent-evidence-20261003.zip）"
-  }
- }
+  "source_equivalent_result": "Tier C 链路追踪有效判定（L4_TIER_C_20260929.md #1，验证难度最低：无前置对象）",
+  "validation_evidence": {
+    "equivalent_reproduction": "链路级等价（PR #72 Tier C：FFI(:416 族) → 嵌套过滤循环 head 无 NULL 检查）",
+    "real_library_reproduction": {
+      "date": "2026-10-03/04",
+      "library": "libcj_hiappevent_ffi.z.so —— 官方完整树构建（manifest repo sync 471+ 项目，官方 gn gen --root-target 一次通过，16,000+ 目标官方构建链；sha256 bf8aa65e30c13782f54fa56b6d5e273a36425555865125a9bea6222943f6636a，BuildID 252096ef，15 个 FfiOHOSHiAppEvent* 导出符号）。树修改仅为登记/环境兼容类，零 FFI 源码改动",
+      "result": "对照（合法 head, size=1）→ 错误码 11101001 不崩溃；候选（head=NULL, size=1）→ SIGSEGV（run.exit=139）",
+      "frame_attribution": "两轮 ASLR 不同 gdb 复现，rip 经 /proc/maps 映射落在 libcj_hiappevent_ffi.z.so 内 file_offset 0x11c9a，不在 musl 运行库、不在 hilog",
+      "record": "docs/analysis/HIAPPEVENT_REAL_LIBRARY_CONFIRM_20261003.md（PR #97）",
+      "evidence_zip_sha256": "a8ae123ded484280d3dc15903683875518f90250d4f8104098ce9a157713c7a6（完整 evidence 目录 + gdb transcripts + ELF dump + inputs-*.sha256 + MANIFEST）"
+    },
+    "caveats": "隔离环境（bwrap）、无产品服务、自定义 x86_64_virt 构建配置；与 IPC 案不同，本库构建自官方完整树且零 FFI 源码改动",
+    "platform_binary_linked": false
+  },
+  "runtime_scope": {
+    "target_executed": true,
+    "open_harmony_binary_linked": false,
+    "network": false,
+    "production_data": false,
+    "model_invoked": false
+  },
+  "limitations": [
+    "验证执行件（tools/validation_cases/hiappevent_null_watcher.c）本地构造 C 结构并 dlopen 真库，未复制目标实现。",
+    "仓颉侧调用者可达性与进程权限边界未验证（产品可达性独立问题）。"
+  ],
+  "next_gate": "平台受理评审；产品级可达性（应用侧经仓颉 HiAppEvent API 传入畸形 watcher 的现实路径）为后续独立验证。",
+  "oh_source": {
+    "l4_evidence": "L4 Tier C 链路（L4_TIER_C_20260929.md #1）：FFI 导出 FfiOHOSHiAppEventAddWatcher 直传 CWatcher（含 CArrAppEventFilter），C++ 侧 hiappevent_ffi.cpp:372-385 嵌套循环 for(i<size){head[i]...} 无 head 判空——链路预判与真库崩溃位置逐行一致。HiAppEvent 打点 API 应用侧直接可达、无前置对象创建（Tier C 评级：验证最易）。"
+  },
+  "fix_recommendation": "AddWatcher 入口对 appEventFilters.head 判空（head==NULL 且 size>0 时返回参数校验错误码，与对照路径现有校验口径一致）；内层 names.head / eventTypes.head 同步补判空。（与提交表单第五节修复建议一致：D:/cve_data/submission_hiappevent/奖励计划表单v1_hiappevent.md）",
+  "submission": {
+    "platform": "OpenHarmony 漏洞奖励计划 (https://bugbounty.openharmony.cn)",
+    "ticket": "OHSA26-100821855",
+    "submission_id": "233895538108403712",
+    "submitted_at": "2026-10-08 10:17（平台时间；本地 2026-10-07 23:17 提交）",
+    "account": "北辰522",
+    "status": "已提交",
+    "form": {
+      "type": "内存破坏与执行类 / 越界读写 (Out-of-Bounds Read/Write)",
+      "repo": "hiviewdfx_hiappevent",
+      "file_path": "frameworks/cj/ffi/src/hiappevent_ffi.cpp / 代码行:372-385",
+      "introduced_by": "de94cb4d53f94afdbc75a5a7c46401f99bdcf17f（实际构建提交，manifest=master；缺陷引入点未单独考证，如实）",
+      "oh_version": "OpenHarmony-v7.0-Release（2026-08-21）",
+      "attachments": "无平台附件（内置浏览器不支持上传控件）：PoC 全文内嵌问题描述四节；证据包以 sha256 a8ae123ded484280d3dc15903683875518f90250d4f8104098ce9a157713c7a6 引用，已入库 cases/hiappevent_ffi_watcher_null_filter/hiappevent-evidence-20261003.zip，可按要求提供"
+    }
+  },
+  "trigger_conditions": "仓颉侧经 HiAppEvent 打点 API 注册 watcher 时，appEventFilters（CArrAppEventFilter）的 head 为 NULL 而 size > 0 的畸形组合进入嵌套过滤循环被直接解引用；对照组合法输入由 FFI 层参数校验拦截（错误码 11101001 不崩溃）。",
+  "reproduction_commands": "真库运行级：libcj_hiappevent_ffi.z.so（官方完整树构建，sha256 bf8aa65e...f6636a，BuildID 252096ef）dlopen 驱动 poc_hiappevent_watcher.c：case0 对照（合法 head, size=1）→ 错误码 11101001 不崩溃；case1（head=NULL, size=1）→ SIGSEGV（退出码 139）；两轮 ASLR gdb 复现 rip 落库内 file_offset 0x11c9a。完整记录 hiappevent-evidence-20261003.zip（sha256 a8ae123d...13c7a6）。",
+  "branch_evidence": {
+    "master": {
+      "verdict": "affected",
+      "source_commit": "de94cb4d53f94afdbc75a5a7c46401f99bdcf17f",
+      "reference": "docs/analysis/HIAPPEVENT_REAL_LIBRARY_CONFIRM_20261003.md（PR #97；真库 sha256 bf8aa65e30c13782f54fa56b6d5e273a36425555865125a9bea6222943f6636a，证据包 hiappevent-evidence-20261003.zip）"
+    }
+  },
+  "notes": "2026-10-17：补入修复建议补丁 patch.diff（AddWatcher 入口边界形态判空，外层 appEventFilters 与内层 names 同步）。"
 }

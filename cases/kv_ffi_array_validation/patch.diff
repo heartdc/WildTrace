@@ -1,0 +1,16 @@
+# 修复建议补丁（kv_ffi_array_validation）
+# 口径：CArrStrToVectorKey 对边界形态按空集返回；CArrStrToVectorString（同文件同型函数）与第三处 CArrStrToVector 族转换同型补丁，完整三处清单见工单。
+# 基线：/home/beichen/oh 官方完整树对应仓（见 case.json oh_source）
+# 生成：2026-10-17，由原始源文件机械生成（scratch 副本编辑，树内文件未动）
+--- a/foundation/distributeddatamgr/kv_store/frameworks/cj/src/distributed_kv_store_impl.cpp
++++ b/foundation/distributeddatamgr/kv_store/frameworks/cj/src/distributed_kv_store_impl.cpp
+@@ -424,6 +424,9 @@
+ {
+     std::vector<Key> keys;
+     int64_t size = cArrStr.size;
++    if (size > 0 && cArrStr.head == nullptr) {
++        return keys; // 边界形态（head=NULL, size>0）按空集处理，不下沉解引用
++    }
+     for (int64_t i = 0; i < size; i++) {
+         std::string str = cArrStr.head[i];
+         keys.push_back(DistributedKv::Key(str));

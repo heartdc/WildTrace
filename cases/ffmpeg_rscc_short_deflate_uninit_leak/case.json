@@ -1,52 +1,77 @@
 {
- "schema": "case-specific-validation-0.2",
- "id": "ffmpeg-rscc-short-deflate-uninit-leak",
- "component": "third_party/ffmpeg",
- "cve_reference": "CVE-2026-70629",
- "cwe_candidate": "CWE-908",
- "discovery_method": "kb_gap_audit pipeline + batch L4 (newest-ref picked the 2015 introducing commit 533a6198; manual triage identified cd1f545c/a5fe21a1 as the real fixes) + L4 confirmed",
- "new_discovery": false,
- "public_upstream": {
-  "fix_commit": "https://github.com/FFmpeg/FFmpeg/commit/cd1f545cf27ba08f6f5b31b1e92665d7874d4fd7 and a5fe21a1a410a680fe93c33b0dd696b7e1c3aea4",
-  "fix_date": "2026-07-29 / 2026-08-02",
-  "fix_subject": "avcodec/rscc: do not leave uninitialized data when the input is too short (Fixes: use of uninitialized memory; repro rscc_short_deflate_heap_disclosure)"
- },
- "oh_source": {
-  "repo": "https://gitcode.com/openharmony/third_party_ffmpeg",
-  "head_commit": "0a0c4dd33c",
-  "baseline": "FFmpeg 7.1.1, snapshot 2026-06-01",
-  "equivalence": "rscc.c byte-identical to upstream n7.1.1",
-  "l4_evidence": "rscc.c deflate branch has no 'len < pixel_size' zero-fill (grep zero hits); both upstream fix diffs apply clean"
- },
- "vulnerability": {
-  "summary": "RSCC screen-capture decoder: when the deflate output is shorter than the frame needs, the un-filled tail of inflated_buf is emitted as frame data — uninitialized heap disclosure.",
-  "verification_level": "source-level confirmed; runtime repro path documented (short-but-valid deflate stream; MSan or frame diff)",
-  "runtime_status": "not_run"
- },
- "controls": [],
- "submission_materials": "D:/cve_data/submission_70629/",
- "notes": "ffmpeg gap batch; same CWE-908 family as CVE-2026-66038 (lcldec) — the uninit-tail pattern is now a confirmed recurring family in this component",
- "submission": {
-  "platform": "OpenHarmony 漏洞奖励计划 (https://bugbounty.openharmony.cn)",
-  "ticket": "OHSA26-092850129",
-  "submitted_at": "2026-09-28",
-  "account": "北辰522",
-  "status": "已提交",
-  "form": {
-   "type": "信息与隐私泄露类 / 敏感信息泄露",
-   "repo": "third_party_ffmpeg",
-   "oh_version": "OpenHarmony-v7.0-Release（2026-08-21）",
-   "attachments": "附件包_CVE-2026-70629.zip, patch.diff, upstream_fix2_a5fe21a.diff, upstream_fix_cd1f545.diff, 上游修复对照.txt"
+  "schema": "case-specific-validation-0.2",
+  "id": "ffmpeg-rscc-short-deflate-uninit-leak",
+  "component": "third_party/ffmpeg",
+  "cve_reference": "CVE-2026-70629",
+  "cwe_candidate": "CWE-908",
+  "discovery_method": "kb_gap_audit pipeline + batch L4 (newest-ref picked the 2015 introducing commit 533a6198; manual triage identified cd1f545c/a5fe21a1 as the real fixes) + L4 confirmed",
+  "new_discovery": false,
+  "public_upstream": {
+    "fix_commit": "https://github.com/FFmpeg/FFmpeg/commit/cd1f545cf27ba08f6f5b31b1e92665d7874d4fd7 and a5fe21a1a410a680fe93c33b0dd696b7e1c3aea4",
+    "fix_date": "2026-07-29 / 2026-08-02",
+    "fix_subject": "avcodec/rscc: do not leave uninitialized data when the input is too short (Fixes: use of uninitialized memory; repro rscc_short_deflate_heap_disclosure)"
+  },
+  "oh_source": {
+    "repo": "https://gitcode.com/openharmony/third_party_ffmpeg",
+    "head_commit": "0a0c4dd33c",
+    "baseline": "FFmpeg 7.1.1, snapshot 2026-06-01",
+    "equivalence": "rscc.c byte-identical to upstream n7.1.1",
+    "l4_evidence": "rscc.c deflate branch has no 'len < pixel_size' zero-fill (grep zero hits); both upstream fix diffs apply clean"
+  },
+  "vulnerability": {
+    "summary": "RSCC screen-capture decoder: when the deflate output is shorter than the frame needs, the un-filled tail of inflated_buf is emitted as frame data — uninitialized heap disclosure.",
+    "verification_level": "runtime-verified differential (2026-10-17, upstream n7.1.1 ASan build, rscc.c byte-identical to OH 0a0c4dd33c): short-deflate trigger decoded under two allocator fill bytes yields differing frame checksums (26da572f745dbfc3 vs 31b9a38e0da95a13) => uninitialized heap tail flows into the output frame; control (raw path) identical checksums on both runs (35058dda7af76383)",
+    "runtime_status": "verified"
+  },
+  "controls": [],
+  "submission_materials": "D:/cve_data/submission_70629/",
+  "notes": "ffmpeg gap batch; same CWE-908 family as CVE-2026-66038 (lcldec) — the uninit-tail pattern is now a confirmed recurring family in this component\n2026-10-17：补入可执行 PoC（poc.c）与运行验证记录（poc_evidence_20261017.md）；修复建议补丁见 patch.diff。",
+  "submission": {
+    "platform": "OpenHarmony 漏洞奖励计划 (https://bugbounty.openharmony.cn)",
+    "ticket": "OHSA26-092850129",
+    "submitted_at": "2026-09-28",
+    "account": "北辰522",
+    "status": "已提交",
+    "form": {
+      "type": "信息与隐私泄露类 / 敏感信息泄露",
+      "repo": "third_party_ffmpeg",
+      "oh_version": "OpenHarmony-v7.0-Release（2026-08-21）",
+      "attachments": "附件包_CVE-2026-70629.zip, patch.diff, upstream_fix2_a5fe21a.diff, upstream_fix_cd1f545.diff, 上游修复对照.txt"
+    }
+  },
+  "trigger_conditions": "RSCC 流 zlib 分支解压输出短于帧需求（len < pixel_size）：rscc.c 无尾部清零，帧尾保持未初始化（上游 cd1f545c/a5fe21a1 以 memset 补零修复）。",
+  "attack_path": "产品用 ffmpeg 解码不可信屏幕捕获视频（远程支持/录屏处理场景）：攻击者提供短 deflate 输出的构造 RSCC 流 → 解码帧尾泄露未初始化堆内存。",
+  "reproduction_commands": "源级三侧对照：a) 上游 cd1f545c/a5fe21a1 修复（上游样本名 rscc_short_deflate_heap_disclosure）；b) OH rscc.c deflate 分支无 len<pixel_size 清零；c) 与 n7.1.1 逐字节一致、官方清单含 7.1.1、diff git apply --check 通过。运行级路径：合法但短的 deflate 输出，MSan 观测 uninit 或对比零填充差分。",
+  "branch_evidence": {
+    "master": {
+      "verdict": "affected",
+      "source_commit": "0a0c4dd33c",
+      "reference": "case.json oh_source（head_commit 0a0c4dd33c 2026-09-10；与上游 n7.1.1 逐字节一致；修复前形态在位 + 上游修复 diff 对 OH 检出 git apply --check 通过）+ 提交材料包 submission_70629（L4 三侧对照）"
+    },
+    "OpenHarmony-v4.1-Release": {
+      "verdict": "affected",
+      "source_commit": "OpenHarmony-4.1-Release",
+      "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-4.1-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-4.1-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '4.4.1', 'curl': '8.4.0', 'openssl': '3.0.9', 'cjson': '1.7.16'}；kb[cvelistV5] 受影响区间 ≥3.0；分支钉住 {'ffmpeg': '4.4.1', 'curl': '8.4.0', 'openssl': '3.0.9', 'cjson': '1.7.16'} 位于上游修复之前（CVE-2026-70629）"
+    },
+    "OpenHarmony-v5.0-Release": {
+      "verdict": "affected",
+      "source_commit": "OpenHarmony-5.0-Release",
+      "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-5.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-5.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.6.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；kb[cvelistV5] 受影响区间 ≥3.0；分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.6.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 位于上游修复之前（CVE-2026-70629）"
+    },
+    "OpenHarmony-v5.1-Release": {
+      "verdict": "affected",
+      "source_commit": "OpenHarmony-5.1.0-Release",
+      "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-5.1.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-5.1.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；kb[cvelistV5] 受影响区间 ≥3.0；分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 位于上游修复之前（CVE-2026-70629）"
+    },
+    "OpenHarmony-v6.0-Release": {
+      "verdict": "affected",
+      "source_commit": "OpenHarmony-6.0-Release",
+      "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-6.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-6.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'}；kb[cvelistV5] 受影响区间 ≥3.0；分支钉住 {'ffmpeg': '5.1.4', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.17'} 位于上游修复之前（CVE-2026-70629）"
+    },
+    "OpenHarmony-v7.0-Release": {
+      "verdict": "affected",
+      "source_commit": "OpenHarmony-7.0-Release",
+      "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-7.0-Release 分支 ohos/ohos.xml 钉住 third_party ffmpeg（ref=OpenHarmony-7.0-Release），gitcode README.OpenSource 声明版本 {'ffmpeg': '7.1.1', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.19'}；kb[cvelistV5] 受影响区间 ≥3.0；分支钉住 {'ffmpeg': '7.1.1', 'curl': '8.8.0', 'openssl': '3.0.9', 'cjson': '1.7.19'} 位于上游修复之前（CVE-2026-70629）"
+    }
   }
- },
- "trigger_conditions": "RSCC 流 zlib 分支解压输出短于帧需求（len < pixel_size）：rscc.c 无尾部清零，帧尾保持未初始化（上游 cd1f545c/a5fe21a1 以 memset 补零修复）。",
- "attack_path": "产品用 ffmpeg 解码不可信屏幕捕获视频（远程支持/录屏处理场景）：攻击者提供短 deflate 输出的构造 RSCC 流 → 解码帧尾泄露未初始化堆内存。",
- "reproduction_commands": "源级三侧对照：a) 上游 cd1f545c/a5fe21a1 修复（上游样本名 rscc_short_deflate_heap_disclosure）；b) OH rscc.c deflate 分支无 len<pixel_size 清零；c) 与 n7.1.1 逐字节一致、官方清单含 7.1.1、diff git apply --check 通过。运行级路径：合法但短的 deflate 输出，MSan 观测 uninit 或对比零填充差分。",
- "branch_evidence": {
-  "master": {
-   "verdict": "affected",
-   "source_commit": "0a0c4dd33c",
-   "reference": "case.json oh_source（head_commit 0a0c4dd33c 2026-09-10；与上游 n7.1.1 逐字节一致；修复前形态在位 + 上游修复 diff 对 OH 检出 git apply --check 通过）+ 提交材料包 submission_70629（L4 三侧对照）"
-  }
- }
 }

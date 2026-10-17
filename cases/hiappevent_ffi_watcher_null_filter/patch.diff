@@ -1,0 +1,21 @@
+# 修复建议补丁（hiappevent_ffi_watcher_null_filter）
+# 口径：AddWatcher 入口对边界形态（head=NULL 且 size>0）返回 ERR_PARAM，外层 appEventFilters 与内层 names 同步补判空；eventTypes 循环同型补丁见工单第五节。
+# 基线：/home/beichen/oh 官方完整树对应仓（见 case.json oh_source）
+# 生成：2026-10-17，由原始源文件机械生成（scratch 副本编辑，树内文件未动）
+--- a/base/hiviewdfx/hiappevent/frameworks/cj/ffi/src/hiappevent_ffi.cpp
++++ b/base/hiviewdfx/hiappevent/frameworks/cj/ffi/src/hiappevent_ffi.cpp
+@@ -369,7 +369,14 @@
+     }
+     std::vector<AppEventFilter> filters;
+     std::unordered_set<std::string> names;
++    if (watcher.appEventFilters.size > 0 && watcher.appEventFilters.head == nullptr) {
++        return ret; // ret.code == ERR_PARAM：边界形态（head=NULL, size>0）拒绝
++    }
+     for (int i = 0; i < watcher.appEventFilters.size; i++) {
++        if (watcher.appEventFilters.head[i].names.size > 0
++            && watcher.appEventFilters.head[i].names.head == nullptr) {
++            return ret;
++        }
+         for (int j = 0; j < watcher.appEventFilters.head[i].names.size; j++) {
+             names.insert(std::string(watcher.appEventFilters.head[i].names.head[j]));
+         }

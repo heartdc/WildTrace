@@ -36,12 +36,16 @@ from datetime import date
 # gitcode pins 1.7.19, which is also the version the cjson case was
 # verified against (observed_version).
 OH_BRANCHES = {
-    "OpenHarmony-v4.1-Release": {"snapshot": "2023-04", "ffmpeg": "n4.1",   "curl": "8.1.1",  "openssl": "3.0.9",  "cjson": "1.7.16"},
-    "OpenHarmony-v5.0-Release": {"snapshot": "2024-10", "ffmpeg": "n5.1.6", "curl": "8.6.0",  "openssl": "3.0.9",  "cjson": "1.7.17"},
-    "OpenHarmony-v5.1-Release": {"snapshot": "2025-04", "ffmpeg": "n5.1.6", "curl": "8.6.0",  "openssl": "3.0.9",  "cjson": "1.7.17"},
-    "OpenHarmony-v6.0-Release": {"snapshot": "2025-10", "ffmpeg": "n6.1.1", "curl": "8.11.0", "openssl": "3.0.12", "cjson": "1.7.17"},
-    "OpenHarmony-v7.0-Release": {"snapshot": "2026-08", "ffmpeg": "n7.1.1", "curl": "8.13.0", "openssl": "3.0.9",  "cjson": "1.7.19"},
-    "master":                   {"snapshot": "2026-09", "ffmpeg": "n7.1.1", "curl": "8.13.0", "openssl": "3.0.9",  "cjson": "1.7.19"},
+    # 2026-10-17 实证校准（kb/third_party_targets/branch_pins.json）：各发布分支
+    # manifest(ohos/ohos.xml) 钉住 ref 在 gitcode（manifest 声明的 remote）解析，
+    # README.OpenSource 的 Version Number。修正了旧手工表的 ffmpeg/curl 估值
+    # （旧表 v4.1=n4.1/v6.0=n6.1.1/curl v6.0=8.11.0 均与实证不符）。
+    "OpenHarmony-v4.1-Release": {"snapshot": "2023-04", "ffmpeg": "4.4.1", "curl": "8.4.0",  "openssl": "3.0.9", "cjson": "1.7.16"},
+    "OpenHarmony-v5.0-Release": {"snapshot": "2024-10", "ffmpeg": "5.1.4", "curl": "8.6.0",  "openssl": "3.0.9", "cjson": "1.7.17"},
+    "OpenHarmony-v5.1-Release": {"snapshot": "2025-04", "ffmpeg": "5.1.4", "curl": "8.8.0",  "openssl": "3.0.9", "cjson": "1.7.17"},
+    "OpenHarmony-v6.0-Release": {"snapshot": "2025-10", "ffmpeg": "5.1.4", "curl": "8.8.0",  "openssl": "3.0.9", "cjson": "1.7.17"},
+    "OpenHarmony-v7.0-Release": {"snapshot": "2026-08", "ffmpeg": "7.1.1", "curl": "8.8.0",  "openssl": "3.0.9", "cjson": "1.7.19"},
+    "master":                   {"snapshot": "2026-09", "ffmpeg": "7.1.1", "curl": "8.8.0",  "openssl": "3.0.9", "cjson": "1.7.19"},
 }
 
 # Branches where the OH-native (non-vendored) cases were source-verified.
