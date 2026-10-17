@@ -38,6 +38,8 @@ def main(argv=None):
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--key-file", type=Path, default=None,
                         help="single-line API key file (run mode only)")
+    parser.add_argument("--timeout", type=int, default=None,
+                        help="per-call timeout in seconds (run mode only)")
     args = parser.parse_args(argv)
 
     roots = {}
@@ -66,11 +68,14 @@ def main(argv=None):
             raise SystemExit("run mode needs --key-file pointing at a single-line key file")
         api_key = args.key_file.read_text(encoding="utf-8").strip()
 
+    kwargs = {}
+    if args.timeout is not None:
+        kwargs["timeout"] = args.timeout
     value = llm_review.run_review(
         args.summary, args.queue, args.context, roots, args.output, ids,
         allow_network=(args.mode == "run"),
         plan_only=(args.mode == "plan"),
-        api_key=api_key, model=args.model, max_calls=32,
+        api_key=api_key, model=args.model, max_calls=32, **kwargs,
     )
     print("LLM_REVIEW_STATUS", value["status"], "; confirmed_vulnerabilities=0")
     return 0 if value["status"] in ("completed", "prepared") else 1
