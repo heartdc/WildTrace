@@ -1,6 +1,7 @@
 # LLM 全量审查本机重建（2026-10-17）
 
-状态：**26 组队列已铸成、双模型全组 plan 已 prepared；在线 run 待密钥注入**
+状态：**26 组队列已铸成、glm-5.3 全组 plan 已 prepared；在线 run 待密钥注入**
+（2026-10-17 范围调整：仅存 GLM 密钥，双模型交叉降级为单模型全量，gpt-6-astra 计划已移除）
 
 ## 背景与范围
 
@@ -34,7 +35,6 @@ Windows 侧运行需 `MSYS_NO_PATHCONV=1` 防路径改写）。
 |---|---|
 | 组件批跑 + 队列 + 上下文 + 交接 | `.cache/comp_review_20261017/`（STATIC_REVIEW_READY groups=26 open_tasks=130） |
 | glm-5.3 全组 plan | `.cache/llm_plan_glm-5_3/`（status=prepared） |
-| gpt-6-astra 全组 plan | `.cache/llm_plan_gpt-6-astra/`（status=prepared） |
 | 组 ID 清单 | `D:/llm_review_work/group_ids.txt`（26 条） |
 
 ## 剩余一步（需所有者注入密钥）
@@ -50,9 +50,9 @@ MSYS_NO_PATHCONV=1 python tools/llm_review_run.py run glm-5.3 \
   --root 'hilog_featured=D:\llm_review_stage' \
   --groups D:/llm_review_work/group_ids.txt \
   --output .cache/llm_run_glm-5_3 --key-file D:/llm_review_work/api_key.txt
-# 同样命令换 gpt-6-astra（--output .cache/llm_run_gpt-6-astra）
-# 3) 离线验收 ×2（--mode verify，无网络无密钥）
-# 4) 双模型分歧清单：python tools/llm_cross_compare.py llm_run_glm-5_3 llm_run_gpt-6-astra
+# 3) 离线验收（--mode verify，无网络无密钥）
+# 双模型交叉（glm-5.3 × gpt-6-astra）因仅存 GLM 密钥不再执行；
+# 若未来取得第二模型密钥，llm_cross_compare.py 与双跑流程可直接复用
 ```
 
 纪律不变：模型输出为 proposal，`final_verdict` 恒为 undetermined，确认漏洞数 0；

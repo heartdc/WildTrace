@@ -59,7 +59,7 @@ WildTrace 是一套**本地、离线优先、证据可审计**的 OpenHarmony C/
 | 交付件组装（vuln_report / competition_report，§3.11） | ✅ 已实现 | 18 案报告自动生成；证据引用 16/18 案 |
 | 工具链预检（toolchain preflight） | ✅ 已实现 | `python -m ohvul.toolchain --output ...` |
 | 执行沙箱自动化（§3.5 扩展） | 📐 设计稿已合入 | P0–P2 待实施 |
-| 双模型交叉验证 | 📐 白名单就绪 | grok-4.6 / glm-5.3 / gpt-6-astra，待全量运行 |
+| 单模型全量审查（glm-5.3） | 📐 队列与 plan 就绪 | 26 组本机重建（2026-10-17）；双模型交叉因仅 GLM 密钥不可行，如实降级为单模型 |
 | OH 真实库构建与平台验证 | IPC 库级证实；产品验证待完成 | `REAL_BUILD_PROBE_20260925.md`；库级≠平台复现 |
 | **P6 状态模型与可证明性排序（§3.13）** | ✅ 已实现 | Null/NonNull/MaybeNull 时间线；dsoftbus 漏斗 2,662→13（语义分层）；51 项契约测试 |
 | **检测形态扩展 + 函数摘要（§3.14）** | ✅ 已实现 | GT1 局部/GT2 成员/GT3 宏展开指针；三个严格修复对回放命中→消失零误伤 |
@@ -164,7 +164,9 @@ cJSON 正例与安全反例）上回验再上线。
   unknown；系统提示内建注入防御；`final_verdict` 恒为 undetermined。
 - **交接**（`review_handoff`）：LLM 草稿投影为"带证据引用的开放任务"，全部标记
   untrusted_model_proposal。
-- **双模型交叉验证**（设计中）：白名单已就绪，待全量运行。
+- **单模型全量审查**（glm-5.3）：26 组队列本机重建、全组 plan prepared
+  （`docs/analysis/LLM_REVIEW_RERUN_20261017.md`）；双模型交叉原设计为
+  glm-5.3 × gpt-6-astra，现仅存 GLM 密钥，如实降级为单模型。
 
 ### 3.5 隔离执行与运行级证据（已实现并实战验证）
 
@@ -465,7 +467,8 @@ python -m ohvul.benchmark <cases.json> [--scanner ...]
   赛题对照审计_20261017` 行动清单）。
 - 影响矩阵剩余 ？格：OH 原生案（hiappevent/ipc/kv/udmf）旧分支 CJ FFI 引入
   时间未确认（各 4-5 格）；cjson 六格与第三方 15 案已实证落定。
-- LLM 29 组全量审查与双模型交叉验证待执行（通道就绪）。
+- LLM 全量审查：26 组队列已本机重建（原 29 组输入在跑批机上），双模型交叉
+  因仅 GLM 密钥降级为单模型 glm-5.3；在线 run 待密钥注入。
 - cfhd 案运行级观测需上游系数样本（驱动与口径已备，§3.17 管线可直接承接）；
   nvdec 需 GPU/NVDEC 宿主、curl 案需 Schannel/GnuTLS 后端（均如实申报）。
 - 内置正则扫描仅作初筛；语义结论以上层引擎为准；跨函数分析为轻量别名级，
