@@ -3,6 +3,7 @@
 The tests exercise the WSL compile and execute paths with a known-good
 PoC that intentionally crashes (null dereference).
 """
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -13,6 +14,7 @@ from ohvul.llm_verify import compile_poc, execute_poc, _to_wsl_path
 class CompileExecuteTests(unittest.TestCase):
     """Test the compile and execute primitives via WSL."""
 
+    @unittest.skipUnless(os.name == "nt", "WSL bridge requires a Windows host")
     def test_compile_valid_null_deref_poc(self):
         code = (
             "#include <stdio.h>\n"
@@ -31,6 +33,7 @@ class CompileExecuteTests(unittest.TestCase):
         self.assertTrue(result["ok"], f"compile failed: {result['stderr']}")
         self.assertIsNotNone(result["binary_path"])
 
+    @unittest.skipUnless(os.name == "nt", "WSL bridge requires a Windows host")
     def test_compile_invalid_code_fails(self):
         code = "int main(void) { syntax error here }"
         with tempfile.TemporaryDirectory(prefix="wt_test_") as d:
@@ -38,6 +41,7 @@ class CompileExecuteTests(unittest.TestCase):
         self.assertFalse(result["ok"])
         self.assertTrue(len(result["stderr"]) > 0)
 
+    @unittest.skipUnless(os.name == "nt", "WSL bridge requires a Windows host")
     def test_execute_crashing_poc_reports_segv(self):
         code = (
             "#include <stdio.h>\n"
@@ -60,6 +64,7 @@ class CompileExecuteTests(unittest.TestCase):
         self.assertTrue(exec_result["asan_report"] or
                         exec_result["exit_code"] != 0)
 
+    @unittest.skipUnless(os.name == "nt", "WSL bridge requires a Windows host")
     def test_execute_non_crashing_poc(self):
         code = (
             "#include <stdio.h>\n"
