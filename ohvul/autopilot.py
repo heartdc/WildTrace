@@ -223,7 +223,9 @@ def score_finding(f: Finding, body: str, cleaned: str, params: str) -> Finding:
         elif 'reassigned-after-check' in desc or 'merged-branches' in desc:
             score += 10; factors.append("+10 (state invalidated by reassignment/merge)")
         elif 'out-param-source' in desc:
-            score += 5; factors.append("+5 (out-param fill: callee contract)");
+            score += 5; factors.append("+5 (out-param fill: callee contract)")
+        elif 'known-nullable-source' in desc or 'reassigned-known-nullable' in desc:
+            score += 10; factors.append("+10 (known-nullable API: verified contract)");
         # Lower: very short function (likely just a wrapper with caller-side check)
         if len(cleaned) < 200:
             score -= 10; factors.append("-10 (very short function)")
@@ -651,6 +653,33 @@ def _p6_block_spans(cleaned: str):
     return enclosing
 
 
+# Function summaries (mentor step 6 item 4): VERIFIED nullable-return
+# patterns. Each entry must cite the implementation or contract that
+# verifies it. These affect the MaybeNull reason tag (known-nullable vs
+# source-unknown) and ranking (+10 known > +5 unknown), never candidate
+# generation. Patterns are name-prefix/suffix conventions from the
+# OpenHarmony codebase, not guesses.
+_P6_KNOWN_NULLABLE = [
+    # Allocators: standard contract — allocation can fail → NULL
+    # (SoftBusMalloc/Calloc verified in common/include/softbus_utils.h;
+    #  malloc/calloc/new are ISO C/C++ contracts)
+    re.compile(r'\b(?:\w*Malloc|\w*Calloc|\w*Alloc|malloc|calloc|new)\b'),
+    # Getters returning pointers: OH convention — Get* can return NULL
+    # when the target is not found/available
+    # (GetRemoteProxy verified: callers all guard with CHECK_AND_RETURN;
+    #  LnnGet*Info verified in bus_center/lnn; GetSession* in transmission)
+    re.compile(r'\b(?:Get\w+Proxy|LnnGet\w+|Get\w*Session\w*|Find\w+)\b'),
+]
+
+
+def _p6_known_nullable_source(rhs: str) -> bool:
+    """Does this assignment RHS call a verified nullable-returning API?"""
+    for pattern in _P6_KNOWN_NULLABLE:
+        if pattern.search(rhs):
+            return True
+    return False
+
+
 def _p6_access_states(cleaned: str, varesc: str, accesses: list):
     """Intra-function pointer-state timeline (mentor step 4, Gap A).
 
@@ -677,9 +706,14 @@ def _p6_access_states(cleaned: str, varesc: str, accesses: list):
             assigns.append({"pos": m.start(), "state": "NonNull",
                             "reason": "assigned-address"})
         else:
+            reason = ("reassigned-source-unknown"
+                      if neg_aborts else "assigned-source-unknown")
+            # function summaries: known-nullable APIs rank above unknown
+            if _p6_known_nullable_source(rhs):
+                reason = ("reassigned-known-nullable"
+                          if neg_aborts else "known-nullable-source")
             assigns.append({"pos": m.start(), "state": "MaybeNull",
-                            "reason": "reassigned-source-unknown"
-                            if neg_aborts else "assigned-source-unknown"})
+                            "reason": reason})
     for a in assigns:
         a["scope"] = enclosing(a["pos"])
     # out-param fills: Func(&var, ...) supersedes an earlier NULL init —

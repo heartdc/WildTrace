@@ -185,7 +185,10 @@ class P6LocalPointerTests(unittest.TestCase):
             "    sptr<IObs> proxy = GetRemoteProxy<IObs>(1);\n"
             "    proxy->Fire(2);")
         self.assertIsNotNone(f)
-        self.assertIn("assigned-source-unknown", f.description)
+        # GetRemoteProxy is a verified nullable-return pattern → tagged
+        # known-nullable-source (upgraded from assigned-source-unknown
+        # when function summaries were added)
+        self.assertIn("known-nullable-source", f.description)
 
     def test_local_sptr_macro_guarded_suppresses(self):
         # CHECK_AND_RETURN_LOG_RET form is a return-polarity guard
@@ -488,6 +491,61 @@ class P6MacroPointerTests(unittest.TestCase):
                 "}\n", encoding="utf-8")
             found = self._finds(root, "StartService", "GATTSERVICE")
         self.assertEqual(found, [], "disjunction-guarded macro deref must suppress")
+
+
+class P6FunctionSummaryTests(unittest.TestCase):
+    """Step 6 item 4: verified nullable-return APIs tag their MaybeNull
+    leads as known-nullable-source (ranking +10) vs the generic
+    assigned-source-unknown (+0). Summaries cite verified contracts."""
+
+    def _finds(self, root: Path, function: str, var: str) -> list:
+        return [f for f in scan_p6(root)
+                if f.pattern == "P6_null_deref" and f.function == function
+                and f.struct_type == var]
+
+    def test_allocator_source_tags_known_nullable(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "summary.c").write_text(
+                "typedef struct Node { int a; } Node;\n"
+                "Node *SoftBusMalloc(unsigned long size);\n"
+                "void use(void) {\n"
+                "    Node *p = SoftBusMalloc(sizeof(Node));\n"
+                "    p->a = 1;\n"
+                "}\n", encoding="utf-8")
+            found = self._finds(root, "use", "p")
+        self.assertTrue(found)
+        self.assertIn("known-nullable-source", found[0].description)
+        self.assertIn("+10 (known-nullable API", found[0].confidence_factors)
+
+    def test_getter_source_tags_known_nullable(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "summary.cpp").write_text(
+                "struct IObs { void Fire(); };\n"
+                "template <typename T> T *GetRemoteProxy(int id);\n"
+                "void use(void) {\n"
+                "    IObs *proxy = GetRemoteProxy<IObs>(1);\n"
+                "    proxy->Fire();\n"
+                "}\n", encoding="utf-8")
+            found = self._finds(root, "use", "proxy")
+        self.assertTrue(found)
+        self.assertIn("known-nullable-source", found[0].description)
+
+    def test_unknown_source_stays_untagged(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "summary.c").write_text(
+                "typedef struct Node { int a; } Node;\n"
+                "Node *some_random_function(void);\n"
+                "void use(void) {\n"
+                "    Node *p = some_random_function();\n"
+                "    p->a = 1;\n"
+                "}\n", encoding="utf-8")
+            found = self._finds(root, "use", "p")
+        self.assertTrue(found)
+        self.assertIn("assigned-source-unknown", found[0].description)
+        self.assertNotIn("known-nullable", found[0].description)
 
 
 class P6ScopedGuardTests(unittest.TestCase):
