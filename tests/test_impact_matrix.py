@@ -213,11 +213,20 @@ class KbJoinTests(unittest.TestCase):
                 self.assertEqual(matrix["demo"]["kb_source"], "cvelistV5")
                 self.assertEqual(matrix["demo"]["upstream_predictions"]["master"],
                                  "affected")
-                # Deliverable contract (2026-10-11 fix): generate_matrix feeds
-                # IMPACT_MATRIX.md / VULN_REPORT.md and must keep the
-                # historical projection — all-unknown output here is the
-                # regression PR #119 briefly introduced on these paths.
-                self.assertEqual(matrix["demo"]["branches"]["master"], "affected")
+                # Convention change (learn/impact-contract, 2026-10-15):
+                # the 2026-10-11 pin required kb hits to project straight
+                # into branch verdicts because the deliverables relied on
+                # the historical projection. That repackaged upstream
+                # prediction as branch-level proof, and the workbench's
+                # strict outlet then disagreed with the matrix/report
+                # outlets on the same case (mentor review 2026-10). The
+                # kb prediction itself is unchanged and still asserted
+                # above; formal outlets now render it in
+                # upstream_predictions / the labeled prediction section,
+                # so the branch verdict here is unknown until per-branch
+                # evidence lands in branch_evidence.
+                self.assertEqual(matrix["demo"]["branches"]["master"],
+                                 "unknown")
 
 
 class RenderTests(unittest.TestCase):

@@ -14,6 +14,7 @@ DRIVERS = {
     "hiappevent_ffi_watcher_null_filter": "hiappevent_null_watcher.c",
     "ipc_cj_array_null_validation": "ipc_null_bytearray.c",
     "kv_ffi_array_validation": "kv_null_entry.c",
+    "udmf_ffi_setproperties_null_tag": "udmf_null_tag.c",
 }
 
 
@@ -37,7 +38,13 @@ def case_detail(name):
         raise ValueError("Invalid case ID")
     folder = contained(ROOT / "cases" / name, [ROOT / "cases"])
     record = read_json(folder / "case.json")
-    rendered = read_case(folder)
+    # One kb load feeds both outlets: read_case renders upstream
+    # predictions and branch verdicts, and `impact` below evaluates the
+    # same record against the same records — differing kb inputs here is
+    # what made the workbench's rendered section diverge from its own
+    # structured impact before (learn/impact-contract).
+    kb_records = load_kb_records(ROOT / "kb/third_party_targets/records.json")
+    rendered = read_case(folder, kb_records)
     if rendered["source_file"] == "—":
         for patch in sorted(folder.glob("*.patch")) + sorted(folder.glob("*.diff")):
             text = patch.read_text(encoding="utf-8", errors="replace")
@@ -104,11 +111,7 @@ def case_detail(name):
         "complete": not missing,
         "rendered": rendered,
         "assets": assets,
-        "impact": evaluate_case(
-            record,
-            load_kb_records(ROOT / "kb/third_party_targets/records.json"),
-            strict_evidence=True,
-        ),
+        "impact": evaluate_case(record, kb_records, strict_evidence=True),
         "raw": record,
         "runtime_supported": name == "cjson_merge_alias",
     }

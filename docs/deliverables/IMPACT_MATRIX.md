@@ -1,36 +1,63 @@
 # 版本分支影响矩阵
 
-生成日期：2026-10-11（工具 `ohvul.impact_matrix` 从 cases/ 自动生成）
+生成日期：2026-10-15（工具 `ohvul.impact_matrix` 从 cases/ 自动生成）
 
 | 案例 | CVE | 组件 | 引入版本 | 上游修复 | v4.1 | v5.0 | v5.1 | v6.0 | v7.0 | master | 证实分支数 | 待定格数 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| cjson_merge_alias | CVE-2026-87933 | cjson | 1.7.0 | pending | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 6 | 0 |
-| curl_native_ca_reuse | CVE-2026-80231 | curl | 7.71.0 | 8.22.0 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 6 | 0 |
-| curl_psl_supercookie | CVE-2026-82209 | curl | 7.46.0 | 8.22.0 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 6 | 0 |
-| ffmpeg_cfhd_transform2_width_oob | CVE-2026-70632 | ffmpeg | 4.4 | 9.0 | — | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 5 | 0 |
-| ffmpeg_dvbsub_parser_capacity_overflow | CVE-2026-70628 | ffmpeg | 0.5 | 9.0 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 6 | 0 |
-| ffmpeg_floodfill_point_stack_oob | CVE-2026-65705 | ffmpeg | 3.4 | pending | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 6 | 0 |
-| ffmpeg_hqdn3d_dynamic_size_oob | CVE-2026-66036 | ffmpeg | 0 | pending | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 6 | 0 |
-| ffmpeg_iamf_count_label_dos | CVE-2026-66037 | ffmpeg | 0 | pending | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 6 | 0 |
-| ffmpeg_lcldec_zlib_tail_disclosure | CVE-2026-66038 | ffmpeg | 0 | pending | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 6 | 0 |
-| ffmpeg_nvdec_sep_ref_doublefree | CVE-2026-64832 | ffmpeg | 4.4 | pending | — | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 5 | 0 |
-| ffmpeg_quirc_resize_oob | CVE-2026-66041 | ffmpeg | 7.0 | pending | — | — | — | — | 🔴 | 🔴 | 2 | 0 |
-| ffmpeg_rscc_short_deflate_uninit_leak | CVE-2026-70629 | ffmpeg | 3.0 | 9.0 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 6 | 0 |
-| ffmpeg_swaprect_temp_row_oob | CVE-2026-65706 | ffmpeg | 3.0 | pending | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 6 | 0 |
-| ffmpeg_ty_ac3_trim_underflow | CVE-2026-65704 | ffmpeg | 0 | pending | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 6 | 0 |
-| ffmpeg_wmaenc_extradata_padding | CVE-2026-52296 | ffmpeg | 0 | 9.0 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 6 | 0 |
-| hiappevent_ffi_watcher_null_filter | — | oh_native | unknown | pending | ？ | ？ | ？ | ？ | 🔴 | 🔴 | 2 | 4 |
-| ipc_cj_array_null_validation | — | oh_native | unknown | pending | ？ | ？ | ？ | ？ | 🔴 | 🔴 | 2 | 4 |
-| kv_ffi_array_validation | — | oh_native | unknown | pending | ？ | ？ | ？ | ？ | 🔴 | 🔴 | 2 | 4 |
-| openssl_ocb_oneshot_iv_discard | CVE-2026-45445 | openssl | 3.0.0 | 4.0.1 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 6 | 0 |
-| udmf_ffi_setproperties_null_tag | — | oh_native | unknown | pending | ？ | ？ | ？ | ？ | 🔴 | 🔴 | 2 | 4 |
+| cjson_merge_alias | CVE-2026-87933 | cjson | 1.7.0 | pending | ？ | ？ | ？ | ？ | ？ | 🔴 | 1 | 5 |
+| curl_native_ca_reuse | CVE-2026-80231 | curl | 7.71.0 | 8.22.0 | ？ | ？ | ？ | ？ | ？ | 🔴 | 1 | 5 |
+| curl_psl_supercookie | CVE-2026-82209 | curl | 7.46.0 | 8.22.0 | ？ | ？ | ？ | ？ | ？ | 🔴 | 1 | 5 |
+| ffmpeg_cfhd_transform2_width_oob | CVE-2026-70632 | ffmpeg | 4.4 | 9.0 | ？ | ？ | ？ | ？ | ？ | 🔴 | 1 | 5 |
+| ffmpeg_dvbsub_parser_capacity_overflow | CVE-2026-70628 | ffmpeg | 0.5 | 9.0 | ？ | ？ | ？ | ？ | ？ | 🔴 | 1 | 5 |
+| ffmpeg_floodfill_point_stack_oob | CVE-2026-65705 | ffmpeg | 3.4 | pending | ？ | ？ | ？ | ？ | ？ | 🔴 | 1 | 5 |
+| ffmpeg_hqdn3d_dynamic_size_oob | CVE-2026-66036 | ffmpeg | 0 | pending | ？ | ？ | ？ | ？ | ？ | 🔴 | 1 | 5 |
+| ffmpeg_iamf_count_label_dos | CVE-2026-66037 | ffmpeg | 0 | pending | ？ | ？ | ？ | ？ | ？ | 🔴 | 1 | 5 |
+| ffmpeg_lcldec_zlib_tail_disclosure | CVE-2026-66038 | ffmpeg | 0 | pending | ？ | ？ | ？ | ？ | ？ | 🔴 | 1 | 5 |
+| ffmpeg_nvdec_sep_ref_doublefree | CVE-2026-64832 | ffmpeg | 4.4 | pending | ？ | ？ | ？ | ？ | ？ | 🔴 | 1 | 5 |
+| ffmpeg_quirc_resize_oob | CVE-2026-66041 | ffmpeg | 7.0 | pending | ？ | ？ | ？ | ？ | ？ | 🔴 | 1 | 5 |
+| ffmpeg_rscc_short_deflate_uninit_leak | CVE-2026-70629 | ffmpeg | 3.0 | 9.0 | ？ | ？ | ？ | ？ | ？ | 🔴 | 1 | 5 |
+| ffmpeg_swaprect_temp_row_oob | CVE-2026-65706 | ffmpeg | 3.0 | pending | ？ | ？ | ？ | ？ | ？ | 🔴 | 1 | 5 |
+| ffmpeg_ty_ac3_trim_underflow | CVE-2026-65704 | ffmpeg | 0 | pending | ？ | ？ | ？ | ？ | ？ | 🔴 | 1 | 5 |
+| ffmpeg_wmaenc_extradata_padding | CVE-2026-52296 | ffmpeg | 0 | 9.0 | ？ | ？ | ？ | ？ | ？ | 🔴 | 1 | 5 |
+| hiappevent_ffi_watcher_null_filter | — | oh_native | unknown | pending | ？ | ？ | ？ | ？ | ？ | 🔴 | 1 | 5 |
+| ipc_cj_array_null_validation | — | oh_native | unknown | pending | ？ | ？ | ？ | ？ | ？ | 🔴 | 1 | 5 |
+| kv_ffi_array_validation | — | oh_native | unknown | pending | ？ | ？ | ？ | ？ | ？ | ？ | 0 | 6 |
+| openssl_ocb_oneshot_iv_discard | CVE-2026-45445 | openssl | 3.0.0 | 4.0.1 | ？ | ？ | ？ | ？ | ？ | ？ | 0 | 6 |
+| udmf_ffi_setproperties_null_tag | — | oh_native | unknown | pending | ？ | ？ | ？ | ？ | ？ | 🔴 | 1 | 5 |
 
-**总计**：20 案 × 6 分支；🔴 证实 affected 98 格；— 证实不受影响 6 格；？待定 16 格。本表只声明有证据的格子，？不是安全结论。
+**总计**：20 案 × 6 分支；🔴 证实 affected 18 格；— 证实不受影响 0 格；？待定 102 格。本表只声明有证据的格子，？不是安全结论。
 
 > 🔴 affected = 本案例记录了具体分支提交及验证证据；上游版本推测不计为分支实证。  
 > ✅ fixed = 分支基线已含上游修复  
 > — not_affected = 分支基线早于缺陷引入版本  
-> ？ unknown = 缺该分支基线数据或缺上游引入范围，不推断
+> ？ unknown = 现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败
+
+## 上游版本预测（风险线索，非分支实证）
+
+| 案例 | v4.1 | v5.0 | v5.1 | v6.0 | v7.0 | master |
+|---|---|---|---|---|---|---|
+| cjson_merge_alias | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 |
+| curl_native_ca_reuse | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 |
+| curl_psl_supercookie | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 |
+| ffmpeg_cfhd_transform2_width_oob | — | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 |
+| ffmpeg_dvbsub_parser_capacity_overflow | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 |
+| ffmpeg_floodfill_point_stack_oob | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 |
+| ffmpeg_hqdn3d_dynamic_size_oob | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 |
+| ffmpeg_iamf_count_label_dos | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 |
+| ffmpeg_lcldec_zlib_tail_disclosure | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 |
+| ffmpeg_nvdec_sep_ref_doublefree | — | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 |
+| ffmpeg_quirc_resize_oob | — | — | — | — | 🔴 | 🔴 |
+| ffmpeg_rscc_short_deflate_uninit_leak | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 |
+| ffmpeg_swaprect_temp_row_oob | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 |
+| ffmpeg_ty_ac3_trim_underflow | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 |
+| ffmpeg_wmaenc_extradata_padding | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 |
+| hiappevent_ffi_watcher_null_filter | ？ | ？ | ？ | ？ | ？ | ？ |
+| ipc_cj_array_null_validation | ？ | ？ | ？ | ？ | ？ | ？ |
+| kv_ffi_array_validation | ？ | ？ | ？ | ？ | ？ | ？ |
+| openssl_ocb_oneshot_iv_discard | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 | 🔴 |
+| udmf_ffi_setproperties_null_tag | ？ | ？ | ？ | ？ | ？ | ？ |
+
+> 本节按上游受影响范围与各分支基线比对得到**预测**，回答"上游版本视角该基线是否在风险范围内"；它不证明对应 OH 分支包含缺陷代码、也不证明已回移修复。分支级结论以上方主表（严格口径）为准，两区信息分别保留、互不覆盖。
 
 ## 判定依据
 

@@ -1,0 +1,17 @@
+--- a/libavfilter/vf_hqdn3d.c
++++ b/libavfilter/vf_hqdn3d.c
+--- a/libavfilter/vf_hqdn3d.c
++++ b/libavfilter/vf_hqdn3d.c
+@@ -316,6 +316,12 @@ static int filter_frame(AVFilterLink *inlink, AVFrame *in)
+     AVFilterLink *outlink = ctx->outputs[0];
+ 
+     AVFrame *out;
++    if (in->width != inlink->w || in->height != inlink->h) {
++        av_log(ctx, AV_LOG_ERROR,
++               "Frame size changed without filter graph reinitialization\n");
++        av_frame_free(&in);
++        return AVERROR(EINVAL);
++    }
+     int direct = av_frame_is_writable(in) && !ctx->is_disabled;
+     ThreadData td;
+ 
