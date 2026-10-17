@@ -1,48 +1,60 @@
 {
-  "schema": "case-specific-validation-0.2",
-  "id": "ffmpeg-nvdec-sep-ref-doublefree",
-  "component": "third_party/ffmpeg",
-  "cve_reference": "CVE-2026-64832",
-  "cwe_candidate": "CWE-415",
-  "discovery_method": "kb_gap_audit.py four-signal pipeline (L1 cve-grep negative + L2 disclosure 2026-07-04 > snapshot 2026-06-01 + L3 baseline 7.1.1 in [4.4, 8.1.2] + L4 source signature confirmed)",
-  "new_discovery": false,
-  "public_upstream": {
-    "fix_commit": "https://github.com/FFmpeg/FFmpeg/commit/4c6217477fc64305055b37d9d1d0d76d30e37f97",
-    "fix_date": "2026-07-04",
-    "fix_subject": "avcodec/nvdec: don't double free the fdd-owned context on the sep_ref error path"
-  },
-  "oh_source": {
-    "repo": "https://gitcode.com/openharmony/third_party_ffmpeg",
-    "head_commit": "0a0c4dd33c (2026-09-10)",
-    "baseline": "FFmpeg 7.1.1, README.OpenSource last change 2026-06-01",
-    "nvdec_c_blob": "932544564a7419c68c1eb143abb7ba6db0c41cba",
-    "l4_evidence": "OH ff_nvdec_start_frame_sep_ref (nvdec.c:599) keeps 'ret = AVERROR(ENOMEM); goto fail;' at the decoder_pool exhaustion branch and the trailing 'fail: nvdec_fdd_priv_free(cf); return ret;' block — exactly what upstream removed. Naming-era note: OH uses ff_refstruct_pool_get, upstream patch context shows av_refstruct_pool_get (same API after the ff_->av_ rename); structure equivalent"
-  },
-  "vulnerability": {
-    "summary": "nvdec hardware decode: when decoder surfaces are exhausted inside ff_nvdec_start_frame_sep_ref, the error path frees the fdd-owned context that ff_nvdec_start_frame already handed to the frame — double free on a crafted video file with NVDEC.",
-    "trigger": "crafted video driving NVDEC into the sep_ref pool-exhaustion error path",
-    "verification_level": "source-level confirmed (L4); runtime repro requires NVIDIA GPU + NVDEC-capable build — declared as source-level if submitted",
-    "runtime_status": "not_run"
-  },
-  "controls": [
-    {"name": "start-frame-path", "desc": "the plain ff_nvdec_start_frame exhaustion path (nvdec.c:582) is unchanged by the upstream fix and must stay identical in any backport"}
-  ],
-  "introduced_by": "72982f8cb5dad6252a14226d28128313eed4a5ff (2020-11-11 'avcodec/nvdec: add support for separate reference frame'; upstream fix's Fixes reference)",
-  "equivalence": "OH nvdec.c == upstream n7.1.1 byte-identical (diff empty)",
-  "submission_materials": "D:/cve_data/submission_64832/ (对照.txt with measured line numbers 612-626, OH-adapted patch.diff git-apply-check-passed, upstream diff, gap audit, form draft)",
-  "submission": {
-    "platform": "OpenHarmony 漏洞奖励计划 (https://bugbounty.openharmony.cn)",
-    "ticket": "OHSA26-092224773",
-    "submission_id": "228180643375222784",
-    "submitted_at": "2026-09-21",
-    "status": "已提交",
-    "form": {
-      "type": "内存破坏与执行类 / 释放后使用(UAF)（子类型清单无双重释放专项，取同族最近项；CWE-415 在描述明确）",
-      "repo": "third_party_ffmpeg",
-      "file_path": "libavcodec/nvdec.c / 代码行:616",
-      "introduced_by": "72982f8cb5dad6252a14226d28128313eed4a5ff",
-      "oh_version": "OpenHarmony-v7.0-Release（2026-08-21）"
-    }
-  },
-  "notes": "part of the ffmpeg gap batch (audit 2026-09-21)"
+ "schema": "case-specific-validation-0.2",
+ "id": "ffmpeg-nvdec-sep-ref-doublefree",
+ "component": "third_party/ffmpeg",
+ "cve_reference": "CVE-2026-64832",
+ "cwe_candidate": "CWE-415",
+ "discovery_method": "kb_gap_audit.py four-signal pipeline (L1 cve-grep negative + L2 disclosure 2026-07-04 > snapshot 2026-06-01 + L3 baseline 7.1.1 in [4.4, 8.1.2] + L4 source signature confirmed)",
+ "new_discovery": false,
+ "public_upstream": {
+  "fix_commit": "https://github.com/FFmpeg/FFmpeg/commit/4c6217477fc64305055b37d9d1d0d76d30e37f97",
+  "fix_date": "2026-07-04",
+  "fix_subject": "avcodec/nvdec: don't double free the fdd-owned context on the sep_ref error path"
+ },
+ "oh_source": {
+  "repo": "https://gitcode.com/openharmony/third_party_ffmpeg",
+  "head_commit": "0a0c4dd33c (2026-09-10)",
+  "baseline": "FFmpeg 7.1.1, README.OpenSource last change 2026-06-01",
+  "nvdec_c_blob": "932544564a7419c68c1eb143abb7ba6db0c41cba",
+  "l4_evidence": "OH ff_nvdec_start_frame_sep_ref (nvdec.c:599) keeps 'ret = AVERROR(ENOMEM); goto fail;' at the decoder_pool exhaustion branch and the trailing 'fail: nvdec_fdd_priv_free(cf); return ret;' block — exactly what upstream removed. Naming-era note: OH uses ff_refstruct_pool_get, upstream patch context shows av_refstruct_pool_get (same API after the ff_->av_ rename); structure equivalent"
+ },
+ "vulnerability": {
+  "summary": "nvdec hardware decode: when decoder surfaces are exhausted inside ff_nvdec_start_frame_sep_ref, the error path frees the fdd-owned context that ff_nvdec_start_frame already handed to the frame — double free on a crafted video file with NVDEC.",
+  "trigger": "crafted video driving NVDEC into the sep_ref pool-exhaustion error path",
+  "verification_level": "source-level confirmed (L4); runtime repro requires NVIDIA GPU + NVDEC-capable build — declared as source-level if submitted",
+  "runtime_status": "not_run"
+ },
+ "controls": [
+  {
+   "name": "start-frame-path",
+   "desc": "the plain ff_nvdec_start_frame exhaustion path (nvdec.c:582) is unchanged by the upstream fix and must stay identical in any backport"
+  }
+ ],
+ "introduced_by": "72982f8cb5dad6252a14226d28128313eed4a5ff (2020-11-11 'avcodec/nvdec: add support for separate reference frame'; upstream fix's Fixes reference)",
+ "equivalence": "OH nvdec.c == upstream n7.1.1 byte-identical (diff empty)",
+ "submission_materials": "D:/cve_data/submission_64832/ (对照.txt with measured line numbers 612-626, OH-adapted patch.diff git-apply-check-passed, upstream diff, gap audit, form draft)",
+ "submission": {
+  "platform": "OpenHarmony 漏洞奖励计划 (https://bugbounty.openharmony.cn)",
+  "ticket": "OHSA26-092224773",
+  "submission_id": "228180643375222784",
+  "submitted_at": "2026-09-21",
+  "status": "已提交",
+  "form": {
+   "type": "内存破坏与执行类 / 释放后使用(UAF)（子类型清单无双重释放专项，取同族最近项；CWE-415 在描述明确）",
+   "repo": "third_party_ffmpeg",
+   "file_path": "libavcodec/nvdec.c / 代码行:616",
+   "introduced_by": "72982f8cb5dad6252a14226d28128313eed4a5ff",
+   "oh_version": "OpenHarmony-v7.0-Release（2026-08-21）"
+  }
+ },
+ "notes": "part of the ffmpeg gap batch (audit 2026-09-21)",
+ "attack_path": "NVIDIA 平台产品用 ffmpeg NVDEC 硬解且码流走独立参考帧路径：攻击者以 crafted 视频流耗尽 decoder surface 池命中 sep_ref 错误分支（nvdec.c:612-616 goto fail）→ fail 标签对已移交 FrameDecodeData 的 cf 二次释放（double free）。",
+ "reproduction_commands": "源级三侧对照（运行级需 NVIDIA GPU+NVDEC 环境，如实申报）：a) 上游 4c621747 修复 diff；b) OH nvdec.c:599 起 612-616/624-626 为修复前形态；c) 与 n7.1.1 逐字节一致、官方清单含 7.1.1。运行级路径：--enable-cuda-nvcc 构建下 H.265 多参考帧流+低 surfaces 配置耗尽池，ASan/Valgrind 观测 nvdec_fdd_priv_free double-free。",
+ "branch_evidence": {
+  "master": {
+   "verdict": "affected",
+   "source_commit": "0a0c4dd33c",
+   "reference": "case.json oh_source（head_commit 0a0c4dd33c 2026-09-10；与上游 n7.1.1 逐字节一致；修复前形态在位 + 上游修复 diff 对 OH 检出 git apply --check 通过）+ 提交材料包 submission_64832（L4 三侧对照）"
+  }
+ }
 }

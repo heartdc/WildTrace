@@ -9,11 +9,11 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "affected",
-      "OpenHarmony-v5.0-Release": "affected",
-      "OpenHarmony-v5.1-Release": "affected",
-      "OpenHarmony-v6.0-Release": "affected",
-      "OpenHarmony-v7.0-Release": "affected",
+      "OpenHarmony-v4.1-Release": "unknown",
+      "OpenHarmony-v5.0-Release": "unknown",
+      "OpenHarmony-v5.1-Release": "unknown",
+      "OpenHarmony-v6.0-Release": "unknown",
+      "OpenHarmony-v7.0-Release": "unknown",
       "master": "affected"
     },
     "upstream_predictions": {
@@ -24,9 +24,15 @@
       "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
-    "branch_evidence": {},
-    "affected_count": 6,
-    "unknown_count": 0
+    "branch_evidence": {
+      "master": {
+        "verdict": "affected",
+        "source_commit": "0c2c9df",
+        "reference": "submission_87933（核验基线 HEAD 0c2c9df，cJSON 1.7.19；ASan 运行级 UAF 2×2 矩阵）"
+      }
+    },
+    "affected_count": 1,
+    "unknown_count": 5
   },
   "curl_native_ca_reuse": {
     "cve": "CVE-2026-80231",
@@ -38,11 +44,11 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "affected",
-      "OpenHarmony-v5.0-Release": "affected",
-      "OpenHarmony-v5.1-Release": "affected",
-      "OpenHarmony-v6.0-Release": "affected",
-      "OpenHarmony-v7.0-Release": "affected",
+      "OpenHarmony-v4.1-Release": "unknown",
+      "OpenHarmony-v5.0-Release": "unknown",
+      "OpenHarmony-v5.1-Release": "unknown",
+      "OpenHarmony-v6.0-Release": "unknown",
+      "OpenHarmony-v7.0-Release": "unknown",
       "master": "affected"
     },
     "upstream_predictions": {
@@ -53,9 +59,15 @@
       "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
-    "branch_evidence": {},
-    "affected_count": 6,
-    "unknown_count": 0
+    "branch_evidence": {
+      "master": {
+        "verdict": "affected",
+        "source_commit": "f044ac3ac942adc9c56efd9a47854a7049a9a78f",
+        "reference": "submission_82209（复核脚本_80231.sh + curl_gap_verification.json；OH 检出连接匹配逻辑零比较 native_ca_store，上游 vtls_config.c:144 已修）"
+      }
+    },
+    "affected_count": 1,
+    "unknown_count": 5
   },
   "curl_psl_supercookie": {
     "cve": "CVE-2026-82209",
@@ -67,11 +79,11 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "affected",
-      "OpenHarmony-v5.0-Release": "affected",
-      "OpenHarmony-v5.1-Release": "affected",
-      "OpenHarmony-v6.0-Release": "affected",
-      "OpenHarmony-v7.0-Release": "affected",
+      "OpenHarmony-v4.1-Release": "unknown",
+      "OpenHarmony-v5.0-Release": "unknown",
+      "OpenHarmony-v5.1-Release": "unknown",
+      "OpenHarmony-v6.0-Release": "unknown",
+      "OpenHarmony-v7.0-Release": "unknown",
       "master": "affected"
     },
     "upstream_predictions": {
@@ -82,9 +94,15 @@
       "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
-    "branch_evidence": {},
-    "affected_count": 6,
-    "unknown_count": 0
+    "branch_evidence": {
+      "master": {
+        "verdict": "affected",
+        "source_commit": "f044ac3ac942adc9c56efd9a47854a7049a9a78f",
+        "reference": "submission_82209（核验基线 commit 2026-09-11；OH lib/cookie.c 与 curl-8.8.0 逐文件 diff 84 行等价 + 源码等价运行级 tailmatch 矩阵）"
+      }
+    },
+    "affected_count": 1,
+    "unknown_count": 5
   },
   "ffmpeg_cfhd_transform2_width_oob": {
     "cve": "CVE-2026-70632",
@@ -96,11 +114,11 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "not_affected",
-      "OpenHarmony-v5.0-Release": "affected",
-      "OpenHarmony-v5.1-Release": "affected",
-      "OpenHarmony-v6.0-Release": "affected",
-      "OpenHarmony-v7.0-Release": "affected",
+      "OpenHarmony-v4.1-Release": "unknown",
+      "OpenHarmony-v5.0-Release": "unknown",
+      "OpenHarmony-v5.1-Release": "unknown",
+      "OpenHarmony-v6.0-Release": "unknown",
+      "OpenHarmony-v7.0-Release": "unknown",
       "master": "affected"
     },
     "upstream_predictions": {
@@ -111,9 +129,15 @@
       "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
-    "branch_evidence": {},
-    "affected_count": 5,
-    "unknown_count": 0
+    "branch_evidence": {
+      "master": {
+        "verdict": "affected",
+        "source_commit": "0a0c4dd33c",
+        "reference": "case.json oh_source（head_commit 0a0c4dd33c 2026-09-10；与上游 n7.1.1 逐字节一致；修复前形态在位 + 上游修复 diff 对 OH 检出 git apply --check 通过）+ 提交材料包 submission_70632（L4 三侧对照）"
+      }
+    },
+    "affected_count": 1,
+    "unknown_count": 5
   },
   "ffmpeg_dvbsub_parser_capacity_overflow": {
     "cve": "CVE-2026-70628",
@@ -125,11 +149,11 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "affected",
-      "OpenHarmony-v5.0-Release": "affected",
-      "OpenHarmony-v5.1-Release": "affected",
-      "OpenHarmony-v6.0-Release": "affected",
-      "OpenHarmony-v7.0-Release": "affected",
+      "OpenHarmony-v4.1-Release": "unknown",
+      "OpenHarmony-v5.0-Release": "unknown",
+      "OpenHarmony-v5.1-Release": "unknown",
+      "OpenHarmony-v6.0-Release": "unknown",
+      "OpenHarmony-v7.0-Release": "unknown",
       "master": "affected"
     },
     "upstream_predictions": {
@@ -140,9 +164,15 @@
       "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
-    "branch_evidence": {},
-    "affected_count": 6,
-    "unknown_count": 0
+    "branch_evidence": {
+      "master": {
+        "verdict": "affected",
+        "source_commit": "0a0c4dd33c",
+        "reference": "case.json oh_source（head_commit 0a0c4dd33c 2026-09-10；与上游 n7.1.1 逐字节一致；修复前形态在位 + 上游修复 diff 对 OH 检出 git apply --check 通过）+ 提交材料包 submission_70628（L4 三侧对照）"
+      }
+    },
+    "affected_count": 1,
+    "unknown_count": 5
   },
   "ffmpeg_floodfill_point_stack_oob": {
     "cve": "CVE-2026-65705",
@@ -154,11 +184,11 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "affected",
-      "OpenHarmony-v5.0-Release": "affected",
-      "OpenHarmony-v5.1-Release": "affected",
-      "OpenHarmony-v6.0-Release": "affected",
-      "OpenHarmony-v7.0-Release": "affected",
+      "OpenHarmony-v4.1-Release": "unknown",
+      "OpenHarmony-v5.0-Release": "unknown",
+      "OpenHarmony-v5.1-Release": "unknown",
+      "OpenHarmony-v6.0-Release": "unknown",
+      "OpenHarmony-v7.0-Release": "unknown",
       "master": "affected"
     },
     "upstream_predictions": {
@@ -169,9 +199,15 @@
       "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
-    "branch_evidence": {},
-    "affected_count": 6,
-    "unknown_count": 0
+    "branch_evidence": {
+      "master": {
+        "verdict": "affected",
+        "source_commit": "0a0c4dd33c",
+        "reference": "case.json oh_source（head_commit 0a0c4dd33c 2026-09-10；与上游 n7.1.1 逐字节一致；修复前形态在位 + 上游修复 diff 对 OH 检出 git apply --check 通过）+ 提交材料包 submission_65705（L4 三侧对照）"
+      }
+    },
+    "affected_count": 1,
+    "unknown_count": 5
   },
   "ffmpeg_hqdn3d_dynamic_size_oob": {
     "cve": "CVE-2026-66036",
@@ -183,11 +219,11 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "affected",
-      "OpenHarmony-v5.0-Release": "affected",
-      "OpenHarmony-v5.1-Release": "affected",
-      "OpenHarmony-v6.0-Release": "affected",
-      "OpenHarmony-v7.0-Release": "affected",
+      "OpenHarmony-v4.1-Release": "unknown",
+      "OpenHarmony-v5.0-Release": "unknown",
+      "OpenHarmony-v5.1-Release": "unknown",
+      "OpenHarmony-v6.0-Release": "unknown",
+      "OpenHarmony-v7.0-Release": "unknown",
       "master": "affected"
     },
     "upstream_predictions": {
@@ -198,9 +234,15 @@
       "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
-    "branch_evidence": {},
-    "affected_count": 6,
-    "unknown_count": 0
+    "branch_evidence": {
+      "master": {
+        "verdict": "affected",
+        "source_commit": "0a0c4dd33c",
+        "reference": "case.json oh_source（head_commit 0a0c4dd33c 2026-09-10；与上游 n7.1.1 逐字节一致；修复前形态在位 + 上游修复 diff 对 OH 检出 git apply --check 通过）+ 提交材料包 submission_66036（L4 三侧对照）；运行级 ASan 矩阵见 reproduction_commands"
+      }
+    },
+    "affected_count": 1,
+    "unknown_count": 5
   },
   "ffmpeg_iamf_count_label_dos": {
     "cve": "CVE-2026-66037",
@@ -212,11 +254,11 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "affected",
-      "OpenHarmony-v5.0-Release": "affected",
-      "OpenHarmony-v5.1-Release": "affected",
-      "OpenHarmony-v6.0-Release": "affected",
-      "OpenHarmony-v7.0-Release": "affected",
+      "OpenHarmony-v4.1-Release": "unknown",
+      "OpenHarmony-v5.0-Release": "unknown",
+      "OpenHarmony-v5.1-Release": "unknown",
+      "OpenHarmony-v6.0-Release": "unknown",
+      "OpenHarmony-v7.0-Release": "unknown",
       "master": "affected"
     },
     "upstream_predictions": {
@@ -227,9 +269,15 @@
       "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
-    "branch_evidence": {},
-    "affected_count": 6,
-    "unknown_count": 0
+    "branch_evidence": {
+      "master": {
+        "verdict": "affected",
+        "source_commit": "0a0c4dd33c",
+        "reference": "case.json oh_source（head_commit 0a0c4dd33c 2026-09-10；与上游 n7.1.1 逐字节一致；修复前形态在位 + 上游修复 diff 对 OH 检出 git apply --check 通过）+ 提交材料包 submission_66037（L4 三侧对照）"
+      }
+    },
+    "affected_count": 1,
+    "unknown_count": 5
   },
   "ffmpeg_lcldec_zlib_tail_disclosure": {
     "cve": "CVE-2026-66038",
@@ -241,11 +289,11 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "affected",
-      "OpenHarmony-v5.0-Release": "affected",
-      "OpenHarmony-v5.1-Release": "affected",
-      "OpenHarmony-v6.0-Release": "affected",
-      "OpenHarmony-v7.0-Release": "affected",
+      "OpenHarmony-v4.1-Release": "unknown",
+      "OpenHarmony-v5.0-Release": "unknown",
+      "OpenHarmony-v5.1-Release": "unknown",
+      "OpenHarmony-v6.0-Release": "unknown",
+      "OpenHarmony-v7.0-Release": "unknown",
       "master": "affected"
     },
     "upstream_predictions": {
@@ -256,9 +304,15 @@
       "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
-    "branch_evidence": {},
-    "affected_count": 6,
-    "unknown_count": 0
+    "branch_evidence": {
+      "master": {
+        "verdict": "affected",
+        "source_commit": "0a0c4dd33c",
+        "reference": "case.json oh_source（head_commit 0a0c4dd33c 2026-09-10；与上游 n7.1.1 逐字节一致；修复前形态在位 + 上游修复 diff 对 OH 检出 git apply --check 通过）+ 提交材料包 submission_66038（L4 三侧对照）"
+      }
+    },
+    "affected_count": 1,
+    "unknown_count": 5
   },
   "ffmpeg_nvdec_sep_ref_doublefree": {
     "cve": "CVE-2026-64832",
@@ -270,11 +324,11 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "not_affected",
-      "OpenHarmony-v5.0-Release": "affected",
-      "OpenHarmony-v5.1-Release": "affected",
-      "OpenHarmony-v6.0-Release": "affected",
-      "OpenHarmony-v7.0-Release": "affected",
+      "OpenHarmony-v4.1-Release": "unknown",
+      "OpenHarmony-v5.0-Release": "unknown",
+      "OpenHarmony-v5.1-Release": "unknown",
+      "OpenHarmony-v6.0-Release": "unknown",
+      "OpenHarmony-v7.0-Release": "unknown",
       "master": "affected"
     },
     "upstream_predictions": {
@@ -285,9 +339,15 @@
       "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
-    "branch_evidence": {},
-    "affected_count": 5,
-    "unknown_count": 0
+    "branch_evidence": {
+      "master": {
+        "verdict": "affected",
+        "source_commit": "0a0c4dd33c",
+        "reference": "case.json oh_source（head_commit 0a0c4dd33c 2026-09-10；与上游 n7.1.1 逐字节一致；修复前形态在位 + 上游修复 diff 对 OH 检出 git apply --check 通过）+ 提交材料包 submission_64832（L4 三侧对照）"
+      }
+    },
+    "affected_count": 1,
+    "unknown_count": 5
   },
   "ffmpeg_quirc_resize_oob": {
     "cve": "CVE-2026-66041",
@@ -299,11 +359,11 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "not_affected",
-      "OpenHarmony-v5.0-Release": "not_affected",
-      "OpenHarmony-v5.1-Release": "not_affected",
-      "OpenHarmony-v6.0-Release": "not_affected",
-      "OpenHarmony-v7.0-Release": "affected",
+      "OpenHarmony-v4.1-Release": "unknown",
+      "OpenHarmony-v5.0-Release": "unknown",
+      "OpenHarmony-v5.1-Release": "unknown",
+      "OpenHarmony-v6.0-Release": "unknown",
+      "OpenHarmony-v7.0-Release": "unknown",
       "master": "affected"
     },
     "upstream_predictions": {
@@ -314,9 +374,15 @@
       "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
-    "branch_evidence": {},
-    "affected_count": 2,
-    "unknown_count": 0
+    "branch_evidence": {
+      "master": {
+        "verdict": "affected",
+        "source_commit": "0a0c4dd33c",
+        "reference": "case.json oh_source（head_commit 0a0c4dd33c 2026-09-10；与上游 n7.1.1 逐字节一致；修复前形态在位 + 上游修复 diff 对 OH 检出 git apply --check 通过）+ 提交材料包 submission_66041（L4 三侧对照）；运行级 ASan 矩阵见 reproduction_commands"
+      }
+    },
+    "affected_count": 1,
+    "unknown_count": 5
   },
   "ffmpeg_rscc_short_deflate_uninit_leak": {
     "cve": "CVE-2026-70629",
@@ -328,11 +394,11 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "affected",
-      "OpenHarmony-v5.0-Release": "affected",
-      "OpenHarmony-v5.1-Release": "affected",
-      "OpenHarmony-v6.0-Release": "affected",
-      "OpenHarmony-v7.0-Release": "affected",
+      "OpenHarmony-v4.1-Release": "unknown",
+      "OpenHarmony-v5.0-Release": "unknown",
+      "OpenHarmony-v5.1-Release": "unknown",
+      "OpenHarmony-v6.0-Release": "unknown",
+      "OpenHarmony-v7.0-Release": "unknown",
       "master": "affected"
     },
     "upstream_predictions": {
@@ -343,9 +409,15 @@
       "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
-    "branch_evidence": {},
-    "affected_count": 6,
-    "unknown_count": 0
+    "branch_evidence": {
+      "master": {
+        "verdict": "affected",
+        "source_commit": "0a0c4dd33c",
+        "reference": "case.json oh_source（head_commit 0a0c4dd33c 2026-09-10；与上游 n7.1.1 逐字节一致；修复前形态在位 + 上游修复 diff 对 OH 检出 git apply --check 通过）+ 提交材料包 submission_70629（L4 三侧对照）"
+      }
+    },
+    "affected_count": 1,
+    "unknown_count": 5
   },
   "ffmpeg_swaprect_temp_row_oob": {
     "cve": "CVE-2026-65706",
@@ -357,11 +429,11 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "affected",
-      "OpenHarmony-v5.0-Release": "affected",
-      "OpenHarmony-v5.1-Release": "affected",
-      "OpenHarmony-v6.0-Release": "affected",
-      "OpenHarmony-v7.0-Release": "affected",
+      "OpenHarmony-v4.1-Release": "unknown",
+      "OpenHarmony-v5.0-Release": "unknown",
+      "OpenHarmony-v5.1-Release": "unknown",
+      "OpenHarmony-v6.0-Release": "unknown",
+      "OpenHarmony-v7.0-Release": "unknown",
       "master": "affected"
     },
     "upstream_predictions": {
@@ -372,9 +444,15 @@
       "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
-    "branch_evidence": {},
-    "affected_count": 6,
-    "unknown_count": 0
+    "branch_evidence": {
+      "master": {
+        "verdict": "affected",
+        "source_commit": "0a0c4dd33c",
+        "reference": "case.json oh_source（head_commit 0a0c4dd33c 2026-09-10；与上游 n7.1.1 逐字节一致；修复前形态在位 + 上游修复 diff 对 OH 检出 git apply --check 通过）+ 提交材料包 submission_65706（L4 三侧对照）"
+      }
+    },
+    "affected_count": 1,
+    "unknown_count": 5
   },
   "ffmpeg_ty_ac3_trim_underflow": {
     "cve": "CVE-2026-65704",
@@ -386,11 +464,11 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "affected",
-      "OpenHarmony-v5.0-Release": "affected",
-      "OpenHarmony-v5.1-Release": "affected",
-      "OpenHarmony-v6.0-Release": "affected",
-      "OpenHarmony-v7.0-Release": "affected",
+      "OpenHarmony-v4.1-Release": "unknown",
+      "OpenHarmony-v5.0-Release": "unknown",
+      "OpenHarmony-v5.1-Release": "unknown",
+      "OpenHarmony-v6.0-Release": "unknown",
+      "OpenHarmony-v7.0-Release": "unknown",
       "master": "affected"
     },
     "upstream_predictions": {
@@ -401,9 +479,15 @@
       "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
-    "branch_evidence": {},
-    "affected_count": 6,
-    "unknown_count": 0
+    "branch_evidence": {
+      "master": {
+        "verdict": "affected",
+        "source_commit": "0a0c4dd33c",
+        "reference": "case.json oh_source（head_commit 0a0c4dd33c 2026-09-10；与上游 n7.1.1 逐字节一致；修复前形态在位 + 上游修复 diff 对 OH 检出 git apply --check 通过）+ 提交材料包 submission_65704（L4 三侧对照）"
+      }
+    },
+    "affected_count": 1,
+    "unknown_count": 5
   },
   "ffmpeg_wmaenc_extradata_padding": {
     "cve": "CVE-2026-52296",
@@ -415,11 +499,11 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "affected",
-      "OpenHarmony-v5.0-Release": "affected",
-      "OpenHarmony-v5.1-Release": "affected",
-      "OpenHarmony-v6.0-Release": "affected",
-      "OpenHarmony-v7.0-Release": "affected",
+      "OpenHarmony-v4.1-Release": "unknown",
+      "OpenHarmony-v5.0-Release": "unknown",
+      "OpenHarmony-v5.1-Release": "unknown",
+      "OpenHarmony-v6.0-Release": "unknown",
+      "OpenHarmony-v7.0-Release": "unknown",
       "master": "affected"
     },
     "upstream_predictions": {
@@ -430,9 +514,15 @@
       "OpenHarmony-v7.0-Release": "affected",
       "master": "affected"
     },
-    "branch_evidence": {},
-    "affected_count": 6,
-    "unknown_count": 0
+    "branch_evidence": {
+      "master": {
+        "verdict": "affected",
+        "source_commit": "0a0c4dd33c",
+        "reference": "case.json oh_source（head_commit 0a0c4dd33c 2026-09-10；与上游 n7.1.1 逐字节一致；修复前形态在位 + 上游修复 diff 对 OH 检出 git apply --check 通过）+ 提交材料包 submission_52296（L4 三侧对照）"
+      }
+    },
+    "affected_count": 1,
+    "unknown_count": 5
   },
   "hiappevent_ffi_watcher_null_filter": {
     "cve": "",
@@ -448,7 +538,7 @@
       "OpenHarmony-v5.0-Release": "unknown",
       "OpenHarmony-v5.1-Release": "unknown",
       "OpenHarmony-v6.0-Release": "unknown",
-      "OpenHarmony-v7.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "unknown",
       "master": "affected"
     },
     "upstream_predictions": {
@@ -456,12 +546,18 @@
       "OpenHarmony-v5.0-Release": "unknown",
       "OpenHarmony-v5.1-Release": "unknown",
       "OpenHarmony-v6.0-Release": "unknown",
-      "OpenHarmony-v7.0-Release": "affected",
-      "master": "affected"
+      "OpenHarmony-v7.0-Release": "unknown",
+      "master": "unknown"
     },
-    "branch_evidence": {},
-    "affected_count": 2,
-    "unknown_count": 4
+    "branch_evidence": {
+      "master": {
+        "verdict": "affected",
+        "source_commit": "de94cb4d53f94afdbc75a5a7c46401f99bdcf17f",
+        "reference": "docs/analysis/HIAPPEVENT_REAL_LIBRARY_CONFIRM_20261003.md（PR #97；真库 sha256 bf8aa65e30c13782f54fa56b6d5e273a36425555865125a9bea6222943f6636a，证据包 hiappevent-evidence-20261003.zip）"
+      }
+    },
+    "affected_count": 1,
+    "unknown_count": 5
   },
   "ipc_cj_array_null_validation": {
     "cve": "",
@@ -477,7 +573,7 @@
       "OpenHarmony-v5.0-Release": "unknown",
       "OpenHarmony-v5.1-Release": "unknown",
       "OpenHarmony-v6.0-Release": "unknown",
-      "OpenHarmony-v7.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "unknown",
       "master": "affected"
     },
     "upstream_predictions": {
@@ -485,12 +581,18 @@
       "OpenHarmony-v5.0-Release": "unknown",
       "OpenHarmony-v5.1-Release": "unknown",
       "OpenHarmony-v6.0-Release": "unknown",
-      "OpenHarmony-v7.0-Release": "affected",
-      "master": "affected"
+      "OpenHarmony-v7.0-Release": "unknown",
+      "master": "unknown"
     },
-    "branch_evidence": {},
-    "affected_count": 2,
-    "unknown_count": 4
+    "branch_evidence": {
+      "master": {
+        "verdict": "affected",
+        "source_commit": "edc6f3ab",
+        "reference": "docs/analysis/IPC_KV_REAL_LIBRARY_VALIDATION_20260928.md（PR #65；隔离构建与原仓 diff -qr 一致，gdb 两轮 ASLR 复现 rip 落库内）"
+      }
+    },
+    "affected_count": 1,
+    "unknown_count": 5
   },
   "kv_ffi_array_validation": {
     "cve": "",
@@ -506,20 +608,20 @@
       "OpenHarmony-v5.0-Release": "unknown",
       "OpenHarmony-v5.1-Release": "unknown",
       "OpenHarmony-v6.0-Release": "unknown",
-      "OpenHarmony-v7.0-Release": "affected",
-      "master": "affected"
+      "OpenHarmony-v7.0-Release": "unknown",
+      "master": "unknown"
     },
     "upstream_predictions": {
       "OpenHarmony-v4.1-Release": "unknown",
       "OpenHarmony-v5.0-Release": "unknown",
       "OpenHarmony-v5.1-Release": "unknown",
       "OpenHarmony-v6.0-Release": "unknown",
-      "OpenHarmony-v7.0-Release": "affected",
-      "master": "affected"
+      "OpenHarmony-v7.0-Release": "unknown",
+      "master": "unknown"
     },
     "branch_evidence": {},
-    "affected_count": 2,
-    "unknown_count": 4
+    "affected_count": 0,
+    "unknown_count": 6
   },
   "openssl_ocb_oneshot_iv_discard": {
     "cve": "CVE-2026-45445",
@@ -531,12 +633,12 @@
     "evidence_rule": "kb-affected-range",
     "kb_source": "cvelistV5",
     "branches": {
-      "OpenHarmony-v4.1-Release": "affected",
-      "OpenHarmony-v5.0-Release": "affected",
-      "OpenHarmony-v5.1-Release": "affected",
-      "OpenHarmony-v6.0-Release": "affected",
-      "OpenHarmony-v7.0-Release": "affected",
-      "master": "affected"
+      "OpenHarmony-v4.1-Release": "unknown",
+      "OpenHarmony-v5.0-Release": "unknown",
+      "OpenHarmony-v5.1-Release": "unknown",
+      "OpenHarmony-v6.0-Release": "unknown",
+      "OpenHarmony-v7.0-Release": "unknown",
+      "master": "unknown"
     },
     "upstream_predictions": {
       "OpenHarmony-v4.1-Release": "affected",
@@ -547,8 +649,8 @@
       "master": "affected"
     },
     "branch_evidence": {},
-    "affected_count": 6,
-    "unknown_count": 0
+    "affected_count": 0,
+    "unknown_count": 6
   },
   "udmf_ffi_setproperties_null_tag": {
     "cve": "",
@@ -564,7 +666,7 @@
       "OpenHarmony-v5.0-Release": "unknown",
       "OpenHarmony-v5.1-Release": "unknown",
       "OpenHarmony-v6.0-Release": "unknown",
-      "OpenHarmony-v7.0-Release": "affected",
+      "OpenHarmony-v7.0-Release": "unknown",
       "master": "affected"
     },
     "upstream_predictions": {
@@ -572,11 +674,17 @@
       "OpenHarmony-v5.0-Release": "unknown",
       "OpenHarmony-v5.1-Release": "unknown",
       "OpenHarmony-v6.0-Release": "unknown",
-      "OpenHarmony-v7.0-Release": "affected",
-      "master": "affected"
+      "OpenHarmony-v7.0-Release": "unknown",
+      "master": "unknown"
     },
-    "branch_evidence": {},
-    "affected_count": 2,
-    "unknown_count": 4
+    "branch_evidence": {
+      "master": {
+        "verdict": "affected",
+        "source_commit": "a4882ad72459e9ae7b8373c681c0f4bafab7781f",
+        "reference": "docs/analysis/UDMF_REAL_LIBRARY_CONFIRM_20261009.md（真库构建 317/317 全绿，case3 tag=NULL SIGSEGV run.exit=139；evidence zip sha256 a70accc94eefb4467d434a220b39cf39c78d35f35614e67d8cbc4a61faea14df）"
+      }
+    },
+    "affected_count": 1,
+    "unknown_count": 5
   }
 }
