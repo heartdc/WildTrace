@@ -72,6 +72,31 @@
       "verdict": "affected",
       "source_commit": "de94cb4d53f94afdbc75a5a7c46401f99bdcf17f",
       "reference": "docs/analysis/HIAPPEVENT_REAL_LIBRARY_CONFIRM_20261003.md（PR #97；真库 sha256 bf8aa65e30c13782f54fa56b6d5e273a36425555865125a9bea6222943f6636a，证据包 hiappevent-evidence-20261003.zip）"
+    },
+    "OpenHarmony-v4.1-Release": {
+      "verdict": "not_affected",
+      "source_commit": "OpenHarmony-4.1-Release",
+      "reference": "2026-10-17 实证：gitcode openharmony/hiviewdfx_hiappevent@OpenHarmony-4.1-Release 浅取，frameworks/cj/ffi/src/hiappevent_ffi.cpp 不存在（CJ FFI 代码未引入该分支），缺陷代码不在位"
+    },
+    "OpenHarmony-v5.0-Release": {
+      "verdict": "affected",
+      "source_commit": "OpenHarmony-5.0-Release",
+      "reference": "2026-10-17 实证：gitcode openharmony/hiviewdfx_hiappevent@OpenHarmony-5.0-Release 浅取，frameworks/cj/ffi/src/hiappevent_ffi.cpp 含漏洞符号 FfiOHOSHiAppEventAddWatcher；该缺陷无上游修复（修复为本案工单建议补丁 patch.diff，未见于任何分支），漏洞形态在位"
+    },
+    "OpenHarmony-v5.1-Release": {
+      "verdict": "affected",
+      "source_commit": "OpenHarmony-5.1.0-Release",
+      "reference": "2026-10-17 实证：gitcode openharmony/hiviewdfx_hiappevent@OpenHarmony-5.1.0-Release 浅取，frameworks/cj/ffi/src/hiappevent_ffi.cpp 含漏洞符号 FfiOHOSHiAppEventAddWatcher；该缺陷无上游修复（修复为本案工单建议补丁 patch.diff，未见于任何分支），漏洞形态在位"
+    },
+    "OpenHarmony-v6.0-Release": {
+      "verdict": "affected",
+      "source_commit": "OpenHarmony-6.0-Release",
+      "reference": "2026-10-17 实证：gitcode openharmony/hiviewdfx_hiappevent@OpenHarmony-6.0-Release 浅取，frameworks/cj/ffi/src/hiappevent_ffi.cpp 含漏洞符号 FfiOHOSHiAppEventAddWatcher；该缺陷无上游修复（修复为本案工单建议补丁 patch.diff，未见于任何分支），漏洞形态在位"
+    },
+    "OpenHarmony-v7.0-Release": {
+      "verdict": "affected",
+      "source_commit": "OpenHarmony-7.0-Release",
+      "reference": "2026-10-17 实证：gitcode openharmony/hiviewdfx_hiappevent@OpenHarmony-7.0-Release 浅取，frameworks/cj/ffi/src/hiappevent_ffi.cpp 含漏洞符号 FfiOHOSHiAppEventAddWatcher；该缺陷无上游修复（修复为本案工单建议补丁 patch.diff，未见于任何分支），漏洞形态在位"
     }
   },
   "notes": "2026-10-17：补入修复建议补丁 patch.diff（AddWatcher 入口边界形态判空，外层 appEventFilters 与内层 names 同步）。"

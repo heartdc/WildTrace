@@ -52,6 +52,31 @@
       "verdict": "affected",
       "source_commit": "a4882ad72459e9ae7b8373c681c0f4bafab7781f",
       "reference": "docs/analysis/UDMF_REAL_LIBRARY_CONFIRM_20261009.md（真库构建 317/317 全绿，case3 tag=NULL SIGSEGV run.exit=139；evidence zip sha256 a70accc94eefb4467d434a220b39cf39c78d35f35614e67d8cbc4a61faea14df）"
+    },
+    "OpenHarmony-v4.1-Release": {
+      "verdict": "not_affected",
+      "source_commit": "OpenHarmony-4.1-Release",
+      "reference": "2026-10-17 实证：gitcode openharmony/distributeddatamgr_udmf@OpenHarmony-4.1-Release 浅取，interfaces/cj/src/unified_data_ffi.cpp 不存在（CJ FFI 代码未引入该分支），缺陷代码不在位"
+    },
+    "OpenHarmony-v5.0-Release": {
+      "verdict": "not_affected",
+      "source_commit": "OpenHarmony-5.0-Release",
+      "reference": "2026-10-17 实证：gitcode openharmony/distributeddatamgr_udmf@OpenHarmony-5.0-Release 浅取，interfaces/cj/src/unified_data_ffi.cpp 不存在（CJ FFI 代码未引入该分支），缺陷代码不在位"
+    },
+    "OpenHarmony-v5.1-Release": {
+      "verdict": "not_affected",
+      "source_commit": "OpenHarmony-5.1.0-Release",
+      "reference": "2026-10-17 实证：gitcode openharmony/distributeddatamgr_udmf@OpenHarmony-5.1.0-Release 浅取，interfaces/cj/src/unified_data_ffi.cpp 存在但不含 FfiUDMFSetProperties（该入口此分支尚未引入），漏洞函数不在位"
+    },
+    "OpenHarmony-v6.0-Release": {
+      "verdict": "affected",
+      "source_commit": "OpenHarmony-6.0-Release",
+      "reference": "2026-10-17 实证：gitcode openharmony/distributeddatamgr_udmf@OpenHarmony-6.0-Release 浅取，interfaces/cj/src/unified_data_ffi.cpp 含漏洞符号 FfiUDMFSetProperties；该缺陷无上游修复（修复为本案工单建议补丁 patch.diff，未见于任何分支），漏洞形态在位"
+    },
+    "OpenHarmony-v7.0-Release": {
+      "verdict": "affected",
+      "source_commit": "OpenHarmony-7.0-Release",
+      "reference": "2026-10-17 实证：gitcode openharmony/distributeddatamgr_udmf@OpenHarmony-7.0-Release 浅取，interfaces/cj/src/unified_data_ffi.cpp 含漏洞符号 FfiUDMFSetProperties；该缺陷无上游修复（修复为本案工单建议补丁 patch.diff，未见于任何分支），漏洞形态在位"
     }
   },
   "fix_recommendation": "FfiUDMFSetProperties 对 properties.tag 判空（tag != nullptr ? Utils::MallocCString(...) : 空串语义），或 Utils::MallocCString 增加 const char* 判空重载（与 UDMF_REAL_LIBRARY_CONFIRM_20261009.md 后续节一致）；同步核查同文件其余直传点。",

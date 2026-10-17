@@ -41,5 +41,37 @@
   },
   "fix_recommendation": "建议 CArrStrToVectorKey/String 族 FFI 转换（同文件 3 处）在 length>0 时校验数组指针非空并返回参数校验错误码；本案为源级归档口径（AbilityRuntime Context 隔离限制，如实记录，见 docs/status/TASK_IPC_KV_VALIDATION_20260928.md）。",
   "reproduction_commands": "等价运行级（WSL Clang 21.1.8 ASan/UBSan，驱动 kv_null_entry.c）：两条转换路径 null head 均 zero-page SEGV，对照组正常；未做真库链接（如实区分等价级与真库级）。",
-  "notes": "2026-10-17：补入修复建议补丁 patch.diff（CArrStrToVectorKey 边界形态按空集返回，同型函数同补）。"
+  "notes": "2026-10-17：补入修复建议补丁 patch.diff（CArrStrToVectorKey 边界形态按空集返回，同型函数同补）。",
+  "branch_evidence": {
+    "OpenHarmony-v4.1-Release": {
+      "verdict": "not_affected",
+      "source_commit": "OpenHarmony-4.1-Release",
+      "reference": "2026-10-17 实证：gitcode openharmony/distributeddatamgr_kv_store@OpenHarmony-4.1-Release 浅取，frameworks/cj/src/distributed_kv_store_impl.cpp 不存在（CJ FFI 代码未引入该分支），缺陷代码不在位"
+    },
+    "OpenHarmony-v5.0-Release": {
+      "verdict": "affected",
+      "source_commit": "OpenHarmony-5.0-Release",
+      "reference": "2026-10-17 实证：gitcode openharmony/distributeddatamgr_kv_store@OpenHarmony-5.0-Release 浅取，frameworks/cj/src/distributed_kv_store_impl.cpp 含漏洞符号 CArrStrToVectorKey；该缺陷无上游修复（修复为本案工单建议补丁 patch.diff，未见于任何分支），漏洞形态在位"
+    },
+    "OpenHarmony-v5.1-Release": {
+      "verdict": "affected",
+      "source_commit": "OpenHarmony-5.1.0-Release",
+      "reference": "2026-10-17 实证：gitcode openharmony/distributeddatamgr_kv_store@OpenHarmony-5.1.0-Release 浅取，frameworks/cj/src/distributed_kv_store_impl.cpp 含漏洞符号 CArrStrToVectorKey；该缺陷无上游修复（修复为本案工单建议补丁 patch.diff，未见于任何分支），漏洞形态在位"
+    },
+    "OpenHarmony-v6.0-Release": {
+      "verdict": "affected",
+      "source_commit": "OpenHarmony-6.0-Release",
+      "reference": "2026-10-17 实证：gitcode openharmony/distributeddatamgr_kv_store@OpenHarmony-6.0-Release 浅取，frameworks/cj/src/distributed_kv_store_impl.cpp 含漏洞符号 CArrStrToVectorKey；该缺陷无上游修复（修复为本案工单建议补丁 patch.diff，未见于任何分支），漏洞形态在位"
+    },
+    "OpenHarmony-v7.0-Release": {
+      "verdict": "affected",
+      "source_commit": "OpenHarmony-7.0-Release",
+      "reference": "2026-10-17 实证：gitcode openharmony/distributeddatamgr_kv_store@OpenHarmony-7.0-Release 浅取，frameworks/cj/src/distributed_kv_store_impl.cpp 含漏洞符号 CArrStrToVectorKey；该缺陷无上游修复（修复为本案工单建议补丁 patch.diff，未见于任何分支），漏洞形态在位"
+    },
+    "master": {
+      "verdict": "affected",
+      "source_commit": "master",
+      "reference": "官方完整树 master 检出（/home/beichen/oh）含 CArrStrToVectorKey（本案源级对照对象）；无上游修复，漏洞形态在位"
+    }
+  }
 }
