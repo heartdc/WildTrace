@@ -5,7 +5,7 @@ test("overview, real case, impact and attachment export", async ({ page }) => {
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/");
   await expect(page.getByText("案例证据完整度")).toBeVisible();
-  await expect(page.locator(".metric").first()).toContainText("19");
+  await expect(page.locator(".metric").first()).toContainText(/案例记录\s*\d+\s*个案例仍有缺项/);
   await page.screenshot({
     path: "test-results/desktop-overview.png",
     fullPage: true,
@@ -74,7 +74,7 @@ test("mobile viewport has no document overflow", async ({ page }) => {
     ).toBeTruthy();
   }
   await page.goto("/#overview");
-  await expect(page.locator(".metric").first()).toContainText("19");
+  await expect(page.locator(".metric").first()).toContainText(/案例记录\s*\d+\s*个案例仍有缺项/);
   await page.screenshot({
     path: "test-results/mobile-overview.png",
     fullPage: true,

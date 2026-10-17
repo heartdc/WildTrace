@@ -180,7 +180,8 @@ def read_case(case_dir: Path, kb_records: dict | None = None) -> dict:
     poc_path = case_dir / "poc.c"
     drivers = {'hiappevent_ffi_watcher_null_filter': 'hiappevent_null_watcher.c',
                'ipc_cj_array_null_validation': 'ipc_null_bytearray.c',
-               'kv_ffi_array_validation': 'kv_null_entry.c'}
+               'kv_ffi_array_validation': 'kv_null_entry.c',
+               'udmf_ffi_setproperties_null_tag': 'udmf_null_tag.c'}
     if not poc_path.exists() and case_dir.name in drivers:
         poc_path = case_dir.parent.parent / 'tools' / 'validation_cases' / drivers[case_dir.name]
     poc_code = ""
@@ -208,18 +209,37 @@ def read_case(case_dir: Path, kb_records: dict | None = None) -> dict:
 
     # Version impact: verdicts come from the impact-matrix engine (single
     # source of truth) — no hardcoded branch lists, no unconditional 🔴.
+    # Branch verdicts use the strict policy (branch_evidence only) and the
+    # upstream projection is rendered as a separate, clearly-labeled
+    # prediction block — prediction is never repackaged as branch proof
+    # (learn/impact-contract, 2026-10-15; supersedes the 2026-10-11
+    # non-strict rendering).
     component = record.get("component") or ""
-    impacts = evaluate_case(record, kb_records, strict_evidence=False)["branches"]
-    version_impact_lines = []
+    evaluated = evaluate_case(record, kb_records, strict_evidence=True)
+    branch_labels = {
+        "affected": "🔴 affected（分支实证：branch_evidence 记录提交与引用）",
+        "fixed": "✅ fixed（分支实证：该分支基线已含修复）",
+        "not_affected": "— not_affected（分支实证：该分支基线早于引入）",
+    }
+    prediction_labels = {
+        "affected": "🔴 预测可能受影响（上游范围覆盖该基线）",
+        "fixed": "✅ 预测已含修复（上游修复版本 ≤ 该基线）",
+        "not_affected": "— 预测不受影响（上游范围不含该基线）",
+    }
+    version_impact_lines = ["**分支判定（严格口径，仅计 branch_evidence）**"]
     for br in OH_BRANCHES:
         short = br.replace("OpenHarmony-", "").replace("-Release", "")
-        impact = impacts.get(br, "unknown")
-        label = {
-            "affected": "🔴 affected（证据：上游受影响范围或与实测基线同版本）",
-            "fixed": "✅ fixed（基线已含上游修复）",
-            "not_affected": "— not_affected（基线早于缺陷引入）",
-        }.get(impact, "？ unknown（缺该分支基线或上游引入范围，不推断）")
+        impact = evaluated["branches"].get(br, "unknown")
+        label = branch_labels.get(impact,
+                                  "？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）")
         version_impact_lines.append(f"- {short}: {label}")
+    version_impact_lines.append("")
+    version_impact_lines.append("**上游版本预测（风险线索，不代替分支证据）**")
+    for br in OH_BRANCHES:
+        short = br.replace("OpenHarmony-", "").replace("-Release", "")
+        pred = evaluated["upstream_predictions"].get(br, "unknown")
+        label = prediction_labels.get(pred, "？ 无上游版本信息，无法预测")
+        version_impact_lines.append(f"- [预测] {short}: {label}")
 
     return {
         "case_id": record.get("case_id") or record.get("id") or case_dir.name,
@@ -233,11 +253,20 @@ def read_case(case_dir: Path, kb_records: dict | None = None) -> dict:
         "trigger_conditions": record.get("trigger_conditions") or (desc.get('trigger') if isinstance(desc, dict) else None) or candidate.get('input_type') or '未记录；需补充触发条件',
         "attack_path": record.get("attack_path") or record.get("entry_point") or candidate.get('entry_point') or '未记录；需补充产品可达性证据',
         "poc_code": poc_code,
-        "poc_usage": ('使用工作台 cJSON 隔离验证，或 tools/cjson_case.py prepare / run / verify-runtime；源码提交必须匹配 case.json。'
-                      if case_dir.name == 'cjson_merge_alias' else
-                      '依赖与运行参数以本案 PoC 文件注释、README 及验证驱动为准。' +
-                      ('\n\n' + str(record['build_requirements']) if record.get('build_requirements') else '') +
-                      '\n\n未提供经过独立复跑的完整命令时，报告保留为待补充状态。'),
+        "poc_usage": (
+            '使用工作台 cJSON 隔离验证，或 tools/cjson_case.py prepare / run / verify-runtime；源码提交必须匹配 case.json。'
+            if case_dir.name == 'cjson_merge_alias'
+            else (
+                # Gap-B backfill (2026-10-15): the case carries its own verified
+                # reproduction material (distilled from the submitted bounty
+                # form) — render that instead of the generic template.
+                str(record['reproduction_commands'])
+                if record.get('reproduction_commands')
+                else '依赖与运行参数以本案 PoC 文件注释、README 及验证驱动为准。'
+                + '\n\n未提供经过独立复跑的完整命令时，报告保留为待补充状态。'
+            )
+        )
+        + (('\n\n' + str(record['build_requirements']) if record.get('build_requirements') else '')),
         "code_module": component,
         "function_module": record.get("function_module", component.split("/")[-1] if "/" in component else component),
         "version_impact": "\n".join(version_impact_lines),
