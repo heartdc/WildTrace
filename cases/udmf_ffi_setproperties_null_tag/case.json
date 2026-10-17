@@ -47,5 +47,12 @@
  "oh_source": {
   "build_provenance": "构建提交 a4882ad72459e9ae7b8373c681c0f4bafab7781f（.repo/projects/foundation/distributeddatamgr/udmf.git 裸仓 HEAD，即实际构建提交）；manifest 解析分支 master（gitcode default revision）——PR #117 预记录，无需 #100 式往返"
  },
+ "branch_evidence": {
+  "master": {
+   "verdict": "affected",
+   "source_commit": "a4882ad72459e9ae7b8373c681c0f4bafab7781f",
+   "reference": "docs/analysis/UDMF_REAL_LIBRARY_CONFIRM_20261009.md（真库构建 317/317 全绿，case3 tag=NULL SIGSEGV run.exit=139；evidence zip sha256 a70accc94eefb4467d434a220b39cf39c78d35f35614e67d8cbc4a61faea14df）"
+  }
+ },
  "fix_recommendation": "FfiUDMFSetProperties 对 properties.tag 判空（tag != nullptr ? Utils::MallocCString(...) : 空串语义），或 Utils::MallocCString 增加 const char* 判空重载（与 UDMF_REAL_LIBRARY_CONFIRM_20261009.md 后续节一致）；同步核查同文件其余直传点。"
 }
