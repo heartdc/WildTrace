@@ -446,6 +446,50 @@ class P6MemberPointerTests(unittest.TestCase):
         self.assertEqual(found, [], "if-guarded member deref must suppress")
 
 
+class P6MacroPointerTests(unittest.TestCase):
+    """GT3 contracts: ALL-CAPS accessor macros expanding to pointer chains.
+    The fix b9fd4075 added `|| GATTSERVICE(...) == nullptr` to a disjunction —
+    existing short-circuit guard logic handles the rest unchanged."""
+
+    def _finds(self, root: Path, function: str, var: str) -> list:
+        return [f for f in scan_p6(root)
+                if f.pattern == "P6_null_deref" and f.function == function
+                and f.struct_type == var]
+
+    def test_macro_deref_unguarded_is_candidate(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "gt3.cpp").write_text(
+                "#define GATTSERVER(x) g_servers[x].server\n"
+                "#define GATTSERVICE(x, y) g_servers[x].services[y].svc\n"
+                "int StartService(int serverId, int handle) {\n"
+                "    if (GATTSERVER(serverId) == nullptr) {\n"
+                "        return -1;\n"
+                "    }\n"
+                "    GATTSERVER(serverId)->AddService(*GATTSERVICE(serverId, handle));\n"
+                "    return 0;\n"
+                "}\n", encoding="utf-8")
+            found = self._finds(root, "StartService", "GATTSERVICE")
+        self.assertTrue(found, "unguarded macro deref must be a candidate")
+
+    def test_macro_deref_disjunction_guard_suppresses(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "gt3.cpp").write_text(
+                "#define GATTSERVER(x) g_servers[x].server\n"
+                "#define GATTSERVICE(x, y) g_servers[x].services[y].svc\n"
+                "int StartService(int serverId, int handle) {\n"
+                "    if (GATTSERVER(serverId) == nullptr || "
+                "GATTSERVICE(serverId, handle) == nullptr) {\n"
+                "        return -1;\n"
+                "    }\n"
+                "    GATTSERVER(serverId)->AddService(*GATTSERVICE(serverId, handle));\n"
+                "    return 0;\n"
+                "}\n", encoding="utf-8")
+            found = self._finds(root, "StartService", "GATTSERVICE")
+        self.assertEqual(found, [], "disjunction-guarded macro deref must suppress")
+
+
 class P6ScopedGuardTests(unittest.TestCase):
     """Scoped guard: a return inside a nested if only fires on the branch
     that entered it — the fall-through path can still carry null."""

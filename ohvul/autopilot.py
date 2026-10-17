@@ -588,20 +588,20 @@ def _p6_guards(cleaned: str, varesc: str):
     for m in re.finditer(
             r'if\s*\(([^()]*(?:\([^()]*\)[^()]*)*)\)\s*[{;]?', cleaned):
         cond = m.group(1)
-        # a null test disjoined with other conditions still guards (short
-        # circuit: var null alone takes the branch) — dsoftbus/bluetooth
-        # commonly write `p == nullptr || !other()`. Conjunctions do NOT
-        # guard (p might be checked only when the other side is false).
+        # GT3: macro invocations — GATTSERVICE(x, y) == nullptr is a null
+        # check on the macro's pointer-typed expansion result
         def _neg(c):
             return re.fullmatch(rf'\s*!\s*{varesc}\s*', c) or \
-                re.fullmatch(rf'\s*{varesc}\s*==\s*(?:NULL|nullptr|0)\s*', c)
+                re.fullmatch(rf'\s*{varesc}\s*==\s*(?:NULL|nullptr|0)\s*', c) or \
+                re.fullmatch(rf'\s*{varesc}\s*\([^()]*\)\s*==\s*(?:NULL|nullptr|0)\s*', c)
         is_neg = _neg(cond)
         if not is_neg:
             parts = re.split(r'\|\|', cond)
             if len(parts) > 1 and any(_neg(p) for p in parts):
                 is_neg = True
         is_pos = re.fullmatch(rf'\s*{varesc}\s*', cond) or \
-            re.fullmatch(rf'\s*{varesc}\s*!=\s*(?:NULL|nullptr)\s*', cond)
+            re.fullmatch(rf'\s*{varesc}\s*!=\s*(?:NULL|nullptr)\s*', cond) or \
+            re.fullmatch(rf'\s*{varesc}\s*\([^()]*\)\s*!=\s*(?:NULL|nullptr)\s*', cond)
         if not (is_neg or is_pos):
             continue
         block = _p6_block_span(cleaned, m.end() - 1) or (m.end(), m.end())
@@ -797,12 +797,21 @@ def _p6_pointer_vars(params: str, cl: str) -> set:
     # GT2: identifiers dereferenced with -> that aren't params/locals are
     # member or global pointers — treat as no-contract candidates. Only
     # those appearing at a dereference site (not in declarations/strings).
+    # GT3: ALL-CAPS macro invocations dereferenced as *MACRO(...) or
+    # MACRO(...)-> — the macro expands to a struct-member chain
+    # (GATTSERVICE(serverId, handle) → g_gattServers[x].gattServices[y].gattService)
     keywords = ('if', 'for', 'while', 'return', 'sizeof', 'NULL', 'void',
                 'new', 'delete', 'this', 'true', 'false', 'else', 'case',
                 'break', 'continue', 'goto', 'switch', 'default')
     for m in re.finditer(r'\b(\w+)\s*->\w', cl):
         name = m.group(1)
         if name not in out and name not in keywords and len(name) > 1:
+            out.add(name)
+    # GT3: *MACRO(...) — macro call result is dereferenced
+    for m in re.finditer(r'\*(\w+)\s*\(', cl):
+        name = m.group(1)
+        if (name.isupper() and name not in out and len(name) > 2
+                and name not in keywords):
             out.add(name)
     return {v for v in out if v not in keywords}
 
@@ -819,10 +828,12 @@ def scan_p6(root, call_graph=None, _suppressed=None):
                 # access = the variable itself dereferenced; a match
                 # preceded by -> or . is a MEMBER NAME (fileList->fileInfo[i]),
                 # not an access of the variable — adjudication lead #1
+                # GT3: *MACRO(...) is also an access (macro call deref)
                 def _real_access(m):
                     return not cl[max(0, m.start() - 2):m.start()].endswith(('->', '.'))
                 accesses = [m for m in re.finditer(
-                    rf'\b{varesc}\s*(?:->\w+|\[|\.\w)', cl) if _real_access(m)]
+                    rf'(?:\*{varesc}\s*\(|\b{varesc}\s*(?:->\w+|\[|\.\w))', cl)
+                    if _real_access(m)]
                 if not accesses:
                     continue
                 acc, state, reason = None, None, None
