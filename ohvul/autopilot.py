@@ -780,13 +780,13 @@ def _p6_access_states(cleaned: str, varesc: str, accesses: list):
 
 
 def _p6_pointer_vars(params: str, cl: str) -> set:
-    """Candidate pointer variables of one function: parameters plus GT1
-    local declarations (sptr<T>/shared_ptr<T>/T* initialized in the body).
-    Locals enter the same state timeline — their initializer is the first
-    assignment fact, so 'assigned-source-unknown' / Null / &x classify
-    exactly as parameter reassignments do (retro GT1: hid_host
-    'sptr<> proxy = GetRemoteProxy(...)' was invisible to a params-only
-    model; mentor step 6 first item)."""
+    """Candidate pointer variables of one function: parameters, GT1 local
+    declarations, and GT2 member pointers.
+
+    Members behave exactly like no-contract parameters from the single
+    function's perspective — it cannot see the constructor. The state
+    timeline, guards, and branch-merge rules apply unchanged (mentor step
+    6 second item; retro GT2: bluetooth_socket pimpl)."""
     out = set(re.findall(r'(?:const\s+)?\w+\s*\*+\s*(\w+)', params))
     out |= set(_SMART_PTR_PARAM.findall(params))
     local_smart = re.compile(
@@ -794,9 +794,17 @@ def _p6_pointer_vars(params: str, cl: str) -> set:
         r'\s*<[^>;()]*>\s*(\w+)\s*=')
     local_raw = re.compile(r'(?:const\s+)?\w+\s*\*+\s*(\w+)\s*=')
     out |= set(local_smart.findall(cl)) | set(local_raw.findall(cl))
-    return {v for v in out
-            if v not in ('if', 'for', 'while', 'return', 'sizeof', 'NULL',
-                         'void', 'new', 'delete')}
+    # GT2: identifiers dereferenced with -> that aren't params/locals are
+    # member or global pointers — treat as no-contract candidates. Only
+    # those appearing at a dereference site (not in declarations/strings).
+    keywords = ('if', 'for', 'while', 'return', 'sizeof', 'NULL', 'void',
+                'new', 'delete', 'this', 'true', 'false', 'else', 'case',
+                'break', 'continue', 'goto', 'switch', 'default')
+    for m in re.finditer(r'\b(\w+)\s*->\w', cl):
+        name = m.group(1)
+        if name not in out and name not in keywords and len(name) > 1:
+            out.add(name)
+    return {v for v in out if v not in keywords}
 
 
 def scan_p6(root, call_graph=None, _suppressed=None):

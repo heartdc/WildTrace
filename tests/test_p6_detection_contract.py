@@ -385,10 +385,88 @@ class P6LocalPointerTests(unittest.TestCase):
         self.assertEqual(suppressed[0]["state"], "NonNull")
         self.assertEqual(suppressed[0]["reason"], "guard-fallthrough")
 
+
+class P6MemberPointerTests(unittest.TestCase):
+    """GT2 contracts (mentor step 6 second item): member pointers join the
+    candidate set — a method can't see the constructor, so an unguarded
+    member deref is a no-contract MaybeNull, same as an unchecked param."""
+
+    def _finds(self, root: Path, function: str, var: str) -> list:
+        return [f for f in scan_p6(root)
+                if f.pattern == "P6_null_deref" and f.function == function
+                and f.struct_type == var]
+
+    def test_member_pointer_unguarded_is_candidate(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "gt2.cpp").write_text(
+                "class ClientSocket {\n"
+                "public:\n"
+                "    Impl *pimpl;\n"
+                "    int Init() {\n"
+                "        return pimpl->Init();\n"
+                "    }\n"
+                "};\n", encoding="utf-8")
+            found = self._finds(root, "Init", "pimpl")
+        self.assertTrue(found, "unguarded member deref must be a candidate")
+        self.assertIn("param-no-contract", found[0].description)
+
+    def test_member_pointer_guarded_suppresses(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "gt2.cpp").write_text(
+                "#define CHECK_AND_RETURN_LOG(c, ...) do { "
+                "if (!(c)) return -1; } while (0)\n"
+                "class ClientSocket {\n"
+                "public:\n"
+                "    Impl *pimpl;\n"
+                "    int Init() {\n"
+                "        CHECK_AND_RETURN_LOG(pimpl != nullptr, \"null\");\n"
+                "        return pimpl->Init();\n"
+                "    }\n"
+                "};\n", encoding="utf-8")
+            found = self._finds(root, "Init", "pimpl")
+        self.assertEqual(found, [], "guarded member deref must suppress")
+
+    def test_member_pointer_if_guard_suppresses(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "gt2.cpp").write_text(
+                "class ClientSocket {\n"
+                "public:\n"
+                "    Impl *pimpl;\n"
+                "    int Init() {\n"
+                "        if (pimpl == nullptr) {\n"
+                "            return -1;\n"
+                "        }\n"
+                "        return pimpl->Init();\n"
+                "    }\n"
+                "};\n", encoding="utf-8")
+            found = self._finds(root, "Init", "pimpl")
+        self.assertEqual(found, [], "if-guarded member deref must suppress")
+
+
+class P6ScopedGuardTests(unittest.TestCase):
+    """Scoped guard: a return inside a nested if only fires on the branch
+    that entered it — the fall-through path can still carry null."""
+
+    def _state(self, parameter: str, body: str):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "sample.cpp").write_text(
+                "struct IObs { void Fire(int x); };\n"
+                "template <typename T> T *GetRemoteProxy(int id);\n"
+                "int other(void);\n"
+                f"void use() {{\n{body}\n}}\n",
+                encoding="utf-8")
+            found = _finds(root, "use", parameter)
+            return (found[0] if found else None)
+
     def test_scoped_guard_does_not_protect_after_block(self):
         # the return only happens when other() is true; the fall-through
         # path can still carry a null p
         f = self._state(
+            "proxy",
             "    sptr<IObs> proxy = GetRemoteProxy<IObs>(1);\n"
             "    if (other()) {\n"
             "        if (!proxy) {\n"
