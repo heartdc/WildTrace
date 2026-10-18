@@ -862,12 +862,24 @@ def scan_p6(root, call_graph=None, _suppressed=None):
                 # access = the variable itself dereferenced; a match
                 # preceded by -> or . is a MEMBER NAME (fileList->fileInfo[i]),
                 # not an access of the variable — adjudication lead #1
-                # GT3: *MACRO(...) is also an access (macro call deref)
+                # GT3: *MACRO(...) is also an access (macro call deref).
                 def _real_access(m):
                     return not cl[max(0, m.start() - 2):m.start()].endswith(('->', '.'))
                 accesses = [m for m in re.finditer(
                     rf'(?:\*{varesc}\s*\(|\b{varesc}\s*(?:->\w+|\[|\.\w))', cl)
                     if _real_access(m)]
+                # bare *p deref (return *p; a = *p;): an access, but ONLY
+                # when the token before `*` is `return` or a non-identifier —
+                # `Type *p` declarations and `a * p` multiplication must not
+                # count (seeded recall benchmark S03 vs P6 contract tests)
+                for m in re.finditer(rf'\*{varesc}(?!\s*\()', cl):
+                    if not _real_access(m):
+                        continue
+                    head = cl[max(0, m.start() - 12):m.start()].rstrip()
+                    if (not head or head.endswith('return')
+                            or not (head[-1].isalnum() or head[-1] == '_')):
+                        accesses.append(m)
+                accesses.sort(key=lambda m: m.start())
                 if not accesses:
                     continue
                 acc, state, reason = None, None, None
