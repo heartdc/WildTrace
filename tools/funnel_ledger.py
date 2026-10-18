@@ -94,8 +94,12 @@ def render(scan_path: Path, ledger_dir: Path) -> str:
     else:
         lines.append("_（账本数据缺失）_")
     lines.append("")
-    lines.append("守恒式：进入候选 = 发射 lead + 带因抑制；无静默丢弃。"
-                 "抑制样本（各目录前 400 条）保留于账本 JSON 供抽裁。")
+    lines.append("口径声明（非守恒断言）：上表为各层产出的独立计数——lead 总数来自"
+                 " autopilot run 的 findings 汇总（按变量/函数合并），P6/P8 的发射与"
+                 "抑制计数来自带 `_suppressed` 采集的独立扫描（按访问点累计），"
+                 "两层计数单位不同，不可直接相加作守恒验证。本工具不做机器守恒校验"
+                 "（conservation_verified=false）；抑制样本（各目录前 400 条）保留"
+                 "于账本 JSON 供人工抽裁。")
     return "\n".join(lines) + "\n"
 
 

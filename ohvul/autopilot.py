@@ -549,6 +549,29 @@ def _fid(prefix, rel, line, var):
 # ---------------------------------------------------------------------------
 
 _ABORT_KW = re.compile(r'\b(?:return|goto|break|continue)\b')
+_COND_LINE_HEAD = re.compile(r'\b(?:if|for|while|else|case)\b')
+
+
+def _p6_abort_confirms(text: str) -> bool:
+    """A guard-block abort confirms fallthrough safety ONLY when it is a
+    standalone unconditional `return` (external review F03): `if (flag)
+    return;` inside the guard is conditional (flag=false still falls
+    through with the variable null); goto/break/continue jump to places
+    that may reach the access anyway, so they never confirm. The return
+    must sit at the guard's own level — depth one inside a braced block,
+    or depth zero for an unbraced `if (!x) return;` guard body."""
+    for m in re.finditer(r'\breturn\b', text):
+        prefix = text[:m.start()]
+        depth = prefix.count('{') - prefix.count('}')
+        if depth not in (0, 1):
+            continue  # nested sub-block: conditional context
+        line_head = text[text.rfind('\n', 0, m.start()) + 1:m.start()]
+        if _COND_LINE_HEAD.search(line_head):
+            continue  # guarded on the same logical line
+        if line_head.count('(') != line_head.count(')'):
+            continue  # inside an unbalanced condition/ternary
+        return True
+    return False
 
 
 def _p6_block_span(text: str, if_end: int):
@@ -608,7 +631,7 @@ def _p6_guards(cleaned: str, varesc: str):
             continue
         block = _p6_block_span(cleaned, m.end() - 1) or (m.end(), m.end())
         if is_neg:
-            if _ABORT_KW.search(cleaned[block[0]:block[1]]):
+            if _p6_abort_confirms(cleaned[block[0]:block[1]]):
                 guards.append({"kind": "neg-abort", "start": m.start(),
                                "end": block[1], "block": block})
         else:
@@ -716,6 +739,18 @@ def _p6_access_states(cleaned: str, varesc: str, accesses: list):
                             "reason": reason})
     for a in assigns:
         a["scope"] = enclosing(a["pos"])
+    # unbraced conditional assignment (external review F03): `if (flag)
+    # p = &x;` is a scoped fact — it must not project past the statement
+    # (the skipped branch keeps the earlier state); give it a self-ending
+    # synthetic scope so the branch-merge rule applies exactly as in the
+    # braced form
+    for a in assigns:
+        if a.get("scope") is not None:
+            continue
+        line_head = cleaned[cleaned.rfind('\n', 0, a["pos"]) + 1:a["pos"]]
+        if ('{' not in line_head and line_head.count('(') == line_head.count(')')
+                and re.search(r'\b(?:if|else|for|while)\b[^;]*$', line_head)):
+            a["scope"] = (a["pos"], a["pos"])
     # out-param fills: Func(&var, ...) supersedes an earlier NULL init —
     # the callee's contract decides, so the honest state is MaybeNull
     # (40/43 of the top-funnel state=Null leads were this pattern)
@@ -768,6 +803,17 @@ def _p6_access_states(cleaned: str, varesc: str, accesses: list):
         merged = None
         if in_pos_block:
             state, reason = "NonNull", "positive-block"
+            # an assignment between the positive check and the access
+            # still applies (external review F02: if (p) { p = nullptr;
+            # p->a; } is Null, not NonNull)
+            g0 = max((g["block"][0] for g in pos_blocks
+                      if g["block"][0] <= p <= g["block"][1]), default=None)
+            if g0 is not None:
+                inner = [a for a in assigns if g0 <= a["pos"] < p]
+                if inner:
+                    a = max(inner, key=lambda x: x["pos"])
+                    if a["state"] != "NonNull":
+                        state, reason = a["state"], a["reason"]
         elif facts:
             last = max(facts, key=lambda f: f["pos"])
             s = last.get("scope")
@@ -871,8 +917,15 @@ def scan_p6(root, call_graph=None, _suppressed=None):
                 # bare *p deref (return *p; a = *p;): an access, but ONLY
                 # when the token before `*` is `return` or a non-identifier —
                 # `Type *p` declarations and `a * p` multiplication must not
-                # count (seeded recall benchmark S03 vs P6 contract tests)
-                for m in re.finditer(rf'\*{varesc}(?!\s*\()', cl):
+                # count (seeded recall benchmark S03 vs P6 contract tests).
+                # Identifier boundary + whitespace/parenthesized forms per
+                # external review F05: *ptr must not prefix-match *p, and
+                # `* p` / `*(p)` are equivalent dereferences. A `)`-headed
+                # match (e.g. `(a) *p`) stays counted: `if (x) *p = 1;` is
+                # a legitimate unbraced deref-assign, and pointer-typed `p`
+                # makes the multiplication reading ill-typed anyway.
+                for m in re.finditer(
+                        rf'\*\s*(?:\(\s*{varesc}\s*\)|{varesc}\b)(?!\s*\()', cl):
                     if not _real_access(m):
                         continue
                     head = cl[max(0, m.start() - 12):m.start()].rstrip()
@@ -963,12 +1016,21 @@ def _p8_innermost(pos, spans):
 
 def _p8_flat_escape(text):
     """A `return` at the top level of this slice — the branch terminator
-    itself, not one inside a nested block (goto/break/continue are excluded:
-    they can jump to a later use, so counting them would over-suppress)."""
+    itself, not one inside a nested block or guarded on its own line
+    (external review F04a: `if (stop) return;` without braces is still a
+    CONDITIONAL return — stop=false falls through to the freed use, so it
+    must not confirm. goto/break/continue stay excluded: they can jump to
+    a later use)."""
     for m in _P8_ESCAPE.finditer(text):
         prefix = text[:m.start()]
-        if prefix.count('{') == prefix.count('}'):
-            return True
+        if prefix.count('{') != prefix.count('}'):
+            continue
+        line_head = text[text.rfind('\n', 0, m.start()) + 1:m.start()]
+        if _COND_LINE_HEAD.search(line_head):
+            continue
+        if line_head.count('(') != line_head.count(')'):
+            continue
+        return True
     return False
 
 
@@ -987,11 +1049,15 @@ def _p8_use_exclusive_reason(cl, spans, free_start, free_end, use_start):
     ub = _p8_innermost(use_start, spans)
 
     # closure shape: the use's enclosing block opens right behind a lambda
-    # introducer `]…(…) -> …` while the free is not inside that same closure
+    # introducer `]…(…) -> …` while the free is not inside that same closure;
+    # an immediately-invoked closure (`}()`) runs in THIS execution and is
+    # not suppressed (external review F04b)
     if ub is not None:
         head = cl[:ub[0]].rstrip()
         if _P8_LAMBDA_HEAD.search(head[-160:]) and not (fb and fb[0] >= ub[0]):
-            return "closure-use (free outside the callback body)"
+            tail = cl[ub[1] + 1:ub[1] + 8].lstrip()
+            if not tail.startswith('('):
+                return "closure-use (free outside the callback body)"
 
     if fb is None:
         return None
@@ -1018,10 +1084,20 @@ def scan_p8(root, _suppressed=None):
                 fv = fm.group(1)
                 if fv in ('NULL','nullptr'): continue
                 after = cl[fm.end():]
-                if re.search(rf'{re.escape(fv)}\s*=\s*(?:NULL|nullptr|0)\s*;', after): continue
+                # a post-free null reset only kills uses AFTER the reset
+                # (external review F04c: free(p); p[0]=1; p=NULL; keeps the
+                # use between free and reset as a live UAF signal)
+                reset = re.search(
+                    rf'{re.escape(fv)}\s*=\s*(?:NULL|nullptr|0)\s*;', after)
+                reset_at = fm.end() + reset.start() if reset else None
                 spans = _p8_block_spans(cl)
                 kept, suppressed = [], []
                 for um in re.finditer(rf'\b{re.escape(fv)}\s*(?:->|\[|\.|\+\+|=)', after):
+                    if reset_at is not None and fm.end() + um.start() >= reset_at:
+                        # at-or-after the reset: the reset's own `p = NULL`
+                        # match included (benchmark N02 — the reset is not a use)
+                        suppressed.append((um, "reset-before-use (pointer nulled before this access)"))
+                        continue
                     reason = _p8_use_exclusive_reason(cl, spans, fm.start(), fm.end(), fm.end() + um.start())
                     if reason is None:
                         kept.append(um)

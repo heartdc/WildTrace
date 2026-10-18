@@ -87,14 +87,16 @@ def execute_poc(wsl_binary: str, timeout: int = 10) -> dict:
             break
 
     output = "\n".join(lines)
-    crashed = exit_code in (139, 134, 134 + 64) or "AddressSanitizer" in output
+    # crash = fatal exit (139 SIGSEGV / 134 SIGABRT via shell) or a REAL ASan
+    # diagnostic line. Mere presence of the word "AddressSanitizer" (e.g. a
+    # benign "AddressSanitizer is disabled" notice with EXIT:0) is not a
+    # crash (external review F07).
     asan_report = ""
-    if "AddressSanitizer" in output:
-        # extract the ASan summary
-        for line in output.splitlines():
-            if "ERROR: AddressSanitizer" in line:
-                asan_report = line.strip()
-                break
+    for line in output.splitlines():
+        if "ERROR: AddressSanitizer" in line:
+            asan_report = line.strip()
+            break
+    crashed = exit_code in (139, 134, 134 + 64) or bool(asan_report)
 
     return {
         "exit_code": exit_code,
@@ -260,12 +262,22 @@ def verify_against_real_library(poc_code: str, oh_root: str,
             exit_code = int(m.group(1))
             break
 
-    crashed = exit_code in (139, 134) or "AddressSanitizer" in stdout
+    crashed = exit_code in (139, 134) or bool(
+        next((l for l in stdout.splitlines() if "ERROR: AddressSanitizer" in l), ""))
 
+    # loader/exec failures (127 command-not-found via musl loader, 126) mean
+    # the client never meaningfully ran — "verified" must not become true on
+    # compile success alone (external review F07). Split the states:
+    # compiled / executed / crashed; real_library_verified keeps its name for
+    # compatibility but now means compiled AND executed.
+    executed = exit_code not in (126, 127, -1)
     return {
-        'real_library_verified': True,
+        'real_library_verified': executed,
+        'compiled': True,
+        'executed': executed,
         'crashed': crashed,
         'exit_code': exit_code,
+        'loader_error': None if executed else stdout[:500],
         'output': stdout[:2000],
         'evidence_dir': str(evidence),
     }
