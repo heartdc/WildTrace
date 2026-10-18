@@ -279,7 +279,7 @@ def main(argv=None):
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(text, encoding="utf-8")
     print(f"RECALL={report['recall']} ({report['detected']}/{report['positive_seeds']}) "
-          f"violations={len(report["violations"])} "
+          f"violations={len(report['violations'])} "
           f"misattributed={len(report['misattributed_at_positive_sites'])} "
           f"stray={len(report['stray_findings_outside_corpus'])}")
     return 0
