@@ -160,7 +160,7 @@ def _iter_functions(text):
     _PARSE_CACHE[key] = (text, funcs)
     _PARSE_CACHE_CHARS += len(text)
     while _PARSE_CACHE and _PARSE_CACHE_CHARS > _PARSE_CACHE_BUDGET_CHARS:
-        _, (old_text, _) = _PARSE_CACHE.pop(next(iter(_PARSE_CACHE)))
+        old_text, _funcs = _PARSE_CACHE.pop(next(iter(_PARSE_CACHE)))
         _PARSE_CACHE_CHARS -= len(old_text)
     return iter(funcs)
 
