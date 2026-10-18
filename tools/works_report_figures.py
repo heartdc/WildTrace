@@ -191,7 +191,66 @@ ax.set_title("图 6  双引擎函数粒度并集（nstackx 子组件）：Joern 
 ax.text(0.5, 0.94, "规则层 2,404 发现 / Joern 1,271 发现；锚点差异（函数起始行 vs 解引用行）已在文档注明",
         transform=ax.transAxes, ha="center", fontsize=8, color="#616161")
 fig.tight_layout()
-fig.savefig(OUT / "fig6_dualengine.png", bbox_inches="tight")
+fig.savefig(OUT / "fig7_dualengine.png", bbox_inches="tight")
 plt.close(fig)
 
-print("written:", OUT / "fig4_funnel.png", OUT / "fig5_matrix.png", OUT / "fig6_dualengine.png")
+print("written:", OUT / "fig4_funnel.png", OUT / "fig5_matrix.png", OUT / "fig7_dualengine.png")
+
+# ---------------- Figure: P6 state model timeline (fig6_statemodel) ----------------
+fig, ax = plt.subplots(figsize=(9.4, 5.0), dpi=150)
+ax.set_xlim(0, 10)
+ax.set_ylim(0, 6.2)
+ax.axis("off")
+
+code = [
+    ("sptr<T> proxy = GetRemoteProxy();", "MaybeNull", "#fff9c4"),
+    ("if (proxy == nullptr) { return; }", "→ NonNull（守卫确认）", "#c8e6c9"),
+    ("proxy->Ping();", "NonNull：安全，不发射", "#a5d6a7"),
+]
+x = 0.5
+for i, (line, state, fc) in enumerate(code):
+    box(ax, x, 3.4, 3.0, 1.0, line, "#eceff1", fs=8.5)
+    box(ax, x + 0.1, 1.9, 2.8, 0.85, state, fc, fs=9)
+    if i < 2:
+        arrow(ax, x + 3.0, 3.9, x + 3.5, 3.9)
+    x += 3.5
+
+box(ax, 0.5, 5.0, 2.8, 0.9, "Null\n（确定性崩溃）", "#ffcdd2", fs=10)
+box(ax, 3.6, 5.0, 2.8, 0.9, "MaybeNull\n（待论证/分层）", "#fff9c4", fs=10)
+box(ax, 6.7, 5.0, 2.8, 0.9, "NonNull\n（安全，不发射）", "#c8e6c9", fs=10)
+ax.text(5.0, 0.6, "每个不发射的访问都记录抑制原因（抑制日志）——漏斗 2,662 → 13 的每一步可审计",
+        ha="center", fontsize=9, color="#37474f")
+ax.set_title("图 6  指针状态模型：Null / NonNull / MaybeNull 三态时间线与可证明性分层", ha="center", fontsize=12, weight="bold", y=6.05)
+fig.tight_layout()
+fig.savefig(OUT / "fig6_statemodel.png", bbox_inches="tight")
+plt.close(fig)
+
+# ---------------- Figure: LLM PoC four-step loop (fig8_llm_loop) ----------------
+fig, ax = plt.subplots(figsize=(9.4, 5.2), dpi=150)
+ax.set_xlim(0, 10)
+ax.set_ylim(0, 6.4)
+ax.axis("off")
+
+steps = [
+    ("③ 语义注入", "P6 状态模型输出\n→ LLM 提示词\n（10 种触发策略）", "#e1bee7"),
+    ("① 编译反馈环", "生成 → 编译 →\n失败 stderr 回喂重试\n（上限 2 次）", "#b3e5fc"),
+    ("② ASan 执行", "SIGSEGV / ASan\n报告检测", "#c8e6c9"),
+    ("④ 真库验证", "dlopen 真实 .so\n+ musl 加载器\n→ exit 139", "#ffcc80"),
+]
+x = 0.4
+positions = [(0.4, 3.2), (2.9, 3.2), (5.4, 3.2), (7.9, 3.2)]
+for (title, sub, fc), (px, py) in zip(steps, positions):
+    box(ax, px, py, 2.1, 1.7, f"{title}\n{sub}", fc, fs=8.5)
+for i in range(3):
+    arrow(ax, positions[i][0] + 2.1, positions[i][1] + 0.85, positions[i+1][0], positions[i+1][1] + 0.85)
+arrow(ax, positions[1][0] + 1.05, 3.2, positions[1][0] + 1.05, 2.2)
+ax.text(positions[1][0] + 1.05, 1.9, "编译失败 → 回喂重试", ha="center", fontsize=8, color="#b71c1c")
+box(ax, 0.4, 0.4, 9.6, 1.0,
+    "端到端 ~30 秒/案（人工约 2 小时）· 密钥仅运行时环境变量 · LLM 永不产生漏洞结论（供信号不裁决）",
+    "#fafafa", fs=9.5)
+ax.set_title("图 8  LLM PoC 四步闭环：语义注入 → 编译反馈环 → ASan 执行 → 真库验证", ha="center", fontsize=12, weight="bold", y=6.25)
+fig.tight_layout()
+fig.savefig(OUT / "fig8_llm_loop.png", bbox_inches="tight")
+plt.close(fig)
+
+print("written:", OUT / "fig6_statemodel.png", OUT / "fig8_llm_loop.png")
