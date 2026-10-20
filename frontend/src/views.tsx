@@ -1,24 +1,32 @@
 import { useEffect, useState } from "react";
 import { CandidateCaseActions, CaseEditor } from "./case-editor";
+import { Donut, BarList, Histogram, Timeline, frequencies } from "./charts";
+import {
+  CheckList,
+  KeyValue,
+  RawJson,
+  EmptyState,
+  LoadingState,
+  PreflightDetails,
+  LaneCounts,
+  MessagePreview,
+  EvidenceDetails,
+} from "./ui";
 import {
   Alert,
-  Badge,
   Button,
   Input,
   InputNumber,
   Modal,
   Select,
   Space,
-  Spin,
   Table,
   Tabs,
   Tag,
-  Tooltip,
   message,
 } from "antd";
 import {
   Download,
-  ExternalLink,
   FileCheck2,
   FolderSearch,
   Gauge,
@@ -29,7 +37,6 @@ import {
   Square,
   TerminalSquare,
   Upload,
-  X,
 } from "lucide-react";
 import {
   api,
@@ -40,11 +47,11 @@ import {
   route,
   query,
   downloadReport,
+  stateLabels,
   type Row,
 } from "./client";
 
 const terminal = ["completed", "failed", "cancelled", "interrupted"];
-const json = (v: unknown) => JSON.stringify(v, null, 2);
 function Title({ eyebrow, title, children }: Row) {
   return (
     <div className="toolbar">
@@ -62,7 +69,59 @@ export function Overview() {
     t = useApi<Row[]>("/api/tasks", []),
     f = useApi<Row[]>("/api/findings", []);
   if (c.loading || t.loading || f.loading)
-    return <Spin aria-label="加载审计数据" />;
+    return <LoadingState label="加载审计数据" />;
+  const pending = f.value.filter(
+    (x) =>
+      !x.review ||
+      ["needs_verification", "approved_for_verification"].includes(
+        x.review.decision,
+      ),
+  ).length;
+  const reproduced = c.value.filter((x) =>
+    [
+      "library_level_reproduced",
+      "real_library_reproduction_confirmed",
+    ].includes(x.status),
+  ).length;
+  const confirmed = c.value.filter(
+    (x) => x.raw?.confirmed_vulnerability === true,
+  ).length;
+  const official = c.value.filter(
+    (x) => x.evidence_dimensions?.official_acceptance === true,
+  ).length;
+  const statusColors: Row = {
+    completed: "var(--ev-product)",
+    failed: "var(--danger)",
+    running: "var(--ev-lib)",
+    queued: "var(--ev-candidate)",
+    interrupted: "var(--ev-pending)",
+    cancelled: "var(--text-3)",
+  };
+  const taskStates = frequencies(
+    t.value.map((x) => x.status || "unknown"),
+    100,
+  ).map((d) => ({
+    ...d,
+    label: stateLabels[d.label] || d.label,
+    color: statusColors[d.label],
+  }));
+  const recent = [...t.value]
+    .sort(
+      (a, b) =>
+        (Date.parse(b.created_at) || 0) - (Date.parse(a.created_at) || 0),
+    )
+    .slice(0, 5);
+  const dateText = (value: string) =>
+    value && !Number.isNaN(Date.parse(value))
+      ? new Date(value).toLocaleString()
+      : "未记录";
+  const chartEmpty = (
+    <EmptyState
+      title="尚无扫描候选"
+      action="新建扫描"
+      onAction={() => route("scans")}
+    />
+  );
   const metrics = [
     {
       icon: FolderSearch,
@@ -106,9 +165,11 @@ export function Overview() {
         </Button>
       </Title>
       <div className="metric-grid">
-        {metrics.map((m) => (
+        {metrics.map((m, index) => (
           <div className="metric" key={m.label}>
-            <div className="metric-icon">
+            <div
+              className={`metric-icon ${["", "candidate", "lib", "product"][index]}`}
+            >
               <m.icon />
             </div>
             <div>
@@ -118,6 +179,153 @@ export function Overview() {
             </div>
           </div>
         ))}
+      </div>
+      <section className="section evidence-tiers">
+        <div className="section-head">
+          <h3>证据分层</h3>
+          <span className="hint">不同记录集合独立计数，不代表逐级转化率</span>
+        </div>
+        <div className="tier-grid">
+          {[
+            [
+              "candidate",
+              "扫描候选",
+              c.error || f.error ? "—" : f.value.length,
+              "扫描结果条目",
+            ],
+            [
+              "pending",
+              "待验证",
+              f.error ? "—" : pending,
+              "未复核、待验证或可进入验证",
+            ],
+            [
+              "lib",
+              "库级复现",
+              c.error ? "—" : reproduced,
+              "仅计明确库级复现状态",
+            ],
+            [
+              "product",
+              "已确认产品漏洞",
+              c.error ? "—" : confirmed,
+              "仅计明确确认记录",
+            ],
+            [
+              "official",
+              "官方接受",
+              c.error ? "—" : official,
+              "以记录中的接受状态为准",
+            ],
+          ].map(([key, label, value, detail]) => (
+            <div key={String(key)} className={`tier-item ${key}`}>
+              <span className="tier-label">{label}</span>
+              <strong>{value}</strong>
+              <span className="hint">{detail}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+      <div className="dashboard-charts">
+        <section className="chart-section">
+          <div className="section-head">
+            <h3>缺失项频次</h3>
+            <span className="hint">按案例统计</span>
+          </div>
+          {c.error ? (
+            <EmptyState title="案例数据加载失败" />
+          ) : (
+            <BarList
+              label="缺失项频次"
+              data={frequencies(c.value.flatMap((x) => x.missing || []))}
+              empty={c.value.length ? "当前没有登记的材料缺项" : "暂无案例记录"}
+            />
+          )}
+        </section>
+        <section className="chart-section">
+          <div className="section-head">
+            <h3>任务状态</h3>
+            <span className="hint">{t.value.length} 条任务记录</span>
+          </div>
+          {t.error ? (
+            <EmptyState title="任务数据加载失败" />
+          ) : (
+            <Donut data={taskStates} label="任务状态分布" />
+          )}
+        </section>
+        <section className="chart-section">
+          <div className="section-head">
+            <h3>候选 CWE 分布</h3>
+            <span className="hint">Top 8 · 按告警条目计数</span>
+          </div>
+          {f.value.length ? (
+            <BarList
+              label="候选 CWE 分布"
+              data={frequencies(
+                f.value.flatMap((x) =>
+                  Array.isArray(x.cwe) ? x.cwe : [x.cwe || "未知"],
+                ),
+              )}
+            />
+          ) : (
+            chartEmpty
+          )}
+        </section>
+        <section className="chart-section">
+          <div className="section-head">
+            <h3>候选组件分布</h3>
+            <span className="hint">Top 8 · 不合并不同任务</span>
+          </div>
+          {f.value.length ? (
+            <BarList
+              label="候选组件分布"
+              data={frequencies(f.value.map((x) => x.component || "未知组件"))}
+            />
+          ) : (
+            chartEmpty
+          )}
+        </section>
+        <section className="chart-section">
+          <div className="section-head">
+            <h3>置信度分布</h3>
+            <span className="hint">规则排序分</span>
+          </div>
+          <Histogram
+            label="候选置信度分布"
+            values={f.value.map((x) => x.confidence)}
+          />
+        </section>
+        <section className="chart-section">
+          <div className="section-head">
+            <h3>最近任务</h3>
+            <Button type="link" onClick={() => route("scans")}>
+              扫描任务
+            </Button>
+          </div>
+          <Timeline
+            label="最近任务时间线"
+            items={recent.map((x) => ({
+              id: x.id,
+              label: `${x.kind} ${stateLabels[x.status] || x.status}`,
+              title: (
+                <>
+                  {x.kind} · {x.id.slice(0, 10)} <Status value={x.status} />
+                </>
+              ),
+              detail: (
+                <>
+                  <span>创建 {dateText(x.created_at)}</span>
+                  <br />
+                  <span>
+                    结束 {x.finished_at ? dateText(x.finished_at) : "尚未结束"}
+                  </span>
+                </>
+              ),
+              color: statusColors[x.status],
+              onClick: () => route("scans", { task: x.id }),
+            }))}
+          />
+        </section>
       </div>
       <section className="section">
         <div className="section-head">
@@ -163,6 +371,16 @@ export function Overview() {
           </Button>
         </div>
         <Table
+          loading={c.loading}
+          locale={{
+            emptyText: (
+              <EmptyState
+                title={c.value.length ? "当前没有待补充案例" : "暂无案例记录"}
+                action="案例库"
+                onAction={() => route("cases")}
+              />
+            ),
+          }}
           size="small"
           rowKey="id"
           dataSource={c.value.filter((x) => x.missing.length).slice(0, 6)}
@@ -245,7 +463,7 @@ export function TaskDetail({ id }: { id: string }) {
     return (
       <>
         <ErrorBox error={error} />
-        <Spin />
+        <LoadingState />
       </>
     );
   const elapsed = task.started_at
@@ -320,9 +538,24 @@ export function TaskDetail({ id }: { id: string }) {
                 <Alert
                   type="info"
                   title="分组用于减少重复审查，不会删除候选或确认漏洞"
-                  description={`候选 ${triage.value.candidate_count} 条 · 分组 ${triage.value.group_count} 组 · ${JSON.stringify(triage.value.lane_counts)}`}
+                  description={
+                    <>
+                      <span>{`候选 ${triage.value.candidate_count} 条 · 分组 ${triage.value.group_count} 组`}</span>
+                      <LaneCounts counts={triage.value.lane_counts} />
+                    </>
+                  }
                 />
+                <ErrorBox error={triage.error} />
                 <Table<Row>
+                  loading={triage.loading}
+                  locale={{
+                    emptyText: (
+                      <EmptyState
+                        title="暂无复核队列"
+                        detail="任务尚未产生可用候选时，队列保持为空。"
+                      />
+                    ),
+                  }}
                   rowKey="id"
                   size="small"
                   dataSource={triage.value.groups || []}
@@ -386,10 +619,69 @@ export function TaskDetail({ id }: { id: string }) {
             label: "结果",
             children: task.result ? (
               <>
+                <KeyValue
+                  items={[
+                    { label: "任务类型", value: task.kind },
+                    {
+                      label: "任务状态",
+                      value: <Status value={task.status} />,
+                    },
+                    { label: "退出码", value: task.exit_code ?? "未记录" },
+                    { label: "耗时", value: `${elapsed}s` },
+                    {
+                      label: "结果状态",
+                      value: <Status value={task.result.status || "unknown"} />,
+                    },
+                    {
+                      label: "候选数量",
+                      value: Array.isArray(task.result.findings)
+                        ? task.result.findings.length
+                        : "不适用",
+                    },
+                  ]}
+                />
+                {task.result.summary && (
+                  <KeyValue
+                    items={[
+                      {
+                        label: "高优先级候选",
+                        value: task.result.summary.high ?? "未记录",
+                      },
+                      {
+                        label: "中优先级候选",
+                        value: task.result.summary.medium ?? "未记录",
+                      },
+                    ]}
+                  />
+                )}
+                {task.kind === "model" && (
+                  <>
+                    <Tag className="draft-banner">草稿 · 待人工复核</Tag>
+                    {(task.result.results || []).map((r: Row, i: number) => (
+                      <section className="model-result" key={i}>
+                        <KeyValue
+                          items={[
+                            { label: "候选", value: r.finding_id },
+                            {
+                              label: "模型",
+                              value: r.model || r.requested_model || "未记录",
+                            },
+                          ]}
+                        />
+                        {(r.code || r.content) && (
+                          <pre>{r.code || r.content}</pre>
+                        )}
+                      </section>
+                    ))}
+                  </>
+                )}
                 {task.kind === "cjson" && (
                   <>
                     <Alert type="info" title="库级运行证据，产品可达性未建立" />
                     <Table
+                      locale={{
+                        emptyText: <EmptyState title="暂无运行对照记录" />,
+                      }}
                       rowKey={(_, i) => String(i)}
                       size="small"
                       dataSource={task.result.rows || []}
@@ -409,7 +701,7 @@ export function TaskDetail({ id }: { id: string }) {
                     />
                   </>
                 )}
-                <pre>{json(task.result)}</pre>
+                <RawJson value={task.result} />
               </>
             ) : (
               <Alert
@@ -421,17 +713,25 @@ export function TaskDetail({ id }: { id: string }) {
           {
             key: "files",
             label: "任务附件",
-            children: assets.value.map((x) => (
-              <div className="asset" key={x.path}>
-                <a
-                  href={`/api/tasks/${id}/file?path=${encodeURIComponent(x.path)}`}
-                  download
-                >
-                  {x.path}
-                </a>
-                <span>{x.bytes} bytes</span>
-              </div>
-            )),
+            children: assets.loading ? (
+              <LoadingState />
+            ) : assets.error ? (
+              <ErrorBox error={assets.error} />
+            ) : !assets.value.length ? (
+              <EmptyState title="暂无任务附件" />
+            ) : (
+              assets.value.map((x) => (
+                <div className="asset" key={x.path}>
+                  <a
+                    href={`/api/tasks/${id}/file?path=${encodeURIComponent(x.path)}`}
+                    download
+                  >
+                    {x.path}
+                  </a>
+                  <span>{x.bytes} bytes</span>
+                </div>
+              ))
+            ),
           },
         ]}
       />
@@ -502,6 +802,7 @@ export function Scans() {
         <label>源码项目</label>
         <Select
           aria-label="扫描源码项目"
+          loading={projects.loading}
           allowClear
           style={{ width: "100%" }}
           placeholder="选择已保存项目，或使用下方本机目录"
@@ -554,6 +855,16 @@ export function Scans() {
       <div className="panel">
         <Table
           rowKey="id"
+          loading={tasks.loading}
+          rowClassName="clickable"
+          locale={{
+            emptyText: (
+              <EmptyState
+                title="暂无扫描任务"
+                detail="选择已登记的项目后可启动扫描。"
+              />
+            ),
+          }}
           dataSource={tasks.value}
           onRow={(r) => ({ onClick: () => route("scans", { task: r.id }) })}
           columns={[
@@ -709,6 +1020,7 @@ function ModelDialog({ ids, close }: { ids: string[]; close: () => void }) {
       {preview ? (
         <>
           <Tag>{preview.connection.model}</Tag>
+          <Tag className="draft-banner">草稿 · 待人工复核</Tag>
           <code>{preview.connection.base_url}</code>
           <p>以下内容将发送至所选模型服务：</p>
           {preview.items.map((x: Row) => (
@@ -716,7 +1028,8 @@ function ModelDialog({ ids, close }: { ids: string[]; close: () => void }) {
               <strong>
                 {x.file}:{x.line}
               </strong>
-              <pre>{json(x.messages)}</pre>
+              <MessagePreview messages={x.messages} />
+              <RawJson value={x.messages} />
             </div>
           ))}
         </>
@@ -832,6 +1145,18 @@ export function Findings() {
         <Table
           rowKey="id"
           size="small"
+          loading={all.loading}
+          locale={{
+            emptyText: (
+              <EmptyState
+                title={
+                  all.value.length ? "没有符合筛选条件的候选" : "暂无扫描候选"
+                }
+                action={all.value.length ? undefined : "新建扫描"}
+                onAction={() => route("scans")}
+              />
+            ),
+          }}
           rowSelection={{ selectedRowKeys: selected, onChange: setSelected }}
           dataSource={rows}
           columns={[
@@ -882,7 +1207,7 @@ export function Findings() {
           error ? (
             <ErrorBox error={error} />
           ) : (
-            <Spin />
+            <LoadingState />
           )
         ) : (
           <Tabs
@@ -966,17 +1291,24 @@ export function Findings() {
                           ? "PoC 草稿 · 未执行"
                           : "待复核建议"}
                       </Tag>
-                      <pre>{r.code || r.content || json(r)}</pre>
+                      <Tag>草稿 · 未作为确认结论</Tag>
+                      {(r.code || r.content) && (
+                        <pre>{r.code || r.content}</pre>
+                      )}
+                      <RawJson value={r} />
                     </div>
                   ))
                 ) : (
-                  <Alert type="info" title="尚未调用模型" />
+                  <EmptyState
+                    title="尚未调用模型"
+                    detail="只有明确发送请求后，才会产生待复核的模型草稿。"
+                  />
                 ),
               },
               {
                 key: "raw",
                 label: "原始记录",
-                children: <pre>{json(item.raw)}</pre>,
+                children: <RawJson value={item.raw} />,
               },
             ]}
           />
@@ -1021,24 +1353,34 @@ export function Cases() {
       setError(e.message);
     }
   }
-  const assetPane = (kinds: string[]) =>
-    item?.assets
-      .filter((a: Row) => kinds.some((k) => a.name.endsWith(k)))
-      .map((a: Row) => (
-        <div className="asset" key={a.asset_id || a.path}>
-          <div className="asset-head">
-            <code>{a.path || a.name}</code>
-            <a
-              href={`/api/cases/${item.id}/attachment?asset_id=${encodeURIComponent(a.asset_id || a.path)}&revision=${item.revision}`}
-              download
-            >
-              <Download size={15} /> 下载
-            </a>
-          </div>
-          <span>SHA-256 {a.sha256}</span>
-          {a.text && <pre>{a.text}</pre>}
+  const assetPane = (kinds: string[]) => {
+    if (!item) return <LoadingState />;
+    const assets =
+      item?.assets.filter((a: Row) => kinds.some((k) => a.name.endsWith(k))) ||
+      [];
+    if (!assets.length)
+      return (
+        <EmptyState
+          title={kinds.includes(".patch") ? "尚未关联补丁" : "暂无相关附件"}
+          detail="缺失项保留在案例材料检查中。"
+        />
+      );
+    return assets.map((a: Row) => (
+      <div className="asset" key={a.asset_id || a.path}>
+        <div className="asset-head">
+          <code>{a.path || a.name}</code>
+          <a
+            href={`/api/cases/${item.id}/attachment?asset_id=${encodeURIComponent(a.asset_id || a.path)}&revision=${item.revision}`}
+            download
+          >
+            <Download size={15} /> 下载
+          </a>
         </div>
-      ));
+        <span>SHA-256 {a.sha256}</span>
+        {a.text && <pre>{a.text}</pre>}
+      </div>
+    ));
+  };
   return (
     <>
       <Title eyebrow="CASE LIBRARY" title={`案例库 · ${all.value.length}`}>
@@ -1052,6 +1394,12 @@ export function Cases() {
       <div className="panel">
         <Table
           rowKey="id"
+          loading={all.loading}
+          locale={{
+            emptyText: (
+              <EmptyState title={search ? "没有匹配的案例" : "暂无案例记录"} />
+            ),
+          }}
           dataSource={all.value.filter((x) =>
             `${x.title} ${x.component} ${x.cve}`
               .toLowerCase()
@@ -1103,7 +1451,7 @@ export function Cases() {
           error ? (
             <ErrorBox error={error} />
           ) : (
-            <Spin />
+            <LoadingState />
           )
         ) : (
           <Tabs
@@ -1196,6 +1544,10 @@ export function Cases() {
                     />
                     <Table
                       rowKey="branch"
+                      loading={all.loading}
+                      locale={{
+                        emptyText: <EmptyState title="暂无分支影响证据" />,
+                      }}
                       pagination={false}
                       dataSource={Object.keys(item.impact.branches).map(
                         (branch) => ({
@@ -1220,7 +1572,8 @@ export function Cases() {
                         {
                           title: "证据引用",
                           dataIndex: "evidence",
-                          render: (x) => (x ? json(x) : "未记录"),
+                          render: (x) =>
+                            x ? <EvidenceDetails value={x} /> : "未记录",
                         },
                       ]}
                     />
@@ -1242,17 +1595,17 @@ export function Cases() {
                         onChange={(e) => importEvidence(e.target.files?.[0])}
                       />
                     </label>
-                    <pre>
-                      {json(
+                    <EvidenceDetails
+                      value={
                         item.raw.validation_evidence ||
-                          item.raw.runtime_evidence || { status: "unknown" },
-                      )}
-                    </pre>
+                        item.raw.runtime_evidence
+                      }
+                    />
                     {item.imported_evidence.map((e: Row, i: number) => (
                       <div key={i}>
                         <Tag>导入 · 未核验</Tag>
                         <strong>{e.name}</strong>
-                        <pre>{json(e.record)}</pre>
+                        <EvidenceDetails value={e.record} />
                       </div>
                     ))}
                   </>
@@ -1261,7 +1614,7 @@ export function Cases() {
               {
                 key: "raw",
                 label: "原始案例",
-                children: <pre>{json(item.raw)}</pre>,
+                children: <RawJson value={item.raw} />,
               },
             ]}
           />
@@ -1341,13 +1694,15 @@ export function Runtime() {
             title={preflight.ready ? "环境及源码指纹预检通过" : "预检未通过"}
             description={preflight.error}
           />
-          <pre>{json(preflight)}</pre>
+          <PreflightDetails data={preflight} />
         </div>
       )}
       <section className="section">
         <h3>历史验证任务</h3>
         <Table
           rowKey="id"
+          loading={tasks.loading}
+          locale={{ emptyText: <EmptyState title="暂无历史验证任务" /> }}
           dataSource={tasks.value.filter((x) => x.kind === "cjson")}
           columns={[
             {
@@ -1390,7 +1745,10 @@ export function Reports() {
     try {
       const body = { case_ids: ids, task_ids: tids, format };
       if (format === "preview") setPreview(await post("/api/reports", body));
-      else await downloadReport(body);
+      else {
+        await downloadReport(body);
+        message.success("报告已导出");
+      }
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -1422,6 +1780,7 @@ export function Reports() {
         <label>案例</label>
         <Select
           mode="multiple"
+          loading={cases.loading}
           style={{ width: "100%" }}
           placeholder="选择案例"
           value={ids}
@@ -1434,6 +1793,7 @@ export function Reports() {
         <label>任务及运行记录</label>
         <Select
           mode="multiple"
+          loading={tasks.loading}
           style={{ width: "100%" }}
           placeholder="选择任务"
           value={tids}
@@ -1447,6 +1807,12 @@ export function Reports() {
           }))}
         />
       </div>
+      {!preview && !busy && (
+        <EmptyState
+          title="尚未生成报告预览"
+          detail="选择案例或任务后检查材料完整度，缺失项会单独列出。"
+        />
+      )}
       {preview && (
         <>
           <Alert
@@ -1456,12 +1822,19 @@ export function Reports() {
                 ? "字段齐全；不代表漏洞已确认"
                 : "待补充，不能作为完整交付"
             }
-            description={Object.entries(preview.missing).map(([k, v]) => (
-              <div key={k}>
-                {k}: {(v as string[]).join("、")}
-              </div>
-            ))}
           />
+          {Object.entries(preview.missing).map(([id, gaps]) => (
+            <section className="report-gaps" key={id}>
+              <h4>{cases.value.find((c) => c.id === id)?.title || id}</h4>
+              <CheckList
+                items={(gaps as string[]).map((label) => ({
+                  label,
+                  status: false,
+                  detail: "待补充",
+                }))}
+              />
+            </section>
+          ))}
           <pre className="report-preview">{preview.markdown}</pre>
         </>
       )}
@@ -1480,6 +1853,7 @@ export function Settings() {
     [key, setKey] = useState(""),
     [modelTimeout, setModelTimeout] = useState(60),
     [tokens, setTokens] = useState(2048),
+    [saving, setSaving] = useState(false),
     [error, setError] = useState("");
   useEffect(() => {
     setRoots((s.value.source_roots || []).join("\n"));
@@ -1493,6 +1867,7 @@ export function Settings() {
     setTokens(m.value.max_tokens || 2048);
   }, [m.value]);
   async function save() {
+    setSaving(true);
     try {
       await api("/api/settings", {
         method: "PUT",
@@ -1521,15 +1896,14 @@ export function Settings() {
       setError("");
     } catch (e: any) {
       setError(e.message);
+    } finally {
+      setSaving(false);
     }
   }
+  if (s.loading || m.loading) return <LoadingState label="正在加载设置" />;
   return (
     <>
-      <Title eyebrow="LOCAL SETTINGS" title="设置">
-        <Button type="primary" onClick={save}>
-          保存设置
-        </Button>
-      </Title>
+      <Title eyebrow="LOCAL SETTINGS" title="设置" />
       <ErrorBox error={error || s.error || m.error} />
       <div className="settings-grid">
         <div className="panel">
@@ -1623,6 +1997,11 @@ export function Settings() {
             清除临时密钥
           </Button>
         </div>
+      </div>
+      <div className="form-foot">
+        <Button type="primary" onClick={save} loading={saving}>
+          保存设置
+        </Button>
       </div>
     </>
   );
