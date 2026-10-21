@@ -89,7 +89,7 @@ PR #51 的 gap-batch-2 三例 66037/70629/70632；2026-09-28 更新）；文档/
 
 - **hiappevent AddWatcher 真库级证实（新发现候选 → 待提交）**：`cases/hiappevent_ffi_watcher_null_filter/`。
   官方完整树构建的 `libcj_hiappevent_ffi.z.so`（零 FFI 源码改动）上，对照组合法输入返回参数校验错误码不崩，
-  候选组 filters.head=NULL+size=1 → SIGSEGV（崩溃帧两轮 ASLR 验证归属 FFI 库内 0x11c9a）。
+  候选组 filters.head=NULL+size=1 → SIGSEGV（崩溃帧归属 FFI 库内 0xdc9a；原记 0x11c9a 与「两轮 ASLR」已于 2026-10-21 按归档证据包复算更正）。
   源码定位 hiappevent_ffi.cpp:372-385 与 Tier C 链路预判一致。记录：HIAPPEVENT_REAL_LIBRARY_CONFIRM_20261003.md（PR #97）。
 - **account 真库级证伪（诚实关闭）**：`libcj_appAccount_ffi.z.so` 四组 malformed 输入全部被 FFI 层参数检查拦截，
   Tier B"顶层 head 未检查"预测不成立。候选关闭，仅当上游行为变化时重开。记录：ACCOUNT_REAL_LIBRARY_FALSIFIED_20260904.md（PR #98）。

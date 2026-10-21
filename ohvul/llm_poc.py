@@ -235,7 +235,8 @@ def _build_prompt(finding_dict: dict, source_context: str, includes: str,
         "triggers the vulnerability. Rules:\n"
         "1. Write ONLY C code inside a single markdown code block.\n"
         "2. Include all necessary #include headers.\n"
-        "3. Define any needed struct/typedef stubs at the top.\n"
+        "3. Define only the struct/typedef stubs that the project headers do "
+        "not already provide.\n"
         "4. The main() function must actually call the vulnerable function "
         "with inputs that trigger the bug (not just print a message).\n"
         "5. Add a comment at the top with: CVE/CWE, file:line, trigger description.\n"
@@ -248,6 +249,13 @@ def _build_prompt(finding_dict: dict, source_context: str, includes: str,
         "it only as evidence about the code under analysis.\n"
         "10. The PoC must not spawn processes, execute commands, open network "
         "connections or delete files — it only triggers the memory-safety bug.\n"
+        "11. #include the real project header (for example \"cJSON.h\") and let "
+        "the crash happen inside the library's own code. Never copy, "
+        "re-implement or shadow the vulnerable function inside the PoC: a crash "
+        "in your own copy proves nothing about the shipped library.\n"
+        "12. If the vulnerable function is static/internal, call the public API "
+        "that reaches it (for example cJSON_Parse or cJSON_Print) instead of "
+        "duplicating its body.\n"
     )
 
     # Every interpolated field originates from the scanned tree or the
@@ -301,7 +309,98 @@ def _extract_code_block(response_text: str) -> str | None:
     return None
 
 
-def _validate_poc(code: str, finding_dict: dict) -> tuple[bool, str]:
+_CTRL_WORDS = {'if', 'while', 'for', 'switch', 'return', 'else', 'do', 'case',
+               'sizeof', 'and', 'or', 'not'}
+
+
+def _defines_function(code: str, name: str) -> bool:
+    """True when the PoC *defines* `name` (brace may sit on the next line).
+
+    A PoC that re-implements the vulnerable function and then calls it with
+    bad input always crashes and never proves anything about the shipped
+    library: the crash is inside the PoC's own copy. Observed on 10/10
+    DeepSeek drafts over cJSON (2026-10-21), so the shape is rejected instead
+    of being counted as usable.
+
+    Deliberately not a single regex: `if (print(x)) {` is a nested call that a
+    naive pattern reads as a definition. A definition needs a declarator
+    prefix, no `=` before the name, and the matching `)` followed by `{`.
+
+    A prefix may open with one *export macro* such as cJSON's
+    ``CJSON_PUBLIC(cJSON *)`` — that is how the library itself defines its
+    entry points, and rejecting it made the link-set resolver miss `cJSON.c`
+    when it looked for `cJSON_Parse`.
+    """
+    if not name or len(name) <= 3:
+        return False
+    clean = re.sub(r'/\*.*?\*/', ' ', code, flags=re.S)
+    clean = re.sub(r'//[^\n]*', ' ', clean)
+    lines = clean.split('\n')
+    pattern = re.compile(rf'\b{re.escape(name)}\s*\(')
+    export_macro = re.compile(r'^\s*[A-Za-z_]\w*\s*\([^()]*\)\s*(?:[A-Za-z_]\w*[\s\*]+)*$')
+    for index, line in enumerate(lines):
+        match = pattern.search(line)
+        if not match:
+            continue
+        prefix = line[:match.start()]
+        if '=' in prefix:
+            continue                      # assignment from a call
+        if '(' in prefix and not export_macro.match(prefix):
+            continue                      # nested call like `if (print(x))`
+        words = re.findall(r'[A-Za-z_]\w*', prefix)
+        if not words or words[0] in _CTRL_WORDS:
+            continue                      # `if (...)`, `while (...)`, ...
+        # walk forward to the matching ')' then require '{'
+        window = ' '.join(part.strip() for part in lines[index:index + 5])
+        start = window.index(match.group(0)) + len(match.group(0))
+        depth = 1
+        for offset in range(start, len(window)):
+            char = window[offset]
+            if char == '(':
+                depth += 1
+            elif char == ')':
+                depth -= 1
+                if depth == 0:
+                    tail = window[offset + 1:].lstrip()
+                    return tail.startswith('{')
+                continue
+            elif char == ';' and depth == 0:
+                return False
+        return False
+    return False
+
+
+# Rejection reasons a rewrite can plausibly fix (as opposed to a transport or
+# truncation failure, where asking again just burns tokens).
+_RETRYABLE_REJECTIONS = ('reimplements_target_function', 'target_function_',
+                         'no_main_function', 'no_includes', 'dangerous_api')
+
+
+def _project_headers(includes: str) -> set[str]:
+    """Header basenames quoted by the target file, e.g. {'cJSON.h'}.
+
+    A PoC that includes the project's own header is allowed to reach an
+    internal/static function through the public API, so the "the target name
+    must appear" rule is waived for it. Requiring the internal name — which
+    cannot be called from outside — is what pushed every draft into copying
+    the function body.
+    """
+    names = set()
+    for line in (includes or '').splitlines():
+        m = re.search(r'#\s*include\s*[<"]([^>"]+)[>"]', line)
+        if not m:
+            continue
+        name = m.group(1).strip()
+        base = name.rsplit('/', 1)[-1]
+        if base and not base.startswith('std') and base not in ('stdio.h', 'stdlib.h',
+                                                               'string.h', 'stdint.h',
+                                                               'stddef.h', 'stdbool.h'):
+            names.add(base)
+    return names
+
+
+def _validate_poc(code: str, finding_dict: dict,
+                  project_headers: set[str] | None = None) -> tuple[bool, str]:
     """Basic validation: does the PoC reference the right function/pattern,
     and does it stay inside the memory-safety triggering contract?"""
     if not code or len(code) < 25:
@@ -314,10 +413,20 @@ def _validate_poc(code: str, finding_dict: dict) -> tuple[bool, str]:
     if m:
         return False, f"dangerous_api ({m.group(0).strip()[:30]})"
     func = finding_dict.get('function', '')
+    generic = ('', 'main', 'test', 'process', 'init', 'handle')
+    uses_project_header = bool(project_headers) and any(
+        (f'"{h}"' in code or f'<{h}>' in code) for h in project_headers)
     if func and func not in code and len(func) > 3:
-        # Function name should appear (unless it's a very common name)
-        if func not in ('main', 'test', 'process', 'init', 'handle'):
+        # The target name must appear — unless the PoC includes the project's
+        # own header, in which case reaching it through the public API is the
+        # correct shape (an internal static function cannot be called directly).
+        if func not in generic and not uses_project_header:
             return False, f"target_function_{func}_not_referenced"
+    # Self-imitation guard: the target must be reached through the library,
+    # not redefined inside the PoC (a copied body makes the crash a tautology).
+    if func not in generic:
+        if _defines_function(code, func):
+            return False, f"reimplements_target_function ({func})"
     return True, "ok"
 
 
@@ -326,65 +435,179 @@ def generate_poc_llm(finding_dict: dict, source_root: Path, *,
                       model: str = 'glm-5.3',
                       base_url: str = 'https://api.z.ai/api/anthropic',
                       timeout: int = 60,
-                      max_tokens: int = 2048) -> dict:
+                      max_tokens: int = 2048,
+                      retries: int = 1,
+                      compile_hook=None,
+                      runtime_hook=None) -> dict:
     """Generate a compilable PoC for a single finding using LLM.
 
     Returns dict with: {code, validated, validation_note, model, sha256}
     On failure: {code: None, error: reason}
+
+    When the draft is rejected for a *structural* reason the rejection note is
+    fed back once and the model is asked to rewrite. Observed on cJSON
+    (2026-10-21): without the feedback turn every draft copied the target
+    function body into the PoC, which passes no evidence to the report.
+    `retries=0` restores the single-shot behaviour.
+
+    ``compile_hook(code, finding) -> (built, stderr)`` adds the third gate: the draft is
+    compiled against the real project and, when it does not build, the compiler
+    output is fed back for one rewrite. Drafts that never build end as
+    ``validated=False, validation_note='compile_failed'`` so they are not
+    written to disk as if they were usable.
+
+    ``runtime_hook(code, finding) -> (hit, note)`` adds the fourth gate. It runs
+    the draft against the real target and returns whether the crash landed on
+    the claimed frame, plus the observed frame as text. A draft that crashes
+    somewhere else is not evidence: on the UDMF case (2026-10-21) a guessed ABI
+    produced a real SIGSEGV inside SetDataParameters while the finding named the
+    tag conversion one line below. Such a draft gets one rewrite carrying the
+    observed frame, then ends as ``validation_note='wrong_site'``.
     """
     file = finding_dict.get('file', '')
     line = _safe_int(finding_dict.get('line', 0))
+    func = finding_dict.get('function', '')
 
     source_context = _extract_context(source_root, file, line)
     includes = _extract_includes(source_root, file)
     semantic_context = _extract_semantic_context(finding_dict)
-    messages = _build_prompt(finding_dict, source_context, includes,
-                             semantic_context=semantic_context)
+    headers = _project_headers(includes)
+    base_messages = _build_prompt(finding_dict, source_context, includes,
+                                  semantic_context=semantic_context)
+    messages = list(base_messages)
 
-    try:
-        # key resolution belongs inside the guard: a missing key is a
-        # per-item outcome, not a batch-killing exception (audit P2)
-        key = runtime_key(api_key)
-        result = chat_completion(
-            messages,
-            base_url=base_url, model=model,
-            timeout=timeout, max_tokens=max_tokens,
-            api_key=key, json_mode=False,
-        )
-    except (LlmTransportError, ValueError) as exc:
-        return {'code': None, 'error': str(exc), 'model': model}
+    attempts = 0
+    usage_total = {'prompt_tokens': 0, 'completion_tokens': 0, 'total_tokens': 0}
+    rejected = None
+    for attempt in range(max(0, retries) + 1):
+        attempts += 1
+        try:
+            # key resolution belongs inside the guard: a missing key is a
+            # per-item outcome, not a batch-killing exception (audit P2)
+            key = runtime_key(api_key)
+            result = chat_completion(
+                messages,
+                base_url=base_url, model=model,
+                timeout=timeout, max_tokens=max_tokens,
+                api_key=key, json_mode=False,
+            )
+        except (LlmTransportError, ValueError) as exc:
+            return {'code': None, 'error': str(exc), 'model': model,
+                    'attempts': attempts}
 
-    content = result.get('content', '')
-    if result.get('finish_reason') == 'length':
-        # cut-off code would still pass the structural checks and be
-        # written to disk flagged validated (audit P2)
-        return {'code': None, 'error': 'response_truncated (finish_reason=length)',
-                'raw_response_length': len(content), 'model': model}
-    code = _extract_code_block(content)
+        content = result.get('content', '')
+        if result.get('finish_reason') == 'length':
+            # cut-off code would still pass the structural checks and be
+            # written to disk flagged validated (audit P2)
+            return {'code': None, 'error': 'response_truncated (finish_reason=length)',
+                    'raw_response_length': len(content), 'model': model,
+                    'attempts': attempts}
+        code = _extract_code_block(content)
 
-    if code is None:
-        return {'code': None, 'error': 'no_code_block_in_response',
-                'raw_response_length': len(content), 'model': model}
+        if code is None:
+            return {'code': None, 'error': 'no_code_block_in_response',
+                    'raw_response_length': len(content), 'model': model,
+                    'attempts': attempts}
 
-    valid, note = _validate_poc(code, finding_dict)
+        for name in ('prompt_tokens', 'completion_tokens', 'total_tokens'):
+            value = (result.get('usage') or {}).get(name)
+            if isinstance(value, int):
+                usage_total[name] += value
 
-    return {
-        'code': code,
-        'validated': valid,
-        'validation_note': note,
-        'model': result.get('reported_model', model),
-        'requested_model': model,
-        'sha256': hashlib.sha256(code.encode('utf-8')).hexdigest(),
-        'request_sha256': result.get('request_sha256', ''),
-        'response_sha256': result.get('response_sha256', ''),
-        'usage': result.get('usage', {}),
-    }
+        valid, note = _validate_poc(code, finding_dict, project_headers=headers)
+        outcome = {
+            'code': code,
+            'validated': valid,
+            'validation_note': note,
+            'model': result.get('reported_model', model),
+            'requested_model': model,
+            'sha256': hashlib.sha256(code.encode('utf-8')).hexdigest(),
+            'request_sha256': result.get('request_sha256', ''),
+            'response_sha256': result.get('response_sha256', ''),
+            'usage': usage_total if attempt else result.get('usage', {}),
+            'attempts': attempts,
+        }
+        compile_error = ''
+        if valid and compile_hook is not None:
+            # Third gate: the draft must actually build against the project.
+            # A hook crash must never turn into a draft failure, so a broken
+            # hook is treated as "could not check" rather than "does not build".
+            try:
+                built, compile_error = compile_hook(code, finding_dict)
+            except Exception as exc:  # noqa: BLE001 — verification must not kill the batch
+                built, compile_error = True, f'{type(exc).__name__}: {exc}'
+            outcome['compiled'] = built
+            outcome['compile_error'] = '' if built else (compile_error or '')[-800:]
+            if not built:
+                valid = False
+                outcome['validated'] = False
+                outcome['validation_note'] = 'compile_failed'
+        runtime_note = ''
+        if valid and runtime_hook is not None:
+            # Fourth gate: a crash is not evidence until it lands on the frame
+            # the finding names. A hook crash means "could not check", which
+            # must not be read as "draft is wrong".
+            try:
+                landed, runtime_note = runtime_hook(code, finding_dict)
+            except Exception as exc:  # noqa: BLE001 — verification must not kill the batch
+                landed, runtime_note = True, f'{type(exc).__name__}: {exc}'
+            outcome['runtime_ok'] = landed
+            if not landed:
+                valid = False
+                outcome['validated'] = False
+                outcome['validation_note'] = 'wrong_site'
+                outcome['runtime_note'] = runtime_note
+        if valid:
+            return outcome
+        rejected = outcome
+        if outcome.get('runtime_ok') is False:
+            retryable = True
+            feedback = (
+                "The previous draft built and ran against the real library, but "
+                "the crash did not land on the function the finding names.\n"
+                f"{runtime_note[-700:]}\n"
+                "Fix the cause: the C ABI layout of every struct you declare, the "
+                "order of the calls, and the field you pass NULL in. Use the exact "
+                "struct definitions from the project headers if they were given. "
+                "Keep loading the library at runtime and calling the exported "
+                "symbol; do not copy the target implementation. Return one C code "
+                "block.")
+        elif compile_error and not outcome.get('compiled', True):
+            retryable = True
+            feedback = (
+                "The previous draft did not compile against the real project:\n"
+                f"{compile_error[-700:]}\n"
+                "Fix exactly what the compiler reports (missing #include, wrong "
+                "prototype, undeclared symbol). Keep the real project header and "
+                "the library call; do not copy the target function. Return one "
+                "C code block.")
+        else:
+            retryable = any(note.startswith(prefix) for prefix in _RETRYABLE_REJECTIONS)
+            target = func or 'the vulnerable function'
+            feedback = (
+                f"The previous draft was rejected by the local validator: {note}.\n"
+                f"Rewrite it. It must #include the real project header"
+                + (f" ({', '.join(sorted(headers))})" if headers else "")
+                + f" and reach {target}() through the library itself; do not "
+                f"define, copy or shadow {target}() anywhere in the PoC. "
+                f"Return one C code block.")
+        if not retryable:
+            return outcome
+        if attempt >= max(0, retries):
+            return outcome
+        # Feedback turn: rejection reason or compiler output only —
+        # no new evidence, no new rules.
+        messages = list(base_messages) + [{'role': 'user', 'content': feedback}]
+    return rejected or {'code': None, 'error': 'no_attempt', 'model': model}
 
 
 def batch_generate(findings: list[dict], source_root: Path, output_dir: Path, *,
                    api_key: str | None = None,
                    model: str = 'glm-5.3',
-                   max_items: int = MAX_FINDINGS_PER_BATCH) -> list[dict]:
+                   base_url: str | None = None,
+                   max_items: int = MAX_FINDINGS_PER_BATCH,
+                   compile_hook=None,
+                   runtime_hook=None) -> list[dict]:
     """Generate PoCs for multiple findings, saving to output_dir.
 
     One malformed finding or transport error must not lose the batch:
@@ -401,13 +624,20 @@ def batch_generate(findings: list[dict], source_root: Path, output_dir: Path, *,
             else:
                 finding_id = f'invalid_item_{i}'
             try:
-                result = generate_poc_llm(f, source_root, api_key=api_key, model=model)
+                extra = {'base_url': base_url} if base_url else {}
+                if compile_hook is not None:
+                    extra['compile_hook'] = compile_hook
+                if runtime_hook is not None:
+                    extra['runtime_hook'] = runtime_hook
+                result = generate_poc_llm(f, source_root, api_key=api_key,
+                                          model=model, **extra)
             except Exception as exc:  # noqa: BLE001 — batch must survive
                 result = {'code': None, 'error': f'{type(exc).__name__}: {exc}',
                           'model': model}
 
             # Save PoC to file only when it passed validation
-            if result.get('code') and result.get('validated'):
+            built = result.get('compiled', True)
+            if result.get('code') and result.get('validated') and built:
                 # hash suffix: two finding_ids sharing the first 40
                 # sanitized characters used to overwrite each other
                 digest = hashlib.sha256(finding_id.encode('utf-8')).hexdigest()[:8]
@@ -452,9 +682,19 @@ def main():
                         help='Root of the source tree')
     parser.add_argument('--output', type=Path, default=Path('llm_pocs'))
     parser.add_argument('--model', default='glm-5.3')
+    parser.add_argument('--base-url', default=None,
+                        help='Allowlisted LLM base URL; defaults to the GLM Anthropic endpoint')
     parser.add_argument('--max', type=int, default=MAX_FINDINGS_PER_BATCH)
     parser.add_argument('--min-confidence', type=int, default=70,
                         help='Only generate PoC for findings >= this confidence')
+    parser.add_argument('--verify', action='store_true',
+                        help='compile every draft against the project and feed '
+                             'compiler errors back for one rewrite')
+    parser.add_argument('--link', action='append', default=[],
+                        help='source file relative to the source root to link '
+                             'during --verify (repeatable)')
+    parser.add_argument('--include-dir', action='append', default=[],
+                        help='extra include directory for --verify')
     args = parser.parse_args()
 
     data = json.loads(args.findings_json.read_text(encoding='utf-8'))
@@ -464,17 +704,43 @@ def main():
     print(f"Generating LLM PoCs for {len(findings)} findings "
           f"(confidence >= {args.min_confidence}, model={args.model})")
 
-    key = os.environ.get('OSLOVELACE_API_KEY')
+    # The key is read from the environment at runtime only; nothing is stored.
+    key = os.environ.get('DEEPSEEK_API_KEY') or os.environ.get('OSLOVELACE_API_KEY')
     if not key:
-        print("ERROR: OSLOVELACE_API_KEY not set")
+        print("ERROR: DEEPSEEK_API_KEY / OSLOVELACE_API_KEY not set")
         return 1
 
+    hook = None
+    if args.verify:
+        from .poc_verify import compile_source, resolve_link_sources
+        work = args.output / '_compile_check'
+        links = [args.source_root / item for item in args.link]
+
+        def hook(code, finding):  # noqa: F811 — closure over CLI args
+            if links:
+                return compile_source(code, work, link_sources=links,
+                                      include_dirs=[args.source_root, *args.include_dir])
+            # No --link given: let the linker name the missing objects.
+            work.mkdir(parents=True, exist_ok=True)
+            draft = work / 'draft.c'
+            draft.write_text(code, encoding='utf-8')
+            built, error, _used = resolve_link_sources(
+                draft, args.source_root, include_dirs=[*args.include_dir],
+                finding_file=finding.get('file'))
+            return built, error
+
     results = batch_generate(findings, args.source_root, args.output,
-                              api_key=key, model=args.model, max_items=args.max)
+                              api_key=key, model=args.model,
+                              base_url=args.base_url, max_items=args.max,
+                              compile_hook=hook)
 
     generated = sum(1 for r in results if r.get('code'))
     validated = sum(1 for r in results if r.get('validated'))
     print(f"Generated: {generated}/{len(results)}, Validated: {validated}/{len(results)}")
+    if args.verify:
+        built = sum(1 for r in results if r.get('compiled'))
+        rewritten = sum(1 for r in results if (r.get('attempts') or 1) > 1)
+        print(f"Compiled: {built}/{len(results)}, rewritten after feedback: {rewritten}")
     print(f"Output: {args.output}")
 
     for r in results:

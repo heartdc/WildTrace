@@ -31,9 +31,12 @@
 | 0（对照） | 合法 head 指针, size=1 | 返回错误码 `11101001`（FFI 层参数校验生效，**不崩溃**） |
 | 1（候选） | `head=NULL, size=1` | **SIGSEGV** |
 
-- 崩溃帧归属：gdb 两轮复现（ASLR 地址不同），rip 经 /proc/maps 映射在
-  `libcj_hiappevent_ffi.z.so` 内（file_offset `0x11c9a`），不在 musl 运行库、
-  不在 hilog。
+- 崩溃帧归属：gdb 复现，rip 经 /proc/maps 映射在 `libcj_hiappevent_ffi.z.so` 内
+  （file_offset `0xdc9a`），不在 musl 运行库、不在 hilog。
+- 更正（2026-10-21）：早期记录的 `0x11c9a` 无法由本页所引证据包复算——包内
+  `gdb-full.txt` 仅一次 SIGSEGV，`$rip=0x7ffff554dc9a`，库 r-xp 段
+  `0x7ffff5548000`+`0x8000` → `0xdc9a`；包内亦无第二轮 gdb，因此原文「两轮复现
+  （ASLR 地址不同）」缺少记录支持，已改为单轮归因。
 - **源码级定位**：`base/hiviewdfx/hiappevent/frameworks/cj/ffi/src/hiappevent_ffi.cpp:372-385`——
   `for (int i = 0; i < watcher.appEventFilters.size; i++)` 循环直接
   `watcher.appEventFilters.head[i]` 解引用，**无 head 判空**。与 Tier C 链路追踪

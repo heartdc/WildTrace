@@ -135,5 +135,237 @@ class GeneratePocTests(unittest.TestCase):
                 self.assertIsNotNone(result.get('error'))
 
 
+class SelfImitationGuardTests(unittest.TestCase):
+    """A PoC that copies the target function always crashes and proves nothing
+    about the shipped library: cJSON/DeepSeek produced 10/10 of those
+    (2026-10-21), so the shape is rejected and the header route is allowed."""
+
+    def test_real_api_poc_accepted_via_project_header(self):
+        code = ('#include "cJSON.h"\n#include <stdio.h>\n'
+                'int main(void){ cJSON *j = cJSON_Parse("{}"); return j ? 0 : 1; }')
+        ok, note = _validate_poc(code, {'function': 'parse_string'},
+                                 project_headers={'cJSON.h'})
+        self.assertTrue(ok, note)
+
+    def test_copied_target_rejected_even_with_header(self):
+        code = ('#include "cJSON.h"\n#include <stdio.h>\n'
+                'static int parse_string(void *b, void *i, int *o){ return 0; }\n'
+                'int main(void){ return parse_string(0, 0, 0); }')
+        ok, note = _validate_poc(code, {'function': 'parse_string'},
+                                 project_headers={'cJSON.h'})
+        self.assertFalse(ok)
+        self.assertIn('reimplements_target_function', note)
+
+    def test_internal_name_still_required_without_header(self):
+        code = ('#include <stdio.h>\n'
+                'int main(void){ cJSON *j = 0; return j ? 0 : 1; }')
+        ok, note = _validate_poc(code, {'function': 'parse_string'})
+        self.assertFalse(ok)
+        self.assertIn('not_referenced', note)
+
+
+class RetryOnRejectTests(unittest.TestCase):
+    def _resp(self, code):
+        return {'content': '```c\n' + code + '\n```', 'reported_model': 'deepseek-chat',
+                'usage': {'prompt_tokens': 10, 'completion_tokens': 5, 'total_tokens': 15},
+                'request_sha256': 'a', 'response_sha256': 'b'}
+
+    def test_rejected_draft_is_rewritten_once(self):
+        copied = ('#include <stdio.h>\n'
+                  'static int parse_string(void *b, void *i, int *o){ return 0; }\n'
+                  'int main(void){ return parse_string(0, 0, 0); }')
+        real = ('#include "cJSON.h"\n#include <stdio.h>\n'
+                'int main(void){ cJSON *j = cJSON_Parse("{}"); return j ? 0 : 1; }')
+        calls = []
+
+        def fake(messages, **kwargs):
+            calls.append(messages)
+            return self._resp(copied if len(calls) == 1 else real)
+
+        finding = {'file': 'cJSON.c', 'line': 10, 'function': 'parse_string',
+                   'pattern': 'P6_null_deref'}
+        with patch('ohvul.llm_poc.chat_completion', side_effect=fake), \
+             patch('ohvul.llm_poc.runtime_key', return_value='k'), \
+             patch('ohvul.llm_poc._extract_includes',
+                   return_value='#include "cJSON.h"'):
+            result = generate_poc_llm(finding, Path('.'), retries=1)
+        self.assertTrue(result['validated'], result.get('validation_note'))
+        self.assertEqual(result['attempts'], 2)
+        self.assertEqual(len(calls), 2)
+        self.assertIn('rejected', calls[1][-1]['content'])
+        self.assertIn('parse_string', calls[1][-1]['content'])
+
+    def test_no_retry_when_first_draft_passes(self):
+        real = ('#include "cJSON.h"\n#include <stdio.h>\n'
+                'int main(void){ cJSON *j = cJSON_Parse("{}"); return j ? 0 : 1; }')
+        with patch('ohvul.llm_poc.chat_completion',
+                   return_value=self._resp(real)) as mocked, \
+             patch('ohvul.llm_poc.runtime_key', return_value='k'), \
+             patch('ohvul.llm_poc._extract_includes',
+                   return_value='#include "cJSON.h"'):
+            result = generate_poc_llm({'file': 'cJSON.c', 'line': 1,
+                                        'function': 'parse_string'}, Path('.'))
+        self.assertTrue(result['validated'])
+        self.assertEqual(mocked.call_count, 1)
+        self.assertEqual(result['attempts'], 1)
+
+    def test_transport_error_is_not_retried(self):
+        with patch('ohvul.llm_poc.chat_completion',
+                   side_effect=ValueError('http_status_401')) as mocked, \
+             patch('ohvul.llm_poc.runtime_key', return_value='k'):
+            result = generate_poc_llm({'file': 'cJSON.c', 'line': 1,
+                                        'function': 'parse_string'}, Path('.'),
+                                       retries=2)
+        self.assertIsNone(result.get('code'))
+        self.assertEqual(mocked.call_count, 1)
+
+
+class CompileFeedbackTests(unittest.TestCase):
+    """Third gate: the draft must build against the real project. Compiler
+    output goes back to the model once, because a missing #include is a
+    one-line rewrite, not a reason to throw the draft away."""
+
+    REAL = ('#include "cJSON.h"\n#include <stdio.h>\n'
+            'int main(void){ cJSON *j = cJSON_Parse("{}"); return j ? 0 : 1; }')
+
+    def _resp(self, code):
+        return {'content': '```c\n' + code + '\n```', 'reported_model': 'deepseek-chat',
+                'usage': {'prompt_tokens': 10, 'completion_tokens': 5, 'total_tokens': 15},
+                'request_sha256': 'a', 'response_sha256': 'b'}
+
+    def _finding(self):
+        return {'file': 'cJSON.c', 'line': 10, 'function': 'parse_string',
+                'pattern': 'P6_null_deref'}
+
+    def test_compile_error_is_fed_back_once(self):
+        broken = self.REAL.replace('#include <stdio.h>\n', '')
+        calls, messages = [], []
+
+        def fake(messages_in, **kwargs):
+            calls.append(1)
+            messages.append(messages_in)
+            return self._resp(broken if len(calls) == 1 else self.REAL)
+
+        def hook(code, finding):
+            return ('stdio' in code), "error: implicit declaration of 'printf'"
+
+        with patch('ohvul.llm_poc.chat_completion', side_effect=fake), \
+             patch('ohvul.llm_poc.runtime_key', return_value='k'), \
+             patch('ohvul.llm_poc._extract_includes',
+                   return_value='#include "cJSON.h"'):
+            result = generate_poc_llm(self._finding(), Path('.'), retries=1,
+                                      compile_hook=hook)
+        self.assertTrue(result['validated'], result.get('validation_note'))
+        self.assertTrue(result.get('compiled'))
+        self.assertEqual(result['attempts'], 2)
+        self.assertIn('did not compile', messages[1][-1]['content'])
+        self.assertIn('implicit declaration', messages[1][-1]['content'])
+
+    def test_wrong_site_frame_is_fed_back_once(self):
+        """UDMF 2026-10-21: the first draft crashed inside SetDataParameters
+        while the finding named the tag conversion, so "it crashed" was not
+        evidence. The observed frame goes back to the model once."""
+        calls, messages = [], []
+        frames = [('OHOS::UDMF::SetDataParameters', 'unified_data_parameter_parse.cpp:0'),
+                  ('FfiUDMFSetProperties', 'unified_data_ffi.cpp:134')]
+
+        def fake(messages_in, **kwargs):
+            calls.append(1)
+            messages.append(messages_in)
+            return self._resp(self.REAL)
+
+        def hook(code, finding):
+            frame = frames[min(len(calls), 2) - 1]
+            landed = 'FfiUDMFSetProperties' in frame[0]
+            return landed, 'observed frame: %s (%s)' % frame
+
+        with patch('ohvul.llm_poc.chat_completion', side_effect=fake), \
+             patch('ohvul.llm_poc.runtime_key', return_value='k'), \
+             patch('ohvul.llm_poc._extract_includes',
+                   return_value='#include "cJSON.h"'):
+            result = generate_poc_llm(self._finding(), Path('.'), retries=1,
+                                      runtime_hook=hook)
+        self.assertTrue(result['validated'], result.get('validation_note'))
+        self.assertTrue(result.get('runtime_ok'))
+        self.assertEqual(result['attempts'], 2)
+        self.assertIn('did not land on the function', messages[1][-1]['content'])
+        self.assertIn('SetDataParameters', messages[1][-1]['content'])
+
+    def test_draft_that_never_lands_is_marked_wrong_site(self):
+        def hook(code, finding):
+            return False, 'observed frame: SetDataParameters'
+
+        with patch('ohvul.llm_poc.chat_completion',
+                   return_value=self._resp(self.REAL)), \
+             patch('ohvul.llm_poc.runtime_key', return_value='k'), \
+             patch('ohvul.llm_poc._extract_includes',
+                   return_value='#include "cJSON.h"'):
+            result = generate_poc_llm(self._finding(), Path('.'), retries=0,
+                                      runtime_hook=hook)
+        self.assertFalse(result['validated'])
+        self.assertEqual(result['validation_note'], 'wrong_site')
+        self.assertIn('SetDataParameters', result['runtime_note'])
+
+    def test_runtime_hook_crash_does_not_condemn_the_draft(self):
+        def hook(code, finding):
+            raise RuntimeError('gdb unavailable')
+
+        with patch('ohvul.llm_poc.chat_completion',
+                   return_value=self._resp(self.REAL)), \
+             patch('ohvul.llm_poc.runtime_key', return_value='k'), \
+             patch('ohvul.llm_poc._extract_includes',
+                   return_value='#include "cJSON.h"'):
+            result = generate_poc_llm(self._finding(), Path('.'), runtime_hook=hook)
+        self.assertTrue(result['validated'])
+        self.assertTrue(result.get('runtime_ok'))
+
+    def test_unbuilt_draft_is_not_validated(self):
+        def hook(code, finding):
+            return False, "error: unknown type name 'cJSON'"
+
+        with patch('ohvul.llm_poc.chat_completion',
+                   return_value=self._resp(self.REAL)), \
+             patch('ohvul.llm_poc.runtime_key', return_value='k'), \
+             patch('ohvul.llm_poc._extract_includes',
+                   return_value='#include "cJSON.h"'):
+            result = generate_poc_llm(self._finding(), Path('.'), retries=0,
+                                      compile_hook=hook)
+        self.assertFalse(result['validated'])
+        self.assertEqual(result['validation_note'], 'compile_failed')
+        self.assertIn('unknown type name', result['compile_error'])
+
+    def test_hook_crash_does_not_condemn_the_draft(self):
+        def hook(code, finding):
+            raise RuntimeError('compiler disappeared')
+
+        with patch('ohvul.llm_poc.chat_completion',
+                   return_value=self._resp(self.REAL)), \
+             patch('ohvul.llm_poc.runtime_key', return_value='k'), \
+             patch('ohvul.llm_poc._extract_includes',
+                   return_value='#include "cJSON.h"'):
+            result = generate_poc_llm(self._finding(), Path('.'), compile_hook=hook)
+        self.assertTrue(result['validated'])
+        self.assertTrue(result.get('compiled'))
+
+    def test_unbuilt_draft_is_not_written_to_disk(self):
+        import tempfile, json as _json
+        with tempfile.TemporaryDirectory() as d:
+            root, out = Path(d), Path(d) / 'out'
+            (root / 'cJSON.c').write_text('int f(void){return 0;}\n', encoding='utf-8')
+            with patch('ohvul.llm_poc.chat_completion',
+                       return_value=self._resp(self.REAL)), \
+                 patch('ohvul.llm_poc.runtime_key', return_value='k'), \
+                 patch('ohvul.llm_poc._extract_includes',
+                       return_value='#include "cJSON.h"'):
+                results = batch_generate(
+                    [{'finding_id': 'x1', 'file': 'cJSON.c', 'line': 1,
+                      'function': 'parse_string'}], root, out,
+                    compile_hook=lambda code, finding: (False, 'error: boom'))
+            self.assertFalse(list(out.glob('llm_poc_*.c')))
+            self.assertIn('not_written_reason', results[0])
+            summary = _json.loads((out / 'llm_poc_summary.json').read_text(encoding='utf-8'))
+            self.assertEqual(summary['validated'], 0)
+
+
 if __name__ == "__main__":
     unittest.main()

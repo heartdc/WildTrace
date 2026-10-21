@@ -2650,7 +2650,7 @@ int main(int argc, char **argv)
 ```
 
 **PoC 使用方法**：
-真库运行级：libcj_hiappevent_ffi.z.so（官方完整树构建，sha256 bf8aa65e...f6636a，BuildID 252096ef）dlopen 驱动 poc_hiappevent_watcher.c：case0 对照（合法 head, size=1）→ 错误码 11101001 不崩溃；case1（head=NULL, size=1）→ SIGSEGV（退出码 139）；两轮 ASLR gdb 复现 rip 落库内 file_offset 0x11c9a。完整记录 hiappevent-evidence-20261003.zip（sha256 a8ae123d...13c7a6）。
+真库运行级：libcj_hiappevent_ffi.z.so（官方完整树构建，sha256 bf8aa65e...f6636a，BuildID 252096ef）dlopen 驱动 poc_hiappevent_watcher.c：case0 对照（合法 head, size=1）→ 错误码 11101001 不崩溃；case1（head=NULL, size=1）→ SIGSEGV（退出码 139）；gdb 复现 rip 落库内 file_offset 0xdc9a。更正（2026-10-21）：早期记录的 0x11c9a 无法由归档证据包 hiappevent-evidence-20261003.zip 内的 gdb-full.txt 复算——该包仅一次 SIGSEGV，$rip=0x7ffff554dc9a，库 r-xp 段 0x7ffff5548000（段内文件偏移 0x8000）→ file_offset 0xdc9a；包内亦无第二轮 gdb 记录，故「两轮 ASLR」一说无记录支持。完整记录 hiappevent-evidence-20261003.zip（sha256 a8ae123d...13c7a6）。
 
 ### 4. 影响分析
 

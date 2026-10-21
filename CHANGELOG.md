@@ -171,7 +171,7 @@ dsoftbus 扫描误报审计（2026-10-08）的三项修复落地，全部带回�
 
 - 合并 AerGap 两项成果（官方完整树真库验证批次，构建阻塞已解除——根因 git-lfs 缺失）：
   - **PR #97 hiappevent 真库级证实**：官方完整树（471+ 项目、官方构建链、零 FFI 源码改动）构建的
-    `libcj_hiappevent_ffi.z.so` 上，对照不崩 / 候选（filters.head=NULL+size=1）SIGSEGV，崩溃帧归属库内 0x11c9a。
+    `libcj_hiappevent_ffi.z.so` 上，对照不崩 / 候选（filters.head=NULL+size=1）SIGSEGV，崩溃帧归属库内 0xdc9a（原记 0x11c9a，2026-10-21 按归档证据包复算更正）。
     建 `cases/hiappevent_ffi_watcher_null_filter/`（真库级口径，CWE-476，新发现）；
   - **PR #98 account 真库级证伪**：四组 malformed 全被 FFI 层参数检查拦截，Tier B 预测不成立，诚实关闭入档。
 - `impact_matrix` 组件映射补 `base/` 前缀（hiappevent 判 oh_native；测试钉死）。交付件重生成：19 案 × 6 分支 =
