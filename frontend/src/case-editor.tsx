@@ -12,6 +12,7 @@ import {
   message,
 } from "antd";
 import { Download, FilePlus2, Link, Upload } from "lucide-react";
+import { CheckList, KeyValue, RawJson, EmptyState } from "./ui";
 import {
   api,
   post,
@@ -43,6 +44,7 @@ export function CandidateCaseActions({
         author: authorDefault,
       });
       route("cases", { case: c.id });
+      message.success("案例已创建");
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -75,6 +77,7 @@ export function CandidateCaseActions({
         从候选创建案例
       </Button>
       <Select
+        loading={cases.loading}
         showSearch
         optionFilterProp="label"
         allowClear
@@ -272,6 +275,7 @@ export function CaseEditor({ item, after }: { item: Row; after: () => void }) {
               <>
                 <label>源码项目</label>
                 <Select
+                  loading={projects.loading}
                   style={{ width: "100%" }}
                   value={pid}
                   placeholder="选择固定提交的项目"
@@ -351,6 +355,7 @@ export function CaseEditor({ item, after }: { item: Row; after: () => void }) {
               <>
                 <label>仓库已有材料</label>
                 <Select
+                  loading={inventory.loading}
                   style={{ width: "100%", marginBottom: 14 }}
                   placeholder="选择已有文档或程序，再确认类别并保存"
                   showSearch
@@ -421,6 +426,7 @@ export function CaseEditor({ item, after }: { item: Row; after: () => void }) {
                   rowKey={(_, i) => String(i)}
                   pagination={false}
                   dataSource={item.material_checks || []}
+                  locale={{ emptyText: <EmptyState title="暂无材料附件" /> }}
                   columns={[
                     { title: "材料", dataIndex: "name" },
                     {
@@ -454,6 +460,7 @@ export function CaseEditor({ item, after }: { item: Row; after: () => void }) {
               <>
                 <label>关联扫描、模型或运行任务</label>
                 <Select
+                  loading={tasks.loading}
                   mode="multiple"
                   style={{ width: "100%" }}
                   value={taskIds}
@@ -479,9 +486,13 @@ export function CaseEditor({ item, after }: { item: Row; after: () => void }) {
                   保存任务关联
                 </Button>
                 <Table<Row>
+                  loading={tasks.loading}
                   rowKey={(r) => r.kind + r.id}
                   pagination={false}
                   dataSource={item.links || []}
+                  locale={{
+                    emptyText: <EmptyState title="尚未关联任务或候选" />,
+                  }}
                   columns={[
                     { title: "类型", render: (_, r) => r.task_kind || r.kind },
                     {
@@ -533,6 +544,9 @@ export function CaseEditor({ item, after }: { item: Row; after: () => void }) {
                   size="small"
                   rowKey="revision"
                   dataSource={[...(item.versions || [])].reverse()}
+                  locale={{
+                    emptyText: <EmptyState title="暂无本地编辑版本" />,
+                  }}
                   columns={[
                     {
                       title: "版本",
@@ -570,7 +584,11 @@ export function CaseEditor({ item, after }: { item: Row; after: () => void }) {
                                 case_ids: [item.id],
                                 revisions: { [item.id]: v.revision },
                                 format: "zip",
-                              }).catch((e) => setError(e.message))
+                              })
+                                .then(() =>
+                                  message.success("本版本证据附件包已导出"),
+                                )
+                                .catch((e) => setError(e.message))
                             }
                           >
                             导出本版本
@@ -583,17 +601,28 @@ export function CaseEditor({ item, after }: { item: Row; after: () => void }) {
                 {historic && (
                   <>
                     <Tag>历史版本 v{historic.revision} · 只读</Tag>
-                    <pre>
-                      {JSON.stringify(
-                        {
-                          fields: historic.fields,
-                          missing: historic.missing,
-                          links: historic.links,
-                        },
-                        null,
-                        2,
+                    <KeyValue
+                      items={Object.entries(historic.fields || {}).map(
+                        ([key, value]) => ({
+                          label: editable.find(([k]) => k === key)?.[1] || key,
+                          value: String(value),
+                        }),
                       )}
-                    </pre>
+                    />
+                    <CheckList
+                      items={(historic.missing || []).map((label: string) => ({
+                        label,
+                        status: false,
+                        detail: "该版本材料缺项",
+                      }))}
+                    />
+                    <RawJson
+                      value={{
+                        fields: historic.fields,
+                        missing: historic.missing,
+                        links: historic.links,
+                      }}
+                    />
                   </>
                 )}
               </>

@@ -12,6 +12,7 @@ import {
 } from "antd";
 import { FolderOpen, Plus, Play, RefreshCw } from "lucide-react";
 import { api, post, useApi, route, ErrorBox, type Row } from "./client";
+import { EmptyState, PreflightDetails } from "./ui";
 
 const initial = {
   name: "",
@@ -69,16 +70,17 @@ export function Projects() {
     }
   }
   async function preflight(p: Row) {
-    setBusy(true);
+    setBusyId(p.id);
     try {
       setProbe(await post(`/api/projects/${p.id}/preflight`, {}));
       projects.reload();
     } catch (e: any) {
       setError(e.message);
     } finally {
-      setBusy(false);
+      setBusyId(undefined);
     }
   }
+  const [busyId, setBusyId] = useState<string>();
   return (
     <>
       <div className="toolbar">
@@ -100,6 +102,15 @@ export function Projects() {
       <ErrorBox error={error || projects.error} />
       <div className="panel">
         <Table<Row>
+          loading={projects.loading}
+          locale={{
+            emptyText: (
+              <EmptyState
+                title="暂无源码项目"
+                detail="登记源码目录后，可在这里检查环境并发起扫描。"
+              />
+            ),
+          }}
           rowKey="id"
           dataSource={projects.value}
           columns={[
@@ -145,7 +156,8 @@ export function Projects() {
                   </Button>
                   <Button
                     size="small"
-                    loading={busy}
+                    loading={busyId === p.id}
+                    disabled={!!busyId && busyId !== p.id}
                     icon={<RefreshCw size={12} />}
                     onClick={() => preflight(p)}
                   >
@@ -285,6 +297,10 @@ export function Projects() {
               <Alert type="warning" title="仅显示前 500 项" />
             )}
             <Table<Row>
+              loading={busy}
+              locale={{
+                emptyText: <EmptyState title="当前目录没有可选择的子项" />,
+              }}
               rowKey="path"
               pagination={{ pageSize: 8 }}
               dataSource={browser.entries}
@@ -332,7 +348,7 @@ export function Projects() {
               type={probe.ready ? "success" : "error"}
               title={probe.ready ? "目录和提交检查通过" : "检查未通过"}
             />
-            <pre>{JSON.stringify(probe, null, 2)}</pre>
+            <PreflightDetails data={probe} />
           </>
         )}
       </Modal>
