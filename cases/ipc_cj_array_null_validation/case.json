@@ -3,6 +3,7 @@
   "case_id": "ipc-cj-array-null-validation",
   "component": "foundation/communication/ipc/interfaces/innerkits/cj",
   "status": "real_library_reproduction_confirmed",
+  "new_discovery": true,
   "cwe_candidate": [
     "CWE-476"
   ],
@@ -24,7 +25,7 @@
       "date": "2026-09-28",
       "library": "libcj_ipc_ffi.z.so 隔离构建 x86_64（IPC HEAD edc6f3ab，CJ 绑定与原仓 diff -qr 一致）",
       "result": "对照组 data=NULL len=0 正常返回 write_error=0；候选组 data=NULL len=1 立即 SIGSEGV（run.exit=139）",
-      "frame_attribution": "两次 ASLR 不同 gdb 复现，rip 映射落在 libcj_ipc_ffi.z.so 内 file_offset 0x1ed9b，非补丁运行库/非 hilog 层",
+      "frame_attribution": "两次 ASLR 不同 gdb 复现，rip 映射落在 libcj_ipc_ffi.z.so 内 file_offset 0x218c4（2026-10-21 按 out/x86_64_virt 库复算；早期隔离构建记录为 0x1ed9b），非补丁运行库/非 hilog 层",
       "record": "docs/analysis/IPC_KV_REAL_LIBRARY_VALIDATION_20260928.md（PR #65）",
       "evidence_zip_sha256": "b7af2df0…（四轮 evidence + args.gn + MANIFEST）"
     },
@@ -61,7 +62,7 @@
     "l4_evidence": "L4 链路（L4_TIER_A/B + REAL_BUILD_PROBE_20260925）：FFI 导出入口 FfiOHOSIPCWriteByteArray(const CJByteArray* array) 直传 CArray 指针，无 head/size 校验；调用链进入 IPC 序列化前对 array->head 解引用遍历（head==NULL 即空指针解引用）。真库级证实（2026-09-28）：隔离构建 libcj_ipc_ffi.z.so 正常导出符号路径下，len=0/空数组输入触发 SIGSEGV（run.exit=139，崩溃帧归属 libcj_ipc_ffi.z.so）；正常字节对照组通过。基础运行库带补丁、非完整产品服务环境（隔离构建口径红线三条如实声明）。"
   },
   "fix_recommendation": "建议 WriteByteArray 的 CJ FFI 入口对（数组指针, 长度）组合校验：length>0 时数组指针判空并返回参数校验错误码，与同文件其他 FFI 转换的既有检查口径对齐（真库级 SIGSEGV 证据：工单 OHSA26-092953990）。",
-  "reproduction_commands": "真库运行级：libcj_ipc_ffi.z.so 隔离构建 x86_64（IPC HEAD edc6f3ab，CJ 绑定与原仓 diff -qr 一致）dlopen 驱动 ipc_null_bytearray.c：对照（data=NULL len=0）→ write_error=0 正常返回；候选（data=NULL len=1）→ 立即 SIGSEGV（run.exit=139）；两次 ASLR gdb 复现 rip 落库内 file_offset 0x1ed9b。记录 docs/analysis/IPC_KV_REAL_LIBRARY_VALIDATION_20260928.md（PR #65）。",
+  "reproduction_commands": "真库运行级：libcj_ipc_ffi.z.so 隔离构建 x86_64（IPC HEAD edc6f3ab，CJ 绑定与原仓 diff -qr 一致）dlopen 驱动 ipc_null_bytearray.c：对照（data=NULL len=0）→ write_error=0 正常返回；候选（data=NULL len=1）→ 立即 SIGSEGV（run.exit=139）；两次 ASLR gdb 复现 rip 落库内 file_offset 0x218c4（2026-10-21 复算；早期隔离构建记录为 0x1ed9b）。记录 docs/analysis/IPC_KV_REAL_LIBRARY_VALIDATION_20260928.md（PR #65）。",
   "branch_evidence": {
     "master": {
       "verdict": "affected",

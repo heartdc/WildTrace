@@ -53,14 +53,14 @@ WildTrace 是一套**本地、离线优先、证据可审计**的 OpenHarmony C/
 | **跨函数 UAF/双重释放（§3.8.2）** | ✅ 已实现 | 位置别名 + 局部变量追踪 + (callee,var) 去重；专项测试 20+ 项 |
 | **Joern CPG 深度分析（§3.8.3）** | ✅ 已实现（--joern 选配） | WSL /opt/joern 实测 dsoftbus；异常安全降级 |
 | **LLM PoC 生成器（§3.9）** | ✅ 已实现并加固 | 路径包含/注入防御/输出屏蔽 16 项安全测试 |
-| **版本分支影响矩阵 + kb 联接（§3.10）** | ✅ 已实现 | 18 案 × 6 分支 = 88 证实 / 6 证实不受影响 / 14 待定（全部可复算） |
+| **版本分支影响矩阵 + kb 联接（§3.10）** | ✅ 已实现 | 20 案 × 6 分支 = 105 证实 / 15 证实不受影响 / 0 待定（全部可复算） |
 | CVE 知识库三层 + 版本探测（§3.6） | ✅ 已实现 | 全量层 375,265 条；靶区子库 446 条（kb 联接数据源） |
 | 隔离执行与运行级证据（§3.5） | ✅ 已实现并实战 | cJSON 案例矩阵 26/26；第二人独立复现通过 |
 | 运行矩阵离线复算（verify-runtime） | ✅ 已实现 | 复算=零执行 |
 | 有界 LLM 审查（§3.4） | ✅ 全量执行完毕（单模型） | 本机重建 26 组队列，glm-5.3 逐组有效草稿 26/26，final_verdict 全 undetermined；双模型交叉因仅存 GLM 密钥不可行（如实） |
 | UAF 生命周期规则（§3.3） | ✅ 已实现 | 已知 cJSON 案例回验 + 反例语料 |
 | 候选人工复核队列（triage） | 已实现五类队列 | 保留每条告警，不自动证明可达性与影响 |
-| 交付件组装（vuln_report / competition_report，§3.11） | ✅ 已实现 | 18 案报告自动生成；证据引用 16/18 案 |
+| 交付件组装（vuln_report / competition_report，§3.11） | ✅ 已实现 | 20 案报告自动生成；证据引用 16/20 案 |
 | 工具链预检（toolchain preflight） | ✅ 已实现 | `python -m ohvul.toolchain --output ...` |
 | 执行沙箱自动化（§3.5 扩展） | 📐 设计稿已合入 | P0–P2 待实施 |
 | 单模型全量审查（glm-5.3） | 📐 队列与 plan 就绪 | 26 组本机重建（2026-10-17）；双模型交叉因仅 GLM 密钥不可行，如实降级为单模型 |
@@ -119,7 +119,7 @@ triage → report → human_review → completed`（另有 blocked / 重试预�
 | `ohvul/llm_adapter / llm_review / llm_evidence` | 有界 LLM 审查（§3.4）与传输 |
 | `ohvul/knowledge_base / kb_sync` | CVE 知识库三层与同步（§3.6） |
 | `ohvul/runtime_evidence` + tools/cjson_case.py | 授权运行案例管线（§3.5） |
-| cases/、bench/、kb/ | 钉死验证案例（18 案）、反例语料、靶区知识库 |
+| cases/、bench/、kb/ | 钉死验证案例（20 案）、反例语料、靶区知识库 |
 
 ---
 
@@ -287,7 +287,7 @@ python -m ohvul.llm_poc findings.json <source_root> --output llm_pocs   # 需 OS
 python -m ohvul.impact_matrix --cases cases --output docs/deliverables/IMPACT_MATRIX
 ```
 
-18 案 × 6 分支（v4.1–master）。判定规则**证据分级、绝不推断**：
+20 案 × 6 分支（v4.1–master）。判定规则**证据分级、绝不推断**：
 
 1. **kb 联接（首选）**：按 CVE 联接 `kb/third_party_targets/records.json`
    （cvelistV5）的上游受影响/修复版本，按 cvelist 边界语义逐分支判定；
@@ -295,16 +295,20 @@ python -m ohvul.impact_matrix --cases cases --output docs/deliverables/IMPACT_MA
 3. 版本等价传播（分支基线与实测验证基线同版本）；
 4. OH 原生代码仅计源级验证过的分支；**绝不跨组件借用基线**。
 
-**当前交付件结果：🔴 证实受影响 88 格 / — 证实不受影响 6 格 / ？待定 14 格**
-（待定 = cJSON 各分支基线未录入 6 格 + OH 原生旧分支 CJ FFI 引入时间未确认 8 格，
-各有明确升级路径）。值得一提的负向结论：quirc（cvelist 引入版本 7.0）在 n4.1/
-n5.1.6/n6.1.1 四个基线上**证实不受影响**——旧手写矩阵的全红口径被库内数据证伪。
+**当前交付件结果：🔴 证实受影响 105 格 / — 证实不受影响 15 格 / ？待定 0 格**
+（20 案 × 6 分支 = 120 格，与 `IMPACT_MATRIX.json` 逐格可复算）。v2.1 前为
+18 案、88 / 6 / 14 口径；2026-10 补全 cJSON 六分支基线并完成原生四案符号探测后，
+20 案全部落定，待定格清零。证据强度分层见 §3.18 与矩阵图例脚注：钉版联接类与
+符号探测类格子弱于检出/复现级实证，不以同色呈现。
+值得一提的负向结论：quirc（cvelist 引入版本 7.0）在 n4.1 / n5.1.6 / n6.1.1 四个
+基线上**证实不受影响**——旧手写矩阵的全红口径被库内数据证伪；udmf 在 v5.1 分支因
+`FfiUDMFSetProperties` 未引入而判 not_affected。
 
 ### 3.11 交付件组装（已实现）
 
 - `ohvul.vuln_report`：分案完整报告（位置与内容、描述、PoC、影响分析、修复
   建议）。源码片段承载内容：案例目录 `source_snippet.txt/.c` 嵌入，否则引用已
-  记录的源码级证据（16/18 案）；已存在输出拒绝静默覆盖（--force）。
+  记录的源码级证据（16/20 案）；已存在输出拒绝静默覆盖（--force）。
 - `ohvul.competition_report`：异构 case.json 的防御性投影 + 证据完整度六维矩阵；
   空输入大声失败；markdown 先于 JSON 发布；confirmed 数字只投影不推断。
 
@@ -321,7 +325,7 @@ n5.1.6/n6.1.1 四个基线上**证实不受影响**——旧手写矩阵的全�
 （赋值点、判空点、解引用点事件序列），据状态机输出四类规则结论
 （确定性问题 / 语义类 / 已知可空路径 / 参数路径）。配套：
 
-- **语义分层漏斗**：dsoftbus 上 2,662 条 P6 候选按语义分层
+- **语义分层漏斗**：dsoftbus 治理后的 2,662 条候选中 P6 族 2,224 条，按语义分层
   （Null 确定性 > 语义类 > 已知可空 > 参数 > 基线）收敛至 13 条高价值线索；
 - **排序 v2**：语义证据 +10 优先于路径词 +5；每个不发射的访问在抑制日志中
   记录原因（可审计、可回归）；
@@ -485,8 +489,8 @@ python -m ohvul.benchmark <cases.json> [--scanner ...]
 | Autopilot 实测（现役口径） | dsoftbus 681,529 行 / 651.7s / 3,033 lead / 峰值 176.4MB
   （`PERFORMANCE.md` 2026-09-30 复测；含 cross_uaf 去重与判定收紧） |
 | CVE 富集组件批量扫描（2026-10-20） | 6 组件 2,339,964 行 / 8,752s / 67,453 lead（高危 417）/ P6 抑制 27,204 |
-| 累计覆盖 | dsoftbus 68 万 + FFI 136 仓 17 万 + CVE 富集 234 万 = **3,195,394 行** |
-| P6 语义分层漏斗 | 2,662 → **13**（Null 确定性 > 语义类 > 已知可空 > 参数 > 基线） |
+| 累计覆盖 | dsoftbus 68 万 + FFI 63 仓 17 万 + CVE 富集 234 万 = **3,195,394 行** |
+| P6 语义分层漏斗 | 2,662 条治理后候选中 P6 族 2,224 条 → **13**（Null 确定性 > 语义类 > 已知可空 > 参数 > 基线） |
 | GT1/GT2/GT3 修复对回放 | 三对全部命中→消失零误伤（§3.14 表） |
 | Joern CPG 实测 | 管线内端到端：available=true / findings=1（J6_null_deref）；
   独立记录：CPG 构建 158s + 查询 58s |
@@ -498,7 +502,7 @@ python -m ohvul.benchmark <cases.json> [--scanner ...]
   检出/复现级，2026-10-18 脚注） |
 | 证据质量矩阵（2026-10-18） | 20 案 × 12 字段：●149 / ◐70 / ○0，实质率 **68%**（PoC 与
   补丁字段全覆盖；五案新增运行级证据） |
-| 漏洞案例与工单 | 20 案（16 CVE 缺口 + ipc/hiappevent 新发现 + udmf/cjson 运行验证）；
+| 漏洞案例与工单 | 20 案（16 个第三方 CVE 缺口 + 4 项原生组件缺陷：ipc / hiappevent / kv / udmf）；
   平台工单 17 张提交待受理；第 18 张（bluetooth 服务端）材料齐备 |
 | LLM 全量审查（2026-10-17 执行） | 26/26 组有效草稿（glm-5.3）；46 调用 / 66,782
   tokens；终轮 verify completed；全部 final_verdict=undetermined |

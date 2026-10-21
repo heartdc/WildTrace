@@ -24,7 +24,7 @@
       "date": "2026-10-09",
       "library": "libcj_unified_data_channel_ffi.z.so —— 官方完整树构建（root-target //foundation/distributeddatamgr/udmf/interfaces/cj:cj_unified_data_channel_ffi，317/317 全绿；sha256 773867c9d7c381f8e323943f7920e5f7ca1c477c182c47e36949fa313213ee59，BuildID 30239ec8b295bffe351d1c437d2aa1cf，42 个 FfiUDMF* 导出符号）。零 FFI 源码改动",
       "result": "case0 对照（extras 合法 I32 1 项 + tag='rt-tag'）→ done 无崩溃；case1 旧候选（extras.head=NULL, size=3）→ done 无崩溃（证伪）；case2 对照（head=NULL, size=0）→ done 无崩溃；case3 候选（extras 合法 + tag=NULL）→ SIGSEGV（run.exit=139）。缺陷精确限定于 tag==NULL，与 extras 内容无关",
-      "frame_attribution": "gdb + 未剥离产物 add-symbol-file 一次成型符号化：#0 strlen → #1 std::char_traits<char>::length(__s=0x0) → #2 basic_string(nullptr) → #3 FfiUDMFSetProperties（unified_data_ffi.cpp:134）；调用帧偏移 0x1716f 落在 libcj_unified_data_channel_ffi.z.so 内",
+      "frame_attribution": "gdb + 未剥离产物 add-symbol-file 一次成型符号化：#0 strlen → #1 std::char_traits<char>::length(__s=0x0) → #2 basic_string(nullptr) → #3 FfiUDMFSetProperties（unified_data_ffi.cpp:134）；调用帧偏移 0x1718a 落在 libcj_unified_data_channel_ffi.z.so 内（2026-10-21 复算；早期记录为 0x1716f）",
       "record": "docs/analysis/UDMF_REAL_LIBRARY_CONFIRM_20261009.md（PR #117）；run1（对照反常发现记录）原样入证据包",
       "evidence_zip_sha256": "a70accc94eefb4467d434a220b39cf39c78d35f35614e67d8cbc4a61faea14df（run1+run2 完整 evidence 目录含 gdb-backtrace.txt + MANIFEST）"
     },

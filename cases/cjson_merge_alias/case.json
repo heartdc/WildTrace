@@ -9,7 +9,6 @@
     "cJSON_Utils.c": "09c85ee09b1cb79260559e003c33e6785e842f0e51fd658a4bc72c995c8fc372"
   },
   "cwe_candidate": "CWE-416",
-  "public_cve_reference": "CVE-2026-87933",
   "discovery_method": "manual source review informed by public upstream report",
   "new_discovery": false,
   "runtime_status": "library_level_reproduced",
@@ -74,5 +73,6 @@
       "source_commit": "OpenHarmony-7.0-Release",
       "reference": "2026-10-17 实证：openharmony/manifest@OpenHarmony-7.0-Release 分支 ohos/ohos.xml 钉住 third_party_cjson（ref=OpenHarmony-7.0-Release），gitcode README.OpenSource 声明版本 1.7.19；kb[cvelistV5] CVE-2026-87933（cJSON_Utils.c cJSONUtils_MergePatch UAF）受影响区间 up to 1.7.19 且修复 PR 待接受，1.7.19 在区间内"
     }
-  }
+  },
+  "cve_reference": "CVE-2026-87933"
 }
