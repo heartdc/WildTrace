@@ -261,6 +261,64 @@ class CompileFeedbackTests(unittest.TestCase):
         self.assertIn('did not compile', messages[1][-1]['content'])
         self.assertIn('implicit declaration', messages[1][-1]['content'])
 
+    def test_wrong_site_frame_is_fed_back_once(self):
+        """UDMF 2026-10-21: the first draft crashed inside SetDataParameters
+        while the finding named the tag conversion, so "it crashed" was not
+        evidence. The observed frame goes back to the model once."""
+        calls, messages = [], []
+        frames = [('OHOS::UDMF::SetDataParameters', 'unified_data_parameter_parse.cpp:0'),
+                  ('FfiUDMFSetProperties', 'unified_data_ffi.cpp:134')]
+
+        def fake(messages_in, **kwargs):
+            calls.append(1)
+            messages.append(messages_in)
+            return self._resp(self.REAL)
+
+        def hook(code, finding):
+            frame = frames[min(len(calls), 2) - 1]
+            landed = 'FfiUDMFSetProperties' in frame[0]
+            return landed, 'observed frame: %s (%s)' % frame
+
+        with patch('ohvul.llm_poc.chat_completion', side_effect=fake), \
+             patch('ohvul.llm_poc.runtime_key', return_value='k'), \
+             patch('ohvul.llm_poc._extract_includes',
+                   return_value='#include "cJSON.h"'):
+            result = generate_poc_llm(self._finding(), Path('.'), retries=1,
+                                      runtime_hook=hook)
+        self.assertTrue(result['validated'], result.get('validation_note'))
+        self.assertTrue(result.get('runtime_ok'))
+        self.assertEqual(result['attempts'], 2)
+        self.assertIn('did not land on the function', messages[1][-1]['content'])
+        self.assertIn('SetDataParameters', messages[1][-1]['content'])
+
+    def test_draft_that_never_lands_is_marked_wrong_site(self):
+        def hook(code, finding):
+            return False, 'observed frame: SetDataParameters'
+
+        with patch('ohvul.llm_poc.chat_completion',
+                   return_value=self._resp(self.REAL)), \
+             patch('ohvul.llm_poc.runtime_key', return_value='k'), \
+             patch('ohvul.llm_poc._extract_includes',
+                   return_value='#include "cJSON.h"'):
+            result = generate_poc_llm(self._finding(), Path('.'), retries=0,
+                                      runtime_hook=hook)
+        self.assertFalse(result['validated'])
+        self.assertEqual(result['validation_note'], 'wrong_site')
+        self.assertIn('SetDataParameters', result['runtime_note'])
+
+    def test_runtime_hook_crash_does_not_condemn_the_draft(self):
+        def hook(code, finding):
+            raise RuntimeError('gdb unavailable')
+
+        with patch('ohvul.llm_poc.chat_completion',
+                   return_value=self._resp(self.REAL)), \
+             patch('ohvul.llm_poc.runtime_key', return_value='k'), \
+             patch('ohvul.llm_poc._extract_includes',
+                   return_value='#include "cJSON.h"'):
+            result = generate_poc_llm(self._finding(), Path('.'), runtime_hook=hook)
+        self.assertTrue(result['validated'])
+        self.assertTrue(result.get('runtime_ok'))
+
     def test_unbuilt_draft_is_not_validated(self):
         def hook(code, finding):
             return False, "error: unknown type name 'cJSON'"

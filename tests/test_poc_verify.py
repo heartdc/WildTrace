@@ -114,6 +114,39 @@ class VerdictTests(unittest.TestCase):
         self.assertEqual(verdict, 'undetermined')
         self.assertIn('tautology', reason)
 
+    def test_crash_on_another_function_is_wrong_site(self):
+        """UDMF 2026-10-21: a draft with a guessed ABI SIGSEGVs inside
+        SetDataParameters while the finding names the tag conversion below it.
+        Exit 139 plus "inside the library" must not read as confirmed."""
+        verdict, reason = verdict_for(
+            self._row(crashed=True, exit_code=139),
+            expected={'function': 'FfiUDMFSetProperties', 'line': 134},
+            observed={'function': 'OHOS::UDMF::SetDataParameters',
+                      'file': 'unified_data_parameter_parse.cpp', 'line': 0})
+        self.assertEqual(verdict, 'wrong_site')
+        self.assertEqual(reason, 'crash_at_unrelated_frame')
+
+    def test_crash_on_the_claimed_function_is_confirmed(self):
+        verdict, reason = verdict_for(
+            self._row(crashed=True, exit_code=139),
+            expected={'function': 'FfiUDMFSetProperties', 'line': 134},
+            observed={'function': 'FfiUDMFSetProperties',
+                      'file': 'unified_data_ffi.cpp', 'line': 134})
+        self.assertEqual(verdict, 'confirmed')
+
+    def test_missing_frame_keeps_the_old_behaviour(self):
+        # no resolver: the verdict stays at library-level attribution
+        verdict, _ = verdict_for(self._row(crashed=True, exit_code=139),
+                                 expected={'function': 'FfiUDMFSetProperties'})
+        self.assertEqual(verdict, 'confirmed')
+
+    def test_frame_match_accepts_a_qualified_symbol(self):
+        verdict, _ = verdict_for(
+            self._row(crashed=True, exit_code=139),
+            expected={'function': 'CJ_WriteByteArray'},
+            observed={'function': 'OHOS::MessageSequenceImpl::CJ_WriteByteArray'})
+        self.assertEqual(verdict, 'confirmed')
+
     def test_build_failure_is_undetermined(self):
         verdict, reason = verdict_for({'compiled': False})
         self.assertEqual(verdict, 'undetermined')

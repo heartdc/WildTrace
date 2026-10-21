@@ -289,7 +289,28 @@ def memory_checker_available(compiler: list[str] | None = None,
     return available
 
 
-def verdict_for(result: dict, *, memory_checks: bool = True) -> tuple[str, str]:
+def _frame_matches(expected: dict | None, observed: dict | None) -> bool:
+    """Function-level frame match.
+
+    Offset equality is too strict across builds (the same source line moves when
+    the binary changes), while file+line alone fails for inlined frames. Compare
+    the settled symbol: an observed ``basic_string::__init`` inlined from
+    ``FfiUDMFSetProperties`` still counts as the claimed function only when the
+    resolver reports the outer symbol, which is why the resolver contract asks
+    for the frame that owns the call, not the innermost one.
+    """
+    if not expected or not observed:
+        return True
+    want = (expected.get('function') or '').strip()
+    got = (observed.get('function') or '').strip()
+    if not want or not got:
+        return True
+    return want == got or want in got or got in want
+
+
+def verdict_for(result: dict, *, memory_checks: bool = True,
+                expected: dict | None = None,
+                observed: dict | None = None) -> tuple[str, str]:
     """Three-state verdict in the spirit of an independent re-review pass.
 
     ``confirmed``   the PoC links the real project and the crash happens inside
@@ -312,6 +333,14 @@ def verdict_for(result: dict, *, memory_checks: bool = True) -> tuple[str, str]:
         return 'undetermined', 'copied_target_crash_is_tautology'
     if kind == 'real_link':
         if result.get('crashed'):
+            # A crash inside the library is necessary but not sufficient: it has
+            # to land on the claimed frame. Observed on the UDMF case
+            # (2026-10-21): a draft with a guessed ABI crashed in
+            # SetDataParameters while the finding named the tag conversion one
+            # line below, and "exit 139 + inside the library" would have called
+            # that confirmed.
+            if observed is not None and not _frame_matches(expected, observed):
+                return 'wrong_site', 'crash_at_unrelated_frame'
             return 'confirmed', 'crash_inside_library'
         pattern = result.get('pattern') or ''
         if not memory_checks and pattern in _SILENT_CORRUPTION:
@@ -329,7 +358,8 @@ def verify(pocs_dir: Path, source_root: Path, output_dir: Path, *,
            findings: dict | None = None, link=(), include_dirs=(),
            include_headers=(), compiler: list[str] | None = None,
            timeout: int = 10, harness: Path | None = None,
-           guarded_heap: Path | None = None) -> dict:
+           guarded_heap: Path | None = None,
+           frames: dict | None = None) -> dict:
     """Compile and run every ``*.c`` in ``pocs_dir``; never raises per-PoC."""
     output_dir.mkdir(parents=True, exist_ok=True)
     compiler = compiler or discover_compiler()
@@ -421,8 +451,17 @@ def verify(pocs_dir: Path, source_root: Path, output_dir: Path, *,
                   'exit_code': None, 'crashed': None}
         if ok:
             result.update(run_poc(exe, timeout))
+        # An external resolver (gdb + addr2line) can hand in the settled frame
+        # per draft; without it the verdict stays at "crash inside the library"
+        # and cannot tell the claimed site from an unrelated one.
+        observed = (frames or {}).get(row['poc'])
+        if observed:
+            result['frame'] = observed
+        expected = {'function': function, 'line': (matched or {}).get('line')}
         result['verdict'], result['verdict_reason'] = verdict_for(
-            result, memory_checks=memory_checks)
+            result, memory_checks=memory_checks,
+            expected=expected if function else None,
+            observed=observed)
         results.append(result)
 
     summary = {
@@ -442,6 +481,7 @@ def verify(pocs_dir: Path, source_root: Path, output_dir: Path, *,
         'confirmed': sum(1 for r in results if r['verdict'] == 'confirmed'),
         'refuted': sum(1 for r in results if r['verdict'] == 'refuted'),
         'undetermined': sum(1 for r in results if r['verdict'] == 'undetermined'),
+        'wrong_site': sum(1 for r in results if r['verdict'] == 'wrong_site'),
         'results': results,
     }
     (output_dir / 'poc_verification.json').write_text(
@@ -472,6 +512,10 @@ def main(argv=None) -> int:
     parser.add_argument('--harness', type=Path, default=None,
                         help='header force-included into every draft, e.g. '
                              'tools/harness/guarded_heap.h (quarantining allocator)')
+    parser.add_argument('--frames', type=Path, default=None,
+                        help='JSON map {poc filename: {function,file,line,offset}} '
+                             'from an external frame resolver; a crash whose '
+                             'frame is not the claimed function becomes wrong_site')
     parser.add_argument('--timeout', type=int, default=10)
     args = parser.parse_args(argv)
 
@@ -484,7 +528,9 @@ def main(argv=None) -> int:
                          include_dirs=args.include,
                          include_headers=args.header, compiler=None,
                          timeout=args.timeout, harness=args.harness,
-                         guarded_heap=args.guarded_heap)
+                         guarded_heap=args.guarded_heap,
+                         frames=(json.loads(args.frames.read_text(encoding='utf-8'))
+                                 if args.frames else None))
     except RuntimeError as exc:
         print(f'ERROR: {exc}', file=sys.stderr)
         return 2
@@ -494,7 +540,8 @@ def main(argv=None) -> int:
               f"{row['verdict']:13s} {row['verdict_reason']}")
     print(f"\ntotal {summary['total']} | compiled {summary['compiled']} | "
           f"crashed {summary['crashed']} | confirmed {summary['confirmed']} | "
-          f"refuted {summary['refuted']} | undetermined {summary['undetermined']}")
+          f"refuted {summary['refuted']} | wrong_site {summary['wrong_site']} | "
+          f"undetermined {summary['undetermined']}")
     print(f"report: {args.output / 'poc_verification.json'}")
     return 0 if summary['compiled'] == summary['total'] else 1
 

@@ -437,7 +437,8 @@ def generate_poc_llm(finding_dict: dict, source_root: Path, *,
                       timeout: int = 60,
                       max_tokens: int = 2048,
                       retries: int = 1,
-                      compile_hook=None) -> dict:
+                      compile_hook=None,
+                      runtime_hook=None) -> dict:
     """Generate a compilable PoC for a single finding using LLM.
 
     Returns dict with: {code, validated, validation_note, model, sha256}
@@ -454,6 +455,14 @@ def generate_poc_llm(finding_dict: dict, source_root: Path, *,
     output is fed back for one rewrite. Drafts that never build end as
     ``validated=False, validation_note='compile_failed'`` so they are not
     written to disk as if they were usable.
+
+    ``runtime_hook(code, finding) -> (hit, note)`` adds the fourth gate. It runs
+    the draft against the real target and returns whether the crash landed on
+    the claimed frame, plus the observed frame as text. A draft that crashes
+    somewhere else is not evidence: on the UDMF case (2026-10-21) a guessed ABI
+    produced a real SIGSEGV inside SetDataParameters while the finding named the
+    tag conversion one line below. Such a draft gets one rewrite carrying the
+    observed frame, then ends as ``validation_note='wrong_site'``.
     """
     file = finding_dict.get('file', '')
     line = _safe_int(finding_dict.get('line', 0))
@@ -533,10 +542,37 @@ def generate_poc_llm(finding_dict: dict, source_root: Path, *,
                 valid = False
                 outcome['validated'] = False
                 outcome['validation_note'] = 'compile_failed'
+        runtime_note = ''
+        if valid and runtime_hook is not None:
+            # Fourth gate: a crash is not evidence until it lands on the frame
+            # the finding names. A hook crash means "could not check", which
+            # must not be read as "draft is wrong".
+            try:
+                landed, runtime_note = runtime_hook(code, finding_dict)
+            except Exception as exc:  # noqa: BLE001 — verification must not kill the batch
+                landed, runtime_note = True, f'{type(exc).__name__}: {exc}'
+            outcome['runtime_ok'] = landed
+            if not landed:
+                valid = False
+                outcome['validated'] = False
+                outcome['validation_note'] = 'wrong_site'
+                outcome['runtime_note'] = runtime_note
         if valid:
             return outcome
         rejected = outcome
-        if compile_error and not outcome.get('compiled', True):
+        if outcome.get('runtime_ok') is False:
+            retryable = True
+            feedback = (
+                "The previous draft built and ran against the real library, but "
+                "the crash did not land on the function the finding names.\n"
+                f"{runtime_note[-700:]}\n"
+                "Fix the cause: the C ABI layout of every struct you declare, the "
+                "order of the calls, and the field you pass NULL in. Use the exact "
+                "struct definitions from the project headers if they were given. "
+                "Keep loading the library at runtime and calling the exported "
+                "symbol; do not copy the target implementation. Return one C code "
+                "block.")
+        elif compile_error and not outcome.get('compiled', True):
             retryable = True
             feedback = (
                 "The previous draft did not compile against the real project:\n"
@@ -570,7 +606,8 @@ def batch_generate(findings: list[dict], source_root: Path, output_dir: Path, *,
                    model: str = 'glm-5.3',
                    base_url: str | None = None,
                    max_items: int = MAX_FINDINGS_PER_BATCH,
-                   compile_hook=None) -> list[dict]:
+                   compile_hook=None,
+                   runtime_hook=None) -> list[dict]:
     """Generate PoCs for multiple findings, saving to output_dir.
 
     One malformed finding or transport error must not lose the batch:
@@ -590,6 +627,8 @@ def batch_generate(findings: list[dict], source_root: Path, output_dir: Path, *,
                 extra = {'base_url': base_url} if base_url else {}
                 if compile_hook is not None:
                     extra['compile_hook'] = compile_hook
+                if runtime_hook is not None:
+                    extra['runtime_hook'] = runtime_hook
                 result = generate_poc_llm(f, source_root, api_key=api_key,
                                           model=model, **extra)
             except Exception as exc:  # noqa: BLE001 — batch must survive
