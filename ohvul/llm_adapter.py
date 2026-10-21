@@ -23,8 +23,14 @@ ANTHROPIC_BASE_URLS = {'https://api.z.ai/api/anthropic',
 # unless a caller explicitly opts into another allowlisted endpoint.
 GLM_BASE_URL = 'https://api.z.ai/api/anthropic'
 GLM_MODEL = 'glm-5.3'
-ALLOWED_BASE_URLS = {DEFAULT_BASE_URL, 'https://www.oslovelace.com/v1'} | ANTHROPIC_BASE_URLS
-ALLOWED_MODELS = {'grok-4.6', 'glm-5.3', 'gpt-6-astra'}
+# OpenAI Chat-Completions endpoints (Authorization: Bearer + /chat/completions).
+# DeepSeek is the domestic provider used for PoC drafting experiments.
+DEEPSEEK_BASE_URL = 'https://api.deepseek.com/v1'
+OPENAI_CHAT_BASE_URLS = {DEEPSEEK_BASE_URL}
+ALLOWED_BASE_URLS = ({DEFAULT_BASE_URL, 'https://www.oslovelace.com/v1'}
+                     | ANTHROPIC_BASE_URLS | OPENAI_CHAT_BASE_URLS)
+ALLOWED_MODELS = {'grok-4.6', 'glm-5.3', 'gpt-6-astra',
+                  'deepseek-chat', 'deepseek-reasoner'}
 MAX_REQUEST_BYTES = 65536
 MAX_RESPONSE_BYTES = 262144
 MAX_CONTENT_BYTES = 32768
@@ -203,6 +209,97 @@ def _anthropic_completion(messages, *, endpoint, model, timeout, max_tokens, api
             'model_identity': 'provider_reported_not_independently_verified'}
 
 
+def _chat_completion(messages, *, endpoint, model, timeout, max_tokens, api_key,
+                     json_mode=False):
+    """One bounded OpenAI Chat-Completions request; no stream, retry or redirect.
+
+    Same guards as the Anthropic path: request/response byte ceilings,
+    credential screening on both directions, redirects rejected, and the
+    request digest bound to the canonical logical payload.
+    """
+    raw = _bytes(canonical_request_payload(messages, model, max_tokens))
+    if len(raw) > MAX_REQUEST_BYTES:
+        raise ValueError('LLM request exceeds byte limit')
+    reject_credentials('\n\n'.join(f"[{item['role']}]\n{item['content']}"
+                                   for item in messages).encode('utf-8'))
+    key = runtime_key(api_key)
+    reject_credentials(raw, key)
+    wire = {'model': model,
+            'messages': [{'role': item['role'], 'content': item['content']}
+                         for item in messages],
+            'max_tokens': max_tokens, 'temperature': 0, 'stream': False}
+    if json_mode:
+        # DeepSeek requires the literal word "json" in the prompt for this mode;
+        # the callers that pass json_mode=True already state the JSON contract.
+        wire['response_format'] = {'type': 'json_object'}
+    body_bytes = _bytes(wire)
+    if len(body_bytes) > MAX_REQUEST_BYTES:
+        raise ValueError('LLM request exceeds byte limit')
+    request = urllib.request.Request(
+        endpoint + '/chat/completions', data=body_bytes,
+        headers={'Authorization': 'Bearer ' + key,
+                 'Content-Type': 'application/json',
+                 'Accept': 'application/json',
+                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140.0 Safari/537.36'},
+        method='POST')
+    try:
+        with _open(request, timeout) as response:
+            body = response.read(MAX_RESPONSE_BYTES + 1)
+    except urllib.error.HTTPError as exc:
+        code = exc.code
+        exc.close()
+        raise LlmTransportError('http_status_' + str(code)) from None
+    except LlmTransportError:
+        raise
+    except TimeoutError:
+        raise LlmTransportError('transport_timeout') from None
+    except urllib.error.URLError as exc:
+        code = 'transport_timeout' if isinstance(exc.reason, TimeoutError) else 'transport_failed'
+        raise LlmTransportError(code) from None
+    except (OSError, ValueError):
+        raise LlmTransportError('transport_failed') from None
+    if not isinstance(body, bytes) or len(body) > MAX_RESPONSE_BYTES:
+        raise LlmTransportError('response_byte_limit')
+    reject_credentials(body, key)
+    try:
+        data = _json(body)
+        if not isinstance(data, dict) or not isinstance(data.get('choices'), list):
+            raise ValueError('not a chat response')
+        choice = data['choices'][0]
+        if not isinstance(choice, dict):
+            raise ValueError('malformed choice')
+        message = choice.get('message')
+        if not isinstance(message, dict):
+            raise ValueError('missing message')
+        if message.get('tool_calls'):
+            raise ValueError('tool call')
+        content = message.get('content')
+        if isinstance(content, list):   # some providers return content parts
+            content = ''.join(part.get('text', '') for part in content
+                              if isinstance(part, dict) and isinstance(part.get('text'), str))
+        if not isinstance(content, str) or not content:
+            raise ValueError('empty response')
+        if len(content.encode('utf-8')) > MAX_CONTENT_BYTES:
+            raise ValueError('content limit')
+        reported = data.get('model')
+        if reported is not None and (not isinstance(reported, str) or len(reported) > 200):
+            raise ValueError('model metadata')
+        finish = choice.get('finish_reason')
+        if finish is not None and (not isinstance(finish, str) or len(finish) > 80):
+            raise ValueError('finish reason')
+        usage = _usage(data.get('usage'))
+    except (ValueError, KeyError, IndexError, TypeError, AttributeError,
+            UnicodeError, RecursionError):
+        raise LlmTransportError('invalid_provider_response') from None
+    return {'content': content, 'requested_model': model, 'reported_model': reported,
+            'finish_reason': finish, 'usage': usage,
+            'request_sha256': hashlib.sha256(raw).hexdigest(),
+            'response_sha256': hashlib.sha256(body).hexdigest(),
+            'content_sha256': hashlib.sha256(content.encode('utf-8')).hexdigest(),
+            'endpoint': endpoint, 'max_tokens': max_tokens,
+            'model_identity': 'provider_reported_not_independently_verified'}
+
+
 def chat_completion(messages, *, base_url=GLM_BASE_URL, model=GLM_MODEL,
                     timeout=45, max_tokens=2048, api_key=None, json_mode=True):
     """One paid request at most. Invalid/failed requests are never retried here."""
@@ -217,6 +314,10 @@ def chat_completion(messages, *, base_url=GLM_BASE_URL, model=GLM_MODEL,
         # prompt already fixes the JSON output contract for Messages requests.
         return _anthropic_completion(messages, endpoint=endpoint, model=model,
                                      timeout=timeout, max_tokens=max_tokens, api_key=api_key)
+    if endpoint in OPENAI_CHAT_BASE_URLS:
+        return _chat_completion(messages, endpoint=endpoint, model=model,
+                                timeout=timeout, max_tokens=max_tokens,
+                                api_key=api_key, json_mode=json_mode)
     input_text = '\n\n'.join(f"[{item['role']}]\n{item['content']}" for item in messages)
     # Screen original evidence before serializing it into the Responses input.
     reject_credentials(input_text.encode('utf-8'))
