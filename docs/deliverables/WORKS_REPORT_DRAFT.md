@@ -288,7 +288,7 @@ dsoftbus 全树扫描（651.7 秒，约 1,046 行/秒，峰值内存 176.4MB）�
 | 目标 | 接口 | 畸形输入 | 结果 |
 |---|---|---|---|
 | IPC | WriteByteArray | data=NULL, len>0 | SIGSEGV，帧归因库内 0x1ed9b → 已提单 |
-| HiAppEvent | AddWatcher | head=NULL, size>0 | SIGSEGV，帧归因库内 0x11c9a → 已提单 |
+| HiAppEvent | AddWatcher | head=NULL, size>0 | SIGSEGV，帧归因库内 0xdc9a → 已提单 |
 | UDMF | SetProperties | tag=NULL | SIGSEGV（帧归因库内 0x1716f）→ 待提单 |
 | bluetooth 服务端 | DeregisterServerObserver | 空 Parcel IPC | SIGSEGV，帧归因 bluetooth_socket_server.cpp:54 → 待提单 |
 | account | 四组畸形 | — | 排除：全被 FFI 参数检查拦截 |

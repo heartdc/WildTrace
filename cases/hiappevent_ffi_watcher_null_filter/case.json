@@ -26,7 +26,7 @@
       "date": "2026-10-03/04",
       "library": "libcj_hiappevent_ffi.z.so —— 官方完整树构建（manifest repo sync 471+ 项目，官方 gn gen --root-target 一次通过，16,000+ 目标官方构建链；sha256 bf8aa65e30c13782f54fa56b6d5e273a36425555865125a9bea6222943f6636a，BuildID 252096ef，15 个 FfiOHOSHiAppEvent* 导出符号）。树修改仅为登记/环境兼容类，零 FFI 源码改动",
       "result": "对照（合法 head, size=1）→ 错误码 11101001 不崩溃；候选（head=NULL, size=1）→ SIGSEGV（run.exit=139）",
-      "frame_attribution": "两轮 ASLR 不同 gdb 复现，rip 经 /proc/maps 映射落在 libcj_hiappevent_ffi.z.so 内 file_offset 0x11c9a，不在 musl 运行库、不在 hilog",
+      "frame_attribution": "gdb 复现 rip 经 /proc/maps 映射落在 libcj_hiappevent_ffi.z.so 内 file_offset 0xdc9a，不在 musl 运行库、不在 hilog；更正（2026-10-21）：早期记录的 0x11c9a 无法由归档证据包 hiappevent-evidence-20261003.zip 内的 gdb-full.txt 复算——该包仅一次 SIGSEGV，$rip=0x7ffff554dc9a，库 r-xp 段 0x7ffff5548000（段内文件偏移 0x8000）→ file_offset 0xdc9a；包内亦无第二轮 gdb 记录，故「两轮 ASLR」一说无记录支持。",
       "record": "docs/analysis/HIAPPEVENT_REAL_LIBRARY_CONFIRM_20261003.md（PR #97）",
       "evidence_zip_sha256": "a8ae123ded484280d3dc15903683875518f90250d4f8104098ce9a157713c7a6（完整 evidence 目录 + gdb transcripts + ELF dump + inputs-*.sha256 + MANIFEST）"
     },
@@ -66,7 +66,7 @@
     }
   },
   "trigger_conditions": "仓颉侧经 HiAppEvent 打点 API 注册 watcher 时，appEventFilters（CArrAppEventFilter）的 head 为 NULL 而 size > 0 的畸形组合进入嵌套过滤循环被直接解引用；对照组合法输入由 FFI 层参数校验拦截（错误码 11101001 不崩溃）。",
-  "reproduction_commands": "真库运行级：libcj_hiappevent_ffi.z.so（官方完整树构建，sha256 bf8aa65e...f6636a，BuildID 252096ef）dlopen 驱动 poc_hiappevent_watcher.c：case0 对照（合法 head, size=1）→ 错误码 11101001 不崩溃；case1（head=NULL, size=1）→ SIGSEGV（退出码 139）；两轮 ASLR gdb 复现 rip 落库内 file_offset 0x11c9a。完整记录 hiappevent-evidence-20261003.zip（sha256 a8ae123d...13c7a6）。",
+  "reproduction_commands": "真库运行级：libcj_hiappevent_ffi.z.so（官方完整树构建，sha256 bf8aa65e...f6636a，BuildID 252096ef）dlopen 驱动 poc_hiappevent_watcher.c：case0 对照（合法 head, size=1）→ 错误码 11101001 不崩溃；case1（head=NULL, size=1）→ SIGSEGV（退出码 139）；gdb 复现 rip 落库内 file_offset 0xdc9a。更正（2026-10-21）：早期记录的 0x11c9a 无法由归档证据包 hiappevent-evidence-20261003.zip 内的 gdb-full.txt 复算——该包仅一次 SIGSEGV，$rip=0x7ffff554dc9a，库 r-xp 段 0x7ffff5548000（段内文件偏移 0x8000）→ file_offset 0xdc9a；包内亦无第二轮 gdb 记录，故「两轮 ASLR」一说无记录支持。完整记录 hiappevent-evidence-20261003.zip（sha256 a8ae123d...13c7a6）。",
   "branch_evidence": {
     "master": {
       "verdict": "affected",
