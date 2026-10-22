@@ -86,6 +86,16 @@ python -m ohvul.performance --files 100 --lines 100
 - **工作台**：`Start-Workbench.ps1` 启动本地 Web 界面（总览指标 / 案例证据
   三标签 / 候选审查 / 报告中心）。概览指标断言为计数无关口径；Joern 为
   `--joern` 选配层（WSL /opt/joern），异常时规则层独立可用。
+- **工作台的两个前置条件（2026-10-22 补）**：① 源码根白名单，默认只放行
+  `bench/`、`C:/Projects/OpenHarmony`、`C:/Projects/OpenHarmony-complete`，
+  扫描其他目录需先在"设置"页登记，否则报 `Path is outside configured roots`；
+  ② "运行验证"页只认 `C:/Projects/OpenHarmony/third_party/cJSON` 一处源码根，
+  预检同时校验 WSL 侧 `/usr/bin/bwrap`、`/home/airgap/llvm/bin/clang` 在位，
+  以及该目录 `git rev-parse HEAD == 388cfc96925e4fb41a30735b270736626d26615d`、
+  工作树干净、`cJSON.c`/`cJSON_Utils.c` 的 SHA-256 与 case.json 记录一致；
+  任一不满足时页面给出原因且不入队（设计如此，非缺陷）。
+  准备这棵树可用已有克隆的 worktree，不必拉整仓：
+  `git -C <third_party_cJSON 克隆> worktree add --detach C:/Projects/OpenHarmony/third_party/cJSON 388cfc9`
 - **真库 malformed 验证**：`tools/validation_cases/run_malformed.sh`（通用，
   支持 udmf/ipc/kv/hiappevent 等客户端）与 `run_bt_dereg.sh`（bluetooth
   服务端空指针，含 ASan 构建、gdb 帧归因与 unstripped 符号化）。判读：

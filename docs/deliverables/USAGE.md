@@ -185,6 +185,26 @@ python tools/export_pdf.py docs/deliverables/VULN_REPORT.md --output docs/delive
   Joern CPG 选配）同一界面驱动
 - 数据目录默认 `.cache/workbench`，可用 `--data-dir` 指定
 
+**两处前置条件（2026-10-22 补，照做否则会卡住）**
+
+- **源码根白名单**：工作台只放行仓库内 `bench/` 与 `C:/Projects/OpenHarmony`、
+  `C:/Projects/OpenHarmony-complete` 三处。在"扫描任务"页填其他目录会直接返回
+  `Path is outside configured roots` —— 先在"设置"页登记该源码根，再启动扫描。
+- **"运行验证"页的登记范围**：首版只接受 `C:/Projects/OpenHarmony/third_party/cJSON`
+  一处源码根。其预检同时校验四件事：WSL（`wsl -d Ubuntu`）内 `/usr/bin/bwrap` 与
+  `/home/airgap/llvm/bin/clang` 在位；该目录 `git rev-parse HEAD` 等于
+  `cases/cjson_merge_alias/case.json` 的 `expected_commit`
+  （`388cfc96925e4fb41a30735b270736626d26615d`）；工作树干净；`cJSON.c` 与
+  `cJSON_Utils.c` 的 SHA-256 等于记录值。任一不满足即返回 `ready=false` 并给出原因、
+  不进入运行队列——这是"预检不通过不执行"的落点，不是功能缺陷。
+
+  准备这棵源码树（用已有的 third_party_cJSON 克隆即可，无需拉整仓）：
+
+  ```bash
+  git -C <third_party_cJSON 克隆目录> worktree add --detach \
+      C:/Projects/OpenHarmony/third_party/cJSON 388cfc96925e4fb41a30735b270736626d26615d
+  ```
+
 ## 7. 验证 harness 一键化（2026-10 增补）
 
 `tools/validation_cases/`（17 个 .c/.sh，含 20+ 验证客户端）：
