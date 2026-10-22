@@ -29,3 +29,6 @@ frontend/*.tsbuildinfo
 .webwork/
 webcases/
 web/node_modules/
+
+# 作品报告的校对版 PDF（由 md 生成，非提交件；提交件见桌面 v24）
+docs/deliverables/WORKS_REPORT_DRAFT.pdf
