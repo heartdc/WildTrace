@@ -2,9 +2,9 @@
 
 > v2 修订要点：删除 v1（2026-09-28）中"确认产品漏洞数为 0"的过时声明——现有
 > 四项真库级 SIGSEGV 证实；新增"真库验证"与"工作台"两个演示段；全部数字对齐
-> 当前 master（1,162 项回归、漏斗 2,662→13、影响矩阵 20 案全分支判定）。
+> 当前 master（1,248 项回归、漏斗 2,662→13、影响矩阵 20 案全分支判定）。
 > 目标时长 10-14 分钟；每段落标注画面必须出现的要素与旁白要点。
-> 纪律与 RUNBOOK 一致：验证层级分开陈述，不把等价复现说成产品复现，
+> 纪律：验证层级分开陈述，不把等价复现说成产品复现，
 > 失败记录不删不改，模型输出永远是 proposal。
 
 ## 0. 片头（30s）
@@ -24,7 +24,14 @@ python -m ohvul.toolchain --output .\demo-out\preflight.json
 
 ## 2. 扫描与候选队列（2-3min）
 
-按 RUNBOOK"推荐录屏顺序"四条命令逐条执行，每条：
+按下列四条命令逐条执行，每条：
+
+```powershell
+python -m ohvul.cli .\demo-source --output .\demo-out\findings.json
+python -m ohvul.candidate_triage --result .\demo-out\findings.json --output .\demo-out\triage.json
+python -m ohvul.verify .\demo-out\findings.json
+python -m ohvul.candidate_triage --result .\demo-out\findings.json --verify .\demo-out\triage.json
+```
 
 - 画面：完整命令行 + 退出码 + 输出 JSON 关键字段（source_file/line/file_sha256/rule/final_verdict=undetermined）
 - 旁白：候选≠结论；指出 input_errors 的保留（故意演示一个不存在文件路径）
@@ -76,9 +83,17 @@ python -m ohvul.toolchain --output .\demo-out\preflight.json
 
 ## 7. 片尾交付清单（30s）
 
-- 画面：RUNBOOK"录屏交付清单"逐项
+- 画面：逐项过下面的交付清单
 - 旁白：视频旁附同版本命令脚本与 SHA-256 的位置；DEMO 中出现的全部命令
   都在仓库 tools/ 与 docs/deliverables/ 内可复跑
+
+录屏交付清单（片尾逐项展示）：
+
+- 演示环境的 Python、工具链与源码提交摘要；
+- 每条命令及其退出码；
+- findings / triage / verify / 报告的 JSON；
+- 失败输入或缺失工具的保留记录（不删不改）；
+- 不出现 API key、真实用户数据、设备凭据或未授权源码。
 
 ## 预检清单（录制前 24h 核对）
 
