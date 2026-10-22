@@ -12,19 +12,28 @@
 | 项 | 要求 | 说明 |
 |---|---|---|
 | 操作系统 | Windows 10+ / Linux | 两条路径均已验证；路径含空格可用（已做引用处理） |
-| Python | 3.10+ | 零第三方运行时依赖（`pip install -e . --no-deps` 即装即用） |
+| Python | 3.10+ | 核心扫描/报告零第三方运行时依赖（`pip install -e . --no-deps` 即装即用） |
 | Git | 可执行 | 知识库同步与 profile 来源校验需要；纯扫描不需要 |
+| Node.js（可选） | 18+ 与 npm | **仅工作台前端构建需要**（`Start-Workbench.ps1` 会执行 `npm ci` + `npm run build`）；纯扫描、报告、PoC 验证均不需要 |
 | WSL（可选） | Ubuntu 24.04 + LLVM/Clang | Clang AST 引擎、Joern（`/opt/joern`）、运行时验证矩阵需要 |
 | LLM 密钥（可选） | `OSLOVELACE_API_KEY` 环境变量 | 仅 `ohvul.llm_review` / `ohvul.llm_poc` 选配功能；默认扫描全程离线 |
-| C 编译器（可选） | `zig cc`（`pip install ziglang`）或 `WILDTRACE_CC` | 仅 PoC 验证（`ohvul.poc_verify`）需要；不装则验证步骤跳过，扫描不受影响 |
+| C 编译器（可选） | `zig cc`（`pip install ziglang`）或 `WILDTTRACE_CC` | 仅 PoC 验证（`ohvul.poc_verify`）需要；不装则验证步骤跳过，扫描不受影响 |
 
 安装与自检：
 
 ```powershell
+# ① 核心功能（扫描 / 报告 / 影响矩阵 / PoC 闸门）：不装任何第三方包
 python -m pip install -e . --no-deps
 python -m unittest discover -s tests -q        # 当前用例 1,248 项（发现计数）
 python -m ohvul.toolchain --output preflight.json   # 工具链预检（演示第一步）
+
+# ② 工作台（可选）：Web 依赖走 extras，另需 Node 18+ 构建前端
+python -m pip install -e ".[workbench]"
+.\Start-Workbench.ps1                          # 内部会装 extras、npm ci、npm run build
 ```
+
+> 只装 ① 时 `python -m ohvul.workbench.launch` 会报 `No module named 'fastapi'`——
+> 工作台是可选组件，不是缺陷；`.[workbench]` 会拉 fastapi/uvicorn/httpx 三个包。
 
 `preflight.json` 中 `ok=true` 表示 WSL/Clang/clang-tidy 通道可用；任一 required 项失败时按
 "预检失败不继续" 纪律处理（这是演示的一个环节，不是缺陷）。

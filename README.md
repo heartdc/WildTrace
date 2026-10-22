@@ -2,6 +2,22 @@
 
 This repository contains a defensive, local-only source auditing MVP.
 
+## Delivering a source snapshot
+
+`python tools/make_release.py` builds `dist/WildTrace-<tag>.zip` from the committed
+tree (`git archive`), appending `frontend/dist` when it has been built so the
+workbench can be opened without npm. Ignored paths — `.venv`, `.cache`,
+`node_modules`, local scan output — never enter the archive.
+
+Installation and dependency notes live in
+[`docs/deliverables/USAGE.md`](docs/deliverables/USAGE.md); the four competition
+deliverables (source, technical spec, usage guide, vulnerability report,
+performance) are under `docs/deliverables/`, with the report also shipped as PDF.
+
+Code is MIT licensed (`LICENSE`). The patches under `patches/` and
+`cases/*/patch.diff` quote upstream projects and stay under their upstream
+licences.
+
 ## Local web workbench
 
 Run `./Start-Workbench.ps1` on Windows to install and open the local React/FastAPI
@@ -189,18 +205,20 @@ The standalone `engine_cli --profile` accepts only a Clang-only profile and sour
 declared by it. Use the main CLI for profiles selecting multiple engines:
 
 ```powershell
-python -m ohvul.cli .\authorized-source --engine-profile .\profiles\component.json --output .\out\findings.json
+python -m ohvul.cli .\authorized-source --engine-profile docs\profiles\securec_captured_20260914.json --output .\out\findings.json
 ```
 
 Historical camera profile metadata does not bypass these gates. Its dependency
 repository declarations must be completed and locally verified before it can be
 used with the stricter execution path; this batch did not verify an OpenHarmony checkout.
 
+Eight real profiles live under `docs/profiles/` (schema `engine-profile-0.1`); any of them works as a template.
+
 Capture missing repository pins from the owners of explicitly declared sources
 and include directories, without changing any existing commit or rule-hash pin:
 
 ```powershell
-python -m ohvul.profile_capture --template .\profiles\template.json --source-root .\authorized-source --output .\profiles\captured.json
+python -m ohvul.profile_capture --template docs\profiles\securec_captured_20260914.json --source-root .\authorized-source --output out\captured.json
 ```
 
 The output must be new, outside the source tree, and have an existing parent

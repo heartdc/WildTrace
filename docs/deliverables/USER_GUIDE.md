@@ -28,14 +28,18 @@ triage 会保留每条告警，并分到人工复核、需要上下文、语法�
 
 ## 3. 编译器和多引擎分析
 
-使用经过来源校验的 profile：
+使用经过来源校验的 profile（真实样例在 `docs\profiles\`，schema 为
+`engine-profile-0.1`；`--engine-profile` 与 `--compiler-profile` 用同一结构）：
 
 ```powershell
 python -m ohvul.cli .\authorized-source `
-  --engine-profile .\profiles\component.json `
-  --compiler-profile .\profiles\compiler.json `
+  --engine-profile docs\profiles\securec_captured_20260914.json `
+  --compiler-profile docs\profiles\camera_app_captured_20260914.json `
   --output .\out\component-findings.json
 ```
+
+profile 必须绑定本地 Git worktree、固定提交（40 位 SHA）、源文件清单、include
+目录和受限编译参数；钉版缺失时用 `ohvul.profile_capture` 以上述任一文件为模板补齐。
 
 profile 必须绑定本地 Git worktree、固定提交、源文件清单、include 目录和受限编译参数。报告中的编译器版本、命令、返回码和产物摘要属于证据绑定，不是工具安装路径的推断。
 
