@@ -84,7 +84,7 @@ def prepare(source: Path, output: Path) -> dict:
         'cwe_mapping_version': '1', 'location': {'file': 'cJSON_Utils.c', 'line': 1328},
         'description': 'Deleting target invalidates a borrowed non-object patch before duplication',
         'status': 'candidate', 'evidence': {'review_origin': 'public_issue_informed_source_review',
-            'cve_reference': spec['public_cve_reference'], 'new_discovery': False,
+            'cve_reference': spec.get('public_cve_reference') or spec.get('cve_reference') or '', 'new_discovery': False,
             'preconditions': ['patch is target or an owned non-object subtree',
                               'caller does not separately free consumed target/patch'],
             'source_sha256': {n: sha(raw[n]) for n in COPIES},
