@@ -149,12 +149,19 @@ python tools/kb_gap_audit.py <component-repo> --kb <kb.json>   # 回移缺口四
 
 ## 5. 交付件索引
 
-`docs/deliverables/`：TECHNICAL_SPEC（技术说明书）、VULN_REPORT（漏洞分析报告）、
-IMPACT_MATRIX（影响矩阵）、PERFORMANCE（性能说明）、VIDEO_SCRIPT + DEMO_RUNBOOK（演示）、
-USAGE（本文件，交付件三正文）、USER_GUIDE（同交付件的命令行补充页）。
+`docs/deliverables/`：TECHNICAL_SPEC（技术说明书）、VULN_REPORT（漏洞分析报告，
+`.md` + `.pdf`）、IMPACT_MATRIX（影响矩阵）、PERFORMANCE（性能说明）、
+VIDEO_SCRIPT + DEMO_RUNBOOK（演示）、USAGE（本文件，交付件三正文）、
+USER_GUIDE（同交付件的命令行补充页）。
 状态台账在 `docs/status/`，审计与实验记录在 `docs/analysis/`，
 PoC 验证 harness 在 `tools/harness/`（Windows 守卫堆 / Linux `LD_PRELOAD` /
 OHOS 真库 `run_real.sh`）。
+
+交付件导出（Markdown → PDF，需要 `pip install markdown` 与本机 Chrome/Edge）：
+
+```powershell
+python tools/export_pdf.py docs/deliverables/VULN_REPORT.md --output docs/deliverables/VULN_REPORT.pdf
+```
 
 ## 6. 本地工作台（2026-10 增补）
 

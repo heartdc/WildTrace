@@ -17,7 +17,8 @@
 > （守卫确认收窄、抑制收窄、基准归属修正、验证器状态拆分——§4.1/§7）。
 > **v2.2（2026-10-22）增补**：LLM 起草的自模仿守卫与 Chat-Completions 通道（§3.9）、
 > PoC 四道闸门——文本/编译/运行/帧归因与 `wrong_site` 第四档（§3.15）、
-> 双平台守卫堆 harness（§3.15.4）、分支判定按证据强度分层（§3.18）。
+> 双平台守卫堆 harness（§3.15.1）、分支判定按证据强度分层（§3.18）、
+> 模块地图全量化（§2.3 逐模块登记 91 个模块，不再是节选）。
 > 测试基线同步为 1,248 项（原 1,191 为 10-18 数字）。
 
 ---
@@ -108,25 +109,151 @@ triage → report → human_review → completed`（另有 blocked / 重试预�
 
 ### 2.3 模块地图（代码功能实现）
 
-| 目录/模块 | 职责 |
+`ohvul` 包共 **91 个模块**（不含 6 个 `__init__`），按调用方向分八层。下表**逐模块登记**
+（不是节选），每行给出该文件在流程中的位置与它不该被当成什么——后者是防止误读的关键。
+
+#### 2.3.1 入口与编排层（10）
+
+| 模块 | 职责 | 对应 |
+|---|---|---|
+| `cli.py` | 离线扫描入口：扫描 → 检查点/日志/报告；产物必须在源码树之外（越界即报错退出） | §2.1 |
+| `autopilot.py` | **端到端管线 v3**：10 层规则聚合、0–100 置信度与因子分解、PoC 模板、统一报告 | §3.8 |
+| `component_batch.py` | 逐组件串行批跑（CVE 富集 6 组件即此路径），无断点续跑 | §3.8 |
+| `toolchain.py` | 工具链预检：WSL/Clang/clang-tidy 真实探针，required/optional 分级（演示第一步） | §4.3 |
+| `recover.py` | 从检查点恢复**工作流**，不重跑审计、不重算结论 | §2.1 |
+| `shards.py` | 生成确定性源码分片清单；只读目录结构，不读文件内容 | §3.1 |
+| `engine_cli.py` | 单次显式 WSL Clang 分析，输出 JSON | §3.1 |
+| `engine_shards.py` | 按分片清单批量驱动本地 WSL Clang 适配器 | §3.1 |
+| `workflow/fsm.py` | 工作流状态机：7 状态 + 迁移表 + 重试预算（§2.1） | §2.1 |
+| `workflow/journal.py` | 追加式审计日志；**日志提交标记本身不是证明** | §2.2 |
+
+#### 2.3.2 检测规则层（13）
+
+| 模块 | 职责 | 对应 |
+|---|---|---|
+| `detect/scanner.py` | 内置规则扫描器：CWE 规则表（CWE-190/476/122…）+ 证据 bundle 生成 | §3.8 |
+| `detect/lexical.py` | 词法复核过滤器；**不是 C/C++ 解析器**，不做安全证明 | §3.12 |
+| `detect/function_rules.py` | 函数作用域规则草稿；产出候选，永不产出漏洞结论 | §3.8 |
+| `detect/components.py` | 组件识别（路径 → 组件名 → 元数据） | §3.8 |
+| `detect/vuln_metadata.py` | CVE 元数据保守匹配；**版本命中不等于影响确认** | §3.6 |
+| `semantic_facts.py` | C/C++ 语义事实抽取（长度来源、容量关系、所有权） | §3.2 |
+| `semantic_rules.py` | 长度传播候选规则；无 CFG/数据流证明，只作保守筛选 | §3.2 |
+| `semantic_syntax.py` | 有界词法输入、括号配平；不构建 AST | §3.12 |
+| `source_structure.py` | 有界词法区间与函数边界；**不是 AST，也不是调用图** | §3.12 |
+| `source_scope.py` | 路径契约与只读路径工具；**不是操作系统沙箱** | §3.5 |
+| `source_snapshot.py` | 源码快照 SHA-256（扫描前后比对，期间变动即拒绝产出） | §2.1 |
+| `cross_uaf.py` | 跨函数 UAF / double-free / 位置别名追踪（P8-Cross），按 (callee,变量) 去重 | §3.3 |
+| `ffi_boundary_audit.py` | FFI 裸数组边界初筛（成员名与裸数组同名即导航候选） | §3.8 |
+
+#### 2.3.3 编译器事实层（10）
+
+| 模块 | 职责 | 对应 |
+|---|---|---|
+| `clang_stream.py` | 流式解析 Clang JSON，只保留主文件函数体与函数声明 | §3.2 |
+| `clang_facts.py` | 编译器派生事实与窄口径对象大小检查 | §3.2 |
+| `clang_flow.py` | 有界整数传递与分支约束 | §3.2 |
+| `clang_ranges.py` | 选定表达式的有限整数区间 | §3.2 |
+| `compiler_analysis.py` | 固定版本、受校验组件输入的显式 AST 分析 | §3.2 |
+| `compile_database.py` | 把显式编译参数向量导入 profile 草稿 | §3.1 |
+| `engine_adapter.py` | 分析引擎适配契约与本地工具发现 | §3.1 |
+| `engine_profile.py` | 组件分析 profile 校验（来源、提交、文件清单、include、参数） | §3.1 |
+| `engine_benchmark.py` | 人工标注下的引擎候选指标（仅离线） | §3.1 |
+| `joern_bridge.py` | Joern CPG 桥接（`--joern` 第 11 层，不可用时降级不中断） | §3.16 |
+
+#### 2.3.4 验证与证据层（12）
+
+| 模块 | 职责 | 对应 |
+|---|---|---|
+| `domain/evidence.py` | EvidenceBundle 内容寻址结构（`EB-<sha256>`）；哈希只证明未变更，不证明真实性 | §2.2 |
+| `local_harness.py` | 合成输入本地 harness；**不执行被审目标代码** | §3.5 |
+| `local_recheck.py` | 离线源码证据复核，不执行目标 | §3.5 |
+| `runtime_evidence.py` | 把已有候选报告与外部收集的运行证据桥接 | §3.5 |
+| `isolation_contract.py` | 离线合成 harness 的 I/O 契约校验 | §3.5 |
+| `harness_record.py` | harness 记录 schema 校验 | §3.5 |
+| `verification_gate.py` | 「是否允许发起本地安全验证」的确定性闸门 | §3.5 |
+| `verification_link.py` | task_id + checkpoint 摘要 + harness 记录三元绑定 | §2.2 |
+| `verify.py` | 已存审计结果与引用的离线校验 | §2.2 |
+| `verify_joint.py` | checkpoint / result / harness 三方联合校验 CLI | §2.2 |
+| `benchmark.py` | 配对真假的候选规则基准（GT1/GT2/GT3 回放） | §3.14 |
+| `performance.py` | 合成输入的性能基准（不等于产品扫描吞吐） | §5 |
+
+#### 2.3.5 LLM 与 PoC 层（7）
+
+| 模块 | 职责 | 对应 |
+|---|---|---|
+| `llm_adapter.py` | 有界远程起草：端点/模型闭集白名单、禁重定向、字节上限、凭证筛查 | §3.9.1 |
+| `llm_evidence.py` | 把已验证的本地片段确定性投影进模型输入（有界） | §3.4 |
+| `llm_review.py` | 有界 LLM 审查；输出恒为 proposal，`final_verdict=undetermined` | §3.4 |
+| `llm_verify.py` | 编译-执行反馈环（四道闸门的前身入口，保留兼容） | §3.15 |
+| `llm_poc.py` | PoC 生成 + 自模仿守卫（头文件豁免、`_defines_function`）+ 拒收回灌 | §3.9 |
+| `poc_verify.py` | 闸门一至三：形态分类、链接集自推断编译、运行三态（静默腐蚀保护） | §3.15 |
+| `poc_real.py` | 闸门四：真库帧归因（WSL + musl + gdb + `addr2line`），支撑 `wrong_site` | §3.15 |
+
+#### 2.3.6 审查与校验层（20）
+
+| 模块 | 职责 | 对应 |
+|---|---|---|
+| `candidate_triage.py` | 离线待办队列分桶（人工复核/需上下文/语法线索/质量/测试支援） | §3.8 |
+| `review_queue.py` | 绑定已存批次证据的确定性离线审查队列 | §3.4 |
+| `review_context.py` | 为已校验队列构建有界源码窗口 | §3.4 |
+| `review_evidence.py` | 诊断文件内的函数/宏上下文扩展 | §3.4 |
+| `review_handoff.py` | 证据绑定的后续任务单；**不执行模型建议** | §3.4 |
+| `review_record.py` | 独立于结论的人工复核记录 | §3.4 |
+| `review_verify.py` | 复核记录对照候选报告的只读校验 | §3.4 |
+| `review_batch_verify.py` | 复核批次对照候选报告的只读校验 | §3.4 |
+| `review_chain_verify.py` | 报告—批次—日志三者链路校验 | §2.2 |
+| `report_verify.py` | 报告投影字段与扫描结果全等的只读校验 | §2.2 |
+| `journal_archive.py` | 导出任务审计历史（不改原日志） | §2.2 |
+| `journal_archive_verify.py` | 归档日志的只读校验 | §2.2 |
+| `journal_status.py` | 日志恢复状态的只读检查 | §2.2 |
+| `archive_seal_record.py` | 生成独立封存标记（无签名、不改权限） | §2.2 |
+| `archive_seal_verify.py` | 封存标记只读校验 | §2.2 |
+| `profile_capture.py` | 从显式本地输入捕获仓库钉版 | §3.18 |
+| `knowledge_base.py` | 版本化本地知识库校验（无网络） | §3.6 |
+| `kb_sync.py` | CVE 知识库同步；构建阶段不扫目标 | §3.6 |
+| `branch_impact.py` | 两次已存扫描结果对比（不碰 Git、不执行目标） | §3.10 |
+| `git_scope.py` | 固定本地 Git 分析范围校验（无网络访问） | §3.18 |
+
+#### 2.3.7 交付件层（8）
+
+| 模块 | 职责 | 对应 |
+|---|---|---|
+| `impact_matrix.py` | 版本分支影响矩阵（kb 联接 + 钉版 + 符号探测），按证据强度分列 | §3.10 |
+| `impact_report.py` | 分支影响报告的只读投影（Phase 5） | §3.10 |
+| `vuln_report.py` | 分案完整报告生成器（五要素 + PoC + 补丁）（交付件 4） | §3.11 |
+| `competition_report.py` | 异构 case.json 的防御性投影 + 证据完整度六维矩阵 | §3.11 |
+| `report/schema.py` | 报告 schema 定义与校验 | §3.11 |
+| `report/review.py` | 人工复核记录的报表投影 | §3.11 |
+| `report/review_batch.py` | 复核批次的报表投影 | §3.11 |
+| `report/archive_seal.py` | 报告归档封存的报表侧实现 | §2.2 |
+
+#### 2.3.8 工作台层（11）
+
+| 模块 | 职责 | 对应 |
+|---|---|---|
+| `workbench/launch.py` | 本地工作台启动（默认 `127.0.0.1:8765`） | `USAGE.md` §6 |
+| `workbench/app.py` | HTTP 路由与页面装配 | `USAGE.md` §6 |
+| `workbench/data.py` | 案例与扫描数据的装载层 | `USAGE.md` §6 |
+| `workbench/store.py` | 本地数据存储（默认 `.cache/workbench`） | `USAGE.md` §6 |
+| `workbench/jobs.py` | 后台作业登记与状态 | `USAGE.md` §6 |
+| `workbench/worker.py` | 作业执行器（长任务不阻塞请求） | `USAGE.md` §6 |
+| `workbench/triage.py` | 扫描结果的确定性复核队列 | `USAGE.md` §6 |
+| `workbench/casebook.py` | 案例叠加层（版本化；仓库内案例记录保持不可变） | `USAGE.md` §6 |
+| `workbench/projects.py` | 项目路径与只读探针（WSL 路径在记录中保持原生） | `USAGE.md` §6 |
+| `workbench/project_io.py` | 在选定项目环境内执行的只读操作 | `USAGE.md` §6 |
+| `workbench/project_scan.py` | 把只读源码范围绑定到隔离的扫描输入副本 | `USAGE.md` §6 |
+
+#### 2.3.9 非 Python 交付物
+
+| 路径 | 内容 |
 |---|---|
-| `ohvul/autopilot.py` | **端到端自动化管线 v3**（§3.8）：10 层扫描 + 置信度 + PoC + 统一报告 |
-| `ohvul/cross_uaf.py` | 跨函数 UAF/双重释放（位置别名、局部变量、去重语义） |
-| `ohvul/joern_bridge.py` | Joern CPG 桥接（--joern 选配层，异常安全降级） |
-| `ohvul/llm_poc.py` | LLM PoC 生成器（安全加固，§3.9）；自模仿守卫与拒收回灌 |
-| `ohvul/poc_verify.py` | PoC 闸门前三道：形态分类、链接集自推断编译、运行三态判定（§3.15） |
-| `ohvul/poc_real.py` | 真库帧归因：WSL + musl 加载 + gdb + `addr2line`，供 `wrong_site` 判定（§3.15） |
 | `tools/harness/` | 守卫堆（Windows 预处理器改名 / Linux `LD_PRELOAD`）与 OHOS 真库 runner（§3.15.1） |
-| `ohvul/impact_matrix.py` / `vuln_report.py` / `competition_report.py` | 影响矩阵（kb 联接）与交付件组装（§3.10/§3.11） |
-| `ohvul/toolchain.py` | 工具链预检（真实通道探针，required/optional 分级） |
-| `ohvul/detect/`（scanner、lexical） | 内置规则初筛 + 词法层 |
-| `ohvul/semantic_facts / semantic_rules / semantic_syntax` | 语义事实抽取、长度传播规则、有界词法解析 |
-| `ohvul/clang_facts / clang_flow / clang_ranges` | 编译器 AST 事实、精确值标量流、区间抽象域（§3.2） |
-| `ohvul/engine_adapter / engine_profile / engine_shards / compile_database` | Clang/CSA、clang-tidy、Semgrep 适配；profile 来源校验 |
-| `ohvul/llm_adapter / llm_review / llm_evidence` | 有界 LLM 审查（§3.4）与传输 |
-| `ohvul/knowledge_base / kb_sync` | CVE 知识库三层与同步（§3.6） |
-| `ohvul/runtime_evidence` + tools/cjson_case.py | 授权运行案例管线（§3.5） |
-| cases/、bench/、kb/ | 钉死验证案例（20 案）、反例语料、靶区知识库 |
+| `tools/perf_measure.py` | 性能测量与复跑（§9 复跑命令） |
+| `cases/` | 20 案 case.json、PoC、patch.diff、证据（66 个文件入库） |
+| `patches/` | 20 份补丁镜像 + 索引（与 `cases/*/patch.diff` 逐字节一致） |
+| `kb/` | 靶区 CVE 记录（records.json）与分支钉版（branch_pins.json） |
+| `bench/` | 反例语料与配对基准 |
+| `frontend/` | 工作台前端（Node 构建） |
 
 ---
 
