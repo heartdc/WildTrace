@@ -96,3 +96,23 @@ python -m ohvul.performance --files 100 --lines 100
 可复算。分支证据三层来源（case.json branch_evidence.reference 可溯源）：
 分支 manifest 钉版 → gitcode README.OpenSource 版本实证（第三方 16 案）；
 漏洞符号逐分支存在性探测（原生四案，2026-10-17）；master 检出三侧对照。
+
+## 10. PoC 四道闸门（2026-10-22 增补）
+
+生成出来的草稿不自动等于证据。`ohvul.poc_verify` 按文本 → 编译 → 运行 → 帧归因
+四道闸门逐条判定，输出 `poc_verification.json`：
+
+```
+python -m ohvul.poc_verify llm_pocs --source .\authorized-source ^
+  --findings .\out\findings.json --output .\verify --guarded-heap tools\harness
+```
+
+- **文本**：草稿自己定义了目标函数（`copied_target`）时崩溃是套套逻辑，永不计证据；
+- **编译**：不给 `--link` 时按链接器的 undefined symbol 自动补源文件（≤3 轮）；
+- **运行**：UAF/溢出属静默腐蚀类，没有内存检查器时"没崩"只判 `undetermined`；
+- **帧归因**：崩溃帧不是 finding 所述函数时判 `wrong_site`——退出码 139 加
+  "在库内"不足以证明打中了目标位置。
+
+真库场景（预编译 `.so`）用 `ohvul.poc_real` 或 `tools/harness/ohos/run_real.sh`；
+Windows 侧守卫堆见 `tools/harness/guarded_heap.h`，Linux 侧
+`tools/harness/linux/README.md`。口径与判定表见 `USAGE.md` §2.5。

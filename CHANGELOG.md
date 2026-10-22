@@ -1,3 +1,25 @@
+# 2026-10-22（交付件同步：PoC 闸门进文档，测试基线与章节编号对齐）
+
+- **技术说明 v2.2**（`TECHNICAL_SPEC.md`，基线 `fbc0f0e` → `29df68f`）：新增
+  §3.9.1 双通道传输与端点白名单（GLM Anthropic / DeepSeek Chat-Completions，禁重定向、
+  不重试、字节上限、凭证筛查）、§3.9.2 自模仿守卫（头文件豁免 + `_defines_function`
+  状态机，解释 10/10 副本草稿的根因）、§3.9.3 拒收回灌与重写预算；§3.15 由"四步闭环"
+  改写为"四道闸门"（文本形态分类 / 链接集自推断 / 运行三态含静默腐蚀保护 / 帧归因
+  `wrong_site`），补 §3.15.1 守卫堆（Windows 预处理改名 vs Linux `LD_PRELOAD`）。
+- **使用说明 v1.1**（`USAGE.md`）：基线 `a023018` → `29df68f`，测试数 1058 → 1,248；
+  新增 §2.5 `ohvul.poc_verify` 用法（`--guarded-heap` / `--frames` / `--harness`）与
+  四档判读表、真库 `run_real.sh` 调用；明确 USAGE 为交付件三正文、USER_GUIDE 为补充页；
+  USER_GUIDE 补 §10 指向同一口径。
+- **性能说明**：修掉重复的 `## 6`（增补实测 / CVE 富集改为 §6/§7，`6.4 说明` → §8，
+  去掉一个孤立的 `#`），抬头日期与版本改成分段标注；§6.3 改写为四道闸门并给出各环节
+  开销口径（文本毫秒级、编译 ≤3 轮、ASan 探测缓存、运行 ≤10s、帧归因分钟级）。
+- **README**：补 PoC 四道闸门一节与 DeepSeek 通道的白名单说明——此前
+  `poc_verify`/`poc_real`/`guarded_heap` 在 `docs/` 与 README 中零命中。
+- 测试：`test_llm_poc` 28 + `test_poc_verify` 24 + `test_poc_real` 20 = 72 项仍在位；
+  全量 `unittest` 发现计数 1,248。
+
+---
+
 # 2026-10-22（分支判定：报告与矩阵同源，且按证据强度分层）
 
 - **根因**：VULN_REPORT.md 的分支块是 2026-10-15 生成的产物，而 branch_evidence 的实证

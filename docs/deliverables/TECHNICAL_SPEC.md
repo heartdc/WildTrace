@@ -1,9 +1,9 @@
-# WildTrace 技术说明书（v2.1）
+# WildTrace 技术说明书（v2.2）
 
 > 面向赛题《OpenHarmony 开源代码漏洞挖掘》交付件二。本文严格区分**已实现并验证**
 > 的能力与**设计中/计划中**的能力（各节状态标注），不含未经验证的质量主张。
-> 基线：master 分支 `fbc0f0e`（2026-10-18，PR #145 合并后），**1,191 项回归测试
-> 通过**，CI（Ubuntu）全绿。
+> 基线：master 分支 `29df68f`（2026-10-22），**1,248 项回归测试通过**（`unittest`
+> 发现计数），CI（Ubuntu）全绿。
 > v1.0（2026-09-30，基线 `1c80e2d`）收录：自动化分析管线（Autopilot v3）、跨函数
 > UAF、Joern CPG 桥接、LLM PoC 生成器、版本分支影响矩阵（kb 联接）、交付件组装器。
 > v2.0（2026-10-17）增补：P6 状态模型与可证明性排序（§3.13）、检测形态扩展
@@ -15,6 +15,10 @@
 > 召回守恒账本（§3.20）、LLM 单模型全量审查执行完毕（§3.4/§5）、双引擎函数粒度
 > 并集实测（§3.16）、影响矩阵证据分层（§3.18）、外部复审 F01-F08 全项响应
 > （守卫确认收窄、抑制收窄、基准归属修正、验证器状态拆分——§4.1/§7）。
+> **v2.2（2026-10-22）增补**：LLM 起草的自模仿守卫与 Chat-Completions 通道（§3.9）、
+> PoC 四道闸门——文本/编译/运行/帧归因与 `wrong_site` 第四档（§3.15）、
+> 双平台守卫堆 harness（§3.15.4）、分支判定按证据强度分层（§3.18）。
+> 测试基线同步为 1,248 项（原 1,191 为 10-18 数字）。
 
 ---
 
@@ -67,7 +71,7 @@ WildTrace 是一套**本地、离线优先、证据可审计**的 OpenHarmony C/
 | OH 真实库构建与平台验证 | IPC 库级证实；产品验证待完成 | `REAL_BUILD_PROBE_20260925.md`；库级≠平台复现 |
 | **P6 状态模型与可证明性排序（§3.13）** | ✅ 已实现 | Null/NonNull/MaybeNull 时间线；dsoftbus 漏斗 2,662→13（语义分层）；51 项契约测试 |
 | **检测形态扩展 + 函数摘要（§3.14）** | ✅ 已实现 | GT1 局部/GT2 成员/GT3 宏展开指针；三个严格修复对回放命中→消失零误伤 |
-| **LLM PoC 四步闭环（§3.15）** | ✅ 已实现 | 编译反馈环 + ASan 执行 + 语义注入 + 真库 dlopen 验证；端到端 ~30s/案 |
+| **LLM PoC 四道闸门（§3.9/§3.15）** | ✅ 已实现 | 文本形态分类 + 链接集自推断编译 + 运行三态（静默腐蚀保护）+ 帧归因 `wrong_site`；端到端 ~30s/案 |
 | **Joern 端到端 + 双引擎交叉（§3.16）** | ✅ 已实测 | available=true、findings=1（J6_null_deref）；P6+J6 双层 |
 | **自足构建链 + 真库 malformed 管线（§3.17）** | ✅ 已实现 | oh_build 工具包四步管线；udmf/bt#19 真库 SIGSEGV 实证（exit 139 + 帧归因） |
 | **分支钉版实证（§3.18）** | ✅ 已实现 | manifest 钉版 + gitcode README 实证；影响矩阵 15 案六分支全判定，待定格清零 |
@@ -266,7 +270,12 @@ CPG 查询，发现转换为管线 Finding（CWE/严重度/置信度保留），
 ### 3.9 LLM PoC 生成器（已实现并加固，选配）
 
 ```
-python -m ohvul.llm_poc findings.json <source_root> --output llm_pocs   # 需 OSLOVELACE_API_KEY
+# 默认通道：GLM（Anthropic Messages）
+python -m ohvul.llm_poc findings.json <source_root> --output llm_pocs
+
+# Chat-Completions 通道：DeepSeek
+python -m ohvul.llm_poc findings.json <source_root> --output llm_pocs \
+    --base-url https://api.deepseek.com/v1 --model deepseek-chat
 ```
 
 把 autopilot lead + 源码上下文交给 LLM 生成可编译 C PoC（从"带 TODO 的模板"
@@ -280,6 +289,63 @@ python -m ohvul.llm_poc findings.json <source_root> --output llm_pocs   # 需 OS
   /bin/sh、curl/wget/nc）命中即不落盘；截断响应（finish_reason=length）拒绝；
 - **批量鲁棒**：逐项异常隔离、摘要 finally 写出、429 退避、文件名哈希防碰撞；
 - **有界读取**：上下文读取 256 KiB 封顶。
+
+#### 3.9.1 双通道传输与端点白名单
+
+所有 LLM 入口（PoC 起草、审查、分析）统一走 `ohvul/llm_adapter.py`，不直连 HTTP：
+
+| 协议 | 白名单端点 | 白名单模型 |
+|---|---|---|
+| Anthropic Messages（默认） | `api.z.ai/api/anthropic`、`open.bigmodel.cn/api/anthropic` | `glm-5.3` |
+| OpenAI Chat-Completions | `api.deepseek.com/v1` | `deepseek-chat`、`deepseek-reasoner` |
+
+端点与模型都是**闭集**：`validate_settings()` 对不在集合内的 base_url 或模型直接
+抛错，不做"拼一个 URL 就发"的兜底。传输层约束：
+
+- **禁重定向**：注册 `_NoRedirect` handler，任何 3xx 都转为 `redirect_rejected`，
+  避免 Authorization 头被带到白名单以外的站点；
+- **不重试**：单次有界请求，失败即返回错误码，由上层决定是否重写；
+- **字节上限**：请求 64 KiB / 响应 256 KiB / 单条内容 32 KiB / 超时 300 s；
+- **凭证筛查**：`reject_credentials()` 在出入两个方向扫 `sk-` 形态、
+  PEM 私钥头、`Authorization: Bearer`，命中即拒收，错误码不含 URL 与凭证；
+- **逻辑载荷绑定**：`canonical_request_payload()` 固定 `stream=False`、
+  `temperature=0`、`response_format=json_object`，摘要只绑模型/消息/额度，
+  不绑线路封装，便于事后复算。
+
+#### 3.9.2 自模仿守卫（2026-10-21，根因修复）
+
+首轮实测（DeepSeek + Chat-Completions，cJSON 目标）**10/10 草稿全是"自实现副本"**：
+PoC 不调用库，而是把 `static` 目标函数体抄进 `main()` 再喂坏输入——这种崩在副本里
+的崩溃是套套逻辑，对被测库零证据。根因不在模型而在校验规则：旧规则要求
+"目标函数名必须出现在 PoC 里"，而目标是文件内 `static` 函数，**外部不可调用**，
+于是模型唯一能满足规则的写法就是抄函数体。
+
+修复是两件事，缺一不可：
+
+1. **头文件豁免**（`_project_headers()`）：解析目标文件的 `#include`，取项目自有
+   头文件基名（排除 `stdio.h`/`stdlib.h` 等标准头）。草稿若 include 了项目自己的
+   头（如 `cJSON.h`），允许它经公共 API 间接触达，不再强制内部函数名字面出现；
+2. **定义检测而非出现检测**（`_defines_function()`）：判断草稿是否**定义**了目标
+   函数。不是单条正则——`if (print(x)) {` 这类嵌套调用会被朴素模式误判成定义，
+   因此按声明形态逐项排除：前缀含 `=`（赋值）、前缀含括号且不是导出宏
+   （`CJSON_PUBLIC(cJSON *)` 这类合法导出宏单独放行）、首个词是控制字
+   （`if/while/for/switch/return/...`）、括号配平后紧跟 `{` 才算定义。
+   同一函数被 `poc_verify` 复用（`classify_poc` 直接 import 它），**起草闸门与
+   验证闸门对"什么叫副本"的定义不可能分歧**。
+
+修复后同一 prompt 的 5/5 草稿走真实 API（`real_link` 形态），不再出现副本型。
+
+#### 3.9.3 拒收回灌与重写预算
+
+拒收原因分两类，只有"模型改一版就能修好"的才重写：
+
+- **可重写**（`_RETRYABLE_REJECTIONS`）：`reimplements_target_function`、
+  `target_function_*`、`no_main_function`、`no_includes`、`dangerous_api`；
+- **不重写**：传输失败、响应截断、凭证命中——再问一次只是白烧 token。
+
+重写预算默认 `retries=1`（`retries=0` 退化为单发模式），失败原因原文进下一轮
+提示词。第四、五道闸门（编译反馈、运行反馈）通过 `compile_hook` / `runtime_hook`
+注入，见 §3.15。
 
 ### 3.10 版本分支影响矩阵与 kb 联接（已实现）
 
@@ -345,14 +411,99 @@ python -m ohvul.impact_matrix --cases cases --output docs/deliverables/IMPACT_MA
 函数摘要（跨函数空指针传播）同步入册；29 个未修复站点经调用方可达性
 穷尽分析后裁定（`OPEN_CANDIDATES_LEDGER.md`）。
 
-### 3.15 LLM PoC 四步闭环（已实现，端到端 ~30 秒/案 vs 手工 ~2 小时）
+### 3.15 PoC 四道闸门：文本 / 编译 / 运行 / 帧归因（已实现）
 
-1. **语义注入**：P6 状态模型输出注入提示词（10 种触发策略）；
-2. **编译反馈环**：生成→编译→失败 stderr 回喂 LLM 重试（上限 2 次）；
-3. **ASan 执行**：SIGSEGV/ASan 报告检测；
-4. **真库验证**：dlopen 官方完整树构建的真实 `.so` + musl 加载器 →
-   SIGSEGV（exit 139）+ gdb 帧归因。
-凭证经 `OSLOVELACE_API_KEY` 环境变量注入，不入库不入日志。
+起草只是第一步。一条草稿要成为证据，必须依次穿过四道闸门；每道闸门都能把它挡回
+`undetermined`，而不是"跑起来就算数"。前三道在 `ohvul/poc_verify.py`，第四道
+在 `ohvul/poc_real.py`。
+
+```
+python -m ohvul.poc_verify llm_pocs --source <source_root> \
+    --findings findings.json --output verify_out \
+    [--guarded-heap tools/harness] [--frames frames.json]
+```
+
+**闸门一 · 文本（形态分类）**。`classify_poc()` 把草稿分成三形态：
+
+| 形态 | 判据 | 崩溃的含义 |
+|---|---|---|
+| `copied_target` | `_defines_function()` 判定草稿自己定义了目标函数 | **套套逻辑**——崩在副本里，对被测库零证据 |
+| `self_contained` | 无项目 include，自足编译 | 崩在 PoC 自身逻辑，说明不了库的问题 |
+| `real_link` | include 了项目头文件 | 只有这一类的崩溃才可能构成库的证据 |
+
+**闸门二 · 编译（链接集自推断）**。草稿不会写"要链 cJSON.c"，findings 也不会。
+`resolve_link_sources()` 顺着链接器自己的报错走：编译 → 解析 `undefined symbol` /
+`undefined reference to` / `unresolved external symbol` → 把同目录优先（最多扫
+400 个 `.c/.cc/.cpp`）里**定义**这些符号的源文件加进链接集 → 重试。上限 3 轮、
+每轮最多新增 4 个文件，不会把整棵树拖进来。编译器发现顺序 `zig cc`（pip wheel，
+无需管理员权限，规避 Defender 对 MinGW 的隔离）→ `WILDTRACE_CC` → `gcc/clang/cc`；
+`zig` 首次构建 mingw CRT 会有 `SubCompilationFailed` 偶发，按瞬态错误原命令重试，
+不消耗模型重写预算。
+
+**闸门三 · 运行（三态判定 + 静默腐蚀保护）**。`run_poc()` 限时 10 s，崩溃码取
+Windows `0xC0000005` 与 POSIX `139/134/136`。关键设计是**"没崩"不等于"证伪"**：
+
+- P6 空解引用、P9 格式化字符串不崩就是真的没触发；
+- P8 UAF/跨函数 UAF/double free、P4 无界拷贝、P5 栈溢出、P7 分配溢出属于
+  **静默腐蚀**——没有内存检查器时"返回 0"与"发生了 UAF 但读到可读垃圾"外观一致；
+- 因此 `memory_checker_available()` 先探 `-fsanitize=address` 能否链接（MinGW 缺
+  ASan 运行时，会报 `undefined symbol: __asan_report_load8`）；探不到且模式属静默
+  腐蚀类，一律 `undetermined / no_crash_without_memory_checker`，**禁止升格为 refuted**。
+
+**闸门四 · 帧归因（`wrong_site` 第四档）**。`real_link` + 崩溃 + "在库内"仍是必要
+不充分条件：崩在库里不等于崩在**被告知的那一行**。`poc_real.resolve_frame()` 在 WSL
+里用 OHOS musl sysroot（`$BUILD_OUTPUT/obj/third_party/musl`）构建客户端，`gdb -batch`
+跑两轮，取崩溃偏移交给 `llvm-addr2line -i -f -C`（对 unstripped 库）符号化，返回
+逐帧 `{function,file,line}`。比对是**函数级**（`_frame_matches()`）：偏移相等在跨
+构建时过严（同一行会漂移），文件+行号在 inline 帧上又会漏；取"稳定下来的外层符号"
+做包含比较。
+
+四档判定（`verdict_for()`）：
+
+| 判定 | 触发条件 | 理由码 |
+|---|---|---|
+| `confirmed` | real_link + 崩溃 + 帧与 finding 函数吻合 | `crash_inside_library` |
+| `wrong_site` | real_link + 崩溃 + 帧落在无关函数 | `crash_at_unrelated_frame` |
+| `refuted` | real_link + 跑完 + 库未崩（且有内存检查器覆盖该模式） | `real_link_no_crash` |
+| `undetermined` | 未编译/未运行/副本崩溃/静默腐蚀且无检查器/未链库 | `build_failed`、`did_not_run`、`copied_target_crash_is_tautology`、`no_crash_without_memory_checker`、`not_linked_against_library` |
+
+实测两例说明第四档不是纸面设计：
+
+- **CVE-2026-87933（cJSON）**：同一份 PoC 在默认堆上 `return 0`，在隔离堆下
+  SIGSEGV——闸门三把它从"看起来证伪"改判 `confirmed`；
+- **UDMF**：第一版猜错 ABI，`exit 139` 且崩在库内，但符号化帧是
+  `SetDataParameters`（`0x16e5d`），而 finding 指的是其下一行的 tag 转换 →
+  `wrong_site`；换到 `0x1718a` 后帧吻合 → `confirmed`。
+  若只有前三道闸门，"139 + 在库内"会把它误判成 confirmed。
+
+#### 3.15.1 守卫堆：没有 ASan 也要让 UAF 现形
+
+目标平台两个硬约束：MinGW 没有 ASan 运行时，`lld` 又不支持 `--wrap`。剩下唯一
+可移植的钩子是预处理器——把标准分配器名字在**编译期**改名：
+
+```
+-include tools/harness/guarded_heap.h \
+-Dmalloc=wt_guard_malloc -Dfree=wt_guard_free \
+-Drealloc=wt_guard_realloc -Dcalloc=wt_guard_calloc
+```
+
+harness 本体（`guarded_heap.c`）**不带这些宏**编译，否则它自己也会被改名而够不到
+CRT。每次分配独占一段页，`free` 后整段 `PAGE_NOACCESS` 且**地址不回收**——这一点
+是必需的：朴素 `VirtualFree` 会把同一地址在下次分配时还回来，UAF 于是对着"合法但
+是垃圾"的内存跑完（CVE-2026-87933 在加隔离前就是这样观测到的）。
+
+平台分工：**Windows 走预处理器改名**（`tools/harness/guarded_heap.{c,h}`），
+**Linux 走 `LD_PRELOAD` 拦截**（`tools/harness/linux/guarded_heap.c`，
+`dlsym(RTLD_NEXT, ...)` 拿真实符号，`mmap` 单段 + `mprotect(PROT_NONE)` 隔离），
+后者用于只能跑预编译 `.so` 的场景。守卫堆一旦启用，`verify()` 直接把
+`memory_checks` 置真——隔离本身就是一个内存检查器。
+
+真库路径（预编译 OHOS ELF，宿主机跑不了）由 `tools/harness/ohos/run_real.sh`
+承担：musl 加载器 + gdb 两轮 + `llvm-addr2line -i`，输出 JSON
+（`{"built","exit","crashed","offset","rounds","frames"}`）。凭证仍只经
+`OSLOVELACE_API_KEY` 环境变量注入，不入库不入日志。
+
+端到端（起草→四道闸门）实测约 30 s/案，对比手工复现约 2 小时。
 
 ### 3.16 Joern CPG 端到端实测与双引擎交叉（已实测）
 
@@ -429,8 +580,9 @@ dsoftbus 全树实测：旧语义 448 → 新 69（移除 379 全为裁定形态
 
 ### 4.1 规模与质量
 
-- 测试：**1,191 项回归测试通过**，CI（Ubuntu）全绿；v1.0 基线 1016 → v2.0 1,162 → v2.1 1,191 项（P6 契约 51 项、
-  影响契约、检测契约、P8 敏感化配对基准、种子基准 v2、外部复审反例回归）。
+- 测试：**1,248 项回归测试通过**（`unittest` 发现计数），CI（Ubuntu）全绿；v1.0 基线
+  1016 → v2.0 1,162 → v2.1 1,191 → v2.2 1,248 项（P6 契约 51 项、影响契约、检测契约、
+  P8 敏感化配对基准、种子基准 v2、外部复审反例回归、PoC 闸门 72 项）。
 - **2026-09-29 全面代码审计与修复**：四子代理并行审查 + 逐项实证复现，发现并
   修复 2 项 P0（影响矩阵跨组件基线兜底伪造全红、"11 层"死代码）、多项 P1/P2
   （P9 格式参数位、P4 打分变量、P6 静默丢弃、cross_uaf 重复计数与别名错位、
@@ -478,11 +630,11 @@ python -m ohvul.benchmark <cases.json> [--scanner ...]
 
 ---
 
-## 5. 实测证据汇总（截至 2026-10-18，全部可复验）
+## 5. 实测证据汇总（截至 2026-10-22，全部可复验）
 
 | 项目 | 数字 |
 |---|---|
-| 回归测试 | **1,191 项通过**；CI 全绿 |
+| 回归测试 | **1,248 项通过**；CI 全绿 |
 | 真实 OH 文件分析 | 44 文件（3 组件，profile 来源校验通过） |
 | 运行级证据案例 | cJSON 矩阵 26/26；独立复现 26/26（双重复现） |
 | CVE 知识库 | 375,265（全量，本地）+ 72（精选）+ 446（靶区，兼矩阵数据源） |
@@ -494,7 +646,9 @@ python -m ohvul.benchmark <cases.json> [--scanner ...]
 | GT1/GT2/GT3 修复对回放 | 三对全部命中→消失零误伤（§3.14 表） |
 | Joern CPG 实测 | 管线内端到端：available=true / findings=1（J6_null_deref）；
   独立记录：CPG 构建 158s + 查询 58s |
-| LLM PoC 四步闭环 | 端到端 ~30s/案（编译反馈环 + ASan + 语义注入 + 真库 dlopen） |
+| LLM PoC 四道闸门 | 端到端 ~30s/案；cJSON 默认堆 `return 0`、隔离堆 SIGSEGV → `confirmed`；
+  UDMF 首版 139 但帧落 `SetDataParameters` → `wrong_site`，改 `0x1718a` 后 `confirmed` |
+| PoC 闸门回归 | `test_llm_poc` 28 + `test_poc_verify` 24 + `test_poc_real` 20 = **72 项** |
 | 真库 malformed 验证 | udmf：run_malformed.sh exit 139；bluetooth 服务端：
   run_bt_dereg.sh exit 139 + 符号化 `bluetooth_socket_server.cpp:54`（PR #135） |
 | 影响矩阵 | **20 案 × 6 分支全部判定**（第三方 16 案钉版联接 + 原生四案符号
@@ -512,7 +666,7 @@ python -m ohvul.benchmark <cases.json> [--scanner ...]
 | 双引擎并集（nstackx，2026-10-18） | 函数粒度交集 752（Joern 覆盖 88% 互证）、
   Joern 独有 105、规则层独有 589（锚点差异已注明） |
 | 外部复审响应（2026-10-18） | F01-F08 八项全复现全修复；20 项反例回归；
-  全量 1,191 测试绿 |
+  全量 1,248 测试绿 |
 | 全树扫描 | **进行中**（34.4M 行产品代码面，双进程后台；完成后补
   `FULLTREE_FUNNEL_LEDGER` 与覆盖率口径——本表不预支数字） |
 
@@ -531,7 +685,8 @@ python -m ohvul.benchmark <cases.json> [--scanner ...]
 5. **真库验证阶梯**：官方完整树零源码改动构建 + dlopen/musl + exit 139 +
    gdb 帧归因（四项真库 SIGSEGV）；两项确定性判读技术（分配器填充差分、
    ASan 分配上限定点拦截）；round-trip 自毁论据；自足构建链工具化。
-6. **LLM 的两个受控方向**：PoC 四步闭环（~30s/案，检测器教 LLM）+
+6. **LLM 的两个受控方向**：PoC 四道闸门（~30s/案，检测器教 LLM；自模仿守卫
+   堵掉"抄函数体"的套套逻辑，`wrong_site` 档区分"崩在库里"与"崩在这一行"）+
    "供信号不裁决"治理（26/26 草稿全 undetermined、密钥运行时、注入防御、
    输出屏蔽）——单模型全量已执行，双模型因密钥不可行如实降级。
 7. **已知答案回放的检测质量度量 + 种子化召回基准**：严格修复对（GT1/GT2/GT3

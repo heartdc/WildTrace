@@ -67,6 +67,37 @@ defused and digest-bound in the prompt, and generated code using dangerous APIs
 (`system`/`popen`/`exec*`/`fork`/`curl`…) is rejected before it reaches disk.
 Truncated responses never become "validated" PoC files.
 
+Endpoints and models are a closed set (`deepseek-chat`/`deepseek-reasoner` over
+`https://api.deepseek.com/v1` is the Chat-Completions channel); redirects are
+rejected so an `Authorization` header cannot follow a 3xx off-allowlist.
+
+## PoC verification gate (four gates)
+
+A draft is not evidence until it survives text → compile → run → frame attribution:
+
+```powershell
+python -m ohvul.poc_verify llm_pocs --source .\authorized-source `
+  --findings autopilot-out\findings.json --output verify `
+  --guarded-heap tools\harness          # -Dmalloc=... + quarantined pages
+```
+
+- **text** — `classify_poc` marks drafts that redefine the target function as
+  `copied_target`; a crash inside the draft's own copy is a tautology and is
+  never counted as evidence (same detector the drafting gate uses).
+- **compile** — with no `--link`, the link set is inferred from the linker's own
+  undefined symbols (≤3 rounds, ≤4 files per round), so a cJSON PoC finds
+  `cJSON.c` without being told.
+- **run** — UAF/overflow are silent-corruption classes: without a memory checker
+  (ASan probe, or the guarded heap) "it did not crash" stays `undetermined`
+  instead of being promoted to `refuted`.
+- **frame** — a crash inside the library at an unrelated function is
+  `wrong_site`, not `confirmed`. Real OHOS `.so` frames come from
+  `ohvul.poc_real` / `tools/harness/ohos/run_real.sh` (WSL + musl loader + gdb +
+  `llvm-addr2line -i`).
+
+Verdicts: `confirmed` / `wrong_site` / `refuted` / `undetermined`, written to
+`verify/poc_verification.json`. See [TECHNICAL_SPEC §3.15](docs/deliverables/TECHNICAL_SPEC.md).
+
 ## Version impact matrix and deliverable assembly
 
 ```powershell
