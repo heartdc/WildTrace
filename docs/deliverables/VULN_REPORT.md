@@ -4,6 +4,9 @@
 工具版本：WildTrace (master)
 分析范围：20 个案例（公开 CVE 缺口回验 + 新发现候选）；修复补丁见 `patches/`
 
+> **PoC 列同时标证据层级**：✅ 真库＝有可执行 PoC，且在真实 `.so` 上复现崩溃（IPC `0x218c4`、UDMF `0x1718a`、HiAppEvent `0xdc9a`）；✅ 等价＝有 PoC，在 ASan 等价环境复现（KV 受 AbilityRuntime 上下文隔离，未进真库）；源级＝只给源码级对照、无可执行触发器（4 个 ffmpeg 案，原因见各案第 3 节）。
+> HiAppEvent 的库在当前构建配置下没有对应 ninja 目标，该行证据取自 2026-10-03/04 归档的 gdb 记录，未能本轮复跑。
+
 ## 分析对象与版本窗口
 
 本报告的分析对象是 OpenHarmony 主干代码的逐组件检出，而非某一个全量提交：各组件的
@@ -15,10 +18,10 @@
 | third_party/curl | `f044ac3a` | 20260819 快照 | 2 | 1 |
 | third_party/ffmpeg | `0a0c4dd3` | 2026-06-01 快照 | 12 | 8 |
 | third_party/openssl | master | — | 1 | 1 |
-| base/hiviewdfx/hiappevent | `de94cb4d` | — | 1 | 0（源级） |
-| foundation/communication/ipc/interfaces/innerkits/cj | `edc6f3ab` | — | 1 | 0（源级） |
-| foundation/distributeddatamgr/kv_store | master | — | 1 | 0（源级） |
-| foundation/distributeddatamgr/udmf | `a4882ad7` | — | 1 | 0（源级） |
+| base/hiviewdfx/hiappevent | `de94cb4d` | — | 1 | 1（真库，归档） |
+| foundation/communication/ipc/interfaces/innerkits/cj | `edc6f3ab` | — | 1 | 1（真库） |
+| foundation/distributeddatamgr/kv_store | master | — | 1 | 1（ASan 等价） |
+| foundation/distributeddatamgr/udmf | `a4882ad7` | — | 1 | 1（真库） |
 
 扫描与复核时间窗口：2026-09-22 至 2026-10-21。覆盖三批代码——dsoftbus 主扫描（1,737
 文件 / 681,529 行）、CJ FFI 清扫集（714 文件 / 173,901 行）、CVE 富集 6 组件（2,339,964
@@ -28,14 +31,14 @@
 
 - 提交号取完整 40 位的前 12 位，完整值与分支证据见 `cases/<case>/case.json` 的
   `expected_commit` 与 `branch_evidence`；curl、ffmpeg 两批按社区快照检出。
-- 「可执行 PoC」指第 3 节给出可编译运行的 PoC；标「源级」者为源码级缺口确认，未产出
-  运行级 PoC，原因逐案注明。
+- 「可执行 PoC」指第 3 节给出可编译运行的 PoC，括号内为该案的证据层级（真库 / 等价）；
+  标「源级」者为源码级缺口确认，未产出运行级 PoC，原因逐案注明。
 - 修复补丁统一存放于 `patches/<case>.patch`，第 5 节内联同一份内容。
 - 分支影响见各案第 4 节：只声明有证据的结论，缺证据一律写 unknown，不作安全结论。
 
 ## 案例总览
 
-| # | 案例 | CVE | CWE | 组件 | 发现方式 | PoC |
+| # | 案例 | CVE | CWE | 组件 | 发现方式 | PoC / 运行证据 |
 |---|---|---|---|---|---|---|
 | 1 | cjson_merge_alias | CVE-2026-87933 | CWE-416 | third_party/cJSON | 缺口回验 | ✅ |
 | 2 | curl_native_ca_reuse | CVE-2026-80231 | CWE-488 | third_party/curl | 缺口回验 | 源级 |
@@ -52,11 +55,11 @@
 | 13 | ffmpeg_swaprect_temp_row_oob | CVE-2026-65706 | CWE-787 | third_party/ffmpeg | 缺口回验 | ✅ |
 | 14 | ffmpeg_ty_ac3_trim_underflow | CVE-2026-65704 | CWE-191 (underflow leading to CWE-787) | third_party/ffmpeg | 缺口回验 | ✅ |
 | 15 | ffmpeg_wmaenc_extradata_padding | CVE-2026-52296 | CWE-125 | third_party/ffmpeg | 缺口回验 | ✅ |
-| 16 | hiappevent_ffi_watcher_null_filter | 新发现 | CWE-476 | base/hiviewdfx/hiappevent | 缺口回验 | 源级 |
-| 17 | ipc_cj_array_null_validation | 新发现 | CWE-476 | foundation/communication/ipc/interfaces/innerkits/cj | 缺口回验 | 源级 |
-| 18 | kv_ffi_array_validation | 新发现 | CWE-476 | foundation/distributeddatamgr/kv_store | 缺口回验 | 源级 |
+| 16 | hiappevent_ffi_watcher_null_filter | 新发现 | CWE-476 | base/hiviewdfx/hiappevent | 缺口回验 | ✅ 真库（归档） |
+| 17 | ipc_cj_array_null_validation | 新发现 | CWE-476 | foundation/communication/ipc/interfaces/innerkits/cj | 缺口回验 | ✅ 真库 |
+| 18 | kv_ffi_array_validation | 新发现 | CWE-476 | foundation/distributeddatamgr/kv_store | 缺口回验 | ✅ 等价（ASan） |
 | 19 | openssl_ocb_oneshot_iv_discard | CVE-2026-45445 | CWE-325 | third_party/openssl | 缺口回验 | ✅ |
-| 20 | udmf_ffi_setproperties_null_tag | 新发现 | CWE-476 | foundation/distributeddatamgr/udmf | 缺口回验 | 源级 |
+| 20 | udmf_ffi_setproperties_null_tag | 新发现 | CWE-476 | foundation/distributeddatamgr/udmf | 缺口回验 | ✅ 真库 |
 
 ## cjson-merge-nonobject-alias
 
