@@ -131,7 +131,7 @@ python tools/kb_gap_audit.py <component-repo> --kb <kb.json>   # 回移缺口四
 | 覆盖率口径 | `findings.json` 的 `surface` 字段如实记录扫描面（文件数/行数估计/CJ 命中）；声明外文件不计为已分析 | |
 
 实测示例见 `docs/deliverables/PERFORMANCE.md`（dsoftbus 1,737 文件 / 681,529 行、
-651.67 s、3,033 条 lead；CVE 富集 6 组件 2,339,964 行 / 8,752 s；耗时与内存数据随附）。
+651.67 s、3,033 条 lead；CVE 富集 6 组件 2,339,964 行 / 8,750.8 s；耗时与内存数据随附）。
 
 ## 4. 常见问题
 
