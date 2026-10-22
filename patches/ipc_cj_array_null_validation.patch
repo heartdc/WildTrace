@@ -1,17 +1,15 @@
-# ipc_cj_array_null_validation
-# CJ_WriteByteArray 入口对（data, len）组合校验
-# 对照 OpenHarmony 检出源码生成（行号取自检出文件）；未编译验证。
-# 应用：在 OpenHarmony 源码根目录 patch -p1 < ipc_cj_array_null_validation.patch
-
+# 修复建议补丁（ipc_cj_array_null_validation）
+# 口径：CJ_WriteByteArray 对（数组指针, 长度）组合校验：len>0 时 data 判空，返回既有参数校验错误码。
+# 基线：/home/beichen/oh 官方完整树对应仓（见 case.json oh_source）
+# 生成：2026-10-17，由原始源文件机械生成（scratch 副本编辑，树内文件未动）
 --- a/foundation/communication/ipc/interfaces/innerkits/cj/src/message_sequence_impl.cpp
 +++ b/foundation/communication/ipc/interfaces/innerkits/cj/src/message_sequence_impl.cpp
-@@ -369,6 +369,11 @@
+@@ -369,6 +369,10 @@
      if (nativeParcel_ == nullptr) {
          return errorDesc::WRITE_DATA_TO_MESSAGE_SEQUENCE_ERROR;
      }
-+    /* A non-zero length with a null buffer would be dereferenced in the write
-+     * loop below; reject the pair before touching the parcel. */
 +    if (value.len > 0 && value.data == nullptr) {
++        // 边界形态（data=NULL, len>0）拒绝，与同文件其他 FFI 转换的校验口径一致
 +        return errorDesc::WRITE_DATA_TO_MESSAGE_SEQUENCE_ERROR;
 +    }
      if (CheckWriteCapacity(BYTE_SIZE_8 * (value.len + 1))) {

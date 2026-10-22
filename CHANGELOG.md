@@ -1,11 +1,12 @@
 # 2026-10-22（交付件补齐：补丁附件 patches/ 19 份 + 分析对象段 + 测试口径统一）
 
-- **补丁附件**：报告里 20 处指向"补丁附件"/`patch.diff`，而仓库此前只有
-  `cases/curl_psl_supercookie/upstream_95c1e891.patch` 一个文件。新增 `patches/`：
-  15 份自报告内联 diff 原样提取，4 份（IPC / HiAppEvent / UDMF / KV）对照检出源码
-  新写并经 `patch -p1 --dry-run` 验证可应用（**未编译验证**）。`patches/README.md`
-  给出目标文件、执行目录与验证状态。`curl-native-ca` 不出单文件补丁：改动涉及
-  connectdata 的缓存字段与建连复制路径，报告写明原因并给修复方向。
+- **补丁附件**：补丁原件本已存在（`cases/<case>/patch.diff`，19 案各一份；此前只按
+  `*.patch` 检索，漏了 `.diff` 扩展名）。新增 `patches/` 作镜像 + 索引：19 份与原件
+  逐字节一致（仅行尾统一 LF），`ffmpeg_quirc_resize_oob` 原件缺失，用报告内联 diff 补齐。
+  报告第 5 节四案（IPC / HiAppEvent / UDMF / KV）的内联补丁同步为原件内容，不再另写一版。
+  `curl_native_ca_reuse` 的件表达的是语义——比对成员 `native_ca_store` 在
+  `ssl_config_data` 里，而 `match_ssl_primary_config()` 只收 `ssl_primary_config`，
+  按现状编译不过，报告已标注并给出可落地方向。
 - **分析对象与版本窗口**：漏洞分析报告新增一节——8 个组件的检出提交/快照
   （cJSON `0c2c9df`、curl `f044ac3a`、ffmpeg `0a0c4dd3`、openssl master、
   hiappevent `de94cb4d`、IPC `edc6f3ab`、kv master、UDMF `a4882ad7`）、

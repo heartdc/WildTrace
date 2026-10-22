@@ -1,8 +1,3 @@
-# openssl-ocb-oneshot-iv-discard
-# 修复补丁（自 docs/deliverables/VULN_REPORT.md 提取，未改动内容）
-# 目标文件：providers/implementations/ciphers/cipher_aes_ocb.c
-# 应用：patch -p1 < openssl_ocb_oneshot_iv_discard.patch （在组件源码根目录执行）
-
 diff --git a/providers/implementations/ciphers/cipher_aes_ocb.c b/providers/implementations/ciphers/cipher_aes_ocb.c
 index 1f6da4b212296..329d4bfa3e17c 100644
 --- a/providers/implementations/ciphers/cipher_aes_ocb.c

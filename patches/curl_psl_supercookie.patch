@@ -1,8 +1,3 @@
-# curl-psl-supercookie-tailmatch
-# 修复补丁（自 docs/deliverables/VULN_REPORT.md 提取，未改动内容）
-# 目标文件：lib/cookie.c
-# 应用：patch -p1 < curl_psl_supercookie.patch （在组件源码根目录执行）
-
 # Narrow fix for CVE-2026-82209 adapted to OpenHarmony third_party/curl
 # (upstream 95c1e891 assumes the is_public_suffix() wrapper introduced by a
 # later refactor; OH's 20260819-snapshot cookie.c checks PSL inline).

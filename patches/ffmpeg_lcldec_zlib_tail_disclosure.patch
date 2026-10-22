@@ -1,8 +1,3 @@
-# ffmpeg-lcldec-zlib-tail-disclosure
-# 修复补丁（自 docs/deliverables/VULN_REPORT.md 提取，未改动内容）
-# 目标文件：libavcodec/lcldec.c
-# 应用：patch -p1 < ffmpeg_lcldec_zlib_tail_disclosure.patch （在组件源码根目录执行）
-
 diff --git a/libavcodec/lcldec.c b/libavcodec/lcldec.c
 --- a/libavcodec/lcldec.c
 +++ b/libavcodec/lcldec.c

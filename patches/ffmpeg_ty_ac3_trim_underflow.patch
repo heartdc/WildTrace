@@ -1,8 +1,3 @@
-# ffmpeg-ty-ac3-trim-underflow
-# 修复补丁（自 docs/deliverables/VULN_REPORT.md 提取，未改动内容）
-# 目标文件：libavformat/ty.c
-# 应用：patch -p1 < ffmpeg_ty_ac3_trim_underflow.patch （在组件源码根目录执行）
-
 diff --git a/libavformat/ty.c b/libavformat/ty.c
 index 9be027fcca35b..842d97038cb6b 100644
 --- a/libavformat/ty.c

@@ -1,19 +1,17 @@
-# udmf_ffi_setproperties_null_tag
-# FfiUDMFSetProperties 对 tag 判空后再转换
-# 对照 OpenHarmony 检出源码生成（行号取自检出文件）；未编译验证。
-# 应用：在 OpenHarmony 源码根目录 patch -p1 < udmf_ffi_setproperties_null_tag.patch
-
+# 修复建议补丁（udmf_ffi_setproperties_null_tag）
+# 口径：FfiUDMFSetProperties 对 properties.tag 判空；或为 Utils::MallocCString增加 const char* 判空重载（工单给了两个可选口径，本补丁取入口判空）。
+# 基线：/home/beichen/oh 官方完整树对应仓（见 case.json oh_source）
+# 生成：2026-10-17，由原始源文件机械生成（scratch 副本编辑，树内文件未动）
 --- a/foundation/distributeddatamgr/udmf/interfaces/cj/src/unified_data_ffi.cpp
 +++ b/foundation/distributeddatamgr/udmf/interfaces/cj/src/unified_data_ffi.cpp
-@@ -131,7 +131,10 @@
+@@ -131,7 +131,9 @@
      AAFwk::WantParams wantP;
      SetDataParameters(properties.extras, wantP);
      prop->extras = wantP;
 -    prop->tag = Utils::MallocCString(properties.tag);
-+    /* MallocCString takes const std::string&, so a null tag builds
-+     * std::string(nullptr) and faults in strlen before the empty-string check
-+     * can run. Treat null as the empty tag that the setter already accepts. */
-+    prop->tag = properties.tag == nullptr ? nullptr : Utils::MallocCString(properties.tag);
++    // tag 为 CJ 侧可空字符串：空指针按空串语义，防 std::string(nullptr) 崩溃
++    // （round-trip 论据：GetProperties 对空 tag 本就返回 nullptr）
++    prop->tag = properties.tag != nullptr ? Utils::MallocCString(properties.tag) : "";
      prop->shareOptions = UDMF::ShareOptions(properties.shareOptions);
      data->unifiedData_->SetProperties(prop);
  }

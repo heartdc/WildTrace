@@ -282,7 +282,7 @@ if(data->set.ssl.native_ca_store != candidate->native_ca_store_cached)
 
 `native_ca_store_cached` 需在 `Curl_ssl_setup_conn()` 建连时从 `data->set.ssl` 复制（与 `ssl_config` 的复制同一处）。
 
-本案例不出单文件补丁：改动要动 `connectdata` 的缓存字段与建连复制路径，须与上游 8.22.0 的匹配函数改造一起落地，单独贴 diff 反而不可编译。
+**注意**：`cases/curl_native_ca_reuse/patch.diff` 里那一行是 `c1->native_ca_store == c2->native_ca_store`，但该位定义在 `struct ssl_config_data`，而 `match_ssl_primary_config()` 的两个形参都是 `ssl_primary_config` —— 这份附件表达的是语义，按现状编译不过，落地需按上面的方向改。
 
 ---
 
@@ -2740,30 +2740,25 @@ int main(int argc, char **argv)
 
 AddWatcher 入口对 appEventFilters.head 判空（head==NULL 且 size>0 时返回参数校验错误码，与对照路径现有校验口径一致）；内层 names.head / eventTypes.head 同步补判空。（与提交表单第五节修复建议一致：D:/cve_data/submission_hiappevent/奖励计划表单v1_hiappevent.md）
 
-**修复补丁**（`patches/hiappevent_ffi_watcher_null_filter.patch`，对照检出源码生成，`patch -p1` 已验证可应用；未编译验证）：
+**修复补丁**（原件 `cases/hiappevent_ffi_watcher_null_filter/patch.diff`；`patches/hiappevent_ffi_watcher_null_filter.patch` 为同内容镜像）：
 
 ```diff
+# 修复建议补丁（hiappevent_ffi_watcher_null_filter）
+# 口径：AddWatcher 入口对边界形态（head=NULL 且 size>0）返回 ERR_PARAM，外层 appEventFilters 与内层 names 同步补判空；eventTypes 循环同型补丁见工单第五节。
+# 基线：/home/beichen/oh 官方完整树对应仓（见 case.json oh_source）
+# 生成：2026-10-17，由原始源文件机械生成（scratch 副本编辑，树内文件未动）
 --- a/base/hiviewdfx/hiappevent/frameworks/cj/ffi/src/hiappevent_ffi.cpp
 +++ b/base/hiviewdfx/hiappevent/frameworks/cj/ffi/src/hiappevent_ffi.cpp
-@@ -369,7 +369,23 @@
+@@ -369,7 +369,14 @@
      }
      std::vector<AppEventFilter> filters;
      std::unordered_set<std::string> names;
-+    /* size/head are a pair: a non-zero size with a null head dereferences null
-+     * on the first iteration. Same check for the inner string arrays. */
 +    if (watcher.appEventFilters.size > 0 && watcher.appEventFilters.head == nullptr) {
-+        ret.code = ERR_PARAM;
-+        return ret;
++        return ret; // ret.code == ERR_PARAM：边界形态（head=NULL, size>0）拒绝
 +    }
      for (int i = 0; i < watcher.appEventFilters.size; i++) {
-+        if (watcher.appEventFilters.head[i].names.size > 0 &&
-+            watcher.appEventFilters.head[i].names.head == nullptr) {
-+            ret.code = ERR_PARAM;
-+            return ret;
-+        }
-+        if (watcher.appEventFilters.head[i].eventTypes.size > 0 &&
-+            watcher.appEventFilters.head[i].eventTypes.head == nullptr) {
-+            ret.code = ERR_PARAM;
++        if (watcher.appEventFilters.head[i].names.size > 0
++            && watcher.appEventFilters.head[i].names.head == nullptr) {
 +            return ret;
 +        }
          for (int j = 0; j < watcher.appEventFilters.head[i].names.size; j++) {
@@ -2896,18 +2891,21 @@ int main(int argc, char **argv)
 
 建议 WriteByteArray 的 CJ FFI 入口对（数组指针, 长度）组合校验：length>0 时数组指针判空并返回参数校验错误码，与同文件其他 FFI 转换的既有检查口径对齐（真库级 SIGSEGV 证据：工单 OHSA26-092953990）。
 
-**修复补丁**（`patches/ipc_cj_array_null_validation.patch`，对照检出源码生成，`patch -p1` 已验证可应用；未编译验证）：
+**修复补丁**（原件 `cases/ipc_cj_array_null_validation/patch.diff`；`patches/ipc_cj_array_null_validation.patch` 为同内容镜像）：
 
 ```diff
+# 修复建议补丁（ipc_cj_array_null_validation）
+# 口径：CJ_WriteByteArray 对（数组指针, 长度）组合校验：len>0 时 data 判空，返回既有参数校验错误码。
+# 基线：/home/beichen/oh 官方完整树对应仓（见 case.json oh_source）
+# 生成：2026-10-17，由原始源文件机械生成（scratch 副本编辑，树内文件未动）
 --- a/foundation/communication/ipc/interfaces/innerkits/cj/src/message_sequence_impl.cpp
 +++ b/foundation/communication/ipc/interfaces/innerkits/cj/src/message_sequence_impl.cpp
-@@ -369,6 +369,11 @@
+@@ -369,6 +369,10 @@
      if (nativeParcel_ == nullptr) {
          return errorDesc::WRITE_DATA_TO_MESSAGE_SEQUENCE_ERROR;
      }
-+    /* A non-zero length with a null buffer would be dereferenced in the write
-+     * loop below; reject the pair before touching the parcel. */
 +    if (value.len > 0 && value.data == nullptr) {
++        // 边界形态（data=NULL, len>0）拒绝，与同文件其他 FFI 转换的校验口径一致
 +        return errorDesc::WRITE_DATA_TO_MESSAGE_SEQUENCE_ERROR;
 +    }
      if (CheckWriteCapacity(BYTE_SIZE_8 * (value.len + 1))) {
@@ -3077,20 +3075,21 @@ int main(int argc, char **argv)
 
 建议 CArrStrToVectorKey/String 族 FFI 转换（同文件 3 处）在 length>0 时校验数组指针非空并返回参数校验错误码；本案为源级归档口径（AbilityRuntime Context 隔离限制，如实记录，见 docs/status/TASK_IPC_KV_VALIDATION_20260928.md）。
 
-**修复补丁**（`patches/kv_ffi_array_validation.patch`，对照检出源码生成，`patch -p1` 已验证可应用；未编译验证）：
+**修复补丁**（原件 `cases/kv_ffi_array_validation/patch.diff`；`patches/kv_ffi_array_validation.patch` 为同内容镜像）：
 
 ```diff
+# 修复建议补丁（kv_ffi_array_validation）
+# 口径：CArrStrToVectorKey 对边界形态按空集返回；CArrStrToVectorString（同文件同型函数）与第三处 CArrStrToVector 族转换同型补丁，完整三处清单见工单。
+# 基线：/home/beichen/oh 官方完整树对应仓（见 case.json oh_source）
+# 生成：2026-10-17，由原始源文件机械生成（scratch 副本编辑，树内文件未动）
 --- a/foundation/distributeddatamgr/kv_store/frameworks/cj/src/distributed_kv_store_impl.cpp
 +++ b/foundation/distributeddatamgr/kv_store/frameworks/cj/src/distributed_kv_store_impl.cpp
-@@ -424,6 +424,12 @@
+@@ -424,6 +424,9 @@
  {
      std::vector<Key> keys;
      int64_t size = cArrStr.size;
-+    /* Defensive guard: size>0 with head==nullptr used to dereference null.
-+     * Returning an empty vector keeps the batch call a no-op; a stricter fix
-+     * would thread an error code back to the CJ layer. */
 +    if (size > 0 && cArrStr.head == nullptr) {
-+        return keys;
++        return keys; // 边界形态（head=NULL, size>0）按空集处理，不下沉解引用
 +    }
      for (int64_t i = 0; i < size; i++) {
          std::string str = cArrStr.head[i];
@@ -3474,20 +3473,23 @@ int main(int argc, char **argv)
 
 FfiUDMFSetProperties 对 properties.tag 判空（tag != nullptr ? Utils::MallocCString(...) : 空串语义），或 Utils::MallocCString 增加 const char* 判空重载（与 UDMF_REAL_LIBRARY_CONFIRM_20261009.md 后续节一致）；同步核查同文件其余直传点。
 
-**修复补丁**（`patches/udmf_ffi_setproperties_null_tag.patch`，对照检出源码生成，`patch -p1` 已验证可应用；未编译验证）：
+**修复补丁**（原件 `cases/udmf_ffi_setproperties_null_tag/patch.diff`；`patches/udmf_ffi_setproperties_null_tag.patch` 为同内容镜像）：
 
 ```diff
+# 修复建议补丁（udmf_ffi_setproperties_null_tag）
+# 口径：FfiUDMFSetProperties 对 properties.tag 判空；或为 Utils::MallocCString增加 const char* 判空重载（工单给了两个可选口径，本补丁取入口判空）。
+# 基线：/home/beichen/oh 官方完整树对应仓（见 case.json oh_source）
+# 生成：2026-10-17，由原始源文件机械生成（scratch 副本编辑，树内文件未动）
 --- a/foundation/distributeddatamgr/udmf/interfaces/cj/src/unified_data_ffi.cpp
 +++ b/foundation/distributeddatamgr/udmf/interfaces/cj/src/unified_data_ffi.cpp
-@@ -131,7 +131,10 @@
+@@ -131,7 +131,9 @@
      AAFwk::WantParams wantP;
      SetDataParameters(properties.extras, wantP);
      prop->extras = wantP;
 -    prop->tag = Utils::MallocCString(properties.tag);
-+    /* MallocCString takes const std::string&, so a null tag builds
-+     * std::string(nullptr) and faults in strlen before the empty-string check
-+     * can run. Treat null as the empty tag that the setter already accepts. */
-+    prop->tag = properties.tag == nullptr ? nullptr : Utils::MallocCString(properties.tag);
++    // tag 为 CJ 侧可空字符串：空指针按空串语义，防 std::string(nullptr) 崩溃
++    // （round-trip 论据：GetProperties 对空 tag 本就返回 nullptr）
++    prop->tag = properties.tag != nullptr ? Utils::MallocCString(properties.tag) : "";
      prop->shareOptions = UDMF::ShareOptions(properties.shareOptions);
      data->unifiedData_->SetProperties(prop);
  }

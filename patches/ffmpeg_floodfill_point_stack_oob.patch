@@ -1,8 +1,3 @@
-# ffmpeg-floodfill-point-stack-oob
-# 修复补丁（自 docs/deliverables/VULN_REPORT.md 提取，未改动内容）
-# 目标文件：libavfilter/vf_floodfill.c
-# 应用：patch -p1 < ffmpeg_floodfill_point_stack_oob.patch （在组件源码根目录执行）
-
 diff --git a/libavfilter/vf_floodfill.c b/libavfilter/vf_floodfill.c
 index 6d89963e71582..e569d5f586352 100644
 --- a/libavfilter/vf_floodfill.c

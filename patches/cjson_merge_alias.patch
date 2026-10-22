@@ -1,8 +1,3 @@
-# cjson-merge-nonobject-alias
-# 修复补丁（自 docs/deliverables/VULN_REPORT.md 提取，未改动内容）
-# 目标文件：cJSON_Utils.c
-# 应用：patch -p1 < cjson_merge_alias.patch （在组件源码根目录执行）
-
 --- a/cJSON_Utils.c
 +++ b/cJSON_Utils.c
 @@ -1325,8 +1325,9 @@

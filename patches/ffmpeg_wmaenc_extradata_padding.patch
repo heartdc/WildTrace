@@ -1,8 +1,3 @@
-# ffmpeg-wmaenc-extradata-padding
-# 修复补丁（自 docs/deliverables/VULN_REPORT.md 提取，未改动内容）
-# 目标文件：libavcodec/wmaenc.c
-# 应用：patch -p1 < ffmpeg_wmaenc_extradata_padding.patch （在组件源码根目录执行）
-
 diff --git a/libavcodec/wmaenc.c b/libavcodec/wmaenc.c
 index b419694c51aad..35a3c6f6e35aa 100644
 --- a/libavcodec/wmaenc.c

@@ -1,0 +1,14 @@
+# 修复建议补丁（curl_native_ca_reuse）
+# 口径：match_ssl_primary_config 补入 native_ca_store 字段比对（上游 master vtls_config.c:144 同口径），使 NATIVE_CA 开关不同的两条 HTTPS 连接不再被复用。
+# 基线：/home/beichen/oh 官方完整树对应仓（见 case.json oh_source）
+# 生成：2026-10-17，由原始源文件机械生成（scratch 副本编辑，树内文件未动）
+--- a/third_party/curl/lib/vtls/vtls.c
++++ b/third_party/curl/lib/vtls/vtls.c
+@@ -181,6 +181,7 @@
+   if((c1->version == c2->version) &&
+      (c1->version_max == c2->version_max) &&
+      (c1->ssl_options == c2->ssl_options) &&
++     (c1->native_ca_store == c2->native_ca_store) &&
+      (c1->verifypeer == c2->verifypeer) &&
+      (c1->verifyhost == c2->verifyhost) &&
+      (c1->verifystatus == c2->verifystatus) &&

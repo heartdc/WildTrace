@@ -1,8 +1,3 @@
-# ffmpeg-iamf-count-label-dos
-# 修复补丁（自 docs/deliverables/VULN_REPORT.md 提取，未改动内容）
-# 目标文件：libavformat/iamf_parse.c
-# 应用：patch -p1 < ffmpeg_iamf_count_label_dos.patch （在组件源码根目录执行）
-
 diff --git a/libavformat/iamf_parse.c b/libavformat/iamf_parse.c
 index d74a8677d68d5..4c2df2c9e686d 100644
 --- a/libavformat/iamf_parse.c
