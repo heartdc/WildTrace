@@ -74,7 +74,7 @@ WildTrace 是一套**本地、离线优先、证据可审计**的 OpenHarmony C/
 | **LLM PoC 四道闸门（§3.9/§3.15）** | ✅ 已实现 | 文本形态分类 + 链接集自推断编译 + 运行三态（静默腐蚀保护）+ 帧归因 `wrong_site`；端到端 ~30s/案 |
 | **Joern 端到端 + 双引擎交叉（§3.16）** | ✅ 已实测 | available=true、findings=1（J6_null_deref）；P6+J6 双层 |
 | **自足构建链 + 真库 malformed 管线（§3.17）** | ✅ 已实现 | oh_build 工具包四步管线；udmf/bt#19 真库 SIGSEGV 实证（exit 139 + 帧归因） |
-| **分支钉版实证（§3.18）** | ✅ 已实现 | manifest 钉版 + gitcode README 实证；影响矩阵 15 案六分支全判定，待定格清零 |
+| **分支钉版实证（§3.18）** | ✅ 已实现 | manifest 钉版 + gitcode README 实证；影响矩阵 20 案六分支全判定（105 格），待定格清零 |
 | **P8 分支/闭包敏感化（§3.19）** | ✅ 已实现 | dsoftbus 448→69（移除 379 全为裁定形态）；外部复审 F04 三处收窄后反例回归锁定 |
 | **种子化召回基准 v2（§3.20）** | ✅ 已实现 | 11 正向种子（独立文件归属）+ 5 负向 silent_for：召回 11/11、violations=0 |
 | **召回守恒账本（§3.20）** | ✅ 工具就绪 | 分目录漏斗 + 抑制原因分布；口径声明（单位不同不做机器守恒断言） |
@@ -534,7 +534,7 @@ DeregisterServerObserver（`run_bt_dereg.sh`，exit 139 + 符号化归因
 manifest（ohos/ohos.xml）钉住 ref 在 **gitcode（manifest 声明的 remote）**
 解析，逐一浅取 README.OpenSource 的 Version Number——实证修正了旧手工表
 的多处估值（v4.1 ffmpeg=n4.1→4.4.1、v6.0=n6.1.1→5.1.4、curl v6.0=
-8.11.0→8.8.0 等）。结合 kb 受影响区间，15 案（curl×2 / ffmpeg×12 /
+8.11.0→8.8.0 等）。结合 kb 受影响区间，16 案（cJSON / curl×2 / ffmpeg×12 /
 openssl）六分支全部落定（🔴 或 not_affected 附证据链），待定格清零；
 iamf 依特性年表（n6.1 引入）判低版本分支不含缺陷代码。影响口径仍由
 契约测试锁定"三出口同输入同判定"。**证据分层**（2026-10-18 外部复审 F08 响应）：
