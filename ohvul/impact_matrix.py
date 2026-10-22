@@ -210,6 +210,36 @@ def affected_range_verdict(entries, baseline):
     return 'unknown'
 
 
+TIER_KEYS = ("reproduced", "pin", "probe")
+TIER_LABELS = {"reproduced": "检出级", "pin": "钉版联接", "probe": "符号探测"}
+
+
+def evidence_tier(record: dict, branch: str) -> str | None:
+    """How strong the evidence behind a non-unknown cell is.
+
+    reproduced — validated on the checked-out tree (commit + run)  → only master
+    pin        — manifest pin → README version → kb range
+    probe      — the vulnerable symbol exists on that branch baseline
+
+    The three are not interchangeable, so the matrix counts them separately:
+    "105 affected" alone reads as 105 reproductions, which it is not.
+    """
+    evidence = record.get("branch_evidence") or {}
+    entry = evidence.get(branch) if isinstance(evidence, dict) else None
+    if not isinstance(entry, dict) or not entry.get("verdict"):
+        return None
+    reference = str(entry.get("reference") or "")
+    if branch == "master":
+        return "reproduced"
+    if "钉住" in reference or "钉版" in reference:
+        return "pin"
+    # Branch-level symbol presence: the branch was fetched and the vulnerable
+    # file/symbol checked, which is weaker than running it there.
+    if any(word in reference for word in ("符号", "在位", "不存在", "未引入", "浅取")):
+        return "probe"
+    return None
+
+
 def evaluate_case(record: dict, kb_records: dict | None = None, *, strict_evidence: bool = True) -> dict:
     """Branch impact verdicts for one case.json record."""
     component = record.get("component") or ""
@@ -264,6 +294,11 @@ def evaluate_case(record: dict, kb_records: dict | None = None, *, strict_eviden
         rule = "version-equality-with-verified-tree"
     else:
         rule = "no-version-evidence"
+    tiers = {b: (evidence_tier(record, b) if v != "unknown" else None)
+             for b, v in branches.items()}
+    tier_counts = {k: sum(1 for b, v in branches.items()
+                          if v == "affected" and tiers.get(b) == k)
+                   for k in TIER_KEYS}
     return {
         "cve": cve,
         "component": component,
@@ -278,6 +313,8 @@ def evaluate_case(record: dict, kb_records: dict | None = None, *, strict_eviden
         "branch_evidence": branch_evidence,
         "affected_count": sum(1 for v in branches.values() if v == "affected"),
         "unknown_count": sum(1 for v in branches.values() if v == "unknown"),
+        "branch_tiers": tiers,
+        "tier_counts": tier_counts,
     }
 
 
@@ -323,8 +360,8 @@ def render_matrix_md(matrix: dict) -> str:
         "",
         f"生成日期：{date.today().isoformat()}（工具 `ohvul.impact_matrix` 从 cases/ 自动生成）",
         "",
-        "| 案例 | CVE | 组件 | 引入版本 | 上游修复 | " + " | ".join(short_branch(b) for b in branches) + " | 证实分支数 | 待定格数 |",
-        "|" + "---|" * (5 + len(branches) + 2),
+        "| 案例 | CVE | 组件 | 引入版本 | 上游修复 | " + " | ".join(short_branch(b) for b in branches) + " | 证实分支数 | 检出 | 钉版 | 符号 | 待定格数 |",
+        "|" + "---|" * (5 + len(branches) + 5),
     ]
     total_affected = total_unknown = total_not_affected = 0
     for name, info in matrix.items():
@@ -335,6 +372,8 @@ def render_matrix_md(matrix: dict) -> str:
         for b in branches:
             row.append(SYMBOLS.get(info["branches"][b], "？"))
         row.append(str(info["affected_count"]))
+        for key in TIER_KEYS:
+            row.append(str(info["tier_counts"][key]))
         row.append(str(info["unknown_count"]))
         total_affected += info["affected_count"]
         total_unknown += info["unknown_count"]
@@ -342,11 +381,14 @@ def render_matrix_md(matrix: dict) -> str:
                                   if v in ("not_affected", "fixed"))
         lines.append("| " + " | ".join(row) + " |")
     lines.append("")
-    lines.append(f"**总计**：{len(matrix)} 案 × {len(branches)} 分支；🔴 证实 affected {total_affected} 格；"
+    grand = {k: sum(info["tier_counts"][k] for info in matrix.values()) for k in TIER_KEYS}
+    lines.append(f"**总计**：{len(matrix)} 案 × {len(branches)} 分支；🔴 证实 affected {total_affected} 格"
+                 f"（检出级 {grand['reproduced']} / 钉版联接 {grand['pin']} / 符号探测 {grand['probe']}）；"
                  f"— 证实不受影响 {total_not_affected} 格；？待定 {total_unknown} 格。"
                  f"本表只声明有证据的格子，？不是安全结论。")
     lines.append("")
     lines.append("> 🔴 affected = 本案例记录了具体分支提交及验证证据；上游版本推测不计为分支实证。  ")
+    lines.append("> 上面三列是 🔴 的证据强度：**检出级**＝该案的验证基线检出（是否跑过见报告第 3 节）；**钉版联接**＝manifest 钉住→README 版本→kb 区间；**符号探测**＝漏洞函数在该分支基线在位。三者不可互换，故分列计数。  ")
     lines.append("> （证据分层，2026-10-18 外部复审 F08：🔴 中 2026-10-17 新增格分两类——**钉版联接**（manifest 钉版→README 版本→kb 区间）与**符号探测**（漏洞函数在位性），弱于检出/复现级实证；分支引用名→SHA 固化列为后续项，见 docs/analysis/EXTERNAL_REVIEW_RESPONSE_20261018.md）  ")
     lines.append("> ✅ fixed = 分支基线已含上游修复  ")
     lines.append("> — not_affected = 分支基线早于缺陷引入版本  ")

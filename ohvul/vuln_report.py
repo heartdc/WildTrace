@@ -15,7 +15,8 @@ import json, os, re
 from pathlib import Path
 from datetime import date
 
-from .impact_matrix import OH_BRANCHES, evaluate_case, load_kb_records
+from .impact_matrix import (OH_BRANCHES, TIER_KEYS, TIER_LABELS, component_type,
+                             evaluate_case, load_kb_records)
 
 REPORT_TEMPLATE = """## {case_id}
 
@@ -216,11 +217,36 @@ def read_case(case_dir: Path, kb_records: dict | None = None) -> dict:
     # non-strict rendering).
     component = record.get("component") or ""
     evaluated = evaluate_case(record, kb_records, strict_evidence=True)
+    # A branch verdict carries its evidence strength: "affected" backed by a run
+    # on the checked-out tree is not the same claim as "affected" backed by a
+    # manifest pin, and neither is a symbol-presence probe. The label says which.
     branch_labels = {
         "affected": "🔴 affected（分支实证：branch_evidence 记录提交与引用）",
         "fixed": "✅ fixed（分支实证：该分支基线已含修复）",
         "not_affected": "— not_affected（分支实证：该分支基线早于引入）",
     }
+    ctype = component_type(component)
+
+    def _tier_label(branch: str, verdict: str) -> str:
+        tier = (evaluated.get("branch_tiers") or {}).get(branch)
+        evidence = (record.get("branch_evidence") or {}).get(branch) or {}
+        if verdict == "affected":
+            if tier == "reproduced":
+                commit = str(evidence.get("source_commit") or "")[:12]
+                return (f"🔴 affected（检出级：验证基线 {commit}；"
+                        f"该树上的运行状态见第 3 节）")
+            if tier == "pin":
+                pinned = (OH_BRANCHES.get(branch) or {}).get(ctype, "")
+                return (f"🔴 affected（钉版联接：manifest@{branch} 钉住 {ctype} "
+                        f"{pinned}，该版本在缺陷区间内）")
+            if tier == "probe":
+                return "🔴 affected（符号探测：漏洞函数在该分支基线中在位）"
+            return branch_labels["affected"]
+        if verdict == "not_affected" and tier == "pin":
+            return "— not_affected（钉版联接：该分支基线版本早于引入）"
+        if verdict == "not_affected" and tier == "probe":
+            return "— not_affected（符号探测：该分支基线无该文件或漏洞符号）"
+        return branch_labels.get(verdict, "")
     prediction_labels = {
         "affected": "🔴 预测可能受影响（上游范围覆盖该基线）",
         "fixed": "✅ 预测已含修复（上游修复版本 ≤ 该基线）",
@@ -230,9 +256,22 @@ def read_case(case_dir: Path, kb_records: dict | None = None) -> dict:
     for br in OH_BRANCHES:
         short = br.replace("OpenHarmony-", "").replace("-Release", "")
         impact = evaluated["branches"].get(br, "unknown")
-        label = branch_labels.get(impact,
-                                  "？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）")
+        label = _tier_label(br, impact) if impact != "unknown" else (
+            "？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）")
         version_impact_lines.append(f"- {short}: {label}")
+
+    counts = evaluated.get("tier_counts") or {}
+    breakdown = " + ".join(f"{TIER_LABELS[k]} {counts.get(k, 0)}" for k in TIER_KEYS
+                           if counts.get(k))
+    affected_total = evaluated.get("affected_count", 0)
+    not_affected_total = sum(1 for v in evaluated["branches"].values()
+                             if v == "not_affected")
+    summary = (f"（本案例 {len(OH_BRANCHES)} 分支：affected {affected_total}"
+               + (f" = {breakdown}" if breakdown else "")
+               + f"；not_affected {not_affected_total}"
+               + f"；unknown {evaluated.get('unknown_count', 0)}）")
+    version_impact_lines.append("")
+    version_impact_lines.append(summary)
     version_impact_lines.append("")
     version_impact_lines.append("**上游版本预测（风险线索，不代替分支证据）**")
     for br in OH_BRANCHES:

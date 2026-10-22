@@ -35,6 +35,9 @@
   标「源级」者为源码级缺口确认，未产出运行级 PoC，原因逐案注明。
 - 修复补丁统一存放于 `patches/<case>.patch`，第 5 节内联同一份内容。
 - 分支影响见各案第 4 节：只声明有证据的结论，缺证据一律写 unknown，不作安全结论。
+  分支结论按证据强度标注——**检出级**（该案的验证基线检出，是否跑过见第 3 节）、**钉版联接**（manifest 钉住
+  → README 版本 → kb 区间）、**符号探测**（漏洞符号在该分支基线在位），三者不可互换；
+  全量分层计数见《版本分支影响矩阵》的复现/钉版/符号三列。
 
 ## 案例总览
 
@@ -176,12 +179,14 @@ int main(int argc, char **argv)
 **影响的 OpenHarmony 版本分支**：
 
 **分支判定（严格口径，仅计 branch_evidence）**
-- v4.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v5.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v5.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v6.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v7.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- master: 🔴 affected（分支实证：branch_evidence 记录提交与引用）
+- v4.1: 🔴 affected（钉版联接：manifest@OpenHarmony-v4.1-Release 钉住 cjson 1.7.16，该版本在缺陷区间内）
+- v5.0: 🔴 affected（钉版联接：manifest@OpenHarmony-v5.0-Release 钉住 cjson 1.7.17，该版本在缺陷区间内）
+- v5.1: 🔴 affected（钉版联接：manifest@OpenHarmony-v5.1-Release 钉住 cjson 1.7.17，该版本在缺陷区间内）
+- v6.0: 🔴 affected（钉版联接：manifest@OpenHarmony-v6.0-Release 钉住 cjson 1.7.17，该版本在缺陷区间内）
+- v7.0: 🔴 affected（钉版联接：manifest@OpenHarmony-v7.0-Release 钉住 cjson 1.7.19，该版本在缺陷区间内）
+- master: 🔴 affected（检出级：验证基线 0c2c9df；该树上的运行状态见第 3 节）
+
+（本案例 6 分支：affected 6 = 检出级 1 + 钉版联接 5；not_affected 0；unknown 0）
 
 **上游版本预测（风险线索，不代替分支证据）**
 - [预测] v4.1: 🔴 预测可能受影响（上游范围覆盖该基线）
@@ -253,12 +258,14 @@ libcurl reuses an HTTPS connection without checking that both requests used the 
 **影响的 OpenHarmony 版本分支**：
 
 **分支判定（严格口径，仅计 branch_evidence）**
-- v4.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v5.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v5.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v6.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v7.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- master: 🔴 affected（分支实证：branch_evidence 记录提交与引用）
+- v4.1: 🔴 affected（钉版联接：manifest@OpenHarmony-v4.1-Release 钉住 curl 8.4.0，该版本在缺陷区间内）
+- v5.0: 🔴 affected（钉版联接：manifest@OpenHarmony-v5.0-Release 钉住 curl 8.6.0，该版本在缺陷区间内）
+- v5.1: 🔴 affected（钉版联接：manifest@OpenHarmony-v5.1-Release 钉住 curl 8.8.0，该版本在缺陷区间内）
+- v6.0: 🔴 affected（钉版联接：manifest@OpenHarmony-v6.0-Release 钉住 curl 8.8.0，该版本在缺陷区间内）
+- v7.0: 🔴 affected（钉版联接：manifest@OpenHarmony-v7.0-Release 钉住 curl 8.8.0，该版本在缺陷区间内）
+- master: 🔴 affected（检出级：验证基线 f044ac3ac942；该树上的运行状态见第 3 节）
+
+（本案例 6 分支：affected 6 = 检出级 1 + 钉版联接 5；not_affected 0；unknown 0）
 
 **上游版本预测（风险线索，不代替分支证据）**
 - [预测] v4.1: 🔴 预测可能受影响（上游范围覆盖该基线）
@@ -472,12 +479,14 @@ libcurl sources (OH tree) built with USE_LIBPSL; libpsl dev package; POSIX socke
 **影响的 OpenHarmony 版本分支**：
 
 **分支判定（严格口径，仅计 branch_evidence）**
-- v4.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v5.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v5.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v6.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v7.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- master: 🔴 affected（分支实证：branch_evidence 记录提交与引用）
+- v4.1: 🔴 affected（钉版联接：manifest@OpenHarmony-v4.1-Release 钉住 curl 8.4.0，该版本在缺陷区间内）
+- v5.0: 🔴 affected（钉版联接：manifest@OpenHarmony-v5.0-Release 钉住 curl 8.6.0，该版本在缺陷区间内）
+- v5.1: 🔴 affected（钉版联接：manifest@OpenHarmony-v5.1-Release 钉住 curl 8.8.0，该版本在缺陷区间内）
+- v6.0: 🔴 affected（钉版联接：manifest@OpenHarmony-v6.0-Release 钉住 curl 8.8.0，该版本在缺陷区间内）
+- v7.0: 🔴 affected（钉版联接：manifest@OpenHarmony-v7.0-Release 钉住 curl 8.8.0，该版本在缺陷区间内）
+- master: 🔴 affected（检出级：验证基线 f044ac3ac942；该树上的运行状态见第 3 节）
+
+（本案例 6 分支：affected 6 = 检出级 1 + 钉版联接 5；not_affected 0；unknown 0）
 
 **上游版本预测（风险线索，不代替分支证据）**
 - [预测] v4.1: 🔴 预测可能受影响（上游范围覆盖该基线）
@@ -562,15 +571,17 @@ CFHD transform-2 output width (lowpass_width*2) is stream-controlled and unbound
 **影响的 OpenHarmony 版本分支**：
 
 **分支判定（严格口径，仅计 branch_evidence）**
-- v4.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v5.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v5.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v6.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v7.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- master: 🔴 affected（分支实证：branch_evidence 记录提交与引用）
+- v4.1: 🔴 affected（钉版联接：manifest@OpenHarmony-v4.1-Release 钉住 ffmpeg 4.4.1，该版本在缺陷区间内）
+- v5.0: 🔴 affected（钉版联接：manifest@OpenHarmony-v5.0-Release 钉住 ffmpeg 5.1.4，该版本在缺陷区间内）
+- v5.1: 🔴 affected（钉版联接：manifest@OpenHarmony-v5.1-Release 钉住 ffmpeg 5.1.4，该版本在缺陷区间内）
+- v6.0: 🔴 affected（钉版联接：manifest@OpenHarmony-v6.0-Release 钉住 ffmpeg 5.1.4，该版本在缺陷区间内）
+- v7.0: 🔴 affected（钉版联接：manifest@OpenHarmony-v7.0-Release 钉住 ffmpeg 7.1.1，该版本在缺陷区间内）
+- master: 🔴 affected（检出级：验证基线 0a0c4dd33c；该树上的运行状态见第 3 节）
+
+（本案例 6 分支：affected 6 = 检出级 1 + 钉版联接 5；not_affected 0；unknown 0）
 
 **上游版本预测（风险线索，不代替分支证据）**
-- [预测] v4.1: — 预测不受影响（上游范围不含该基线）
+- [预测] v4.1: 🔴 预测可能受影响（上游范围覆盖该基线）
 - [预测] v5.0: 🔴 预测可能受影响（上游范围覆盖该基线）
 - [预测] v5.1: 🔴 预测可能受影响（上游范围覆盖该基线）
 - [预测] v6.0: 🔴 预测可能受影响（上游范围覆盖该基线）
@@ -781,12 +792,14 @@ int main(int argc, char **argv)
 **影响的 OpenHarmony 版本分支**：
 
 **分支判定（严格口径，仅计 branch_evidence）**
-- v4.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v5.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v5.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v6.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v7.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- master: 🔴 affected（分支实证：branch_evidence 记录提交与引用）
+- v4.1: 🔴 affected（钉版联接：manifest@OpenHarmony-v4.1-Release 钉住 ffmpeg 4.4.1，该版本在缺陷区间内）
+- v5.0: 🔴 affected（钉版联接：manifest@OpenHarmony-v5.0-Release 钉住 ffmpeg 5.1.4，该版本在缺陷区间内）
+- v5.1: 🔴 affected（钉版联接：manifest@OpenHarmony-v5.1-Release 钉住 ffmpeg 5.1.4，该版本在缺陷区间内）
+- v6.0: 🔴 affected（钉版联接：manifest@OpenHarmony-v6.0-Release 钉住 ffmpeg 5.1.4，该版本在缺陷区间内）
+- v7.0: 🔴 affected（钉版联接：manifest@OpenHarmony-v7.0-Release 钉住 ffmpeg 7.1.1，该版本在缺陷区间内）
+- master: 🔴 affected（检出级：验证基线 0a0c4dd33c；该树上的运行状态见第 3 节）
+
+（本案例 6 分支：affected 6 = 检出级 1 + 钉版联接 5；not_affected 0；unknown 0）
 
 **上游版本预测（风险线索，不代替分支证据）**
 - [预测] v4.1: 🔴 预测可能受影响（上游范围覆盖该基线）
@@ -977,12 +990,14 @@ int main(int argc, char **argv)
 **影响的 OpenHarmony 版本分支**：
 
 **分支判定（严格口径，仅计 branch_evidence）**
-- v4.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v5.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v5.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v6.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v7.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- master: 🔴 affected（分支实证：branch_evidence 记录提交与引用）
+- v4.1: 🔴 affected（钉版联接：manifest@OpenHarmony-v4.1-Release 钉住 ffmpeg 4.4.1，该版本在缺陷区间内）
+- v5.0: 🔴 affected（钉版联接：manifest@OpenHarmony-v5.0-Release 钉住 ffmpeg 5.1.4，该版本在缺陷区间内）
+- v5.1: 🔴 affected（钉版联接：manifest@OpenHarmony-v5.1-Release 钉住 ffmpeg 5.1.4，该版本在缺陷区间内）
+- v6.0: 🔴 affected（钉版联接：manifest@OpenHarmony-v6.0-Release 钉住 ffmpeg 5.1.4，该版本在缺陷区间内）
+- v7.0: 🔴 affected（钉版联接：manifest@OpenHarmony-v7.0-Release 钉住 ffmpeg 7.1.1，该版本在缺陷区间内）
+- master: 🔴 affected（检出级：验证基线 0a0c4dd33c；该树上的运行状态见第 3 节）
+
+（本案例 6 分支：affected 6 = 检出级 1 + 钉版联接 5；not_affected 0；unknown 0）
 
 **上游版本预测（风险线索，不代替分支证据）**
 - [预测] v4.1: 🔴 预测可能受影响（上游范围覆盖该基线）
@@ -1215,12 +1230,14 @@ int main(int argc, char **argv)
 **影响的 OpenHarmony 版本分支**：
 
 **分支判定（严格口径，仅计 branch_evidence）**
-- v4.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v5.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v5.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v6.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v7.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- master: 🔴 affected（分支实证：branch_evidence 记录提交与引用）
+- v4.1: 🔴 affected（钉版联接：manifest@OpenHarmony-v4.1-Release 钉住 ffmpeg 4.4.1，该版本在缺陷区间内）
+- v5.0: 🔴 affected（钉版联接：manifest@OpenHarmony-v5.0-Release 钉住 ffmpeg 5.1.4，该版本在缺陷区间内）
+- v5.1: 🔴 affected（钉版联接：manifest@OpenHarmony-v5.1-Release 钉住 ffmpeg 5.1.4，该版本在缺陷区间内）
+- v6.0: 🔴 affected（钉版联接：manifest@OpenHarmony-v6.0-Release 钉住 ffmpeg 5.1.4，该版本在缺陷区间内）
+- v7.0: 🔴 affected（钉版联接：manifest@OpenHarmony-v7.0-Release 钉住 ffmpeg 7.1.1，该版本在缺陷区间内）
+- master: 🔴 affected（检出级：验证基线 0a0c4dd33c；该树上的运行状态见第 3 节）
+
+（本案例 6 分支：affected 6 = 检出级 1 + 钉版联接 5；not_affected 0；unknown 0）
 
 **上游版本预测（风险线索，不代替分支证据）**
 - [预测] v4.1: 🔴 预测可能受影响（上游范围覆盖该基线）
@@ -1304,12 +1321,14 @@ IAMF mix_presentation OBU: count_label taken from stream leb128 and used directl
 **影响的 OpenHarmony 版本分支**：
 
 **分支判定（严格口径，仅计 branch_evidence）**
-- v4.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v5.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v5.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v6.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v7.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- master: 🔴 affected（分支实证：branch_evidence 记录提交与引用）
+- v4.1: — not_affected（钉版联接：该分支基线版本早于引入）
+- v5.0: — not_affected（钉版联接：该分支基线版本早于引入）
+- v5.1: — not_affected（钉版联接：该分支基线版本早于引入）
+- v6.0: — not_affected（钉版联接：该分支基线版本早于引入）
+- v7.0: 🔴 affected（钉版联接：manifest@OpenHarmony-v7.0-Release 钉住 ffmpeg 7.1.1，该版本在缺陷区间内）
+- master: 🔴 affected（检出级：验证基线 0a0c4dd33c；该树上的运行状态见第 3 节）
+
+（本案例 6 分支：affected 2 = 检出级 1 + 钉版联接 1；not_affected 4；unknown 0）
 
 **上游版本预测（风险线索，不代替分支证据）**
 - [预测] v4.1: 🔴 预测可能受影响（上游范围覆盖该基线）
@@ -1488,12 +1507,14 @@ int main(int argc, char **argv)
 **影响的 OpenHarmony 版本分支**：
 
 **分支判定（严格口径，仅计 branch_evidence）**
-- v4.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v5.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v5.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v6.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v7.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- master: 🔴 affected（分支实证：branch_evidence 记录提交与引用）
+- v4.1: 🔴 affected（钉版联接：manifest@OpenHarmony-v4.1-Release 钉住 ffmpeg 4.4.1，该版本在缺陷区间内）
+- v5.0: 🔴 affected（钉版联接：manifest@OpenHarmony-v5.0-Release 钉住 ffmpeg 5.1.4，该版本在缺陷区间内）
+- v5.1: 🔴 affected（钉版联接：manifest@OpenHarmony-v5.1-Release 钉住 ffmpeg 5.1.4，该版本在缺陷区间内）
+- v6.0: 🔴 affected（钉版联接：manifest@OpenHarmony-v6.0-Release 钉住 ffmpeg 5.1.4，该版本在缺陷区间内）
+- v7.0: 🔴 affected（钉版联接：manifest@OpenHarmony-v7.0-Release 钉住 ffmpeg 7.1.1，该版本在缺陷区间内）
+- master: 🔴 affected（检出级：验证基线 0a0c4dd33c；该树上的运行状态见第 3 节）
+
+（本案例 6 分支：affected 6 = 检出级 1 + 钉版联接 5；not_affected 0；unknown 0）
 
 **上游版本预测（风险线索，不代替分支证据）**
 - [预测] v4.1: 🔴 预测可能受影响（上游范围覆盖该基线）
@@ -1582,15 +1603,17 @@ nvdec hardware decode: when decoder surfaces are exhausted inside ff_nvdec_start
 **影响的 OpenHarmony 版本分支**：
 
 **分支判定（严格口径，仅计 branch_evidence）**
-- v4.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v5.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v5.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v6.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v7.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- master: 🔴 affected（分支实证：branch_evidence 记录提交与引用）
+- v4.1: 🔴 affected（钉版联接：manifest@OpenHarmony-v4.1-Release 钉住 ffmpeg 4.4.1，该版本在缺陷区间内）
+- v5.0: 🔴 affected（钉版联接：manifest@OpenHarmony-v5.0-Release 钉住 ffmpeg 5.1.4，该版本在缺陷区间内）
+- v5.1: 🔴 affected（钉版联接：manifest@OpenHarmony-v5.1-Release 钉住 ffmpeg 5.1.4，该版本在缺陷区间内）
+- v6.0: 🔴 affected（钉版联接：manifest@OpenHarmony-v6.0-Release 钉住 ffmpeg 5.1.4，该版本在缺陷区间内）
+- v7.0: 🔴 affected（钉版联接：manifest@OpenHarmony-v7.0-Release 钉住 ffmpeg 7.1.1，该版本在缺陷区间内）
+- master: 🔴 affected（检出级：验证基线 0a0c4dd33c；该树上的运行状态见第 3 节）
+
+（本案例 6 分支：affected 6 = 检出级 1 + 钉版联接 5；not_affected 0；unknown 0）
 
 **上游版本预测（风险线索，不代替分支证据）**
-- [预测] v4.1: — 预测不受影响（上游范围不含该基线）
+- [预测] v4.1: 🔴 预测可能受影响（上游范围覆盖该基线）
 - [预测] v5.0: 🔴 预测可能受影响（上游范围覆盖该基线）
 - [预测] v5.1: 🔴 预测可能受影响（上游范围覆盖该基线）
 - [预测] v6.0: 🔴 预测可能受影响（上游范围覆盖该基线）
@@ -1803,12 +1826,14 @@ int main(int argc, char **argv)
 **影响的 OpenHarmony 版本分支**：
 
 **分支判定（严格口径，仅计 branch_evidence）**
-- v4.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v5.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v5.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v6.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v7.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- master: 🔴 affected（分支实证：branch_evidence 记录提交与引用）
+- v4.1: — not_affected（钉版联接：该分支基线版本早于引入）
+- v5.0: — not_affected（钉版联接：该分支基线版本早于引入）
+- v5.1: — not_affected（钉版联接：该分支基线版本早于引入）
+- v6.0: — not_affected（钉版联接：该分支基线版本早于引入）
+- v7.0: 🔴 affected（钉版联接：manifest@OpenHarmony-v7.0-Release 钉住 ffmpeg 7.1.1，该版本在缺陷区间内）
+- master: 🔴 affected（检出级：验证基线 0a0c4dd33c；该树上的运行状态见第 3 节）
+
+（本案例 6 分支：affected 2 = 检出级 1 + 钉版联接 1；not_affected 4；unknown 0）
 
 **上游版本预测（风险线索，不代替分支证据）**
 - [预测] v4.1: — 预测不受影响（上游范围不含该基线）
@@ -1911,12 +1936,14 @@ RSCC screen-capture decoder: when the deflate output is shorter than the frame n
 **影响的 OpenHarmony 版本分支**：
 
 **分支判定（严格口径，仅计 branch_evidence）**
-- v4.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v5.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v5.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v6.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v7.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- master: 🔴 affected（分支实证：branch_evidence 记录提交与引用）
+- v4.1: 🔴 affected（钉版联接：manifest@OpenHarmony-v4.1-Release 钉住 ffmpeg 4.4.1，该版本在缺陷区间内）
+- v5.0: 🔴 affected（钉版联接：manifest@OpenHarmony-v5.0-Release 钉住 ffmpeg 5.1.4，该版本在缺陷区间内）
+- v5.1: 🔴 affected（钉版联接：manifest@OpenHarmony-v5.1-Release 钉住 ffmpeg 5.1.4，该版本在缺陷区间内）
+- v6.0: 🔴 affected（钉版联接：manifest@OpenHarmony-v6.0-Release 钉住 ffmpeg 5.1.4，该版本在缺陷区间内）
+- v7.0: 🔴 affected（钉版联接：manifest@OpenHarmony-v7.0-Release 钉住 ffmpeg 7.1.1，该版本在缺陷区间内）
+- master: 🔴 affected（检出级：验证基线 0a0c4dd33c；该树上的运行状态见第 3 节）
+
+（本案例 6 分支：affected 6 = 检出级 1 + 钉版联接 5；not_affected 0；unknown 0）
 
 **上游版本预测（风险线索，不代替分支证据）**
 - [预测] v4.1: 🔴 预测可能受影响（上游范围覆盖该基线）
@@ -2132,12 +2159,14 @@ int main(int argc, char **argv)
 **影响的 OpenHarmony 版本分支**：
 
 **分支判定（严格口径，仅计 branch_evidence）**
-- v4.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v5.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v5.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v6.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v7.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- master: 🔴 affected（分支实证：branch_evidence 记录提交与引用）
+- v4.1: 🔴 affected（钉版联接：manifest@OpenHarmony-v4.1-Release 钉住 ffmpeg 4.4.1，该版本在缺陷区间内）
+- v5.0: 🔴 affected（钉版联接：manifest@OpenHarmony-v5.0-Release 钉住 ffmpeg 5.1.4，该版本在缺陷区间内）
+- v5.1: 🔴 affected（钉版联接：manifest@OpenHarmony-v5.1-Release 钉住 ffmpeg 5.1.4，该版本在缺陷区间内）
+- v6.0: 🔴 affected（钉版联接：manifest@OpenHarmony-v6.0-Release 钉住 ffmpeg 5.1.4，该版本在缺陷区间内）
+- v7.0: 🔴 affected（钉版联接：manifest@OpenHarmony-v7.0-Release 钉住 ffmpeg 7.1.1，该版本在缺陷区间内）
+- master: 🔴 affected（检出级：验证基线 0a0c4dd33c；该树上的运行状态见第 3 节）
+
+（本案例 6 分支：affected 6 = 检出级 1 + 钉版联接 5；not_affected 0；unknown 0）
 
 **上游版本预测（风险线索，不代替分支证据）**
 - [预测] v4.1: 🔴 预测可能受影响（上游范围覆盖该基线）
@@ -2342,12 +2371,14 @@ int main(int argc, char **argv)
 **影响的 OpenHarmony 版本分支**：
 
 **分支判定（严格口径，仅计 branch_evidence）**
-- v4.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v5.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v5.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v6.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v7.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- master: 🔴 affected（分支实证：branch_evidence 记录提交与引用）
+- v4.1: 🔴 affected（钉版联接：manifest@OpenHarmony-v4.1-Release 钉住 ffmpeg 4.4.1，该版本在缺陷区间内）
+- v5.0: 🔴 affected（钉版联接：manifest@OpenHarmony-v5.0-Release 钉住 ffmpeg 5.1.4，该版本在缺陷区间内）
+- v5.1: 🔴 affected（钉版联接：manifest@OpenHarmony-v5.1-Release 钉住 ffmpeg 5.1.4，该版本在缺陷区间内）
+- v6.0: 🔴 affected（钉版联接：manifest@OpenHarmony-v6.0-Release 钉住 ffmpeg 5.1.4，该版本在缺陷区间内）
+- v7.0: 🔴 affected（钉版联接：manifest@OpenHarmony-v7.0-Release 钉住 ffmpeg 7.1.1，该版本在缺陷区间内）
+- master: 🔴 affected（检出级：验证基线 0a0c4dd33c；该树上的运行状态见第 3 节）
+
+（本案例 6 分支：affected 6 = 检出级 1 + 钉版联接 5；not_affected 0；unknown 0）
 
 **上游版本预测（风险线索，不代替分支证据）**
 - [预测] v4.1: 🔴 预测可能受影响（上游范围覆盖该基线）
@@ -2519,12 +2550,14 @@ int main(int argc, char **argv)
 **影响的 OpenHarmony 版本分支**：
 
 **分支判定（严格口径，仅计 branch_evidence）**
-- v4.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v5.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v5.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v6.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v7.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- master: 🔴 affected（分支实证：branch_evidence 记录提交与引用）
+- v4.1: 🔴 affected（钉版联接：manifest@OpenHarmony-v4.1-Release 钉住 ffmpeg 4.4.1，该版本在缺陷区间内）
+- v5.0: 🔴 affected（钉版联接：manifest@OpenHarmony-v5.0-Release 钉住 ffmpeg 5.1.4，该版本在缺陷区间内）
+- v5.1: 🔴 affected（钉版联接：manifest@OpenHarmony-v5.1-Release 钉住 ffmpeg 5.1.4，该版本在缺陷区间内）
+- v6.0: 🔴 affected（钉版联接：manifest@OpenHarmony-v6.0-Release 钉住 ffmpeg 5.1.4，该版本在缺陷区间内）
+- v7.0: 🔴 affected（钉版联接：manifest@OpenHarmony-v7.0-Release 钉住 ffmpeg 7.1.1，该版本在缺陷区间内）
+- master: 🔴 affected（检出级：验证基线 0a0c4dd33c；该树上的运行状态见第 3 节）
+
+（本案例 6 分支：affected 6 = 检出级 1 + 钉版联接 5；not_affected 0；unknown 0）
 
 **上游版本预测（风险线索，不代替分支证据）**
 - [预测] v4.1: 🔴 预测可能受影响（上游范围覆盖该基线）
@@ -2721,12 +2754,14 @@ int main(int argc, char **argv)
 **影响的 OpenHarmony 版本分支**：
 
 **分支判定（严格口径，仅计 branch_evidence）**
-- v4.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v5.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v5.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v6.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v7.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- master: 🔴 affected（分支实证：branch_evidence 记录提交与引用）
+- v4.1: — not_affected（符号探测：该分支基线无该文件或漏洞符号）
+- v5.0: 🔴 affected（符号探测：漏洞函数在该分支基线中在位）
+- v5.1: 🔴 affected（符号探测：漏洞函数在该分支基线中在位）
+- v6.0: 🔴 affected（符号探测：漏洞函数在该分支基线中在位）
+- v7.0: 🔴 affected（符号探测：漏洞函数在该分支基线中在位）
+- master: 🔴 affected（检出级：验证基线 de94cb4d53f9；该树上的运行状态见第 3 节）
+
+（本案例 6 分支：affected 5 = 检出级 1 + 符号探测 4；not_affected 1；unknown 0）
 
 **上游版本预测（风险线索，不代替分支证据）**
 - [预测] v4.1: ？ 无上游版本信息，无法预测
@@ -2872,12 +2907,14 @@ int main(int argc, char **argv)
 **影响的 OpenHarmony 版本分支**：
 
 **分支判定（严格口径，仅计 branch_evidence）**
-- v4.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v5.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v5.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v6.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v7.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- master: 🔴 affected（分支实证：branch_evidence 记录提交与引用）
+- v4.1: — not_affected（符号探测：该分支基线无该文件或漏洞符号）
+- v5.0: — not_affected（符号探测：该分支基线无该文件或漏洞符号）
+- v5.1: 🔴 affected（符号探测：漏洞函数在该分支基线中在位）
+- v6.0: 🔴 affected（符号探测：漏洞函数在该分支基线中在位）
+- v7.0: 🔴 affected（符号探测：漏洞函数在该分支基线中在位）
+- master: 🔴 affected（检出级：验证基线 edc6f3ab；该树上的运行状态见第 3 节）
+
+（本案例 6 分支：affected 4 = 检出级 1 + 符号探测 3；not_affected 2；unknown 0）
 
 **上游版本预测（风险线索，不代替分支证据）**
 - [预测] v4.1: ？ 无上游版本信息，无法预测
@@ -3056,12 +3093,14 @@ int main(int argc, char **argv)
 **影响的 OpenHarmony 版本分支**：
 
 **分支判定（严格口径，仅计 branch_evidence）**
-- v4.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v5.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v5.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v6.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v7.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- master: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
+- v4.1: — not_affected（符号探测：该分支基线无该文件或漏洞符号）
+- v5.0: 🔴 affected（符号探测：漏洞函数在该分支基线中在位）
+- v5.1: 🔴 affected（符号探测：漏洞函数在该分支基线中在位）
+- v6.0: 🔴 affected（符号探测：漏洞函数在该分支基线中在位）
+- v7.0: 🔴 affected（符号探测：漏洞函数在该分支基线中在位）
+- master: 🔴 affected（检出级：验证基线 master；该树上的运行状态见第 3 节）
+
+（本案例 6 分支：affected 5 = 检出级 1 + 符号探测 4；not_affected 1；unknown 0）
 
 **上游版本预测（风险线索，不代替分支证据）**
 - [预测] v4.1: ？ 无上游版本信息，无法预测
@@ -3243,12 +3282,14 @@ int main(void)
 **影响的 OpenHarmony 版本分支**：
 
 **分支判定（严格口径，仅计 branch_evidence）**
-- v4.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v5.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v5.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v6.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v7.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- master: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
+- v4.1: 🔴 affected（钉版联接：manifest@OpenHarmony-v4.1-Release 钉住 openssl 3.0.9，该版本在缺陷区间内）
+- v5.0: 🔴 affected（钉版联接：manifest@OpenHarmony-v5.0-Release 钉住 openssl 3.0.9，该版本在缺陷区间内）
+- v5.1: 🔴 affected（钉版联接：manifest@OpenHarmony-v5.1-Release 钉住 openssl 3.0.9，该版本在缺陷区间内）
+- v6.0: 🔴 affected（钉版联接：manifest@OpenHarmony-v6.0-Release 钉住 openssl 3.0.9，该版本在缺陷区间内）
+- v7.0: 🔴 affected（钉版联接：manifest@OpenHarmony-v7.0-Release 钉住 openssl 3.0.9，该版本在缺陷区间内）
+- master: 🔴 affected（检出级：验证基线 master；该树上的运行状态见第 3 节）
+
+（本案例 6 分支：affected 6 = 检出级 1 + 钉版联接 5；not_affected 0；unknown 0）
 
 **上游版本预测（风险线索，不代替分支证据）**
 - [预测] v4.1: 🔴 预测可能受影响（上游范围覆盖该基线）
@@ -3454,12 +3495,14 @@ int main(int argc, char **argv)
 **影响的 OpenHarmony 版本分支**：
 
 **分支判定（严格口径，仅计 branch_evidence）**
-- v4.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v5.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v5.1: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v6.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- v7.0: ？ unknown（现有材料不足以给出该分支的判定——既非安全结论，也非扫描失败）
-- master: 🔴 affected（分支实证：branch_evidence 记录提交与引用）
+- v4.1: — not_affected（符号探测：该分支基线无该文件或漏洞符号）
+- v5.0: — not_affected（符号探测：该分支基线无该文件或漏洞符号）
+- v5.1: — not_affected（符号探测：该分支基线无该文件或漏洞符号）
+- v6.0: 🔴 affected（符号探测：漏洞函数在该分支基线中在位）
+- v7.0: 🔴 affected（符号探测：漏洞函数在该分支基线中在位）
+- master: 🔴 affected（检出级：验证基线 a4882ad72459；该树上的运行状态见第 3 节）
+
+（本案例 6 分支：affected 3 = 检出级 1 + 符号探测 2；not_affected 3；unknown 0）
 
 **上游版本预测（风险线索，不代替分支证据）**
 - [预测] v4.1: ？ 无上游版本信息，无法预测
