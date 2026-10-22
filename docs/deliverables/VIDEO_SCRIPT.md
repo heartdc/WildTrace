@@ -72,7 +72,7 @@ python -m ohvul.toolchain --output .\demo-out\preflight.json
 - 画面：competition_report.md 的矩阵与分案记录；IMPACT_MATRIX.md 的
   🔴/—/？三态与"上游预测独立呈现"分区
 - 旁白：报告只投影 case.json、未知项显式保留、不发明 confirmed 数字；
-  ？格已通过分支钉版实证清零（第三方 15 案 + 原生四案符号级探测）
+  ？格已通过分支钉版实证清零（第三方 16 案 + 原生四案符号级探测）
 
 ## 7. 片尾交付清单（30s）
 

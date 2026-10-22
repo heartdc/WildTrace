@@ -382,7 +382,10 @@ def render_matrix_md(matrix: dict) -> str:
         lines.append("| " + " | ".join(row) + " |")
     lines.append("")
     grand = {k: sum(info["tier_counts"][k] for info in matrix.values()) for k in TIER_KEYS}
-    lines.append(f"**总计**：{len(matrix)} 案 × {len(branches)} 分支；🔴 证实 affected {total_affected} 格"
+    lines.append(f"**总计**：{len(matrix)} 案 × {len(branches)} 分支 = "
+                 f"**{len(matrix) * len(branches)} 格**"
+                 f"（{total_affected} + {total_not_affected} + {total_unknown}）；"
+                 f"🔴 证实 affected {total_affected} 格"
                  f"（检出级 {grand['reproduced']} / 钉版联接 {grand['pin']} / 符号探测 {grand['probe']}）；"
                  f"— 证实不受影响 {total_not_affected} 格；？待定 {total_unknown} 格。"
                  f"本表只声明有证据的格子，？不是安全结论。")
