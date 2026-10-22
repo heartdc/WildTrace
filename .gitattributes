@@ -4,3 +4,6 @@
 # Scripts executed under WSL/bash must keep LF on checkout too.
 *.sh text eol=lf
 *.sc text eol=lf
+
+# Patch attachments are applied on Linux/WSL; keep LF on checkout.
+*.patch text eol=lf

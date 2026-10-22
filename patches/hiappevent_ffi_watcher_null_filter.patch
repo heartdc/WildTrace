@@ -1,0 +1,31 @@
+# hiappevent_ffi_watcher_null_filter
+# FfiOHOSHiAppEventAddWatcher 对 filters/names/eventTypes 三处 head 判空
+# 对照 OpenHarmony 检出源码生成（行号取自检出文件）；未编译验证。
+# 应用：在 OpenHarmony 源码根目录 patch -p1 < hiappevent_ffi_watcher_null_filter.patch
+
+--- a/base/hiviewdfx/hiappevent/frameworks/cj/ffi/src/hiappevent_ffi.cpp
++++ b/base/hiviewdfx/hiappevent/frameworks/cj/ffi/src/hiappevent_ffi.cpp
+@@ -369,7 +369,23 @@
+     }
+     std::vector<AppEventFilter> filters;
+     std::unordered_set<std::string> names;
++    /* size/head are a pair: a non-zero size with a null head dereferences null
++     * on the first iteration. Same check for the inner string arrays. */
++    if (watcher.appEventFilters.size > 0 && watcher.appEventFilters.head == nullptr) {
++        ret.code = ERR_PARAM;
++        return ret;
++    }
+     for (int i = 0; i < watcher.appEventFilters.size; i++) {
++        if (watcher.appEventFilters.head[i].names.size > 0 &&
++            watcher.appEventFilters.head[i].names.head == nullptr) {
++            ret.code = ERR_PARAM;
++            return ret;
++        }
++        if (watcher.appEventFilters.head[i].eventTypes.size > 0 &&
++            watcher.appEventFilters.head[i].eventTypes.head == nullptr) {
++            ret.code = ERR_PARAM;
++            return ret;
++        }
+         for (int j = 0; j < watcher.appEventFilters.head[i].names.size; j++) {
+             names.insert(std::string(watcher.appEventFilters.head[i].names.head[j]));
+         }

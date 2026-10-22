@@ -1,0 +1,31 @@
+# ffmpeg-lcldec-zlib-tail-disclosure
+# 修复补丁（自 docs/deliverables/VULN_REPORT.md 提取，未改动内容）
+# 目标文件：libavcodec/lcldec.c
+# 应用：patch -p1 < ffmpeg_lcldec_zlib_tail_disclosure.patch （在组件源码根目录执行）
+
+diff --git a/libavcodec/lcldec.c b/libavcodec/lcldec.c
+--- a/libavcodec/lcldec.c
++++ b/libavcodec/lcldec.c
+@@ -120,6 +120,9 @@ static unsigned int mszh_decomp(const unsigned char * srcptr, int srclen, unsign
+         }
+     }
+ 
++    if (destptr < destptr_end)
++        memset(destptr, 0, destptr_end - destptr);
++
+     return destptr - destptr_bak;
+ }
+ 
+@@ -153,8 +156,11 @@ static int zlib_decomp(AVCodecContext *avctx, const uint8_t *src, int src_len, i
+     if (expected != (unsigned int)zstream->total_out) {
+         av_log(avctx, AV_LOG_ERROR, "Decoded size differs (%d != %lu)\n",
+                expected, zstream->total_out);
+-        if (expected > (unsigned int)zstream->total_out)
++        if (expected > (unsigned int)zstream->total_out) {
++            memset(c->decomp_buf + offset + zstream->total_out, 0,
++                   c->decomp_size - offset - zstream->total_out);
+             return (unsigned int)zstream->total_out;
++        }
+         return AVERROR_UNKNOWN;
+     }
+     return zstream->total_out;

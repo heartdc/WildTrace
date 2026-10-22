@@ -1,0 +1,19 @@
+# ipc_cj_array_null_validation
+# CJ_WriteByteArray 入口对（data, len）组合校验
+# 对照 OpenHarmony 检出源码生成（行号取自检出文件）；未编译验证。
+# 应用：在 OpenHarmony 源码根目录 patch -p1 < ipc_cj_array_null_validation.patch
+
+--- a/foundation/communication/ipc/interfaces/innerkits/cj/src/message_sequence_impl.cpp
++++ b/foundation/communication/ipc/interfaces/innerkits/cj/src/message_sequence_impl.cpp
+@@ -369,6 +369,11 @@
+     if (nativeParcel_ == nullptr) {
+         return errorDesc::WRITE_DATA_TO_MESSAGE_SEQUENCE_ERROR;
+     }
++    /* A non-zero length with a null buffer would be dereferenced in the write
++     * loop below; reject the pair before touching the parcel. */
++    if (value.len > 0 && value.data == nullptr) {
++        return errorDesc::WRITE_DATA_TO_MESSAGE_SEQUENCE_ERROR;
++    }
+     if (CheckWriteCapacity(BYTE_SIZE_8 * (value.len + 1))) {
+         size_t pos = nativeParcel_->GetWritePosition();
+         nativeParcel_->WriteUint32(value.len);

@@ -1,0 +1,42 @@
+# ffmpeg-quirc-resize-oob
+# 修复补丁（自 docs/deliverables/VULN_REPORT.md 提取，未改动内容）
+# 目标文件：libavfilter/vf_quirc.c
+# 应用：patch -p1 < ffmpeg_quirc_resize_oob.patch （在组件源码根目录执行）
+
+diff --git a/libavfilter/vf_quirc.c b/libavfilter/vf_quirc.c
+index 59dc84caa8d4c..d2ba48e7bcbad 100644
+--- a/libavfilter/vf_quirc.c
++++ b/libavfilter/vf_quirc.c
+@@ -36,6 +36,7 @@ typedef struct QuircContext {
+     const AVClass *class;
+ 
+     struct quirc *quirc;
++    int width, height;
+ } QuircContext;
+ 
+ static av_cold int init(AVFilterContext *ctx)
+@@ -67,6 +68,8 @@ static int config_input(AVFilterLink *inlink)
+     if (err == -1) {
+         return AVERROR(ENOMEM);
+     }
++    quirc->width  = inlink->w;
++    quirc->height = inlink->h;
+ 
+     return 0;
+ }
+@@ -80,6 +83,15 @@ static int filter_frame(AVFilterLink *inlink, AVFrame *frame)
+     int codes_count;
+     uint8_t *image;
+ 
++    if (quirc->width != inlink->w || quirc->height != inlink->h) {
++        if (quirc_resize(quirc->quirc, inlink->w, inlink->h) < 0) {
++            av_frame_free(&frame);
++            return AVERROR(ENOMEM);
++        }
++        quirc->width  = inlink->w;
++        quirc->height = inlink->h;
++    }
++
+     /* copy input image to quirc buffer */
+     image = quirc_begin(quirc->quirc, NULL, NULL);
+     av_image_copy_plane(image, inlink->w,

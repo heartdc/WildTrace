@@ -2,7 +2,36 @@
 
 生成日期：2026-10-15
 工具版本：WildTrace (master)
-分析范围：20 个案例（公开 CVE 缺口回验 + 新发现候选）
+分析范围：20 个案例（公开 CVE 缺口回验 + 新发现候选）；修复补丁见 `patches/`
+
+## 分析对象与版本窗口
+
+本报告的分析对象是 OpenHarmony 主干代码的逐组件检出，而非某一个全量提交：各组件的
+检出/校验提交不同（随检出时点而变），逐案记录如下，便于评审按提交复算。
+
+| 组件 | 检出/校验提交 | 版本 / 快照 | 案例数 | 其中可执行 PoC |
+|---|---|---|---|---|
+| third_party/cJSON | `0c2c9df` | 1.7.19 | 1 | 1 |
+| third_party/curl | `f044ac3a` | 20260819 快照 | 2 | 1 |
+| third_party/ffmpeg | `0a0c4dd3` | 2026-06-01 快照 | 12 | 8 |
+| third_party/openssl | master | — | 1 | 1 |
+| base/hiviewdfx/hiappevent | `de94cb4d` | — | 1 | 0（源级） |
+| foundation/communication/ipc/interfaces/innerkits/cj | `edc6f3ab` | — | 1 | 0（源级） |
+| foundation/distributeddatamgr/kv_store | master | — | 1 | 0（源级） |
+| foundation/distributeddatamgr/udmf | `a4882ad7` | — | 1 | 0（源级） |
+
+扫描与复核时间窗口：2026-09-22 至 2026-10-21。覆盖三批代码——dsoftbus 主扫描（1,737
+文件 / 681,529 行）、CJ FFI 清扫集（714 文件 / 173,901 行）、CVE 富集 6 组件（2,339,964
+行）；逐批规模与耗时见《工具性能说明》。
+
+口径说明：
+
+- 提交号取完整 40 位的前 12 位，完整值与分支证据见 `cases/<case>/case.json` 的
+  `expected_commit` 与 `branch_evidence`；curl、ffmpeg 两批按社区快照检出。
+- 「可执行 PoC」指第 3 节给出可编译运行的 PoC；标「源级」者为源码级缺口确认，未产出
+  运行级 PoC，原因逐案注明。
+- 修复补丁统一存放于 `patches/<case>.patch`，第 5 节内联同一份内容。
+- 分支影响见各案第 4 节：只声明有证据的结论，缺证据一律写 unknown，不作安全结论。
 
 ## 案例总览
 
@@ -161,9 +190,9 @@ int main(int argc, char **argv)
 
 ### 5. 修复建议
 
-回移上游修复（见补丁附件）
+回移上游修复（补丁见 `patches/cjson_merge_alias.patch`）
 
-**修复补丁**（`patch.diff`）：
+**修复补丁**（`patches/cjson_merge_alias.patch`）：
 ```diff
 --- a/cJSON_Utils.c
 +++ b/cJSON_Utils.c
@@ -238,9 +267,19 @@ libcurl reuses an HTTPS connection without checking that both requests used the 
 
 ### 5. 修复建议
 
-上游修复口径：match_ssl_primary_config() 的配置字段枚举补入 native_ca_store，使 HTTPS 连接复用时校验原生 CA 存储设置差异（字段枚举遗漏定位见 case.json oh_source.gap_evidence 与工单 OHSA26-092209031 源码级证据评论）。
+上游修复口径：连接复用判定补入 native_ca_store，使 HTTPS 连接复用时校验原生 CA 存储设置差异（该位定义在 ssl_config_data，而 Curl_ssl_conn_config_match() 只比较 ssl_primary_config，见下方修复方向）（字段枚举遗漏定位见 case.json oh_source.gap_evidence 与工单 OHSA26-092209031 源码级证据评论）。
 
+**修复方向（示意，未编译验证）**：`native_ca_store` 位于 `struct ssl_config_data`，而 `Curl_ssl_conn_config_match()` 只比较 `ssl_primary_config`，该位的差异因此不会进入连接复用判定。最小改动是让候选连接记住该位并在比较时一并判断：
 
+```c
+/* lib/vtls/vtls.c: Curl_ssl_conn_config_match() */
+if(data->set.ssl.native_ca_store != candidate->native_ca_store_cached)
+    return FALSE;
+```
+
+`native_ca_store_cached` 需在 `Curl_ssl_setup_conn()` 建连时从 `data->set.ssl` 复制（与 `ssl_config` 的复制同一处）。
+
+本案例不出单文件补丁：改动要动 `connectdata` 的缓存字段与建连复制路径，须与上游 8.22.0 的匹配函数改造一起落地，单独贴 diff 反而不可编译。
 
 ---
 
@@ -417,7 +456,7 @@ int main(int argc, char **argv) {
 ```
 
 **PoC 使用方法**：
-源码等价运行级（curl-8.8.0，OH lib/cookie.c 与其逐文件 diff 84 行等价）：./configure --without-ssl --with-libpsl && make -C lib；clang -fsanitize=address,undefined -I<curl>/include poc.c <curl>/lib/.libs/libcurl.a -lpsl -lpthread -o probe；./probe psl-supercookie：原版 tailmatch=1（域字段 .localhost，漏洞行为）→ 应用 patch.diff 重建 → tailmatch=0（修复生效）；non-psl-control 对照两侧均 1（无回归）。
+源码等价运行级（curl-8.8.0，OH lib/cookie.c 与其逐文件 diff 84 行等价）：./configure --without-ssl --with-libpsl && make -C lib；clang -fsanitize=address,undefined -I<curl>/include poc.c <curl>/lib/.libs/libcurl.a -lpsl -lpthread -o probe；./probe psl-supercookie：原版 tailmatch=1（域字段 .localhost，漏洞行为）→ 应用 `patches/curl_psl_supercookie.patch` 重建 → tailmatch=0（修复生效）；non-psl-control 对照两侧均 1（无回归）。
 
 libcurl sources (OH tree) built with USE_LIBPSL; libpsl dev package; POSIX sockets (loopback only)
 
@@ -449,7 +488,7 @@ libcurl sources (OH tree) built with USE_LIBPSL; libpsl dev package; POSIX socke
 
 After psl_is_cookie_domain_acceptable() accepts, clear co->tailmatch when the cookie domain is itself a public suffix (upstream 95c1e891, adapted to OH's pre-refactor structure).
 
-**修复补丁**（`patch.diff`）：
+**修复补丁**（`patches/curl_psl_supercookie.patch`）：
 ```diff
 # Narrow fix for CVE-2026-82209 adapted to OpenHarmony third_party/curl
 # (upstream 95c1e891 assumes the is_public_suffix() wrapper introduced by a
@@ -477,6 +516,8 @@ After psl_is_cookie_domain_acceptable() accepts, clear co->tailmatch when the co
        else
 
 ```
+
+补丁文件：`patches/curl_psl_supercookie.patch`（内容同上）。
 
 ---
 
@@ -535,9 +576,9 @@ CFHD transform-2 output width (lowpass_width*2) is stream-controlled and unbound
 
 ### 5. 修复建议
 
-回移上游修复（见补丁附件）
+回移上游修复（补丁见 `patches/ffmpeg_cfhd_transform2_width_oob.patch`）
 
-**修复补丁**（`patch.diff`）：
+**修复补丁**（`patches/ffmpeg_cfhd_transform2_width_oob.patch`）：
 ```diff
 diff --git a/libavcodec/cfhd.c b/libavcodec/cfhd.c
 index 4d430e32efd94..128362ac62dcf 100644
@@ -626,13 +667,13 @@ DVB subtitle parser capacity guard adds three attacker-influenced ints and can s
 
 无运行级 PoC（原因如上）；证据为三侧源码对照（上游已修 diff /
 OH 检出修复前形态逐行对应 / 官方受影响清单含基线版本），附件
-patch.diff 为可直接应用的修复（git apply --check 通过）。
+`patches/ffmpeg_dvbsub_parser_capacity_overflow.patch` 为可直接应用的修复（git apply --check 通过）。
 
 五、修复及缓解措施建议：
 
 回移上游修复 93f2a525：dvbsub_parse() 容量守卫改为
 "buf_size - buf_pos > PARSE_BUF_SIZE - pc->packet_index"（附件
-patch.diff 即上游原文，对 OH 检出直接适用）。单行等价改写，
+`patches/ffmpeg_dvbsub_parser_capacity_overflow.patch` 即上游原文，对 OH 检出直接适用）。单行等价改写，
 无行为回归风险。
 
 ### 3. PoC 源代码
@@ -756,10 +797,10 @@ int main(int argc, char **argv)
 
 回移上游修复 93f2a525：dvbsub_parse() 容量守卫改为
 "buf_size - buf_pos > PARSE_BUF_SIZE - pc->packet_index"（附件
-patch.diff 即上游原文，对 OH 检出直接适用）。单行等价改写，
+`patches/ffmpeg_dvbsub_parser_capacity_overflow.patch` 即上游原文，对 OH 检出直接适用）。单行等价改写，
 无行为回归风险。
 
-**修复补丁**（`patch.diff`）：
+**修复补丁**（`patches/ffmpeg_dvbsub_parser_capacity_overflow.patch`）：
 ```diff
 diff --git a/libavcodec/dvbsub_parser.c b/libavcodec/dvbsub_parser.c
 index 4527e4dd75624..a93f39bfe034a 100644
@@ -776,6 +817,8 @@ index 4527e4dd75624..a93f39bfe034a 100644
  /* if not currently in a packet, pass data */
 
 ```
+
+补丁文件：`patches/ffmpeg_dvbsub_parser_capacity_overflow.patch`（内容同上）。
 
 ---
 
@@ -820,13 +863,13 @@ Flood-fill point stack is allocated for the configured link size (with 4x slack)
 
 见附件 poc_floodfill.c 与对照.txt 的运行尝试记录（未触发的参数
 组合与原因分析如实呈现）；证据主体为三侧源码对照与同族运行级
-类比，附件 patch.diff 为可直接应用的修复。
+类比，`patches/ffmpeg_floodfill_point_stack_oob.patch` 为可直接应用的修复。
 
 五、修复及缓解措施建议：
 
 回移上游修复 24c322fd：点栈分配移至 filter_frame 按当前帧尺寸
 动态进行（points_size 跟踪 + av_fast_malloc + av_size_mult 溢出
-检查），config_input 不再预分配（附件 patch.diff 即上游原文，
+检查），config_input 不再预分配（`patches/ffmpeg_floodfill_point_stack_oob.patch` 即上游原文，
 对 OH 检出直接适用）。临时缓解：避免在包含 floodfill 的滤镜图
 中处理分辨率动态增大的不可信输入。
 
@@ -950,11 +993,11 @@ int main(int argc, char **argv)
 
 回移上游修复 24c322fd：点栈分配移至 filter_frame 按当前帧尺寸
 动态进行（points_size 跟踪 + av_fast_malloc + av_size_mult 溢出
-检查），config_input 不再预分配（附件 patch.diff 即上游原文，
+检查），config_input 不再预分配（`patches/ffmpeg_floodfill_point_stack_oob.patch` 即上游原文，
 对 OH 检出直接适用）。临时缓解：避免在包含 floodfill 的滤镜图
 中处理分辨率动态增大的不可信输入。
 
-**修复补丁**（`patch.diff`）：
+**修复补丁**（`patches/ffmpeg_floodfill_point_stack_oob.patch`）：
 ```diff
 diff --git a/libavfilter/vf_floodfill.c b/libavfilter/vf_floodfill.c
 index 6d89963e71582..e569d5f586352 100644
@@ -1004,6 +1047,8 @@ index 6d89963e71582..e569d5f586352 100644
  
 
 ```
+
+补丁文件：`patches/ffmpeg_floodfill_point_stack_oob.patch`（内容同上）。
 
 ---
 
@@ -1156,7 +1201,7 @@ int main(int argc, char **argv)
 ```
 
 **PoC 使用方法**：
-运行级（ASan）：./poc_orig：buffer→hqdn3d→buffersink，第 1 帧 64x64 排空后直推 512x512 帧 → ASan heap-buffer-overflow WRITE size 2（写点 denoise_spatial vf_hqdn3d.c:98，越界 config_input 分配的 128 字节行缓冲末尾，退出码 1）；git apply patch.diff 重建 → 变尺寸帧被拒绝（'Frame size changed without filter graph reinitialization'，修复生效，退出码 0）；control（两帧均 64x64）两侧正常（无回归）。
+运行级（ASan）：./poc_orig：buffer→hqdn3d→buffersink，第 1 帧 64x64 排空后直推 512x512 帧 → ASan heap-buffer-overflow WRITE size 2（写点 denoise_spatial vf_hqdn3d.c:98，越界 config_input 分配的 128 字节行缓冲末尾，退出码 1）；git apply `patches/ffmpeg_hqdn3d_dynamic_size_oob.patch` 重建 → 变尺寸帧被拒绝（'Frame size changed without filter graph reinitialization'，修复生效，退出码 0）；control（两帧均 64x64）两侧正常（无回归）。
 
 ### 4. 影响分析
 
@@ -1186,13 +1231,13 @@ int main(int argc, char **argv)
 
 推荐回移上游 5d7112c（filter_frame 检测帧尺寸变化后重跑
 config_input 重新分配行缓冲、输出按帧尺寸分配，并将 hqdn3d 加入
-avfilter.c 动态尺寸白名单）。短期可先落附件 patch.diff 的窄化防御
+avfilter.c 动态尺寸白名单）。短期可先落`patches/ffmpeg_hqdn3d_dynamic_size_oob.patch` 的窄化防御
 （filter_frame 校验帧尺寸与链路尺寸不一致即拒绝该帧，等价于上游
 中间版本的安全语义，已验证无回归）。临时缓解：避免在包含 hqdn3d
 的滤镜图中处理不可信变尺寸流；对不可信输入的滤镜处理置于资源
 受限环境。
 
-**修复补丁**（`patch.diff`）：
+**修复补丁**（`patches/ffmpeg_hqdn3d_dynamic_size_oob.patch`）：
 ```diff
 --- a/libavfilter/vf_hqdn3d.c
 +++ b/libavfilter/vf_hqdn3d.c
@@ -1213,6 +1258,8 @@ avfilter.c 动态尺寸白名单）。短期可先落附件 patch.diff 的窄化
  
 
 ```
+
+补丁文件：`patches/ffmpeg_hqdn3d_dynamic_size_oob.patch`（内容同上）。
 
 ---
 
@@ -1271,9 +1318,9 @@ IAMF mix_presentation OBU: count_label taken from stream leb128 and used directl
 
 ### 5. 修复建议
 
-回移上游修复（见补丁附件）
+回移上游修复（补丁见 `patches/ffmpeg_iamf_count_label_dos.patch`）
 
-**修复补丁**（`patch.diff`）：
+**修复补丁**（`patches/ffmpeg_iamf_count_label_dos.patch`）：
 ```diff
 diff --git a/libavformat/iamf_parse.c b/libavformat/iamf_parse.c
 index d74a8677d68d5..4c2df2c9e686d 100644
@@ -1335,12 +1382,12 @@ LCL/ZLIB video decoder leaves the not-decoded tail of decomp_buf uninitialized o
 
 无运行级 PoC（原因如上）；证据为三侧源码对照（上游已修 diff /
 OH 检出修复前形态逐行对应 / 官方受影响清单含基线版本），附件
-patch.diff 为可直接应用的修复（git apply --check 通过）。
+`patches/ffmpeg_lcldec_zlib_tail_disclosure.patch` 为可直接应用的修复（git apply --check 通过）。
 
 五、修复及缓解措施建议：
 
 回移上游修复 e7cbfd1c：mszh_decomp 与 zlib_decomp 的短解出返回
-路径补 memset 尾部清零（附件 patch.diff 即上游原文，对 OH 检出
+路径补 memset 尾部清零（`patches/ffmpeg_lcldec_zlib_tail_disclosure.patch` 即上游原文，对 OH 检出
 直接适用）。属低风险防御性修复，不改变正常解码行为。
 
 ### 3. PoC 源代码
@@ -1456,10 +1503,10 @@ int main(int argc, char **argv)
 ### 5. 修复建议
 
 回移上游修复 e7cbfd1c：mszh_decomp 与 zlib_decomp 的短解出返回
-路径补 memset 尾部清零（附件 patch.diff 即上游原文，对 OH 检出
+路径补 memset 尾部清零（`patches/ffmpeg_lcldec_zlib_tail_disclosure.patch` 即上游原文，对 OH 检出
 直接适用）。属低风险防御性修复，不改变正常解码行为。
 
-**修复补丁**（`patch.diff`）：
+**修复补丁**（`patches/ffmpeg_lcldec_zlib_tail_disclosure.patch`）：
 ```diff
 diff --git a/libavcodec/lcldec.c b/libavcodec/lcldec.c
 --- a/libavcodec/lcldec.c
@@ -1489,6 +1536,8 @@ diff --git a/libavcodec/lcldec.c b/libavcodec/lcldec.c
      return zstream->total_out;
 
 ```
+
+补丁文件：`patches/ffmpeg_lcldec_zlib_tail_disclosure.patch`（内容同上）。
 
 ---
 
@@ -1547,9 +1596,9 @@ nvdec hardware decode: when decoder surfaces are exhausted inside ff_nvdec_start
 
 ### 5. 修复建议
 
-回移上游修复（见补丁附件）
+回移上游修复（补丁见 `patches/ffmpeg_nvdec_sep_ref_doublefree.patch`）
 
-**修复补丁**（`patch.diff`）：
+**修复补丁**（`patches/ffmpeg_nvdec_sep_ref_doublefree.patch`）：
 ```diff
 --- a/libavcodec/nvdec.c
 +++ b/libavcodec/nvdec.c
@@ -1817,6 +1866,8 @@ index 59dc84caa8d4c..d2ba48e7bcbad 100644
 
 ```
 
+补丁文件：`patches/ffmpeg_quirc_resize_oob.patch`（内容同上）。
+
 ---
 
 ## ffmpeg-rscc-short-deflate-uninit-leak
@@ -1874,9 +1925,9 @@ RSCC screen-capture decoder: when the deflate output is shorter than the frame n
 
 ### 5. 修复建议
 
-回移上游修复（见补丁附件）
+回移上游修复（补丁见 `patches/ffmpeg_rscc_short_deflate_uninit_leak.patch`）
 
-**修复补丁**（`patch.diff`）：
+**修复补丁**（`patches/ffmpeg_rscc_short_deflate_uninit_leak.patch`）：
 ```diff
 diff --git a/libavcodec/rscc.c b/libavcodec/rscc.c
 index 3715e1c6d42a8..5fde30ec35070 100644
@@ -1955,12 +2006,12 @@ Row-swap temp buffer is sized for plane 0 only; formats where another plane's wi
 四、PoC & Exploit：
 
 无运行级 PoC（上游复现样本名已在修复 commit 标注，可按其构造）；
-证据为三侧源码对照，附件 patch.diff 为可直接应用的修复。
+证据为三侧源码对照，`patches/ffmpeg_swaprect_temp_row_oob.patch` 为可直接应用的修复。
 
 五、修复及缓解措施建议：
 
 回移上游修复 a7e38b61：s->temp 分配改为遍历全部平面取
-宽度×步长最大值（含 INT_MAX 溢出检查）（附件 patch.diff 即上游
+宽度×步长最大值（含 INT_MAX 溢出检查）（`patches/ffmpeg_swaprect_temp_row_oob.patch` 即上游
 原文，对 OH 检出直接适用）。临时缓解：避免在包含 swaprect 的
 滤镜图中处理 NV12 等平面步长不均匀格式的奇数尺寸输入。
 
@@ -2096,11 +2147,11 @@ int main(int argc, char **argv)
 ### 5. 修复建议
 
 回移上游修复 a7e38b61：s->temp 分配改为遍历全部平面取
-宽度×步长最大值（含 INT_MAX 溢出检查）（附件 patch.diff 即上游
+宽度×步长最大值（含 INT_MAX 溢出检查）（`patches/ffmpeg_swaprect_temp_row_oob.patch` 即上游
 原文，对 OH 检出直接适用）。临时缓解：避免在包含 swaprect 的
 滤镜图中处理 NV12 等平面步长不均匀格式的奇数尺寸输入。
 
-**修复补丁**（`patch.diff`）：
+**修复补丁**（`patches/ffmpeg_swaprect_temp_row_oob.patch`）：
 ```diff
 diff --git a/libavfilter/vf_swaprect.c b/libavfilter/vf_swaprect.c
 index 5d93f51c30f5e..fe007ee5e77dc 100644
@@ -2134,6 +2185,8 @@ index 5d93f51c30f5e..fe007ee5e77dc 100644
  
 
 ```
+
+补丁文件：`patches/ffmpeg_swaprect_temp_row_oob.patch`（内容同上）。
 
 ---
 
@@ -2179,13 +2232,13 @@ TY demuxer Series2 AC3 branch trims packet size by 2 even when the packet size i
 
 无运行级 PoC（原因如上：需 Series2 AC3 TY 流构造，见附件复现
 路径说明）；证据为三侧源码对照（上游已修 diff / OH 检出修复前
-形态逐行对应 / 官方受影响清单含基线版本），附件 patch.diff 为
+形态逐行对应 / 官方受影响清单含基线版本），`patches/ffmpeg_ty_ac3_trim_underflow.patch` 为
 可直接应用的修复（git apply --check 通过）。
 
 五、修复及缓解措施建议：
 
 回移上游修复 de771bd5：ty.c demux_audio 的 Series2 AC3 裁剪改为
-pkt->size -= FFMIN(pkt->size, 2)（附件 patch.diff 即上游原文，
+pkt->size -= FFMIN(pkt->size, 2)（`patches/ffmpeg_ty_ac3_trim_underflow.patch` 即上游原文，
 对 OH 检出直接适用）。注意 640 行的同型代码有 pkt->s
 
 ### 3. PoC 源代码
@@ -2304,13 +2357,13 @@ int main(int argc, char **argv)
 ### 5. 修复建议
 
 回移上游修复 de771bd5：ty.c demux_audio 的 Series2 AC3 裁剪改为
-pkt->size -= FFMIN(pkt->size, 2)（附件 patch.diff 即上游原文，
+pkt->size -= FFMIN(pkt->size, 2)（`patches/ffmpeg_ty_ac3_trim_underflow.patch` 即上游原文，
 对 OH 检出直接适用）。注意 640 行的同型代码有 pkt->size >
 AC3_PKT_LENGTH 前置保护，保持原样不动。临时缓解：产品侧限制
 对不可信 TiVo 流的解复用；升级后可补充 Series2 AC3 边界尺寸
 的回归用例（上游 oss-fuzz 语料已含该形态）。
 
-**修复补丁**（`patch.diff`）：
+**修复补丁**（`patches/ffmpeg_ty_ac3_trim_underflow.patch`）：
 ```diff
 diff --git a/libavformat/ty.c b/libavformat/ty.c
 index 9be027fcca35b..842d97038cb6b 100644
@@ -2327,6 +2380,8 @@ index 9be027fcca35b..842d97038cb6b 100644
                  ty->ac3_pkt_size += pkt->size;
 
 ```
+
+补丁文件：`patches/ffmpeg_ty_ac3_trim_underflow.patch`（内容同上）。
 
 ---
 
@@ -2372,12 +2427,12 @@ WMA encoder extradata buffer lacks the FFmpeg-mandated input padding, letting do
 
 无运行级 PoC（原因如上）；证据为三侧源码对照（上游已修 diff /
 OH 检出修复前形态逐行对应 / 官方受影响清单含基线版本），附件
-patch.diff 为可直接应用的修复（git apply --check 通过）。
+`patches/ffmpeg_wmaenc_extradata_padding.patch` 为可直接应用的修复（git apply --check 通过）。
 
 五、修复及缓解措施建议：
 
 回移上游修复 23227a44：wmaenc.c encode_init 的两处 extradata
-分配均附加 AV_INPUT_BUFFER_PADDING_SIZE（附件 patch.diff 即上游
+分配均附加 AV_INPUT_BUFFER_PADDING_SIZE（`patches/ffmpeg_wmaenc_extradata_padding.patch` 即上游
 原文，对 OH 检出直接适用）。同时建议评估组件内其他 extradata
 手工分配点是否存在同类缺填充形态（上游在本修复同期对多处
 extradata 分配做过同类加固，可按上游提交历史
@@ -2479,12 +2534,12 @@ int main(int argc, char **argv)
 ### 5. 修复建议
 
 回移上游修复 23227a44：wmaenc.c encode_init 的两处 extradata
-分配均附加 AV_INPUT_BUFFER_PADDING_SIZE（附件 patch.diff 即上游
+分配均附加 AV_INPUT_BUFFER_PADDING_SIZE（`patches/ffmpeg_wmaenc_extradata_padding.patch` 即上游
 原文，对 OH 检出直接适用）。同时建议评估组件内其他 extradata
 手工分配点是否存在同类缺填充形态（上游在本修复同期对多处
 extradata 分配做过同类加固，可按上游提交历史对照排查）。
 
-**修复补丁**（`patch.diff`）：
+**修复补丁**（`patches/ffmpeg_wmaenc_extradata_padding.patch`）：
 ```diff
 diff --git a/libavcodec/wmaenc.c b/libavcodec/wmaenc.c
 index b419694c51aad..35a3c6f6e35aa 100644
@@ -2509,6 +2564,8 @@ index b419694c51aad..35a3c6f6e35aa 100644
          avctx->extradata_size = 10;
 
 ```
+
+补丁文件：`patches/ffmpeg_wmaenc_extradata_padding.patch`（内容同上）。
 
 ---
 
@@ -2680,7 +2737,36 @@ int main(int argc, char **argv)
 
 AddWatcher 入口对 appEventFilters.head 判空（head==NULL 且 size>0 时返回参数校验错误码，与对照路径现有校验口径一致）；内层 names.head / eventTypes.head 同步补判空。（与提交表单第五节修复建议一致：D:/cve_data/submission_hiappevent/奖励计划表单v1_hiappevent.md）
 
+**修复补丁**（`patches/hiappevent_ffi_watcher_null_filter.patch`，对照检出源码生成，`patch -p1` 已验证可应用；未编译验证）：
 
+```diff
+--- a/base/hiviewdfx/hiappevent/frameworks/cj/ffi/src/hiappevent_ffi.cpp
++++ b/base/hiviewdfx/hiappevent/frameworks/cj/ffi/src/hiappevent_ffi.cpp
+@@ -369,7 +369,23 @@
+     }
+     std::vector<AppEventFilter> filters;
+     std::unordered_set<std::string> names;
++    /* size/head are a pair: a non-zero size with a null head dereferences null
++     * on the first iteration. Same check for the inner string arrays. */
++    if (watcher.appEventFilters.size > 0 && watcher.appEventFilters.head == nullptr) {
++        ret.code = ERR_PARAM;
++        return ret;
++    }
+     for (int i = 0; i < watcher.appEventFilters.size; i++) {
++        if (watcher.appEventFilters.head[i].names.size > 0 &&
++            watcher.appEventFilters.head[i].names.head == nullptr) {
++            ret.code = ERR_PARAM;
++            return ret;
++        }
++        if (watcher.appEventFilters.head[i].eventTypes.size > 0 &&
++            watcher.appEventFilters.head[i].eventTypes.head == nullptr) {
++            ret.code = ERR_PARAM;
++            return ret;
++        }
+         for (int j = 0; j < watcher.appEventFilters.head[i].names.size; j++) {
+             names.insert(std::string(watcher.appEventFilters.head[i].names.head[j]));
+         }
+```
 
 ---
 
@@ -2807,7 +2893,24 @@ int main(int argc, char **argv)
 
 建议 WriteByteArray 的 CJ FFI 入口对（数组指针, 长度）组合校验：length>0 时数组指针判空并返回参数校验错误码，与同文件其他 FFI 转换的既有检查口径对齐（真库级 SIGSEGV 证据：工单 OHSA26-092953990）。
 
+**修复补丁**（`patches/ipc_cj_array_null_validation.patch`，对照检出源码生成，`patch -p1` 已验证可应用；未编译验证）：
 
+```diff
+--- a/foundation/communication/ipc/interfaces/innerkits/cj/src/message_sequence_impl.cpp
++++ b/foundation/communication/ipc/interfaces/innerkits/cj/src/message_sequence_impl.cpp
+@@ -369,6 +369,11 @@
+     if (nativeParcel_ == nullptr) {
+         return errorDesc::WRITE_DATA_TO_MESSAGE_SEQUENCE_ERROR;
+     }
++    /* A non-zero length with a null buffer would be dereferenced in the write
++     * loop below; reject the pair before touching the parcel. */
++    if (value.len > 0 && value.data == nullptr) {
++        return errorDesc::WRITE_DATA_TO_MESSAGE_SEQUENCE_ERROR;
++    }
+     if (CheckWriteCapacity(BYTE_SIZE_8 * (value.len + 1))) {
+         size_t pos = nativeParcel_->GetWritePosition();
+         nativeParcel_->WriteUint32(value.len);
+```
 
 ---
 
@@ -2971,7 +3074,25 @@ int main(int argc, char **argv)
 
 建议 CArrStrToVectorKey/String 族 FFI 转换（同文件 3 处）在 length>0 时校验数组指针非空并返回参数校验错误码；本案为源级归档口径（AbilityRuntime Context 隔离限制，如实记录，见 docs/status/TASK_IPC_KV_VALIDATION_20260928.md）。
 
+**修复补丁**（`patches/kv_ffi_array_validation.patch`，对照检出源码生成，`patch -p1` 已验证可应用；未编译验证）：
 
+```diff
+--- a/foundation/distributeddatamgr/kv_store/frameworks/cj/src/distributed_kv_store_impl.cpp
++++ b/foundation/distributeddatamgr/kv_store/frameworks/cj/src/distributed_kv_store_impl.cpp
+@@ -424,6 +424,12 @@
+ {
+     std::vector<Key> keys;
+     int64_t size = cArrStr.size;
++    /* Defensive guard: size>0 with head==nullptr used to dereference null.
++     * Returning an empty vector keeps the batch call a no-op; a stricter fix
++     * would thread an error code back to the CJ layer. */
++    if (size > 0 && cArrStr.head == nullptr) {
++        return keys;
++    }
+     for (int64_t i = 0; i < size; i++) {
+         std::string str = cArrStr.head[i];
+         keys.push_back(DistributedKv::Key(str));
+```
 
 ---
 
@@ -3011,7 +3132,7 @@ nonce 重用攻破机密性；IV 由调用方正常轮换也无法缓解（被�
 
 五、修复及缓解措施建议：
 
-回移上游修复 843c9b94（附件 patch.diff 为窄化版，对 OH 检出
+回移上游修复 843c9b94（`patches/openssl_ocb_oneshot_iv_discard.patch` 为窄化版，对 OH 检出
 git apply --check 直接通过）：aes_ocb_cipher() 处理数据前检查
 key_set 并调用 update_iv() 刷入缓冲 IV。建议同步引
 
@@ -3109,7 +3230,7 @@ int main(void)
 ```
 
 **PoC 使用方法**：
-运行级：./poc_orig：同一 (key, iv) 下 body 分别经 EVP_Cipher()（one-shot）与 EVP_CipherUpdate/Final（streaming）加密——S1（无 AAD，one-shot 为首次数据调用）原版 ct=DIFF tag=DIFF（one-shot 实际以 nonce-0 加密、丢弃调用方 IV）；S2（AAD 先 streaming）原版 SAME（佐证机理：仅 one-shot 为首次数据调用时 IV 被丢弃）；应用 patch.diff 重建 → 两场景全 SAME（修复生效）。
+运行级：./poc_orig：同一 (key, iv) 下 body 分别经 EVP_Cipher()（one-shot）与 EVP_CipherUpdate/Final（streaming）加密——S1（无 AAD，one-shot 为首次数据调用）原版 ct=DIFF tag=DIFF（one-shot 实际以 nonce-0 加密、丢弃调用方 IV）；S2（AAD 先 streaming）原版 SAME（佐证机理：仅 one-shot 为首次数据调用时 IV 被丢弃）；应用 `patches/openssl_ocb_oneshot_iv_discard.patch` 重建 → 两场景全 SAME（修复生效）。
 
 ### 4. 影响分析
 
@@ -3137,7 +3258,7 @@ int main(void)
 
 ### 5. 修复建议
 
-回移上游修复 843c9b94（附件 patch.diff 为窄化版，对 OH 检出
+回移上游修复 843c9b94（`patches/openssl_ocb_oneshot_iv_discard.patch` 为窄化版，对 OH 检出
 git apply --check 直接通过）：aes_ocb_cipher() 处理数据前检查
 key_set 并调用 update_iv() 刷入缓冲 IV。建议同步引入上游配套
 测试（one-shot 与 streaming 交叉往返矩阵）。临时缓解：应用侧
@@ -3145,7 +3266,7 @@ key_set 并调用 update_iv() 刷入缓冲 IV。建议同步引入上游配套
 EVP_EncryptUpdate/EVP_EncryptFinal_ex 序列（streaming 槽位不受
 影响）；或升级至上游公告列出的修复版本。
 
-**修复补丁**（`patch.diff`）：
+**修复补丁**（`patches/openssl_ocb_oneshot_iv_discard.patch`）：
 ```diff
 diff --git a/providers/implementations/ciphers/cipher_aes_ocb.c b/providers/implementations/ciphers/cipher_aes_ocb.c
 index 1f6da4b212296..329d4bfa3e17c 100644
@@ -3173,6 +3294,8 @@ index 1f6da4b212296..329d4bfa3e17c 100644
          return 0;
 
 ```
+
+补丁文件：`patches/openssl_ocb_oneshot_iv_discard.patch`（内容同上）。
 
 ---
 
@@ -3348,6 +3471,24 @@ int main(int argc, char **argv)
 
 FfiUDMFSetProperties 对 properties.tag 判空（tag != nullptr ? Utils::MallocCString(...) : 空串语义），或 Utils::MallocCString 增加 const char* 判空重载（与 UDMF_REAL_LIBRARY_CONFIRM_20261009.md 后续节一致）；同步核查同文件其余直传点。
 
+**修复补丁**（`patches/udmf_ffi_setproperties_null_tag.patch`，对照检出源码生成，`patch -p1` 已验证可应用；未编译验证）：
 
+```diff
+--- a/foundation/distributeddatamgr/udmf/interfaces/cj/src/unified_data_ffi.cpp
++++ b/foundation/distributeddatamgr/udmf/interfaces/cj/src/unified_data_ffi.cpp
+@@ -131,7 +131,10 @@
+     AAFwk::WantParams wantP;
+     SetDataParameters(properties.extras, wantP);
+     prop->extras = wantP;
+-    prop->tag = Utils::MallocCString(properties.tag);
++    /* MallocCString takes const std::string&, so a null tag builds
++     * std::string(nullptr) and faults in strlen before the empty-string check
++     * can run. Treat null as the empty tag that the setter already accepts. */
++    prop->tag = properties.tag == nullptr ? nullptr : Utils::MallocCString(properties.tag);
+     prop->shareOptions = UDMF::ShareOptions(properties.shareOptions);
+     data->unifiedData_->SetProperties(prop);
+ }
+```
 
 ---
+

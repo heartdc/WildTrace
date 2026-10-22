@@ -1,0 +1,39 @@
+# ffmpeg-rscc-short-deflate-uninit-leak
+# 修复补丁（自 docs/deliverables/VULN_REPORT.md 提取，未改动内容）
+# 目标文件：libavcodec/rscc.c
+# 应用：patch -p1 < ffmpeg_rscc_short_deflate_uninit_leak.patch （在组件源码根目录执行）
+
+diff --git a/libavcodec/rscc.c b/libavcodec/rscc.c
+index 3715e1c6d42a8..5fde30ec35070 100644
+--- a/libavcodec/rscc.c
++++ b/libavcodec/rscc.c
+@@ -311,6 +311,12 @@ static int rscc_decode_frame(AVCodecContext *avctx, AVFrame *frame,
+             ret = AVERROR_UNKNOWN;
+             goto end;
+         }
++        if (len < pixel_size) {
++            av_log(avctx, AV_LOG_WARNING, "Deflated %lu bytes, but %d are needed\n",
++                   len, pixel_size);
++            memset(ctx->inflated_buf + len, 0, pixel_size - len);
++            pixel_size = len;
++        }
+         pixels = ctx->inflated_buf;
+     }
+ 
+diff --git a/libavcodec/rscc.c b/libavcodec/rscc.c
+index 3715e1c6d42a8..5fde30ec35070 100644
+--- a/libavcodec/rscc.c
++++ b/libavcodec/rscc.c
+@@ -311,6 +311,12 @@ static int rscc_decode_frame(AVCodecContext *avctx, AVFrame *frame,
+             ret = AVERROR_UNKNOWN;
+             goto end;
+         }
++        if (len < pixel_size) {
++            av_log(avctx, AV_LOG_WARNING, "Deflated %lu bytes, but %d are needed\n",
++                   len, pixel_size);
++            memset(ctx->inflated_buf + len, 0, pixel_size - len);
++            pixel_size = len;
++        }
+         pixels = ctx->inflated_buf;
+     }
+ 

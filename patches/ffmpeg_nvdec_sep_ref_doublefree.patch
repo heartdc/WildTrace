@@ -1,0 +1,27 @@
+# ffmpeg-nvdec-sep-ref-doublefree
+# 修复补丁（自 docs/deliverables/VULN_REPORT.md 提取，未改动内容）
+# 目标文件：libavcodec/nvdec.c
+# 应用：patch -p1 < ffmpeg_nvdec_sep_ref_doublefree.patch （在组件源码根目录执行）
+
+--- a/libavcodec/nvdec.c
++++ b/libavcodec/nvdec.c
+@@ -614,8 +614,7 @@
+             cf->ref_idx_ref = ff_refstruct_pool_get(ctx->decoder_pool);
+             if (!cf->ref_idx_ref) {
+                 av_log(avctx, AV_LOG_ERROR, "No decoder surfaces left\n");
+-                ret = AVERROR(ENOMEM);
+-                goto fail;
++                return AVERROR(ENOMEM);
+             }
+         }
+         cf->ref_idx = *cf->ref_idx_ref;
+@@ -625,9 +624,6 @@
+     }
+ 
+     return 0;
+-fail:
+-    nvdec_fdd_priv_free(cf);
+-    return ret;
+ }
+ 
+ int ff_nvdec_end_frame(AVCodecContext *avctx)

@@ -1,0 +1,18 @@
+# ffmpeg-ty-ac3-trim-underflow
+# 修复补丁（自 docs/deliverables/VULN_REPORT.md 提取，未改动内容）
+# 目标文件：libavformat/ty.c
+# 应用：patch -p1 < ffmpeg_ty_ac3_trim_underflow.patch （在组件源码根目录执行）
+
+diff --git a/libavformat/ty.c b/libavformat/ty.c
+index 9be027fcca35b..842d97038cb6b 100644
+--- a/libavformat/ty.c
++++ b/libavformat/ty.c
+@@ -578,7 +578,7 @@ static int demux_audio(AVFormatContext *s, TyRecHdr *rec_hdr, AVPacket *pkt)
+         if (ty->audio_type == TIVO_AUDIO_AC3 &&
+                 ty->tivo_series == TIVO_SERIES2) {
+             if (ty->ac3_pkt_size + pkt->size > AC3_PKT_LENGTH) {
+-                pkt->size -= 2;
++                pkt->size -= FFMIN(pkt->size, 2);
+                 ty->ac3_pkt_size = 0;
+             } else {
+                 ty->ac3_pkt_size += pkt->size;

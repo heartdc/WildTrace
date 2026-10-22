@@ -1,0 +1,20 @@
+# kv_ffi_array_validation
+# CArrStrToVectorKey 入口判空（String 同族同理）
+# 对照 OpenHarmony 检出源码生成（行号取自检出文件）；未编译验证。
+# 应用：在 OpenHarmony 源码根目录 patch -p1 < kv_ffi_array_validation.patch
+
+--- a/foundation/distributeddatamgr/kv_store/frameworks/cj/src/distributed_kv_store_impl.cpp
++++ b/foundation/distributeddatamgr/kv_store/frameworks/cj/src/distributed_kv_store_impl.cpp
+@@ -424,6 +424,12 @@
+ {
+     std::vector<Key> keys;
+     int64_t size = cArrStr.size;
++    /* Defensive guard: size>0 with head==nullptr used to dereference null.
++     * Returning an empty vector keeps the batch call a no-op; a stricter fix
++     * would thread an error code back to the CJ layer. */
++    if (size > 0 && cArrStr.head == nullptr) {
++        return keys;
++    }
+     for (int64_t i = 0; i < size; i++) {
+         std::string str = cArrStr.head[i];
+         keys.push_back(DistributedKv::Key(str));

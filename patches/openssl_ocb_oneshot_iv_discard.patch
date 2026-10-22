@@ -1,0 +1,29 @@
+# openssl-ocb-oneshot-iv-discard
+# 修复补丁（自 docs/deliverables/VULN_REPORT.md 提取，未改动内容）
+# 目标文件：providers/implementations/ciphers/cipher_aes_ocb.c
+# 应用：patch -p1 < openssl_ocb_oneshot_iv_discard.patch （在组件源码根目录执行）
+
+diff --git a/providers/implementations/ciphers/cipher_aes_ocb.c b/providers/implementations/ciphers/cipher_aes_ocb.c
+index 1f6da4b212296..329d4bfa3e17c 100644
+--- a/providers/implementations/ciphers/cipher_aes_ocb.c
++++ b/providers/implementations/ciphers/cipher_aes_ocb.c
+@@ -498,6 +498,19 @@ static int aes_ocb_cipher(void *vctx, unsigned char *out, size_t *outl,
+         return 0;
+     }
+ 
++    /*
++     * Mirror the streaming handler: refuse if the key has not been set,
++     * and push the buffered IV into the OCB context before any data is
++     * processed.  Without this, CRYPTO_ocb128_encrypt/decrypt runs with
++     * Offset_0 = 0 regardless of the caller's IV -- catastrophic
++     * (key, nonce) reuse, and a subsequent EVP_*Final_ex() emits a tag
++     * that is a function of (key, iv) only.
++     */
++    if (!ctx->key_set || !update_iv(ctx)) {
++        ERR_raise(ERR_LIB_PROV, PROV_R_CIPHER_OPERATION_FAILED);
++        return 0;
++    }
++
+     if (!aes_generic_ocb_cipher(ctx, in, out, inl)) {
+         ERR_raise(ERR_LIB_PROV, PROV_R_CIPHER_OPERATION_FAILED);
+         return 0;
