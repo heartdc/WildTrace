@@ -20,6 +20,12 @@
   `libcj_ipc_ffi.z.so` 内（file_offset `0x1ed9b`），非补丁 musl 运行库、非 hilog
   适配层；调用与崩溃间无日志尝试。函数级符号化未成（OH 预编译 llvm 工具对该帧
   返回 `??`），file_offset 供后续符号化。
+- 补记（2026-10-21）：同一客户端在 `out/x86_64_virt` 构建上复跑，两次 ASLR 的调用
+  帧偏移同为 `0x218c4`，并用该构建 `lib.unstripped/` 下的库经 `llvm-addr2line`
+  符号化到 `OHOS::MessageSequenceImpl::CJ_WriteByteArray`
+  （`interfaces/innerkits/cj/src/message_sequence_impl.cpp:377`）。本节记录的
+  `0x1ed9b` 属于早期 `out/ffi-direct-min` 隔离构建；偏移随二进制变化，后续引用
+  请注明取自哪一次构建。
 - 证据：`out/ffi-direct-min/evidence/ipc-malformed-20260928/`（client/runner/
   build.log/run.log/run.exit/target-elf/inputs-*.sha256/gdb-full.txt）。
 
@@ -57,6 +63,7 @@ AbilityRuntime 环境的后续批次。
 ## 交接（任务书 D 节，lenovo 侧）
 
 - IPC：按"真库级证实"升级 case.json；若提交工单，backtrace 证据在包内
-  （file_offset `0x1ed9b` 可补符号名）。
+  （file_offset `0x1ed9b`，早期构建；现行 `out/x86_64_virt` 构建为 `0x218c4`，
+  符号名已补为 `MessageSequenceImpl::CJ_WriteByteArray`）。
 - KV：case.json 按隔离限制如实记录；建议后续批次用带 AbilityRuntime 的
   环境重开真库判定。

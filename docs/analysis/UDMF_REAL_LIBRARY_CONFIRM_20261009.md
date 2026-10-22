@@ -53,7 +53,11 @@
 - 根因链：`Utils::MallocCString` 形参为 `const std::string &`
   （`interfaces/cj/src/utils.cpp:18`），`char* NULL` 隐式构造
   `std::string(nullptr)` → `strlen(NULL)`。调用帧偏移 `0x1716f`
-  （`libcj_unified_data_channel_ffi.z.so` 内，BASE `0x7ffff7bc0000`）。
+  （`libcj_unified_data_channel_ffi.z.so` 内，BASE `0x7ffff7bc0000`），该值取自
+  早期构建。
+- 补记（2026-10-21）：在 `out/x86_64_virt` 构建上复跑，两次 ASLR 的调用帧偏移
+  同为 `0x1718a`，`llvm-addr2line -i` 链到 `unified_data_ffi.cpp:134`。偏移随
+  二进制变化，后续引用请注明取自哪一次构建。
 - **round-trip 论据**：`FfiUDMFGetProperties`（同文件）对空存储 tag 返回
   `ret.tag = Utils::MallocCString(uni->tag)` → `nullptr`（MallocCString 对
   空 std::string 返回 nullptr）。即 getter 的合法输出直接喂回 setter 必崩。

@@ -2777,7 +2777,7 @@ int main(int argc, char **argv)
 ```
 
 **PoC 使用方法**：
-真库运行级：libcj_ipc_ffi.z.so 隔离构建 x86_64（IPC HEAD edc6f3ab，CJ 绑定与原仓 diff -qr 一致）dlopen 驱动 ipc_null_bytearray.c：对照（data=NULL len=0）→ write_error=0 正常返回；候选（data=NULL len=1）→ 立即 SIGSEGV（run.exit=139）；两次 ASLR gdb 复现 rip 落库内 file_offset 0x1ed9b。记录 docs/analysis/IPC_KV_REAL_LIBRARY_VALIDATION_20260928.md（PR #65）。
+真库运行级：libcj_ipc_ffi.z.so 隔离构建 x86_64（IPC HEAD edc6f3ab，CJ 绑定与原仓 diff -qr 一致）dlopen 驱动 ipc_null_bytearray.c：对照（data=NULL len=0）→ write_error=0 正常返回；候选（data=NULL len=1）→ 立即 SIGSEGV（run.exit=139）；两次 ASLR gdb 复现 rip 落库内 file_offset 0x218c4（2026-10-21 按 out/x86_64_virt 库复算；早期隔离构建记录为 0x1ed9b）。记录 docs/analysis/IPC_KV_REAL_LIBRARY_VALIDATION_20260928.md（PR #65）。
 
 ### 4. 影响分析
 
