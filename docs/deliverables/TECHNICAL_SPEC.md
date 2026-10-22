@@ -2,8 +2,8 @@
 
 > 面向赛题《OpenHarmony 开源代码漏洞挖掘》交付件二。本文严格区分**已实现并验证**
 > 的能力与**设计中/计划中**的能力（各节状态标注），不含未经验证的质量主张。
-> 基线：master 分支 `29df68f`（2026-10-22），**1,248 项回归测试通过**（`unittest`
-> 发现计数），CI（Ubuntu）全绿。
+> 基线：master 分支 `29df68f`（2026-10-22），**1,248 项用例**（`unittest` 发现计数），
+> CI（Ubuntu）全绿。
 > v1.0（2026-09-30，基线 `1c80e2d`）收录：自动化分析管线（Autopilot v3）、跨函数
 > UAF、Joern CPG 桥接、LLM PoC 生成器、版本分支影响矩阵（kb 联接）、交付件组装器。
 > v2.0（2026-10-17）增补：P6 状态模型与可证明性排序（§3.13）、检测形态扩展
@@ -113,7 +113,10 @@ triage → report → human_review → completed`（另有 blocked / 重试预�
 | `ohvul/autopilot.py` | **端到端自动化管线 v3**（§3.8）：10 层扫描 + 置信度 + PoC + 统一报告 |
 | `ohvul/cross_uaf.py` | 跨函数 UAF/双重释放（位置别名、局部变量、去重语义） |
 | `ohvul/joern_bridge.py` | Joern CPG 桥接（--joern 选配层，异常安全降级） |
-| `ohvul/llm_poc.py` | LLM PoC 生成器（安全加固，§3.9） |
+| `ohvul/llm_poc.py` | LLM PoC 生成器（安全加固，§3.9）；自模仿守卫与拒收回灌 |
+| `ohvul/poc_verify.py` | PoC 闸门前三道：形态分类、链接集自推断编译、运行三态判定（§3.15） |
+| `ohvul/poc_real.py` | 真库帧归因：WSL + musl 加载 + gdb + `addr2line`，供 `wrong_site` 判定（§3.15） |
+| `tools/harness/` | 守卫堆（Windows 预处理器改名 / Linux `LD_PRELOAD`）与 OHOS 真库 runner（§3.15.1） |
 | `ohvul/impact_matrix.py` / `vuln_report.py` / `competition_report.py` | 影响矩阵（kb 联接）与交付件组装（§3.10/§3.11） |
 | `ohvul/toolchain.py` | 工具链预检（真实通道探针，required/optional 分级） |
 | `ohvul/detect/`（scanner、lexical） | 内置规则初筛 + 词法层 |
@@ -580,7 +583,7 @@ dsoftbus 全树实测：旧语义 448 → 新 69（移除 379 全为裁定形态
 
 ### 4.1 规模与质量
 
-- 测试：**1,248 项回归测试通过**（`unittest` 发现计数），CI（Ubuntu）全绿；v1.0 基线
+- 测试：**1,248 项用例**（`unittest` 发现计数），CI（Ubuntu）全绿；v1.0 基线
   1016 → v2.0 1,162 → v2.1 1,191 → v2.2 1,248 项（P6 契约 51 项、影响契约、检测契约、
   P8 敏感化配对基准、种子基准 v2、外部复审反例回归、PoC 闸门 72 项）。
 - **2026-09-29 全面代码审计与修复**：四子代理并行审查 + 逐项实证复现，发现并
@@ -634,7 +637,7 @@ python -m ohvul.benchmark <cases.json> [--scanner ...]
 
 | 项目 | 数字 |
 |---|---|
-| 回归测试 | **1,248 项通过**；CI 全绿 |
+| 回归测试 | **1,248 项用例**（`unittest` 发现计数）；CI Ubuntu 全绿 |
 | 真实 OH 文件分析 | 44 文件（3 组件，profile 来源校验通过） |
 | 运行级证据案例 | cJSON 矩阵 26/26；独立复现 26/26（双重复现） |
 | CVE 知识库 | 375,265（全量，本地）+ 72（精选）+ 446（靶区，兼矩阵数据源） |
@@ -666,7 +669,7 @@ python -m ohvul.benchmark <cases.json> [--scanner ...]
 | 双引擎并集（nstackx，2026-10-18） | 函数粒度交集 752（Joern 覆盖 88% 互证）、
   Joern 独有 105、规则层独有 589（锚点差异已注明） |
 | 外部复审响应（2026-10-18） | F01-F08 八项全复现全修复；20 项反例回归；
-  全量 1,248 测试绿 |
+  全量 1,191 测试绿（10-18 口径） |
 | 全树扫描 | **进行中**（34.4M 行产品代码面，双进程后台；完成后补
   `FULLTREE_FUNNEL_LEDGER` 与覆盖率口径——本表不预支数字） |
 

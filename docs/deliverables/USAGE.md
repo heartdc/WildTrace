@@ -22,7 +22,7 @@
 
 ```powershell
 python -m pip install -e . --no-deps
-python -m unittest discover -s tests -q        # 当前基线 1,248 项通过
+python -m unittest discover -s tests -q        # 当前用例 1,248 项（发现计数）
 python -m ohvul.toolchain --output preflight.json   # 工具链预检（演示第一步）
 ```
 
