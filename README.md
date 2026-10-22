@@ -130,7 +130,7 @@ Absent branch evidence stays unknown. The workbench reads all 19 case records
 and displays delivery gaps separately from vulnerability confirmation.
 
 Deliverables live in `docs/deliverables/` (TECHNICAL_SPEC, VULN_REPORT,
-IMPACT_MATRIX, PERFORMANCE, VIDEO_SCRIPT, DEMO_RUNBOOK). Toolchain preflight for
+IMPACT_MATRIX, PERFORMANCE, VIDEO_SCRIPT). Toolchain preflight for
 demos: `python -m ohvul.toolchain --output preflight.json`.
 
 ## Candidate triage

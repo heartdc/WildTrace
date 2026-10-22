@@ -1,8 +1,7 @@
 # WildTrace 使用说明书（赛题交付件 3 · 文档部分）
 
 > 版本：1.1（2026-10-22，对应 master tag `v2.3`；1.0 为 2026-09-30 / `a023018`）。
-> 配套演示视频按 `docs/deliverables/VIDEO_SCRIPT.md` 录制，逐命令操作顺序见
-> `docs/deliverables/DEMO_RUNBOOK.md`。
+> 配套演示视频按 `docs/deliverables/VIDEO_SCRIPT.md` 的分镜录制。
 > 分工：**本文件是交付件三正文**（依赖环境 + 主命令 + 常见问题 + 交付件索引）；
 > `USER_GUIDE.md` 是同一交付件的命令行补充页（分步 walkthrough、安全边界与工作台
 > 说明），两者不重复计数，冲突时以本文件为准。
@@ -160,7 +159,7 @@ python tools/kb_gap_audit.py <component-repo> --kb <kb.json>   # 回移缺口四
 
 `docs/deliverables/`：TECHNICAL_SPEC（技术说明书）、VULN_REPORT（漏洞分析报告，
 `.md` + `.pdf`）、IMPACT_MATRIX（影响矩阵）、PERFORMANCE（性能说明）、
-VIDEO_SCRIPT + DEMO_RUNBOOK（演示）、USAGE（本文件，交付件三正文）、
+VIDEO_SCRIPT（演示分镜）、USAGE（本文件，交付件三正文）、
 USER_GUIDE（同交付件的命令行补充页）。
 状态台账在 `docs/status/`，审计与实验记录在 `docs/analysis/`，
 PoC 验证 harness 在 `tools/harness/`（Windows 守卫堆 / Linux `LD_PRELOAD` /

@@ -854,7 +854,7 @@ python -m ohvul.benchmark <cases.json> [--scanner ...]
 ## 8. 附录：关键文档索引
 
 - 交付件：`docs/deliverables/`（TECHNICAL_SPEC、VULN_REPORT、IMPACT_MATRIX、
-  PERFORMANCE、VIDEO_SCRIPT、DEMO_RUNBOOK）；
+  PERFORMANCE、VIDEO_SCRIPT）；
 - 状态台账：`docs/status/`（CASE_LEDGER、SUBMISSION_QUEUE、PROJECT_STATE 等）；
 - 审计记录：`docs/analysis/`（含 2026-09-29 L4 三级审计、REAL_BUILD_PROBE、
   cJSON 运行案例、独立复现、各轮代码审查）；
